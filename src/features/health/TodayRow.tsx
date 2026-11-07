@@ -13,7 +13,7 @@ export function TodayRow({ personId, readings }: { personId: string; readings: R
   const water = useWater(personId)
   const goal = useGoal(personId)
   const doses = useTodayDoses(personId)
-  const tiles = useMemo(() => todayTiles({ personId, readings, activity, doses: doses?.doses ?? null, hasMeds: doses?.hasMeds, water, goalMl: goal.waterMl, now: new Date() }), [personId, readings, activity, doses, water, goal.waterMl])
+  const tiles = useMemo(() => todayTiles({ personId, readings, activity, doses: doses?.doses ?? null, hasMeds: doses?.hasMeds, water, goalMl: goal.waterMl, goalSource: goal.waterSource, now: new Date() }), [personId, readings, activity, doses, water, goal.waterMl, goal.waterSource])
   return (
     <Section title="Today" testId="today-kpis">
       <div className="tk-grid" role="group" aria-label="Today">

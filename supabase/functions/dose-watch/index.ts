@@ -11,7 +11,7 @@ import webpush from 'npm:web-push@3.6.7'
 import { fcmMessageFor, fcmOutcome, parseServiceAccount, sendFcm } from '../_shared/fcm.ts'
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { TEMPLATES } from '../_shared/templates.ts'
-import { manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
+import { DOSE_RETRY_MS, manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
 
 const PAGE = 1000
 /** Read every row, PAGE at a time (the API caps one response at 1000 rows). */
@@ -51,7 +51,7 @@ const BUDGET_MS = 100_000 // measured from the start of the request; no send sta
 const DOSE_DUE_WINDOW_MS = 15 * 60_000 // one cron tick; the notification tag makes a repeat replace, not double
 
 interface SubRow { user_id: string; endpoint: string; p256dh: string | null; auth: string | null }
-interface AlertPushRow { id: string; person_id: string | null; carer_user_id: string; kind: string; template: string }
+interface AlertPushRow { id: string; person_id: string | null; carer_user_id: string; kind: string; template: string; ref: string | null; created_at: string }
 interface TokenRow { token: string; user_id: string; failed: number }
 /** A table that is not there yet (migration not applied): nothing to read, not a failure. */
 const missingTable = (e: unknown) => ['42P01', 'PGRST205', 'PGRST200'].includes((e as { code?: string } | null)?.code ?? '')
@@ -146,10 +146,10 @@ Deno.serve(async (req) => {
   }
 
   /** Push for rows not yet offered: web push to browser/PWA subscriptions AND FCM to the Android app's tokens. pushed_at is set once per row ("offered").
-   *  A row is left unmarked (offered again next run, for 12 h) only when an FCM send could not be tried or proved (no access token, network, 429, 5xx):
+   *  A row is left unmarked (offered again next run, for 12 h; a missed-dose alert only for DOSE_RETRY_MS) only when an FCM send could not be tried or proved (no access token, network, 429, 5xx):
    *  a lost safety push would not come back, a repeat replaces itself by tag (ML-23). 404/410 deletes the token; 400/403 counts a failure (5 = pruned by 0040). */
   async function flushPush(now: Date): Promise<{ webPushed: number; fcmPushed: number; fcmRetried: number }> {
-    const { data, error } = await sb.from('carer_alerts').select('id,person_id,carer_user_id,kind,template').is('pushed_at', null).gt('expires_at', now.toISOString()).gt('created_at', new Date(now.getTime() - FLUSH_FRESH_MS).toISOString()).order('created_at', { ascending: false }).limit(FLUSH_MAX)
+    const { data, error } = await sb.from('carer_alerts').select('id,person_id,carer_user_id,kind,template,ref,created_at').is('pushed_at', null).gt('expires_at', now.toISOString()).gt('created_at', new Date(now.getTime() - FLUSH_FRESH_MS).toISOString()).order('created_at', { ascending: false }).limit(FLUSH_MAX)
     if (error) throw new Error('read')
     const rows = (data ?? []) as AlertPushRow[]
     if (!rows.length) return { webPushed: 0, fcmPushed: 0, fcmRetried: 0 }
@@ -191,6 +191,8 @@ Deno.serve(async (req) => {
           }
         }
       }
+      // D-145: a missed dose re-sends its web push on every retry, so it is retried only while the row is young (about 2 cron ticks); older, it is marked offered and the in-app row stays
+      if (retry && carerDose && now.getTime() - Date.parse(r.created_at) >= DOSE_RETRY_MS) retry = false
       if (retry) fcmRetried++
       else offered.push(r.id)
     }

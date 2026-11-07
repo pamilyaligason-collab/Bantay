@@ -11,6 +11,7 @@ import MovePanel from '../exercise/MovePanel'
 import { MOVE_LOCK } from '../exercise/recommend'
 import PlateSheet from '../nutrition/PlateSheet'
 import WaterSheet from '../nutrition/WaterSheet'
+import { useGoal } from '../nutrition/hooks'
 import { Icon, type IconName } from '../shell/Icon'
 
 export type Kind = 'bp' | 'sugar' | 'weight' | 'walk' | 'move' | 'dose' | 'mood' | 'meal' | 'water' | 'more' | 'pain' | 'sleep' | 'temp'
@@ -76,6 +77,7 @@ function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: stri
   const [fasting, setFasting] = useState(true)
   const self = useActingPersonId() // the viewed person while an admin is acting, else me
   const personId = self ?? undefined
+  const goal = useGoal(self ?? '') // no water goal under 1 year: no Water in More
   const can = useActingCan() // null when not acting
   const lockLog = !!can && !can.log
   const writer = useHasWriterCarer(self)
@@ -214,7 +216,7 @@ function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: stri
       {open === 'more' && (
         <Sheet title="More" onClose={close} focusFirst={false}>
           <div className="td-more-grid" role="group" aria-label="More things to log">
-            {MORE.map((m) => <button key={m.id} type="button" className="td-opt td-more-t" disabled={lockLog && m.id !== 'mood'} aria-label={lockLog && m.id !== 'mood' ? `${m.label}, view only` : undefined} onClick={() => setOpen(m.id)}><Icon name={m.icon} size={24} /><span>{m.label}</span></button>)}
+            {MORE.filter((m) => m.id !== 'water' || goal.waterMl != null).map((m) => <button key={m.id} type="button" className="td-opt td-more-t" disabled={lockLog && m.id !== 'mood'} aria-label={lockLog && m.id !== 'mood' ? `${m.label}, view only` : undefined} onClick={() => setOpen(m.id)}><Icon name={m.icon} size={24} /><span>{m.label}</span></button>)}
           </div>
         </Sheet>
       )}

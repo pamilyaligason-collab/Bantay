@@ -16,8 +16,8 @@ export const bpDue = (readings: Pick<Reading, 'test' | 'value' | 'takenAt'>[], n
 export const checkInDue = (activity: { kind: string; startedAt: string }[], now: Date): boolean => !checkInRow(activity, now).done
 
 /** Water is due from 2 PM local (2:00 itself counts) while today's total is under half the goal (exactly half is not due). */
-export const waterDue = (rows: { drunkAt: string; ml: number }[], goalMl: number, now: Date): boolean =>
-  now.getHours() >= WATER_FROM_HOUR && onDay(rows, now).reduce((s, r) => s + r.ml, 0) * 2 < goalMl
+export const waterDue = (rows: { drunkAt: string; ml: number }[], goalMl: number | null, now: Date): boolean =>
+  goalMl != null && now.getHours() >= WATER_FROM_HOUR && onDay(rows, now).reduce((s, r) => s + r.ml, 0) * 2 < goalMl
 
 /** A pinned sugar, pulse or weight is due when none was logged in the last 7 days (exactly 7 days old still counts), but only for someone who has an earlier reading of it. */
 export function metricDue(readings: Pick<Reading, 'test' | 'takenAt'>[], code: string, now: Date): boolean {

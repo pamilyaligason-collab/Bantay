@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useFamilyPeople } from '../family/roster'
 import { useTakenToday } from '../health/useActivity'
 import { useMedications } from '../health/useMedications'
-import { dayOf, matchDoses, slotsFor } from '../health/meds'
+import { manilaDay, matchDoses, slotsFor } from '../health/meds'
 import { logDose } from '../log/store'
 import { Icon } from '../shell/Icon'
 import { useActingCan, useActingPersonId } from '../viewas/viewAs'
@@ -29,9 +29,9 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
   const [ask, setAsk] = useState(false)
   const [done, setDone] = useState(false)
   const { day, slot } = doseRef(refText)
-  const today = dayOf(now)
+  const today = manilaDay(now) // the ref's day is the server's Manila day
   const open = personId && slot && (day == null || day === today)
-    ? matchDoses(slotsFor(meds, personId, today), takes, today).filter((d) => d.slot === slot && d.state === 'pending')
+    ? matchDoses(slotsFor(meds, personId, today), takes, today, manilaDay).filter((d) => d.slot === slot && d.state === 'pending')
     : []
   const mark = async () => {
     for (const d of open) { const med = meds.find((m) => m.serverId === d.medicationId && m.name === d.name) ?? meds.find((m) => m.name === d.name); if (med) await logDose(med, d.slot) }

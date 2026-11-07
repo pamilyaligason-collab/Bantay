@@ -140,18 +140,27 @@ describe('resolveMedication', () => {
 })
 
 describe('pickSlot and remindable', () => {
+  const miso = (hhmm: string) => new Date(`${DAY}T${hhmm}:00+08:00`).toISOString() // the dose day is Manila's (ML-38)
   const twice = med({ name: 'Drug A', schedule: { v: 1, times: ['08:00', '20:00'] } })
   it('picks the latest open slot at or before now, never a future one; none before: the earliest', () => {
-    expect(pickSlot(twice, [], new Date(`${DAY}T07:30:00`))).toBe('08:00') // nothing yet at or before: earliest
-    expect(pickSlot(twice, [], new Date(`${DAY}T19:00:00`))).toBe('08:00') // 20:00 is still in the future
-    expect(pickSlot(twice, [], new Date(`${DAY}T20:00:00`))).toBe('20:00')
-    expect(pickSlot(twice, [], new Date(`${DAY}T21:30:00`))).toBe('20:00')
-    expect(pickSlot(twice, [{ name: 'Drug A', takenAt: iso('08:05'), medicationId: 's-Drug A', slot: '08:00' }], new Date(`${DAY}T09:00:00`))).toBe('20:00') // only open slot left
+    expect(pickSlot(twice, [], new Date(`${DAY}T07:30:00+08:00`))).toBe('08:00') // nothing yet at or before: earliest
+    expect(pickSlot(twice, [], new Date(`${DAY}T19:00:00+08:00`))).toBe('08:00') // 20:00 is still in the future
+    expect(pickSlot(twice, [], new Date(`${DAY}T20:00:00+08:00`))).toBe('20:00')
+    expect(pickSlot(twice, [], new Date(`${DAY}T21:30:00+08:00`))).toBe('20:00')
+    expect(pickSlot(twice, [{ name: 'Drug A', takenAt: miso('08:05'), medicationId: 's-Drug A', slot: '08:00' }], new Date(`${DAY}T09:00:00+08:00`))).toBe('20:00') // only open slot left
   })
   it('gives none for as-needed or when every slot is done', () => {
-    expect(pickSlot(med({ name: 'P', asNeeded: true }), [], new Date(`${DAY}T09:00:00`))).toBeUndefined()
-    const done = ['08:00', '20:00'].map((slot) => ({ name: 'Drug A', takenAt: iso('09:00'), medicationId: 's-Drug A', slot }))
-    expect(pickSlot(twice, done, new Date(`${DAY}T21:00:00`))).toBeUndefined()
+    expect(pickSlot(med({ name: 'P', asNeeded: true }), [], new Date(`${DAY}T09:00:00+08:00`))).toBeUndefined()
+    const done = ['08:00', '20:00'].map((slot) => ({ name: 'Drug A', takenAt: miso('09:00'), medicationId: 's-Drug A', slot }))
+    expect(pickSlot(twice, done, new Date(`${DAY}T21:00:00+08:00`))).toBeUndefined()
+  })
+  it('reads the slot on the Manila clock and day, whatever zone the phone is in (run with TZ=America/Los_Angeles to prove it)', () => {
+    {
+      expect(pickSlot(twice, [], new Date(`${DAY}T21:30:00+08:00`))).toBe('20:00')
+      expect(pickSlot(twice, [], new Date(`${DAY}T07:30:00+08:00`))).toBe('08:00')
+      const yesterdayTake = { name: 'Drug A', takenAt: new Date('2026-10-19T23:30:00+08:00').toISOString(), medicationId: 's-Drug A', slot: '08:00' }
+      expect(pickSlot(twice, [yesterdayTake], new Date(`${DAY}T09:00:00+08:00`))).toBe('08:00') // a take from the Manila day before does not close today's slot
+    }
   })
   it('remindable honours startedOn and stoppedOn like slotsFor', () => {
     const rows = [med({ name: 'NotYet', startedOn: '2026-10-21' }), med({ name: 'Over', stoppedOn: '2026-10-19' }), med({ name: 'Live', startedOn: '2026-10-20', stoppedOn: '2026-10-20' })]

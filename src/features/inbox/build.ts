@@ -1,6 +1,6 @@
 import { DOSE_WINDOW_MIN, dueDoses } from '../today/heroCards'
 import { rankAlerts, type Alert } from '../safety/alerts'
-import { dayOf, matchDoses, slotsFor } from '../health/meds'
+import { manilaDay, manilaMinutes, matchDoses, slotsFor } from '../health/meds'
 import type { MedTaken, Medication } from '../log/store'
 import type { AlertKind } from '../safety/alerts'
 import type { AlertRow } from '../notify/store'
@@ -81,18 +81,18 @@ export interface InboxSources {
 }
 
 export const MAX_ALERTS = 5
-const mins = (d: Date) => d.getHours() * 60 + d.getMinutes()
 const clock = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`
 
 /** Today's doses that are due now or already past their window and not marked taken or skipped. */
 export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' | 'skipped' | 'medications' | 'personId'>) {
-  const nowMin = mins(s.now)
   if (s.medications && s.personId) {
-    const day = dayOf(s.now)
-    return matchDoses(slotsFor(s.medications, s.personId, day), s.taken, day)
+    const nowMin = manilaMinutes(s.now) // the dose day and clock are Manila's, not this phone's (ML-38; useTakenToday reads from Manila midnight)
+    const day = manilaDay(s.now)
+    return matchDoses(slotsFor(s.medications, s.personId, day), s.taken, day, manilaDay)
       .filter((d) => d.state === 'pending' && d.at <= nowMin)
       .map((d) => ({ name: d.name, at: d.at, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
   }
+  const nowMin = s.now.getHours() * 60 + s.now.getMinutes() // deprecated kv-text path (no medications rows yet): heroCards' own local clock
   return dueDoses(s.profile, s.taken, s.skipped, s.now).map((d) => ({ ...d, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
 }
 
@@ -102,7 +102,7 @@ export function buildInbox(s: InboxSources): InboxItem[] {
   for (const a of rankAlerts(s.alerts, null).slice(0, MAX_ALERTS)) {
     out.push({ id: `alert:${a.id}:${a.issuedAt}`, kind: 'alert', title: a.title, sub: `Alert · ${a.where || a.source}`, href: '#safety', alertKind: a.kind, ...(Number.isNaN(Date.parse(a.issuedAt)) ? {} : { at: Date.parse(a.issuedAt) }) })
   }
-  const day = s.now.toDateString()
+  const day = manilaDay(s.now)
   for (const d of pendingDoses(s)) {
     out.push(d.missed
       ? { id: `dose:${day}:${d.name}:${d.at}:missed`, kind: 'dose', title: `${d.name} was not marked today`, sub: `Medicine · was due ${clock(d.at)}`, href: '#today' }

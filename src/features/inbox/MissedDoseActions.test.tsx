@@ -3,16 +3,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Medication } from '../log/store'
 import { doseRef, MissedDoseActions } from './MissedDoseActions'
 
-const h = vi.hoisted(() => ({ phone: '+639171234567' as string | null, takes: [] as unknown[], logDose: vi.fn(), can: null as { log: boolean; reason: string | null } | null }))
+const h = vi.hoisted(() => ({ times: ['09:00'], phone: '+639171234567' as string | null, takes: [] as unknown[], logDose: vi.fn(), can: null as { log: boolean; reason: string | null } | null }))
 const MED: Medication = { personId: 'p1', name: 'Losartan', serverId: 'm1', medStatus: 'active', schedule: { v: 1, times: ['09:00'] } }
 vi.mock('../family/roster', () => ({ useFamilyPeople: () => ({ people: [{ id: 'p1', name: 'Mama Rosa', phone: h.phone, isMe: false }], selfId: 'me' }) }))
-vi.mock('../health/useMedications', () => ({ useMedications: (id: string) => (id === 'p1' ? [MED] : []) }))
+vi.mock('../health/useMedications', () => ({ useMedications: (id: string) => (id === 'p1' ? [{ ...MED, schedule: { v: 1, times: h.times } }] : []) }))
 vi.mock('../health/useActivity', () => ({ useTakenToday: () => h.takes }))
 vi.mock('../viewas/viewAs', () => ({ useActingCan: () => h.can, useActingPersonId: () => (h.can ? 'p1' : null) }))
 vi.mock('../log/store', () => ({ logDose: (...a: unknown[]) => h.logDose(...a) }))
-afterEach(() => { cleanup(); h.phone = '+639171234567'; h.can = null; h.takes = []; h.logDose.mockReset() })
+afterEach(() => { cleanup(); vi.restoreAllMocks(); h.times = ['09:00']; h.phone = '+639171234567'; h.can = null; h.takes = []; h.logDose.mockReset() })
 
-const NOW = new Date(2026, 9, 26, 10, 10)
+const NOW = new Date('2026-10-26T10:10:00+08:00') // a Manila instant: the dose day is the Manila day (ML-38)
 const REF = 'm1:2026-10-26:09:00'
 
 describe('doseRef', () => {
@@ -64,7 +64,7 @@ describe('MissedDoseActions (lock-missed)', () => {
     expect((screen.getByRole('button', { name: 'Mark taken for Mama Rosa' }) as HTMLButtonElement).disabled).toBe(false)
   })
   it('no Mark taken when the slot is already taken, is not today, or the ref has no slot', () => {
-    h.takes = [{ name: 'Losartan', takenAt: new Date(2026, 9, 26, 9, 40).toISOString(), medicationId: 'm1', slot: '09:00' }]
+    h.takes = [{ name: 'Losartan', takenAt: new Date('2026-10-26T09:40:00+08:00').toISOString(), medicationId: 'm1', slot: '09:00' }]
     const a = render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
     expect(screen.queryByRole('button', { name: /Mark taken/ })).toBeNull()
     a.unmount(); h.takes = []
@@ -72,6 +72,35 @@ describe('MissedDoseActions (lock-missed)', () => {
     expect(screen.queryByRole('button', { name: /Mark taken/ })).toBeNull()
     b.unmount()
     render(<MissedDoseActions personId="p1" refText="m1" now={NOW} />)
+    expect(screen.queryByRole('button', { name: /Mark taken/ })).toBeNull()
+  })
+  // ML-38: the ref's day is the Manila dose day, whatever this phone's own calendar says (a worker cannot switch the real zone: the local getters read an instant shifted `hours` ahead of UTC)
+  function phoneAhead(hours: number) {
+    const proto = Object.getPrototypeOf(new Date()) as Date
+    const shift = (d: Date) => new Date(d.getTime() + hours * 3_600_000)
+    vi.spyOn(proto, 'getFullYear').mockImplementation(function (this: Date) { return shift(this).getUTCFullYear() })
+    vi.spyOn(proto, 'getMonth').mockImplementation(function (this: Date) { return shift(this).getUTCMonth() })
+    vi.spyOn(proto, 'getDate').mockImplementation(function (this: Date) { return shift(this).getUTCDate() })
+  }
+  it('23:30 Manila on a phone 13 h ahead: the 23:15 dose of the Manila day is open, and a take at 23:20 Manila closes it', () => {
+    phoneAhead(13); h.times = ['23:15']
+    const now = new Date('2026-10-26T23:30:00+08:00')
+    const a = render(<MissedDoseActions personId="p1" refText="m1:2026-10-26:23:15" now={now} />)
+    expect(screen.getByRole('button', { name: 'Mark taken for Mama Rosa' })).toBeTruthy()
+    a.unmount()
+    h.takes = [{ name: 'Losartan', takenAt: new Date('2026-10-26T23:20:00+08:00').toISOString(), medicationId: 'm1', slot: '23:15' }]
+    render(<MissedDoseActions personId="p1" refText="m1:2026-10-26:23:15" now={now} />)
+    expect(screen.queryByRole('button', { name: /Mark taken/ })).toBeNull()
+  })
+  it('00:30 Manila on a phone on UTC: the 00:15 dose of the new Manila day is open; a take from 23:50 Manila the evening before does not close it', () => {
+    phoneAhead(0); h.times = ['00:15']
+    const now = new Date('2026-10-27T00:30:00+08:00')
+    h.takes = [{ name: 'Losartan', takenAt: new Date('2026-10-26T23:50:00+08:00').toISOString(), medicationId: 'm1', slot: '00:15' }]
+    const a = render(<MissedDoseActions personId="p1" refText="m1:2026-10-27:00:15" now={now} />)
+    expect(screen.getByRole('button', { name: 'Mark taken for Mama Rosa' })).toBeTruthy()
+    a.unmount()
+    h.takes = [{ name: 'Losartan', takenAt: new Date('2026-10-27T00:20:00+08:00').toISOString(), medicationId: 'm1', slot: '00:15' }]
+    render(<MissedDoseActions personId="p1" refText="m1:2026-10-27:00:15" now={now} />)
     expect(screen.queryByRole('button', { name: /Mark taken/ })).toBeNull()
   })
 })

@@ -32,6 +32,13 @@ describe('Today row: null is not 0', () => {
     expect(t.every((x) => x.empty)).toBe(true)
     expect(t.map((x) => x.sub)).toEqual(['No reading today', 'No reading today', 'Nothing logged today', 'No reading today', 'No reading today', 'None due today'])
   })
+  it('no water goal (a baby under 1 year): no Water tile', () => {
+    expect(todayTiles({ personId: 'p1', readings: [], activity: [], doses: [], water: [], goalMl: null, now: at(23, 30) }).map((x) => x.code)).toEqual(['bp', 'pulse', 'steps', 'sleep', 'meds'])
+  })
+  it('a doctor limit rounds the goal glasses down, like the My day row: 1150 ml is 4, not 5', () => {
+    expect(run({ goalMl: 1150, goalSource: 'limit', water: [at(8)].map(water) }).water!.value).toBe('1/4')
+    expect(run({ goalMl: 1150, goalSource: 'weight', water: [at(8)].map(water) }).water!.value).toBe('1/5')
+  })
   it('medicines still loading is "--" with no claim', () => {
     const m = run({ doses: null }).meds!
     expect(m.value).toBe('--')

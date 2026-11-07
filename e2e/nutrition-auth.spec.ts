@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import { skipOnboarding } from './helpers'
+import { assertJackClear } from './v13'
 
 // Runs in the "auth" project (build WITH test Supabase env). Signed in as a made-up member; PostgREST is mocked (the nutrition tables answer
 // "not found" like a project where 0024 is not applied yet, so this also proves the app works with local rows only). All data is invented.
@@ -201,6 +202,18 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.reload()
       await expect(page.getByTestId('limit')).toHaveText('1,500 mg')
     })
+
+    for (const width of [360, 390]) {
+      test(`Food and nutrients at ${width}: the water hint shows and the Jack button covers no control`, async ({ page }) => {
+        test.setTimeout(120_000)
+        await page.setViewportSize({ width, height: 800 })
+        await page.goto('/')
+        await expect(page.getByTestId('myday')).toBeVisible()
+        await page.evaluate(() => { location.hash = '#health/nutrition' })
+        await expect(page.getByRole('link', { name: /Add your weight for a goal that fits you/ })).toBeVisible() // nothing known about this person: the hint row is on screen
+        await assertJackClear(page, { at: 'both' })
+      })
+    }
 
     test('Health > Food and nutrients: targets by age and sex, food vs supplement segments, unknown stays unknown; axe clean', async ({ page }) => {
       await page.goto('/')

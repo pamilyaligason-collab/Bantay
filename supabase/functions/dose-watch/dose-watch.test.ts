@@ -136,6 +136,31 @@ function fakePort(over: { meds?: MedRow[]; taken?: TakenRow[]; failWrites?: bool
 }
 const review = (since: string | undefined, over: Partial<MedRow> = {}) => med({ schedule: { v: 1, times: ['08:00'], review: true, ...(since ? { review_since: since } : {}) }, ...over })
 
+describe('D-145 one missed-dose alert per dose and carer', () => {
+  const slots = ['06:00', '06:30', '07:00', '07:30']
+  const four = () => med({ schedule: { v: 1, times: slots } })
+  const refs = (f: ReturnType<typeof fakePort>) => f.rows.filter((r) => r.carer === 'w1').map((r) => r.ref)
+  it('4 doses in a day, all missed: every dose alerts once (a different missed dose is never silenced by the others)', async () => {
+    const f = fakePort({ meds: [four()] })
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 4, claimed: 4, rows: 4, failed: 0 })
+    expect(refs(f).sort()).toEqual(slots.map((sl) => `p1:2026-10-20:${sl}`))
+    await runDoseWatch(f.port, NOW + 15 * 60_000)
+    await runDoseWatch(f.port, NOW + 60 * 60_000)
+    expect(refs(f)).toHaveLength(4) // the claim keeps every later run from raising the same dose again
+  })
+  it('two carers share a dose: one row each, never more, however many runs', async () => {
+    const f = fakePort()
+    for (let i = 0; i < 5; i++) await runDoseWatch(f.port, NOW + i * 60_000)
+    expect(f.rows.filter((r) => r.carer === 'w1')).toHaveLength(1)
+    expect(f.rows.filter((r) => r.carer === 'w2')).toHaveLength(1)
+  })
+  it('a taken or skipped dose never alerts', async () => {
+    const f = fakePort({ taken: [took()] })
+    expect(await runDoseWatch(f.port, NOW)).toMatchObject({ due: 0, claimed: 0, rows: 0 })
+    expect(f.rows).toEqual([])
+  })
+})
+
 describe('runDoseWatch', () => {
   it('an archived person gets no claim and no row', async () => {
     const f = fakePort({ meds: [med({ people: { archived_at: '2026-10-20T00:00:00Z' } })] })

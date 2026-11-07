@@ -34,6 +34,7 @@ describe('checkInDue: not done today', () => {
 })
 
 describe('waterDue: from 2 PM, under half the goal', () => {
+  it('no goal (null, a baby under 1 year) is never due', () => expect(waterDue([], null, at(15))).toBe(false))
   const ml = (n: number, h = 9) => [{ drunkAt: at(h).toISOString(), ml: n }]
   it('not before 2 PM, due at 2:00 PM sharp', () => {
     expect(waterDue([], 1500, at(13, 59))).toBe(false)

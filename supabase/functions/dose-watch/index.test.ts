@@ -35,6 +35,7 @@ function builder(name: string) {
   b.select = () => b
   b.eq = (c: string, v: unknown) => f((r) => val(r, c) === v)
   b.is = (c: string, v: unknown) => f((r) => val(r, c) === v)
+  b.not = (c: string, _op: string, v: unknown) => f((r) => val(r, c) !== v)
   b.in = (c: string, vs: unknown[]) => f((r) => vs.includes(r[c]))
   b.gt = (c: string, v: string) => f((r) => val(r, c) != null && String(r[c]) > v)
   b.gte = (c: string, v: string) => f((r) => val(r, c) != null && String(r[c]) >= v)
@@ -446,6 +447,16 @@ describe('FCM to the Android app (lane E, D-85)', () => {
     expect([job, ok]).toEqual(['dose-watch', true])
     expect((summary as Record<string, unknown>).fcmPushed).toBe(1)
     expect(JSON.stringify(summary)).not.toContain('token')
+  })
+  it('D-145 flush: a missed-dose alert whose FCM leg cannot be proved is offered again only while young (the web push repeats with every offer)', async () => {
+    on()
+    h.tables.push_tokens!.push(tok('c1'))
+    h.fcmStatus.set(tok('c1').token, 500)
+    h.tables.carer_alerts!.push(alert('young', 'c1', 'dose_missed', { kind: 'dose_missed', ref: 'p1:2026-10-26:09:30', created_at: '2026-10-26T09:50:00+08:00' }), alert('old', 'c1', 'dose_missed', { kind: 'dose_missed', ref: 'p1:2026-10-26:09:00', created_at: '2026-10-26T09:30:00+08:00' }))
+    const r = await call({ mode: 'flush' })
+    expect(r.json).toMatchObject({ ok: true, fcmRetried: 1 })
+    expect(h.tables.carer_alerts!.find((x) => x.id === 'young')!.pushed_at).toBeNull() // 15 min old: tried again next run
+    expect(h.tables.carer_alerts!.find((x) => x.id === 'old')!.pushed_at).not.toBeNull() // 35 min old: marked, never re-sent
   })
   it('port.digestOff: the user ids with digest_on = false; a missing carer_prefs table (before 0039) is nobody', async () => {
     await call({})

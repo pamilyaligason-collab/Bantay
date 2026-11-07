@@ -1,12 +1,13 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { ldb } from '../log/store'
+import { manilaDay } from './meds'
 import type { Activity } from './model'
 
 export const NO_ACTIVITY: Activity[] = [] // useActivity's state before its first query answers (every answer is a new array)
 export type TakenToday = { name: string; takenAt: string }
 const NO_TAKEN: TakenToday[] = []
-const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d }
+const startOfDay = () => new Date(`${manilaDay(new Date())}T00:00:00+08:00`) // the dose day is the Manila day (the server's), not this phone's midnight (ML-38)
 
 /** One person's activity rows (steps, sleep, mood) from the last `days` days, live. */
 export function useActivity(personId: string, days = 120): Activity[] {
@@ -20,7 +21,7 @@ export function useActivity(personId: string, days = 120): Activity[] {
   return rows
 }
 
-/** Doses this person marked taken today, live. */
+/** Doses this person marked taken today (Manila day), live. */
 /** Skipped rows are not takes: they are left out unless `includeSkipped` (the new id-based screens read skips themselves). */
 export function useTakenToday(personId: string, opts: { includeSkipped?: boolean } = {}): TakenToday[] {
   const includeSkipped = !!opts.includeSkipped

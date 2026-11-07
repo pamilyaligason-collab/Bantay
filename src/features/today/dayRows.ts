@@ -1,5 +1,6 @@
 import type { Reading } from '../health/ranges'
 import { ML_PER_TAP, dayKey, onDay } from '../nutrition/logic'
+import { goalGlasses } from '../nutrition/waterGoal'
 import { BAT_LOW, isEvening } from './batteryReminder'
 import type { Battery } from './useBattery'
 
@@ -18,10 +19,10 @@ export function bpRow(readings: Pick<Reading, 'test' | 'value' | 'takenAt'>[], n
 }
 
 /** Water is done at the goal, not per glass; `frac` (0..1) lets each glass still move the ring. */
-export function waterRow(rows: { drunkAt: string; ml: number }[], goalMl: number, now: Date): Row & { frac: number } {
+export function waterRow(rows: { drunkAt: string; ml: number }[], goalMl: number, now: Date, source?: string): Row & { frac: number } {
   const glasses = Math.round(onDay(rows, now).reduce((s, r) => s + r.ml, 0) / ML_PER_TAP)
-  const goal = Math.max(1, Math.round(goalMl / ML_PER_TAP))
-  return { title: 'Water', sub: `${glasses} of ${goal} glasses`, done: glasses >= goal, frac: Math.min(1, glasses / goal) }
+  const goal = goalGlasses(goalMl, source)
+  return { title: 'Water', sub: `${glasses} of ${goal} glasses${source === 'limit' ? " · Your doctor's limit" : ''}`, done: glasses >= goal, frac: Math.min(1, glasses / goal) }
 }
 
 export const checkInRow = (activity: { kind: string; startedAt: string }[], now: Date, signedIn = true): Row =>

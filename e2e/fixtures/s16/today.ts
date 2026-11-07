@@ -52,7 +52,7 @@ export async function startToday(page: Page, variant: Variant = 'calm', opts: { 
   const served = opts.alert ? [row(opts.alert)] : variant === 'quake' ? [row(QUAKE)] : variant === 'storm' ? [row(STORM)] : []
   await page.route('https://bantay-test.supabase.test/rest/v1/safety_alerts*', (route) => (route.request().method() === 'GET' ? route.fulfill({ json: served, headers: { 'access-control-allow-origin': '*' } }) : route.fallback())) // OPTIONS and writes stay with the shared mock
   // Ma's missed dose (a My day row, v13 T2), unseen, served by the same carer_alerts read the app uses.
-  const notices = opts.notice ? [{ id: 'a-dose', person_id: 'ma', kind: opts.notice === 'sos' ? 'sos' : 'dose_missed', template: opts.notice === 'sos' ? 'family_sos' : 'dose_missed', ref: `ma:${NOW.toISOString().slice(0, 10)}:09:00`, created_at: new Date(NOW.getTime() - 70 * 60_000).toISOString(), pushed_at: null, seen_at: null, expires_at: new Date(NOW.getTime() + 7 * 86_400_000).toISOString() }] : []
+  const notices = opts.notice ? [{ id: 'a-dose', person_id: 'ma', kind: opts.notice === 'sos' ? 'sos' : 'dose_missed', template: opts.notice === 'sos' ? 'family_sos' : 'dose_missed', ref: `ma:${NOW.toISOString().slice(0, 10)}:09:00`, created_at: new Date(NOW.getTime() - 10 * 60_000).toISOString(), pushed_at: null, seen_at: null, expires_at: new Date(NOW.getTime() + 7 * 86_400_000).toISOString() }] : []
   await page.route('https://bantay-test.supabase.test/rest/v1/carer_alerts*', (route) => (route.request().method() === 'GET' ? route.fulfill({ json: notices, headers: { 'access-control-allow-origin': '*' } }) : route.fallback()))
   await page.emulateMedia({ reducedMotion: 'reduce', colorScheme: opts.scheme ?? 'light' })
   await page.goto('/')

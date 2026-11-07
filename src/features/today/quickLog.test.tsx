@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const { h, stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }), h: { storm: null as null | { title: string; body: string }, feel: vi.fn(), result: 'told' as string, checkIn: vi.fn(), act: vi.fn(), read: vi.fn(), take: vi.fn(), meds: [] as unknown[], can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } } }))
+const { h, stub } = vi.hoisted(() => ({ stub: (id: string) => ({ default: () => <div data-testid={id} /> }), h: { storm: null as null | { title: string; body: string }, feel: vi.fn(), result: 'told' as string, checkIn: vi.fn(), act: vi.fn(), read: vi.fn(), take: vi.fn(), meds: [] as unknown[], baby: false, can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } } }))
 
 vi.mock('./useMyTakes', () => ({ useMyMedications: () => h.meds, useMyDoseRows: () => [] }))
 vi.mock('../setup/useProfile', () => ({ useSelfPersonId: () => 'p1' }))
@@ -13,13 +13,14 @@ vi.mock('../exercise/MovePanel', () => ({ default: (p: { lockLog?: string; hideR
 vi.mock('../nutrition/PlateSheet', () => stub('meal'))
 vi.mock('../nutrition/SaltSummary', () => stub('salt'))
 vi.mock('../nutrition/WaterSheet', () => stub('water'))
+vi.mock('../nutrition/hooks', () => ({ useGoal: () => ({ waterMl: h.baby ? null : 1500 }) })) // no water goal under 1 year
 vi.mock('../health/bpcheck/BpCheckButton', () => ({ default: () => <button type="button">Guided check</button> }))
 vi.mock('./actions', async (orig) => ({ ...(await orig<typeof import('./actions')>()), logFeeling: (f: string, id?: string) => { h.feel(f, id); return Promise.resolve(h.result) }, checkIn: (id?: string) => { h.checkIn(id); return Promise.resolve('ok') }, takeMedication: (m: unknown, _t: unknown, id?: string) => { h.take(m, id); return Promise.resolve('ok') } }))
 import { MoodSheet, MoreSheet } from './QuickLog'
 const mood = (notify: (m: string) => void = () => undefined) => render(<MoodSheet onClose={() => undefined} notify={notify} />)
 const more = (notify: (m: string) => void = () => undefined) => render(<MoreSheet onClose={() => undefined} notify={notify} />)
 
-afterEach(() => { cleanup(); h.storm = null; h.result = 'told'; h.can = null; h.meds = []; for (const f of [h.feel, h.checkIn, h.act, h.read, h.take]) f.mockReset() })
+afterEach(() => { cleanup(); h.storm = null; h.result = 'told'; h.can = null; h.meds = []; h.baby = false; for (const f of [h.feel, h.checkIn, h.act, h.read, h.take]) f.mockReset() })
 
 describe('log sheets (MoodSheet, MoreSheet)', () => {
   it('More holds the readings that lost their tile, then Dose taken, Food, Walk, Move, Pain, Sleep, Temperature, Mood and Water; each opens its sheet', () => {
@@ -27,6 +28,13 @@ describe('log sheets (MoodSheet, MoreSheet)', () => {
     expect([...screen.getByRole('dialog', { name: 'More' }).querySelectorAll('button.td-opt')].map((b) => b.textContent)).toEqual(['Blood pressure', 'Sugar', 'Weight', 'Dose taken', 'Food', 'Walk', 'Move', 'Pain', 'Sleep', 'Temperature', 'Mood', 'Water'])
     fireEvent.click(screen.getByRole('button', { name: 'Food' }))
     expect(screen.getByRole('dialog', { name: 'Meal' })).toBeTruthy()
+  })
+  it('a baby under 1 year has no Water option in More', () => {
+    h.baby = true
+    more()
+    const names = [...screen.getByRole('dialog', { name: 'More' }).querySelectorAll('button.td-opt')].map((b) => b.textContent)
+    expect(names).not.toContain('Water')
+    expect(names).toHaveLength(11)
   })
   it('acting with log rights, More > Move is locked as on the Move screen: Done would log to the admin', () => {
     h.can = { log: true, edit: true, rollcall: true, mood: true, reason: null }

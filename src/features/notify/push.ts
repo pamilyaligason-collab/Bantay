@@ -19,13 +19,17 @@ export const readQuietOn = async () => (await db.kv.get('quiet.on').catch(() => 
 /** 10 PM to 6 AM Manila, the hours the Me screen promises. */
 export const inQuietHours = (d: Date) => { const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }).format(d)) % 24; return h >= 22 || h < 6 }
 
-/** Own small cap for carer alerts (their own kv key, so health nudges never use it up). */
-export const claimCarer = (day: string, max: number) =>
+/** Own small cap for carer alerts (their own kv key, so health nudges never use it up). It counts distinct tags per Manila day: a re-sent push for a tag already claimed today
+ *  replaces the shown one (same tag) and is free, so dose-watch retries cannot use the cap up and silence a later, different alert. */
+export const claimCarer = (day: string, max: number, tag = '') =>
   db.transaction('rw', db.kv, async () => {
-    const st = (await db.kv.get('nudge.carer'))?.value as NudgeState | undefined
-    const count = st?.day === day ? st.count : 0
+    const st = (await db.kv.get('nudge.carer'))?.value as (NudgeState & { tags?: string[] }) | undefined
+    const same = st?.day === day
+    const count = same ? st.count : 0
+    const tags = same ? (st.tags ?? []) : []
+    if (tag && tags.includes(tag)) return true
     if (count >= max) return false
-    await db.kv.put({ key: 'nudge.carer', value: { day, count: count + 1 } })
+    await db.kv.put({ key: 'nudge.carer', value: { day, count: count + 1, tags: tag ? [...tags, tag] : tags } })
     return true
   })
 
@@ -54,7 +58,7 @@ export async function handlePush(raw: unknown, deps: PushDeps, now = new Date())
   if (n.cls === 'health' && !(await deps.claimNudge(dayKey(now), MAX_NUDGES_PER_DAY))) return
   if (n.cls === 'carer') {
     // not the shared health cap: a claimed alert for a family member must not be dropped because a reminder used it up. Own cap of 6 a day.
-    if (!(await claimCarer(dayKey(now), MAX_CARER_PER_DAY))) return
+    if (!(await claimCarer(dayKey(now), MAX_CARER_PER_DAY, n.tag))) return
     if (inQuietHours(now) && (await (deps.quietOn ?? readQuietOn)())) return deps.show({ ...n, silent: true })
   }
   await deps.show(n)

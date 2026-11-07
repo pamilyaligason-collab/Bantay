@@ -52,8 +52,12 @@ const isDeleted = (m: Medication) => !!(m as { deletedAt?: unknown }).deletedAt
 export const isLive = (m: Medication) => !isDeleted(m) && (m.medStatus ?? 'active') === 'active'
 
 const MANILA = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' })
-/** Calendar day (YYYY-MM-DD) in Asia/Manila of an instant. */
-const manilaDay = (d: Date) => (Number.isNaN(d.getTime()) ? '' : MANILA.format(d))
+/** Calendar day (YYYY-MM-DD) in Asia/Manila of an instant (an ISO string or a Date): the dose day the server uses (alert refs, dose-watch). */
+export const manilaDay = (v: string | Date) => { const d = typeof v === 'string' ? new Date(v) : v; return Number.isNaN(d.getTime()) ? '' : MANILA.format(d) }
+
+const MANILA_CLOCK = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: false })
+/** Minutes after Manila midnight of an instant: the clock a dose slot (`at`) is read on, whatever this phone's timezone says (pairs with manilaDay, ML-38). */
+export const manilaMinutes = (d: Date) => { const [h, m] = MANILA_CLOCK.format(d).split(':').map(Number); return (h! % 24) * 60 + m! }
 
 /** Whole days a "Still taking it?" has been open (0 = asked today); null when the medicine is not in review or has no review_since. `today` is YYYY-MM-DD or a Date (Manila day). */
 export function reviewAgeDays(med: Pick<Medication, 'schedule'>, today: string | Date): number | null {
@@ -105,10 +109,10 @@ export function slotsFor(meds: Medication[], personId: string, day: string): Med
 export type DoseState = MedSlot & { state: 'taken' | 'skipped' | 'pending' }
 const lc = (s: string) => normaliseDrug(s) ?? s.trim().toLowerCase()
 
-/** Marks each slot taken, skipped or pending from the takes logged on `day`. Matches by medicationId + slot; a take with no medicationId
+/** Marks each slot taken, skipped or pending from the takes logged on `day` (a take's day is read with `dayFn`: this phone's day by default, `manilaDay` for server refs). Matches by medicationId + slot; a take with no medicationId
  *  (an old row) falls back to a name match on the normalised drug name ("Losartan" matches "Losartan 50mg tab") and uses up the earliest slots of that name, one per take. */
-export function matchDoses(slots: MedSlot[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[], day: string): DoseState[] {
-  const today = takes.filter((t) => dayOf(t.takenAt) === day)
+export function matchDoses(slots: MedSlot[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[], day: string, dayFn: (v: string | Date) => string = dayOf): DoseState[] {
+  const today = takes.filter((t) => dayFn(t.takenAt) === day)
   const byId = today.filter((t) => t.medicationId)
   const legacy = today.filter((t) => !t.medicationId && !t.skipped)
   const used = new Map<string, number>()
@@ -154,9 +158,9 @@ export function reminderId(key: string, slot: string): number {
 /** Which slot a dose logged at `when` belongs to: the open (not yet taken or skipped) slot of that day latest at or before that time (else the earliest). undefined for an as-needed medicine,
  *  one with no times, or when every slot of the day is done (an extra dose has no slot). */
 export function pickSlot(med: Medication, takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[], when: Date): string | undefined {
-  const day = dayOf(when)
-  const open = matchDoses(slotsFor([med], med.personId, day), takes, day).filter((d) => d.state === 'pending')
-  const at = when.getHours() * 60 + when.getMinutes()
+  const day = manilaDay(when) // the dose day is the Manila day, like the server's refs and useTakenToday
+  const open = matchDoses(slotsFor([med], med.personId, day), takes, day, manilaDay).filter((d) => d.state === 'pending')
+  const at = manilaMinutes(when)
   const sorted = open.sort((a, b) => a.at - b.at)
   // the latest open slot at or before the time of the take; never a slot still in the future. None yet: the earliest.
   return ([...sorted].reverse().find((d) => d.at <= at) ?? sorted[0])?.slot
