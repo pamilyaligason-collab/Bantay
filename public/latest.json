@@ -1,9 +1,9 @@
 {
-    "versionCode":  2007000,
-    "versionName":  "2.7.0",
-    "url":  "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.7.0/bantay-2.7.0.apk",
-    "sha256":  "2bbd06503f72307d48b2c9a5a12c3b7ed3de683efe7ede4bd44dc46da5d9f5dc",
-    "size":  8506060,
+    "versionCode":  2008000,
+    "versionName":  "2.8.0",
+    "url":  "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.8.0/bantay-2.8.0.apk",
+    "sha256":  "af062a50f5ad06f6a3c4e4703acf9141568a606ef14260ce6eed1c362be6be11",
+    "size":  15779070,
     "minShell":  2000000,
-    "notes":  "New look: weather on Today, a simpler tab bar, Ask Jack button, View as for admins, and clearer safety warnings."
+    "notes":  "Daily battery and check-in for the family map while the app is closed."
 }
