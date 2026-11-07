@@ -249,18 +249,19 @@ describe('WeatherScreen', () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
     await waitFor(() => expect(screen.getByTestId('wx-live-map').querySelector('iframe')!.getAttribute('src')).toMatch(/lat=10\.32/)) // settled on the last fix
-    const card = screen.getByTestId('wx-live-map')
-    const sw = within(card).getByRole('switch', { name: 'Pause on mobile data' })
+    // The card is looked up again each time: a re-render under load can swap its element, and a held one would never change.
+    const card = () => screen.getByTestId('wx-live-map')
+    const sw = within(card()).getByRole('switch', { name: 'Pause on mobile data' })
     expect(sw.getAttribute('aria-checked')).toBe('false')
-    expect(card.querySelector('iframe')).not.toBeNull() // default off: cellular still loads
+    expect(card().querySelector('iframe')).not.toBeNull() // default off: cellular still loads
     fireEvent.click(sw)
-    await waitFor(() => expect(within(card).getByRole('button', { name: 'Load live layer' })).toBeTruthy())
-    expect(card.querySelector('iframe')).toBeNull()
+    await waitFor(() => expect(within(card()).getByRole('button', { name: 'Load live layer' })).toBeTruthy())
+    expect(card().querySelector('iframe')).toBeNull()
     expect((await db.kv.get('wx.windyPause'))?.value).toBe(true)
     delete (navigator as unknown as { connection?: unknown }).connection
     expect(await db.kv.get('safety.windyPause')).toBeUndefined() // Storm tracker's own switch is untouched
-    fireEvent.click(within(card).getByRole('button', { name: 'Load live layer' }))
-    await waitFor(() => expect(card.querySelector('iframe')).not.toBeNull())
+    fireEvent.click(within(card()).getByRole('button', { name: 'Load live layer' }))
+    await waitFor(() => expect(card().querySelector('iframe')).not.toBeNull())
   })
 
   it('D-125: Storms near you only with an advisory (listed storm, signal only, none, stale)', async () => {
