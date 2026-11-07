@@ -9,6 +9,8 @@ export interface OutboxRow {
   tries: number
   /** Short code of the last failed send (HTTP status code, PostgREST code or 'net'), never a message; additive, old rows lack it. */
   lastCode?: string
+  /** HTTP status of the last failed send (0 or absent for a network failure); the sheet words a row by this, never by the code text. */
+  lastStatus?: number
   lastAt?: number
 }
 export interface KvRow {

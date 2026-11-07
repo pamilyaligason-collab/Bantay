@@ -21,7 +21,7 @@ const DAY = 86_400_000
 
 /** Health > Food and nutrients (#health/nutrition): salt today, the daily limit, the week's sodium next to the week's blood pressure, and today's food. */
 export default function NutritionScreen() {
-  const { ready, people, personId, readings, canMark } = useHealthPerson()
+  const { ready, people, personId, ownId, readings, canMark } = useHealthPerson()
   const now = useMemo(() => new Date(), [])
   const food = useFood(personId, 8)
   const water = useWater(personId, 2)
@@ -61,7 +61,7 @@ export default function NutritionScreen() {
           <section className="card nu-card" aria-labelledby="nu-salt">
             <h2 id="nu-salt" className="td-sech">Salt and meals today</h2>
             <SaltSummary entries={today} goalMg={goal.sodiumMg} headingId="nu-salt" />
-            <WaterPanel rows={water} goalMl={goal.waterMl} source={goal.waterSource} now={now} canAdd={canMark} personId={personId} />
+            <WaterPanel rows={water} goalMl={goal.waterMl} source={goal.waterSource} now={now} canAdd={canMark} personId={personId} name={personId !== ownId ? name : undefined} />
             {canMark && !plating && <div className="nu-act"><button type="button" className="nu-big-btn" onClick={() => setPlating(true)}><Icon name="meal" size={24} />Log a meal</button></div>}
             {canMark && plating && <PlateSheet personId={personId} onDone={(m) => { setPlating(false); setSaved(m) }} />}
             {saved && canMark && <p className="nu-sub" role="status">{saved}</p>}

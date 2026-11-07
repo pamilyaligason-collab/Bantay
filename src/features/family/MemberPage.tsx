@@ -1,7 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import FmAvatar from './FmAvatar'
-import { dayOf, matchDoses, slotsFor } from '../health/meds'
+import { dayOf, manilaDay, manilaMinutes, matchDoses, slotsFor } from '../health/meds'
 import { ON_TIME_MIN } from '../health/doseCount'
 import { BP_WORDS, bpDoctorOf, bpPairLevel } from '../health/verdict'
 import { ldb, type MedTaken, type Medication } from '../log/store'
@@ -34,9 +34,9 @@ export function whenAgo(iso: string, now: Date): string {
 }
 export function todayView(i: { meds: Medication[]; takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[]; activity: ActRow[]; readings: Reading[]; thresholds: ({ key: string; high?: number | null })[]; personId: string; now: Date }): TodayView {
   const { now, personId } = i
-  const day = dayOf(now)
-  const nowMin = now.getHours() * 60 + now.getMinutes()
-  const doses = matchDoses(slotsFor(i.meds, personId, day), i.takes, day).map((d): DoseLine => {
+  const day = manilaDay(now) // the dose day and clock are Manila's, whatever this phone's zone says
+  const nowMin = manilaMinutes(now)
+  const doses = matchDoses(slotsFor(i.meds, personId, day), i.takes, day, manilaDay).map((d): DoseLine => {
     const past = nowMin - d.at > ON_TIME_MIN // same 2 hours the adherence counter uses
     const word = d.state === 'taken' ? 'Taken' : d.state === 'skipped' ? 'Skipped' : past ? 'Missed' : d.at <= nowMin ? 'Due now' : 'Later'
     return { key: `${d.key}|${d.slot}`, name: shortMedName(d.name), time: clockOf(d.at), word, state: word === 'Taken' ? 'taken' : word === 'Missed' || word === 'Skipped' ? 'missed' : 'open' }

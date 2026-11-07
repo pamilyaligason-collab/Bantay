@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { adherence as reportAdherence } from '../family/reportLogic'
-import { computeMyWeek, lastDays } from '../today/myWeekLogic'
+import { computeMyWeek } from '../today/myWeekLogic'
+import { manilaDaysEnding } from '../today/nextPick'
+import { weekCounter } from './medDetailLogic'
 import { countDoses } from './doseCount'
 import { buildSummary } from './visitSummaryLogic'
 import type { Medication, MedTaken } from '../log/store'
 
-const NOW = new Date('2026-10-20T20:00:00')
+// 12:00 Tue 20 Oct Manila is 21:00 Mon 19 Oct in Los Angeles, so the four surfaces must agree on Manila's dates even where the phone's date differs.
+const NOW = new Date('2026-10-20T12:00:00+08:00')
 const med: Medication = { personId: 'p1', name: 'Losartan', serverId: 'm1', medStatus: 'active', schedule: { v: 1, times: ['08:00'] }, startedOn: '2026-10-14' }
-const take = (day: string): MedTaken => ({ personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '08:00', takenAt: new Date(`${day}T08:05:00`).toISOString() })
+const take = (day: string): MedTaken => ({ personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '08:00', takenAt: new Date(`${day}T08:05:00+08:00`).toISOString() })
 
 describe('one dose counter', () => {
   const takes = [take('2026-10-20'), take('2026-10-19')]
-  const days = lastDays(NOW, 7)
+  const days = manilaDaysEnding(NOW, 7)
   it('counts due doses so far as the denominator', () => {
     const n = countDoses({ meds: [med], takes, personId: 'p1', now: NOW, days })
     expect(n.want).toBeGreaterThan(0)
@@ -20,6 +23,8 @@ describe('one dose counter', () => {
     expect(n.done).toBeLessThanOrEqual(n.want)
   })
   it('Today, report and visit summary agree for the same 7 days', () => {
+    expect(new Date(NOW).toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' })).toBe('2026-10-19') // the guard: Los Angeles is a day behind Manila at this instant
+    expect(manilaDaysEnding(NOW, 7)[6]).toBe('2026-10-20')
     const n = countDoses({ meds: [med], takes, personId: 'p1', now: NOW, days })
     const tile = computeMyWeek({ personId: 'p1', readings: [], activity: [], meds: [med], takes, now: NOW }).find((t) => t.code === 'doses')!
     expect(tile.value).toBe(`${n.done} of ${n.want}`)
@@ -27,25 +32,26 @@ describe('one dose counter', () => {
     expect([rp.taken, rp.due]).toEqual([n.done, n.want])
     const s = buildSummary({ person: { name: 'A' }, readings: [], meds: [med], takes, personId: 'p1', now: NOW })
     expect(s.adherence).toMatchObject({ done: n.done, want: n.want }) // started 14 Oct, so the 30 day window holds the same 7 days
+    expect(weekCounter({ meds: [med], takes, personId: 'p1', now: NOW })).toBe(`${n.done} of ${n.want} doses on time this week`) // the Medicines week counter too
   })
   it('no scheduled doses gives no percentage, never 0', () => {
     expect(countDoses({ meds: [], takes: [], personId: 'p1', now: NOW, days }).pct).toBeNull()
   })
   it('a 23:00 dose taken at 00:30 the next day counts as done, not missed', () => {
     const night: Medication = { ...med, schedule: { v: 1, times: ['23:00'] }, startedOn: '2026-10-19' }
-    const t: MedTaken = { personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '23:00', takenAt: new Date('2026-10-20T00:30:00').toISOString() }
-    const n = countDoses({ meds: [night], takes: [t], personId: 'p1', now: new Date('2026-10-20T12:00:00'), days: ['2026-10-19'] })
+    const t: MedTaken = { personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '23:00', takenAt: new Date('2026-10-20T00:30:00+08:00').toISOString() }
+    const n = countDoses({ meds: [night], takes: [t], personId: 'p1', now: new Date('2026-10-20T12:00:00+08:00'), days: ['2026-10-19'] })
     expect([n.done, n.want]).toEqual([1, 1])
   })
   it('a 00:30 dose taken at 23:45 the night before counts as done, and one take never serves two days', () => {
     const early: Medication = { ...med, schedule: { v: 1, times: ['00:30'] }, startedOn: '2026-10-19' }
-    const t: MedTaken = { personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '00:30', takenAt: new Date('2026-10-19T23:45:00').toISOString() }
-    const n = countDoses({ meds: [early], takes: [t], personId: 'p1', now: new Date('2026-10-20T12:00:00'), days: ['2026-10-19', '2026-10-20'] })
+    const t: MedTaken = { personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '00:30', takenAt: new Date('2026-10-19T23:45:00+08:00').toISOString() }
+    const n = countDoses({ meds: [early], takes: [t], personId: 'p1', now: new Date('2026-10-20T12:00:00+08:00'), days: ['2026-10-19', '2026-10-20'] })
     expect([n.done, n.want]).toEqual([1, 2]) // 19 Oct 00:30 slot is 23h away: missed; 20 Oct 00:30 slot takes it
   })
   it('just after midnight a 23:00 slot of yesterday is still inside its 2 hours', () => {
     const night: Medication = { ...med, schedule: { v: 1, times: ['23:00'] }, startedOn: '2026-10-19' }
-    const n = countDoses({ meds: [night], takes: [], personId: 'p1', now: new Date('2026-10-20T00:30:00'), days: ['2026-10-19'] })
+    const n = countDoses({ meds: [night], takes: [], personId: 'p1', now: new Date('2026-10-20T00:30:00+08:00'), days: ['2026-10-19'] })
     expect([n.done, n.want]).toEqual([0, 0])
   })
 })

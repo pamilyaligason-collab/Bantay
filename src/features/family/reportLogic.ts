@@ -1,8 +1,8 @@
 import { formatNumber } from '../../lib/labFormat'
 import { groupLabs, labInfo, labRow, labVerdict, type LabRow } from '../health/labsLogic'
 import { countDoses } from '../health/doseCount'
-import { lastDays } from '../today/myWeekLogic'
-import { matchDoses, slotsFor, type DoseState } from '../health/meds'
+import { manilaDay, matchDoses, slotsFor, type DoseState } from '../health/meds'
+import { manilaDaysEnding } from '../today/nextPick'
 import { metricLabel, plainName, readingPosition, shortDate } from '../health/model'
 import { verdictFor, kindOf, type BpArg } from '../health/verdict'
 import { latestByTest, type Position, type Range, type Reading } from '../health/ranges'
@@ -51,22 +51,21 @@ export type CellState = 'none' | 'taken' | 'missed' | 'pending'
 export interface DayCell { day: string; label: string; state: CellState; taken: number; due: number }
 export interface Adherence { cells: DayCell[]; taken: number; due: number; missed: { day: string; label: string; names: string[] }[] }
 
-/** Seven local days ending today. A day with no scheduled doses is "none". A past day with a dose not taken (or skipped) is "missed". Today's open doses are "pending", not missed. */
+/** Seven Manila days ending today (the dose day, whatever this phone's zone says). A day with no scheduled doses is "none". A past day with a dose not taken (or skipped) is "missed". Today's open doses are "pending", not missed. */
 export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped' | 'personId'>[], personId: string, now: Date): Adherence {
-  const today = dayKey(now)
+  const today = manilaDay(now)
   const cells: DayCell[] = []
   const missed: Adherence['missed'] = []
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
-    const day = dayKey(d)
-    const doses: DoseState[] = matchDoses(slotsFor(meds, personId, day), takes, day)
+  for (const day of manilaDaysEnding(now, 7)) {
+    const wd = WD[new Date(`${day}T12:00:00Z`).getUTCDay()]!
+    const doses: DoseState[] = matchDoses(slotsFor(meds, personId, day), takes, day, manilaDay)
     const taken = doses.filter((x) => x.state === 'taken').length
     const open = doses.filter((x) => x.state !== 'taken')
     const state: CellState = doses.length === 0 ? 'none' : open.length === 0 ? 'taken' : day === today && open.every((x) => x.state === 'pending') ? 'pending' : 'missed'
-    cells.push({ day, label: WD[d.getDay()]!, state, taken, due: doses.length })
-    if (state === 'missed') missed.push({ day, label: WD[d.getDay()]!, names: [...new Set(open.map((x) => x.name))] })
+    cells.push({ day, label: wd, state, taken, due: doses.length })
+    if (state === 'missed') missed.push({ day, label: wd, names: [...new Set(open.map((x) => x.name))] })
   }
-  const n = countDoses({ meds, takes, personId, now, days: lastDays(now, 7) }) // the one shared counter, so this total equals Today and the visit summary
+  const n = countDoses({ meds, takes, personId, now, days: manilaDaysEnding(now, 7) }) // the one shared counter, so this total equals Today and the visit summary
   return { cells, taken: n.done, due: n.want, missed }
 }
 

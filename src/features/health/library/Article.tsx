@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { SubHeader } from '../../shell/SubHeader'
 import { loadTopic, parseKey, SOURCE_LINE, type Topic } from './medline'
-import { labEntry } from '../labGlossary'
+import type { LabEntry } from '../labGlossary'
+import { useLabGlossary } from '../labsLogic'
 import { LabExplain } from './LabExplain'
 import '../health.css'
 import '../m7a.css'
@@ -10,14 +11,17 @@ type View = { s: 'loading' } | { s: 'ok'; topic: Topic; old: boolean } | { s: 'n
 
 /** #discover/learn/library/<key> (was #health/library/<key>): one summary from MedlinePlus Connect (one request when it is not cached), its source line, and a link to the full page. */
 export default function Article({ rawKey }: { rawKey: string }) {
-  const lab = rawKey.startsWith('t:') ? labEntry(rawKey.slice(2)) : null
-  if (lab) return <LabArticle code={lab.code} />
+  const g = useLabGlossary()
+  if (rawKey.startsWith('t:')) {
+    if (!g) return <ArticleLoading />
+    const lab = g.labEntry(rawKey.slice(2))
+    if (lab) return <LabArticle e={lab} />
+  }
   return <TopicArticle rawKey={rawKey} />
 }
 
 /** t:<code>: a lab test from the glossary, shown without a network request. Same text as the lab detail page. */
-function LabArticle({ code }: { code: string }) {
-  const e = labEntry(code)!
+function LabArticle({ e }: { e: LabEntry }) {
   return (
     <>
       <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
@@ -27,6 +31,18 @@ function LabArticle({ code }: { code: string }) {
       </article>
       <LabExplain entry={e} />
       <p className="sub ar-src" style={{ margin: '8px 4px 0' }}>{SOURCE_LINE}</p>
+    </>
+  )
+}
+
+function ArticleLoading() {
+  return (
+    <>
+      <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
+      <article className="card ar-art" data-testid="article">
+        <h2 className="ar-h">Article</h2>
+        <p className="sub" role="status">Loading...</p>
+      </article>
     </>
   )
 }

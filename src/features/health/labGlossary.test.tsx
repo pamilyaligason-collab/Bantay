@@ -1,10 +1,10 @@
 import 'fake-indexeddb/auto'
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 import catalog from '../../../scripts/import/test-catalog.json'
 import { GUIDE } from './ranges'
 import { LAB_GLOSSARY, labEntry } from './labGlossary'
-import { attentionLine, gapWords, labInfo, labRow, plainWords } from './labsLogic'
+import { attentionLine, gapWords, labInfo, labRow, loadLabGlossary, plainWords } from './labsLogic'
 
 vi.mock('../auth/client', () => ({ supabase: null }))
 vi.mock('../records/useRecordsServer', () => ({ useConfirmedDocs: () => [] }))
@@ -17,6 +17,8 @@ import { pickAttention } from './attention'
 afterEach(cleanup)
 
 const alt = { personId: 'p1', takenAt: '2026-10-02T12:00:00', test: 'alt', value: 98, unit: 'U/L', labLow: 7, labHigh: 40 }
+
+beforeAll(async () => { await loadLabGlossary() }) // the glossary is its own lazy chunk
 
 describe('lab glossary coverage', () => {
   it('has an entry for every code and alias the importer maps', () => {
@@ -68,11 +70,11 @@ describe('ALT lab page and library', () => {
     expect(screen.getByTestId('lab-library').getAttribute('href')).toBe('#discover/learn/library/t%3Aalt')
     expect(document.body.textContent).not.toContain('A test from your lab results')
   })
-  it('the library article for t:alt shows the same text without a network request', () => {
+  it('the library article for t:alt shows the same text without a network request', async () => {
     const f = vi.fn()
     vi.stubGlobal('fetch', f)
     render(<Article rawKey="t:alt" />)
-    expect(screen.getByTestId('lab-measures').textContent).toContain('ALT is an enzyme found mostly in the liver')
+    expect((await screen.findByTestId('lab-measures')).textContent).toContain('ALT is an enzyme found mostly in the liver')
     expect(f).not.toHaveBeenCalled()
     vi.unstubAllGlobals()
   })

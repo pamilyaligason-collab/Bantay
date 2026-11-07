@@ -4,6 +4,7 @@ import { db } from '../../db'
 import { supabase } from '../auth/client'
 import { getMember, type Member } from '../auth/session'
 import type { Range, Reading } from '../health/ranges'
+import { useLabGlossary } from '../health/labsLogic'
 import { useMedications } from '../health/useMedications'
 import { ldb, type Medication, type MedTaken } from '../log/store'
 import { hdb } from '../records/store'
@@ -73,6 +74,7 @@ export function useMemberReport(personId: string): Report {
   const thresholds = useLive<Threshold[]>(() => hdb.thresholds.toArray(), [], [])
   const takes = useLive(() => ldb.meds.where('personId').equals(personId).toArray(), NO_TAKES, [personId])
   const meds = useMedications(personId)
+  const glossary = useLabGlossary() // the report's lab questions come from it; rebuild when it lands
   const [questions, setQuestions] = useState<string[]>([])
   useEffect(() => {
     let live = true
@@ -81,7 +83,7 @@ export function useMemberReport(personId: string): Report {
   }, [personId])
   return useMemo(
     () => buildReport({ readings, meds: meds ?? NO_MEDS, takes, questions, personId, now: new Date(), familyOf: (r) => thresholds.find((t) => t.key === `${r.personId}:${r.test}`) }),
-    [readings, meds, takes, questions, personId, thresholds]
+    [readings, meds, takes, questions, personId, thresholds, glossary]
   )
 }
 

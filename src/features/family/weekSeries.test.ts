@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { Reading } from '../health/ranges'
 import type { Activity, MedTaken, Medication } from '../log/store'
 import { bpSeries, dayKeys, doseSeries, emptyWords, firstWithData, legendWord, stepSeries } from './weekSeries'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
-const now = new Date(2026, 9, 27, 10, 20)
+const now = mnl(2026, 9, 27, 10, 20)
 const at = (day: string, hm = '08:00') => `${day}T${hm}:00`
 const bp = (personId: string, day: string, value: number): Reading => ({ personId, takenAt: at(day), test: 'bp_systolic', value })
 

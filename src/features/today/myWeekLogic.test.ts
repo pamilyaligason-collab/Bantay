@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
 import { computeMyWeek, lastDays, sparkPoints } from './myWeekLogic'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
-const now = new Date(2026, 9, 20, 15, 0)
-const day = (back: number, h = 9) => new Date(2026, 9, 20 - back, h).toISOString()
+const now = mnl(2026, 9, 20, 15, 0)
+const dayL = (back: number, h = 9) => new Date(2026, 9, 20 - back, h).toISOString() // activity rows: this phone's own day
+const day = (back: number, h = 9) => mnl(2026, 9, 20 - back, h).toISOString()
 const rd = (test: string, value: number, back: number, o: Partial<Reading> = {}): Reading => ({ personId: 'me', takenAt: day(back), test, value, ...o })
 const base = { personId: 'me', readings: [] as Reading[], activity: [], meds: [] as Medication[], takes: [] as MedTaken[], now }
 const find = (t: ReturnType<typeof computeMyWeek>, code: string) => t.find((x) => x.code === code)
@@ -32,15 +34,15 @@ describe('computeMyWeek', () => {
     expect(find(computeMyWeek({ ...base, readings: [rd('weight', 62, 2)] }), 'weight')).toMatchObject({ value: '62', sub: 'latest reading' })
   })
   it('steps a day against the 6000 goal; a walk row or a row with no count is not a step day', () => {
-    const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 4000, startedAt: day(1) }, { kind: 'steps', steps: 8000, startedAt: day(2) }, { kind: 'steps', steps: null, startedAt: day(3) }, { kind: 'walk', steps: 500, startedAt: day(3) }] })
+    const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 4000, startedAt: dayL(1) }, { kind: 'steps', steps: 8000, startedAt: dayL(2) }, { kind: 'steps', steps: null, startedAt: dayL(3) }, { kind: 'walk', steps: 500, startedAt: dayL(3) }] })
     expect(find(t, 'steps')).toMatchObject({ value: '6,000', sub: 'goal 6,000, reached' })
   })
   it('a 0 steps row is a real day, as on Move and the 7-day average: 3000, 3000, 0 averages 2,000 and the spark keeps the 0', () => {
-    const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 3000, startedAt: day(2) }, { kind: 'steps', steps: 3000, startedAt: day(1) }, { kind: 'steps', steps: 0, startedAt: day(0) }] })
+    const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 3000, startedAt: dayL(2) }, { kind: 'steps', steps: 3000, startedAt: dayL(1) }, { kind: 'steps', steps: 0, startedAt: dayL(0) }] })
     expect(find(t, 'steps')).toMatchObject({ value: '2,000', sub: 'goal 6,000', spark: [null, null, null, null, 3000, 3000, 0] })
   })
   it('a negative or missing count is rejected, so no tile from it alone', () => {
-    expect(find(computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: -5, startedAt: day(1) }, { kind: 'steps', steps: null, startedAt: day(1) }] }), 'steps')).toBeUndefined()
+    expect(find(computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: -5, startedAt: dayL(1) }, { kind: 'steps', steps: null, startedAt: dayL(1) }] }), 'steps')).toBeUndefined()
   })
   it('BP chip judges the worse of top and bottom: 110/95 is not "within range"', () => {
     const t = computeMyWeek({ ...base, readings: [rd('bp_systolic', 110, 1), rd('bp_diastolic', 95, 1)] })

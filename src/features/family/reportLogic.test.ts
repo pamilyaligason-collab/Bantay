@@ -2,14 +2,15 @@ import { describe, expect, it } from 'vitest'
 import type { Reading } from '../health/ranges'
 import type { Medication, MedTaken } from '../log/store'
 import { adherence, bringUp, buildReport, canViewReport, flagLine, flaggedLabs, vitalCards } from './reportLogic'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
-// Made-up data only. "Now" is Wed 21 Oct 2026, noon, local.
-const NOW = new Date(2026, 9, 21, 12, 0, 0)
+// Made-up data only. "Now" is Wed 21 Oct 2026, noon, Manila.
+const NOW = mnl(2026, 9, 21, 12, 0, 0)
 const ago = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString()
 const r = (test: string, value: number, unit: string, days = 1, extra: Partial<Reading> = {}): Reading => ({ personId: 'p1', takenAt: ago(days), test, value, unit, ...extra })
 const med: Medication = { personId: 'p1', name: 'Losartan', serverId: 'm1', medStatus: 'active', schedule: { v: 1, times: ['08:00'] } }
 const take = (daysAgo: number): MedTaken => {
-  const d = new Date(2026, 9, 21 - daysAgo, 8, 5)
+  const d = mnl(2026, 9, 21 - daysAgo, 8, 5)
   return { personId: 'p1', name: 'Losartan', takenAt: d.toISOString(), medicationId: 'm1', slot: '08:00' }
 }
 
@@ -44,7 +45,7 @@ describe('adherence', () => {
     expect(a.missed).toEqual([{ day: '2026-10-20', label: 'Tue', names: ['Losartan'] }])
   })
   it('a late take shows a taken cell but is not "on time", and the total says so', () => {
-    const late: MedTaken = { ...take(0), takenAt: new Date(2026, 9, 21, 11, 30).toISOString() }
+    const late: MedTaken = { ...take(0), takenAt: mnl(2026, 9, 21, 11, 30).toISOString() }
     const a = adherence([med], [late], 'p1', NOW)
     expect(a.cells[6]!.state).toBe('taken')
     expect(a.taken).toBe(0) // total is "Doses on time" (same rule as Today), not the number of green cells

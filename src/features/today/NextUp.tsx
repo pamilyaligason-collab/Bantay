@@ -9,7 +9,7 @@ import { COLLAPSE_MS, leaveMs, MORPH_MS, takenLabel } from './doneMorph'
 import { prefersReducedMotion } from '../look/useReducedMotion'
 import { JackArt } from '../look'
 import { loadLang } from '../../lib/i18n'
-import { snoozeCard } from './snoozeCard'
+import { canSnooze, snoozeCard } from './snoozeCard'
 import { Capacitor } from '@capacitor/core'
 import { useSosActive } from '../family/sosActive'
 import { useActingCan } from '../viewas/viewAs' // S16-L1: View only while acting without the log right (C-9)
@@ -37,6 +37,9 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
   const [off, setOff] = useState<string[]>([]) // unticked keys; everything starts ticked
   const w = item.who
   const many = (w?.slots.length ?? 0) > 1
+  const [, rerender] = useState(0) // bumped after a snooze so the cap is re-read
+  const day = w ? doseDay(w, new Date()) : undefined // the cap is per the dose's own day, not the day of the tap
+  const mayLater = canSnooze(item.key, new Date(), day) // D-148: 3 snoozes, then the button goes
 
   const act = async (skip: boolean) => {
     if (!w || busy) return
@@ -60,7 +63,8 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
   /** In 10 min: the card hides until then (snoozeCard), and the phone rings once more in 10 minutes (the lock-screen button's snooze, reused). Never throws. */
   const later = async () => {
     if (!w) return
-    snoozeCard(item.key, SNOOZE_MIN)
+    snoozeCard(item.key, SNOOZE_MIN, new Date(), day)
+    rerender((n) => n + 1)
     notify(Capacitor.isNativePlatform() && alarmsOk === true ? `Okay. I will remind you in ${SNOOZE_MIN} minutes` : `Okay. This card comes back in ${SNOOZE_MIN} minutes`) // the web build rings nothing
     try {
       const [{ handleReminderAction }, { alarmText }] = await Promise.all([import('../health/reminderActions'), import('../health/reminders')])
@@ -98,10 +102,11 @@ export default function NextUp({ item, review, notify, hold }: { item: NextItem;
         {w && !locked && (
           <div className="td-nu-acts">
             <button type="button" className={`btn td-taken${phase !== 'idle' ? ' done' : ''}`} aria-label={phase === 'idle' && !picking ? 'Take, mark as taken' : undefined} disabled={busy || phase !== 'idle' || (picking && off.length >= w.slots.length)} onClick={() => void act(false)}><Icon name="check" size={20} />{phase !== 'idle' ? <span className="td-morph">{label}</span> : picking ? 'Mark these taken' : 'Take'}</button>
-            {phase === 'idle' && <button type="button" className="btn2 td-snooze" aria-label={`Snooze, in ${SNOOZE_MIN} minutes`} disabled={busy} onClick={() => void later()}>Snooze</button>}
+            {phase === 'idle' && mayLater && <button type="button" className="btn2 td-snooze" aria-label={`Snooze, in ${SNOOZE_MIN} minutes`} disabled={busy} onClick={() => void later()}>Snooze</button>}
             {phase === 'idle' && w.slots.every((x) => x.medicationId) && <button type="button" className="td-skip" disabled={busy} onClick={() => void act(true)}>Skip</button>}
           </div>
         )}
+        {w && !locked && phase === 'idle' && !mayLater && <p className="sub td-still">This dose is still due.</p>}
         {w && phase !== 'idle' && <p className="td-saved">{!sos && <JackArt name="well-done" size={56} decorative />}Saved. This card folds away in a moment.</p>}
         {item.href && <div className="td-nu-acts"><a className="btn td-nu-link" href={item.href}>{item.linkLabel}</a></div>}
       </article>

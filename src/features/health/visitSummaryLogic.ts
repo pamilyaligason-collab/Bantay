@@ -2,7 +2,7 @@ import { formatNumber } from '../../lib/labFormat'
 import type { MedTaken, Medication } from '../log/store'
 import { countDoses, ON_TIME_MIN } from './doseCount'
 import { isLive, parseSchedule } from './meds'
-import { lastDays } from '../today/myWeekLogic'
+import { manilaDaysEnding } from '../today/nextPick'
 import { readingPosition } from './model'
 import { toCanonicalReading, type Reading } from './ranges'
 import { clock12 } from './medActions'
@@ -42,7 +42,7 @@ function ageOf(birthdate: string | null | undefined, now: Date): string | null {
 
 /** Doses taken within 2 hours of their time over the last 30 days, from the one shared counter (doseCount.ts). */
 export function adherence(meds: Medication[], takes: MedTaken[], personId: string, now: Date): { done: number; want: number; pct: number } | null {
-  const n = countDoses({ meds, takes, personId, now, days: lastDays(now, SUMMARY_DAYS) })
+  const n = countDoses({ meds, takes, personId, now, days: manilaDaysEnding(now, SUMMARY_DAYS) })
   return n.want ? { done: n.done, want: n.want, pct: n.pct! } : null
 }
 

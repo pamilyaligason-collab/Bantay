@@ -7,7 +7,7 @@ import { useAlertRows } from '../notify/useAlerts'
 import { useHealthData } from '../records/useHealthData'
 import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
-import { lastDays } from '../today/myWeekLogic'
+import { manilaDaysEnding } from '../today/nextPick'
 import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { clock12, setMedStatus } from './medActions'
 import { missNote, stockInfo, weekStrip, type CellState } from './medDetailLogic'
@@ -43,7 +43,7 @@ function useWeekTakes(personId: string | undefined): MedTaken[] | undefined {
   const [got, setGot] = useState<{ id: string; rows: MedTaken[] } | undefined>(undefined)
   useEffect(() => {
     if (!personId) return
-    const since = new Date(`${lastDays(new Date())[0]}T00:00:00`).toISOString()
+    const since = new Date(`${manilaDaysEnding(new Date(), 7)[0]}T00:00:00+08:00`).toISOString()
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id: personId, rows }), error: () => setGot({ id: personId, rows: NONE }) })
     return () => sub.unsubscribe()
   }, [personId])

@@ -7,11 +7,11 @@ import { MedReview, toCheck } from './MedReview'
 import { clock12, setMedStatus } from './medActions'
 import { useSelf } from '../sos/useSelf'
 import { JackArt } from '../look/JackArt'
-import { lastDays } from '../today/myWeekLogic'
+import { addManilaDays } from '../today/nextPick'
 import { stockInfo, weekCounter } from './medDetailLogic'
 import { stockRows } from './stock'
 import { Row, Section, GroupedList } from '../look'
-import { answeredBy, dayOf, isLive, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
+import { answeredBy, isLive, manilaDay, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
 import { QueuedBadge } from '../sync/OfflineBar'
 import { useQueuedDoseIds } from '../sync/useOffline'
 import { useMedicationRows } from './useMedicationRows'
@@ -30,7 +30,7 @@ function useTakesSince(personId: string, day: string): MedTaken[] | undefined {
   const id = `${personId}|${day}`
   useEffect(() => {
     if (!personId) return
-    const since = new Date(`${day}T00:00:00`).toISOString()
+    const since = new Date(`${day}T00:00:00+08:00`).toISOString()
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id, rows }), error: () => setGot({ id, rows: NONE }) })
     return () => sub.unsubscribe()
   }, [personId, day, id])
@@ -52,10 +52,10 @@ function settledBy(d: DoseState, takes: MedTaken[]): MedTaken | undefined {
 /** Today's doses for one person, shared by the screen and the Health summary. */
 export function useToday(personId: string) {
   const meds = useMedicationRows(personId)
-  const day = dayOf(new Date())
-  const week = useTakesSince(personId, lastDays(new Date())[0]!)
-  const takes = useMemo(() => (week ?? NONE).filter((t) => dayOf(t.takenAt) === day), [week, day])
-  const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day), [meds, personId, day, takes])
+  const day = manilaDay(new Date()) // the dose day is Manila's
+  const week = useTakesSince(personId, addManilaDays(day, -6))
+  const takes = useMemo(() => (week ?? NONE).filter((t) => manilaDay(t.takenAt) === day), [week, day])
+  const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day, manilaDay), [meds, personId, day, takes])
   return { meds, takes, week, doses, day }
 }
 

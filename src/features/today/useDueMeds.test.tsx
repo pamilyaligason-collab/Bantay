@@ -11,7 +11,9 @@ import { hdb } from '../records/store'
 import { markDue, markTaken, useDueMeds } from './useDueMeds'
 import { setActing } from '../viewas/store'
 
-const soon = () => { const d = new Date(Date.now() + 30 * 60_000); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` }
+// Slots are Manila clock times (D-148, ML-38): `soon` is the Manila clock 30 min from now, and `man` a fixed Manila instant, so this passes on a phone in any zone.
+const soon = () => { const d = new Date(Date.now() + 30 * 60_000 + 8 * 3_600_000); return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}` }
+const man = (d: number, h: number, m = 0, mo = 9) => new Date(Date.UTC(2026, mo, d, h - 8, m))
 
 beforeEach(async () => { await Promise.all([ldb.medications.clear(), ldb.meds.clear(), hdb.people.clear()]) })
 
@@ -43,7 +45,7 @@ describe('useDueMeds', () => {
   })
   it('a dose just after midnight tapped before midnight is logged once, not twice', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2026, 9, 27, 23, 50)) // 23:50 local; the dose is 00:20 tomorrow
+    vi.setSystemTime(man(27, 23, 50)) // 23:50 Manila; the dose is 00:20 tomorrow
     try {
       await ldb.medications.bulkAdd([{ personId: 'me', name: 'Losartan', medStatus: 'active', schedule: { v: 1, times: ['00:20'] }, serverId: 's9' }])
       expect(await markTaken('me', ['s9'])).toBe(1)
@@ -53,7 +55,7 @@ describe('useDueMeds', () => {
   })
   it('a medicine not synced yet (no server id) is also guarded, and a second unsynced medicine in the same slot is not blocked', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date(2026, 9, 27, 23, 50))
+    vi.setSystemTime(man(27, 23, 50))
     try {
       await ldb.medications.bulkAdd([
         { personId: 'me', name: 'Unsynced A', medStatus: 'active', schedule: { v: 1, times: ['00:20'] } },
@@ -67,8 +69,8 @@ describe('useDueMeds', () => {
       expect((await ldb.meds.toArray()).map((r) => r.name).sort()).toEqual(['Unsynced A', 'Unsynced B'])
     } finally { vi.useRealTimers() }
   })
-  it('S16 L6: while acting the targets are the acting member (even without edit access), at 23:30 and 00:30 local; exit returns to me', async () => {
-    for (const [now, dose] of [[new Date(2026, 9, 30, 23, 30), '23:50'], [new Date(2026, 9, 31, 0, 30), '00:50']] as const) {
+  it('S16 L6: while acting the targets are the acting member (even without edit access), at 23:30 and 00:30 Manila; exit returns to me', async () => {
+    for (const [now, dose] of [[man(30, 23, 30), '23:50'], [man(31, 0, 30), '00:50']] as const) {
       await ldb.medications.clear()
       vi.useFakeTimers({ toFake: ['Date'] })
       vi.setSystemTime(now)

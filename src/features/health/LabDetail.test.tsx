@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 
 vi.mock('../auth/client', () => ({ supabase: null }))
@@ -8,10 +8,11 @@ vi.mock('../records/useRecordsServer', () => ({ useConfirmedDocs: () => [] }))
 vi.mock('./useVisits', () => ({ useVisits: () => ({ next: null }) }))
 
 import { LabDetail } from './LabDetail'
-import { labInfo } from './labsLogic'
+import { labInfo, loadLabGlossary } from './labsLogic'
 
 beforeEach(async () => { await db.kv.clear() })
 afterEach(cleanup)
+beforeAll(async () => { await loadLabGlossary() }) // the glossary is its own lazy chunk
 
 describe('LabDetail Add', () => {
   it('two quick adds both land in the visit list', async () => {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { latestByTest, type Range, type Reading } from './ranges'
-import { groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, overBy, plainWords, previousResult, rangeSource, type LabRow, type LabSource } from './labsLogic'
+import { groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, overBy, plainWords, previousResult, rangeSource, useLabGlossary, type LabRow, type LabSource } from './labsLogic'
 import { metricLabel } from './model'
 import { db } from '../../db'
 import { isVital } from './vitals'
@@ -92,6 +92,7 @@ type Filter = 'all' | 'ask' | 'in'
 
 /** Questions to ask (board): the tests' own questions (labInfo, MedlinePlus-style wording) for the results to ask about, each with an Add that saves it to the Visits list (kv visits.questions.<id>). */
 function LabQuestions({ personId, rows, canAdd }: { personId: string; rows: LabRow[]; canAdd: boolean }) {
+  const loaded = useLabGlossary() !== null // neutral questions before the chunk lands must not be saved
   const [saved, setSaved] = useState<string[]>([])
   useEffect(() => {
     let live = true
@@ -119,7 +120,7 @@ function LabQuestions({ personId, rows, canAdd }: { personId: string; rows: LabR
       <GroupedList>{sugg.map((q) => (
         <Row key={q} icon="msg" tint="purple" title={q} control={!canAdd ? undefined : saved.includes(q)
           ? <button type="button" className="btn2 lb-add lb-added" disabled aria-label={`Added to visit questions: ${q}`}>Added</button>
-          : <button type="button" className="btn2 lb-add" aria-label={`Add to visit questions: ${q}`} onClick={() => void add(q)}>Add</button>} />
+          : <button type="button" className="btn2 lb-add" disabled={!loaded} aria-label={`Add to visit questions: ${q}`} onClick={() => void add(q)}>Add</button>} />
       ))}</GroupedList>
       {err && <p className="sub" role="alert">{err}</p>}
       <p className="sub" style={{ margin: '8px 4px 0' }}>Added questions are shared with Visits. <a className="lb-lnk" href="#health/visits">Open Visits</a></p>
@@ -129,6 +130,7 @@ function LabQuestions({ personId, rows, canAdd }: { personId: string; rows: LabR
 
 /** Lab results screen body (mockup v8 health-labs): the source paper (D-9), filter chips, the Previous switch (D-38) and one card per test with its date and whose range it is. */
 export function LabsList({ readings, thresholds, ready, sources, personId, canMark = false }: { readings: Reading[]; thresholds: (Range & { key: string })[]; ready: boolean; sources: Map<string, LabSource>; personId?: string; canMark?: boolean }) {
+  useLabGlossary() // re-render the cards when the glossary chunk lands
   const [filter, setFilter] = useState<Filter>('all')
   const [showPrev, setShowPrev] = useState(true)
   if (!ready) return null

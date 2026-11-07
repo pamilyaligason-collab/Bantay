@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../db'
 import { formatNumber } from '../../lib/labFormat'
-import { labDate, labInfo, labNum, labRow, labVerdict, lastThree, plainWords, rangeSource, sourceIndex, trendOfLastThree } from './labsLogic'
+import { labDate, labInfo, labNum, labRow, labVerdict, lastThree, plainWords, rangeSource, sourceIndex, trendOfLastThree, useLabGlossary } from './labsLogic'
 import { LabBar, VerdictChip } from './LabsList'
 import { articleHref } from './library/medline'
 import { LabExplain } from './library/LabExplain'
@@ -16,6 +16,7 @@ const kvGet = async (key: string): Promise<string[]> => { try { const v = (await
 
 /** Lab detail (mockup v8 health-labdetail): the top card (value, range bar, whose range, date, the paper), what the test means, the last three results with their trend, and questions to ask with one Add each. Text is a static map marked for clinician review. */
 export function LabDetail({ code, readings, family, personId }: { code: string; readings: Reading[]; family?: Range | null; personId: string }) {
+  const loaded = useLabGlossary() !== null // until it lands the questions are neutral text: Add stays off so that is never saved
   const info = labInfo(code)
   const docs = useConfirmedDocs(personId)
   const sources = useMemo(() => sourceIndex(docs), [docs])
@@ -95,7 +96,7 @@ export function LabDetail({ code, readings, family, personId }: { code: string; 
               <span className="grow">{q}</span>
               {personId && (added.includes(q)
                 ? <span role="status" className="sub"><Icon name="check" size={20} /> Added</span>
-                : <button type="button" className="btn2" aria-label={`Add to visit list: ${q}`} onClick={() => void add(q)}>Add</button>)}
+                : <button type="button" className="btn2" disabled={!loaded} aria-label={`Add to visit list: ${q}`} onClick={() => void add(q)}>Add</button>)}
             </div>
           ))}
           {added.length > 0 && <div className="row"><a href="#health/visits" style={{ color: 'var(--act)' }}>Open your visit list</a></div>}

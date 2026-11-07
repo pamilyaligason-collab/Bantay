@@ -3,9 +3,10 @@ import type { MedTaken, Medication } from '../log/store'
 import type { Reading } from './ranges'
 import { shareSummary } from './summaryImage'
 import { adherence, buildSummary } from './visitSummaryLogic'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
-const NOW = new Date(2026, 10, 1, 21, 0) // 1 Nov 2026, 9 PM local
-const ago = (days: number, h = 7) => new Date(2026, 10, 1 - days, h, 30).toISOString()
+const NOW = mnl(2026, 10, 1, 21, 0) // 1 Nov 2026, 9 PM Manila
+const ago = (days: number, h = 7) => mnl(2026, 10, 1 - days, h, 30).toISOString()
 const r = (test: string, value: number, days: number, personId = 'p1', unit = test.startsWith('bp_') ? 'mmHg' : 'mg/dL'): Reading => ({ personId, takenAt: ago(days), test, value, unit })
 const med = (o: Partial<Medication> = {}): Medication => ({ personId: 'p1', name: 'Losartan', strength: '50 mg', dose: '1 tablet', serverId: 's-los', medStatus: 'active', startedOn: '2026-10-01', schedule: { v: 1, times: ['08:00'] }, ...o })
 const take = (days: number, h: number, o: Partial<MedTaken> = {}): MedTaken => ({ personId: 'p1', name: 'Losartan', takenAt: ago(days, h), medicationId: 's-los', slot: '08:00', ...o })

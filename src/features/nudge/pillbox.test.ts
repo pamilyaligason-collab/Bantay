@@ -2,10 +2,11 @@ import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { ldb, type MedTaken, type Medication } from '../log/store'
 import { logHalf, pillbox } from './pillboxLogic'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
 // Sunday 15 March 2026, 8 PM; the week is Mon 9 to Sun 15.
-const now = new Date(2026, 2, 15, 20, 0)
-const at = (d: number, h: number, m = 0) => new Date(2026, 2, d, h, m).toISOString()
+const now = mnl(2026, 2, 15, 20, 0)
+const at = (d: number, h: number, m = 0) => mnl(2026, 2, d, h, m).toISOString()
 const losartan: Medication = { personId: 'me', name: 'Losartan', serverId: 'm1', schedule: { v: 1, times: ['08:00'] }, startedOn: '2026-03-01', medStatus: 'active' }
 const metformin: Medication = { personId: 'me', name: 'Metformin', serverId: 'm2', schedule: { v: 1, times: ['08:00', '20:00'] }, startedOn: '2026-03-01', medStatus: 'active' }
 const take = (d: number, h: number, id: string, name: string, slot: string, extra: Partial<MedTaken> = {}): MedTaken => ({ personId: 'me', name, medicationId: id, slot, takenAt: at(d, h, 5), ...extra })
@@ -60,7 +61,7 @@ describe('logHalf: tap logs through logDose, never twice', () => {
   })
   it('a 00:30 dose taken at 23:50 the night before is not logged again at 00:10', async () => {
     const night: Medication = { ...losartan, schedule: { v: 1, times: ['00:30'] } }
-    const justAfter = new Date(2026, 2, 16, 0, 10)
+    const justAfter = mnl(2026, 2, 16, 0, 10)
     await ldb.medications.add(night)
     await ldb.meds.add({ personId: 'me', name: 'Losartan', medicationId: 'm1', slot: '00:30', takenAt: at(15, 23, 50) })
     expect(await logHalf('me', 'am', justAfter)).toBe(0)
@@ -68,8 +69,8 @@ describe('logHalf: tap logs through logDose, never twice', () => {
   })
   it('the same dose with no earlier take is logged once at 00:10', async () => {
     await ldb.medications.add({ ...losartan, schedule: { v: 1, times: ['00:30'] } })
-    expect(await logHalf('me', 'am', new Date(2026, 2, 16, 0, 10))).toBe(1)
-    expect(await logHalf('me', 'am', new Date(2026, 2, 16, 0, 11))).toBe(0)
+    expect(await logHalf('me', 'am', mnl(2026, 2, 16, 0, 10))).toBe(1)
+    expect(await logHalf('me', 'am', mnl(2026, 2, 16, 0, 11))).toBe(0)
   })
   it('a take more than 3 h old does not block a new dose of the same slot', async () => {
     await ldb.medications.add(losartan)

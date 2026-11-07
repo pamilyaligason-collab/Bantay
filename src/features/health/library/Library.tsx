@@ -6,7 +6,7 @@ import { isLive, normaliseDrug } from '../meds'
 import { useHealthPerson } from '../useHealthPerson'
 import { useMedications } from '../useMedications'
 import { articleHref, SOURCE_LINE } from './medline'
-import { LAB_GLOSSARY, labEntry } from '../labGlossary'
+import { loadLabGlossary, useLabGlossary } from '../labsLogic'
 import '../health.css'
 import '../m7a.css'
 
@@ -18,6 +18,7 @@ export default function Library() {
   const profile = useProfile(personId)
   const meds = useMedications(personId)
   const [q, setQ] = useState('')
+  const g = useLabGlossary()
   const items = useMemo(() => {
     const seen = new Set<string>()
     const out: { kind: 'c' | 'm'; text: string; label: string; sub: string }[] = []
@@ -31,13 +32,13 @@ export default function Library() {
     }
     return out
   }, [profile, meds])
-  const go = () => { const t = q.trim(); const lab = labEntry(t); if (lab) location.hash = articleHref('t', lab.code); else if (t) location.hash = articleHref('s', t) }
+  const go = async () => { const t = q.trim(); const lab = t ? (await loadLabGlossary().catch(() => null))?.labEntry(t) : null; if (lab) location.hash = articleHref('t', lab.code); else if (t) location.hash = articleHref('s', t) }
 
   return (
     <>
       <SubHeader title="Health library" backHref="#discover/learn" backLabel="Back to Learn" />
       <WhoLine />
-      <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); go() }}>
+      <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); void go() }}>
         <label htmlFor="lb-q" className="hv-sr">Search conditions, medicines, tests</label>
         <input id="lb-q" type="search" placeholder="Search conditions, medicines" autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />
         <button type="submit" className="btn2 wz-sm">Search</button>
@@ -57,8 +58,9 @@ export default function Library() {
         </ul>
       )}
       <h2 className="hd" id="lib-labs">Lab tests</h2>
+      {!g && <p className="sub" role="status">Loading...</p>}
       <ul className="grp lb-list" aria-labelledby="lib-labs" data-testid="library-labs">
-        {LAB_GLOSSARY.map((e) => (
+        {(g?.LAB_GLOSSARY ?? []).map((e) => (
           <li key={e.code}>
             <a className="row hl-row" href={articleHref('t', e.code)}>
               <span className="grow"><b>{e.name}</b><span className="sub">{e.organ} · MedlinePlus</span></span>

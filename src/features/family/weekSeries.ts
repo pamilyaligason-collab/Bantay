@@ -1,4 +1,5 @@
-import { dayOf, matchDoses, slotsFor } from '../health/meds'
+import { manilaDay, matchDoses, slotsFor } from '../health/meds'
+import { manilaDaysEnding } from '../today/nextPick'
 import { GUIDE, type Reading } from '../health/ranges'
 import { BP_WORDS, bpPairLevel, type BpArg } from '../health/verdict'
 import type { Activity, MedTaken, Medication } from '../log/store'
@@ -8,9 +9,9 @@ export const DAYS = 7
 export type Metric = 'bp' | 'steps' | 'meds'
 export interface Series { personId: string; points: (number | null)[]; latest: number | null; empty: boolean }
 
-/** 7 local YYYY-MM-DD keys, oldest first, the last one today. */
+/** 7 Manila YYYY-MM-DD keys, oldest first, the last one today. */
 export function dayKeys(now: Date): string[] {
-  return Array.from({ length: DAYS }, (_, i) => dayOf(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (DAYS - 1 - i), 12)))
+  return manilaDaysEnding(now, DAYS)
 }
 
 const finish = (personId: string, points: (number | null)[]): Series => {
@@ -21,7 +22,7 @@ const finish = (personId: string, points: (number | null)[]): Series => {
 export function bpSeries(readings: Reading[], ids: string[], now: Date): Series[] {
   const keys = dayKeys(now)
   return ids.map((id) => finish(id, keys.map((k) => {
-    const v = readings.filter((r) => r.personId === id && r.test === 'bp_systolic' && Number.isFinite(r.value) && dayOf(r.takenAt) === k).map((r) => r.value)
+    const v = readings.filter((r) => r.personId === id && r.test === 'bp_systolic' && Number.isFinite(r.value) && manilaDay(r.takenAt) === k).map((r) => r.value)
     return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null
   })))
 }
@@ -29,7 +30,7 @@ export function bpSeries(readings: Reading[], ids: string[], now: Date): Series[
 export function stepSeries(acts: Activity[], ids: string[], now: Date): Series[] {
   const keys = dayKeys(now)
   return ids.map((id) => finish(id, keys.map((k) => {
-    const v = acts.filter((a) => a.personId === id && a.kind === 'steps' && typeof a.steps === 'number' && dayOf(a.startedAt) === k).map((a) => a.steps!)
+    const v = acts.filter((a) => a.personId === id && a.kind === 'steps' && typeof a.steps === 'number' && manilaDay(a.startedAt) === k).map((a) => a.steps!)
     return v.length ? v.reduce((a, b) => a + b, 0) : null
   })))
 }
@@ -38,7 +39,7 @@ export function stepSeries(acts: Activity[], ids: string[], now: Date): Series[]
 export function doseSeries(meds: Medication[], takes: MedTaken[], ids: string[], now: Date): Series[] {
   const keys = dayKeys(now)
   return ids.map((id) => finish(id, keys.map((k) => {
-    const d = matchDoses(slotsFor(meds, id, k), takes.filter((t) => t.personId === id), k)
+    const d = matchDoses(slotsFor(meds, id, k), takes.filter((t) => t.personId === id), k, manilaDay)
     return d.length ? Math.round((d.filter((x) => x.state === 'taken').length / d.length) * 100) : null
   })))
 }

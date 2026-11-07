@@ -18,17 +18,20 @@ afterEach(() => { cleanup(); vi.useRealTimers() })
 const now = new Date(2026, 9, 27, 14, 0) // 2:00 PM
 const med = (name: string, time: string, id: string) => ({ personId: 'p2', name, medStatus: 'active', schedule: { v: 1, times: [time] }, serverId: id }) as never
 const iso = (h: number, m = 0, d = 27) => new Date(2026, 9, d, h, m).toISOString()
+// The doses use fixed Manila instants (D-148, ML-38): 2:00 PM Tue 27 Oct Manila, and a Manila clock time on that day. The mood and BP words stay on the phone's own clock.
+const nowM = new Date('2026-10-27T06:00:00Z')
+const mIso = (h: number, m = 0) => new Date(Date.UTC(2026, 9, 27, h - 8, m)).toISOString()
 const none = { meds: [], takes: [], activity: [], readings: [], thresholds: [], personId: 'p2', now }
 
 describe('todayView (hand-computed at 2:00 PM)', () => {
   const meds = [med('Aspirin', '08:00', 'a'), med('Losartan', '13:00', 'l'), med('Metformin', '20:00', 'm'), med('Statin', '07:00', 's')]
-  const takes = [{ name: 'Aspirin', takenAt: iso(8, 10), medicationId: 'a', slot: '08:00' }, { name: 'Statin', takenAt: iso(7, 5), medicationId: 's', slot: '07:00', skipped: true }]
+  const takes = [{ name: 'Aspirin', takenAt: mIso(8, 10), medicationId: 'a', slot: '08:00' }, { name: 'Statin', takenAt: mIso(7, 5), medicationId: 's', slot: '07:00', skipped: true }]
   it('taken, skipped, due now (within 2 h) and later', () => {
-    const v = todayView({ ...none, meds, takes })
+    const v = todayView({ ...none, meds, takes, now: nowM })
     expect(v.doses.map((d) => `${d.name} ${d.time} ${d.word}`)).toEqual(['Statin 7:00 AM Skipped', 'Aspirin 8:00 AM Taken', 'Losartan 1:00 PM Due now', 'Metformin 8:00 PM Later'])
   })
   it('a dose more than 2 h past its time and not taken is Missed', () => {
-    expect(todayView({ ...none, meds: [med('Aspirin', '10:00', 'a')] }).doses[0]).toMatchObject({ word: 'Missed', state: 'missed' })
+    expect(todayView({ ...none, now: nowM, meds: [med('Aspirin', '10:00', 'a')] }).doses[0]).toMatchObject({ word: 'Missed', state: 'missed' })
   })
   it('last mood by time, with the word; none when there is none', () => {
     const act = [{ personId: 'p2', kind: 'mood-ok', startedAt: iso(8) }, { personId: 'p2', kind: 'mood-low', startedAt: iso(11, 30) }, { personId: 'p2', kind: 'check-in', startedAt: iso(13) }, { personId: 'p3', kind: 'mood-good', startedAt: iso(13) }]
@@ -45,7 +48,7 @@ describe('todayView (hand-computed at 2:00 PM)', () => {
 })
 
 describe('MemberPage', () => {
-  beforeEach(async () => { acc.v = true; vi.useFakeTimers({ toFake: ['Date'], now: new Date(2026, 9, 27, 14, 0) }); await Promise.all([ldb.medications.clear(), ldb.meds.clear(), ldb.activity.clear(), hdb.readings.clear()]) })
+  beforeEach(async () => { acc.v = true; vi.useFakeTimers({ toFake: ['Date'], now: nowM }); await Promise.all([ldb.medications.clear(), ldb.meds.clear(), ldb.activity.clear(), hdb.readings.clear()]) })
   it('shows today doses, last mood, last BP with its word, and Call and Text', async () => {
     const t = new Date().toISOString()
     await ldb.medications.add({ personId: 'p2', name: 'Aspirin', medStatus: 'active', schedule: { v: 1, times: ['00:01'] }, serverId: 'a' } as never)
