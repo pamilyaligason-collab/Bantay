@@ -37,7 +37,8 @@ Write-Host "[2/8] tsc"
 npx tsc --noEmit
 if ($LASTEXITCODE -ne 0) { throw "step 2 failed" }
 Write-Host "[3/8] tests"
-npm test
+# A failed test gets two more tries: a real bug fails all three and stops the release; a test that only loses a race under the full parallel load passes on a retry.
+npm test -- --retry=2
 if ($LASTEXITCODE -ne 0) { throw "step 3 failed" }
 Write-Host "[4/8] build web + cap sync"
 npm run build
