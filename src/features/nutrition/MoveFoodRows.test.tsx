@@ -55,3 +55,19 @@ describe('FoodBlock (Move and food, board Food block)', () => {
     expect(screen.queryByTestId('salt-week')).toBeNull()
   })
 })
+
+describe('FoodBlock forwards the shown person name to the real WaterPanel', () => {
+  it('names the person in the weight hint, and says your without a name', async () => {
+    vi.resetModules()
+    vi.doUnmock('./WaterPanel')
+    vi.doMock('./actions', () => ({ logWater: async () => 'ok', undoWater: async () => 'ok' }))
+    vi.doMock('../viewas/viewAs', () => ({ useActing: () => ({ acting: false, personId: null, name: '' }) }))
+    vi.doMock('./hooks', () => ({ useFood: () => [], useWater: () => [], useGoal: () => ({ sodiumMg: 2000, waterMl: 1500, waterSource: 'default' }) }))
+    const { FoodBlock: Real } = await import('./MoveFoodRows')
+    render(<Real personId="p2" canMark name="Rey" />)
+    expect(screen.getByRole('link', { name: /Add Rey's weight for a goal that fits Rey/ })).toBeTruthy()
+    cleanup()
+    render(<Real personId="p1" canMark />)
+    expect(screen.getByRole('link', { name: /Add your weight/ })).toBeTruthy()
+  })
+})

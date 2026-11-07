@@ -12,7 +12,7 @@ const m = vi.hoisted(() => ({
   wx: null as unknown,
   due: [] as unknown[],
   review: 0,
-  tick: new Date(2026, 9, 28, 23, 30),
+  tick: new Date(2026, 9, 28, 23, 30), // this phone's own 23:30: Simple mode's night is the phone's clock, not Manila's
   snooze: vi.fn(async () => 'snoozed')
 }))
 vi.mock('../location/useLocation', () => ({ usePlace: () => m.place }))
@@ -121,15 +121,16 @@ describe('Weather card Jack cutoff', () => {
   })
 })
 
+// Dates below are fixed Manila instants written as UTC (Manila = UTC+8, ML-38), so they hold on a phone in any zone.
 describe('Native snooze carries the dose day, not the tap day', () => {
   it('doseDay: a 23:30 dose seen at 00:10 is yesterday, a 00:30 dose seen at 23:50 is tomorrow, an ordinary dose is today', () => {
-    expect(doseDay(dose('me', 'L', 1410, -30), new Date(2026, 9, 29, 0, 10))).toBe('2026-10-28')
-    expect(doseDay(dose('me', 'L', 30, 1470), new Date(2026, 9, 28, 23, 50))).toBe('2026-10-29')
-    expect(doseDay(dose('me', 'L', 540, 540), new Date(2026, 9, 28, 9, 30))).toBe('2026-10-28')
+    expect(doseDay(dose('me', 'L', 1410, -30), new Date(Date.UTC(2026, 9, 29, -8, 10)))).toBe('2026-10-28')
+    expect(doseDay(dose('me', 'L', 30, 1470), new Date(Date.UTC(2026, 9, 28, 15, 50)))).toBe('2026-10-29')
+    expect(doseDay(dose('me', 'L', 540, 540), new Date(Date.UTC(2026, 9, 28, 1, 30)))).toBe('2026-10-28')
   })
   it('In 10 min at 00:10 on a dose from 23:30 yesterday sends day 2026-10-28', async () => {
-    vi.setSystemTime(new Date(2026, 9, 29, 0, 10))
-    const item = pickNext({ due: [dose('me', 'Rey', 1410, -30)], plan: null, storm: null }, new Date(2026, 9, 29, 0, 10))
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 29, -8, 10)))
+    const item = pickNext({ due: [dose('me', 'Rey', 1410, -30)], plan: null, storm: null }, new Date(Date.UTC(2026, 9, 29, -8, 10)))
     render(<NextUp item={item} review={0} notify={() => undefined} />)
     fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
     await waitFor(() => expect(m.snooze).toHaveBeenCalledTimes(1))
@@ -144,8 +145,8 @@ describe('A snoozed late card hides only itself', () => {
     const b = dose('ana', 'Ana', 600)
     m.due = [a, b]
     m.review = 1
-    m.tick = new Date(2026, 9, 28, 10, 0)
-    vi.setSystemTime(new Date(2026, 9, 28, 10, 0))
+    m.tick = new Date(Date.UTC(2026, 9, 28, 2, 0))
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 28, 2, 0)))
     const first = renderHook(() => useNext())
     expect(first.result.current.item.who?.personId).toBe('me')
     first.unmount()
@@ -159,8 +160,8 @@ describe('A snoozed late card hides only itself', () => {
     const a = dose('me', 'Rey', 540)
     m.due = [a]
     m.review = 2
-    m.tick = new Date(2026, 9, 28, 10, 0)
-    vi.setSystemTime(new Date(2026, 9, 28, 10, 0))
+    m.tick = new Date(Date.UTC(2026, 9, 28, 2, 0))
+    vi.setSystemTime(new Date(Date.UTC(2026, 9, 28, 2, 0)))
     snoozeCard(doseKey(a), 10, new Date())
     const { result } = renderHook(() => useNext())
     expect(result.current.item.kind).toBe('calm')
@@ -168,7 +169,7 @@ describe('A snoozed late card hides only itself', () => {
     m.wx = base
     render(<WeatherCard expanded review={result.current.review} />)
     expect(screen.getByRole('link', { name: /Nothing due right now · 2 medicines to check/ })).toBeTruthy()
-    act(() => { vi.setSystemTime(new Date(2026, 9, 28, 10, 11)); document.dispatchEvent(new Event('visibilitychange')) })
+    act(() => { vi.setSystemTime(new Date(Date.UTC(2026, 9, 28, 2, 11))); document.dispatchEvent(new Event('visibilitychange')) })
     expect(result.current.item.who?.personId).toBe('me') // 10:11: the 10 minutes are over, the card is back
   })
 })

@@ -14,12 +14,13 @@ import { Kudos } from './Kudos'
 import { Pillbox } from './Pillbox'
 import { Pixels } from './Pixels'
 import { Recap } from './Recap'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
 afterEach(cleanup)
 beforeEach(async () => { vi.clearAllMocks(); api.sendRecap.mockResolvedValue({ ok: true, data: null }); api.sendKudosHeart.mockResolvedValue({ ok: true, data: null }); await Promise.all([ldb.meds.clear(), ldb.medications.clear()]) })
 
-const now = new Date(2026, 2, 15, 20, 0)
-const at = (d: number, h: number, m = 30) => new Date(2026, 2, d, h, m).toISOString()
+const now = mnl(2026, 2, 15, 16, 0) // 16:00 Manila is still 15 March in Los Angeles and Auckland
+const at = (d: number, h: number, m = 30) => new Date(2026, 2, d, h, m).toISOString() // a reading: this phone's own day
 const SYS = [130, 132, 134, 136, 131, 135, 133]
 const DIA = [80, 82, 84, 86, 81, 85, 83]
 const readings: Reading[] = SYS.flatMap((s, k) => [
@@ -27,7 +28,7 @@ const readings: Reading[] = SYS.flatMap((s, k) => [
   { personId: 'me', takenAt: at(9 + k, 7), test: 'bp_diastolic', value: DIA[k]!, unit: 'mmHg' }
 ])
 const med: Medication = { personId: 'me', name: 'Losartan', serverId: 'm1', schedule: { v: 1, times: ['08:00'] }, startedOn: '2026-03-01', medStatus: 'active' }
-const takes: MedTaken[] = [9, 10, 11, 13, 15].map((d) => ({ personId: 'me', name: 'Losartan', medicationId: 'm1', slot: '08:00', takenAt: at(d, 8, 10) }))
+const takes: MedTaken[] = [9, 10, 11, 13, 15].map((d) => ({ personId: 'me', name: 'Losartan', medicationId: 'm1', slot: '08:00', takenAt: mnl(2026, 2, d, 8, 10).toISOString() }))
 
 describe('Recap card', () => {
   it('shows the hand-computed week and shares COUNTS only', async () => {

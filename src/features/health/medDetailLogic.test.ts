@@ -3,27 +3,30 @@ import type { MedTaken, Medication } from '../log/store'
 import type { AlertRow } from '../notify/store'
 import { countDoses } from './doseCount'
 import { missNote, stockInfo, weekCounter, weekStrip } from './medDetailLogic'
-import { lastDays } from '../today/myWeekLogic'
+import { manilaDaysEnding } from '../today/nextPick'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
-const d = (day: number, h: number, m = 0) => new Date(2026, 9, day, h, m) // October 2026, local clock
+const dl = (day: number, h: number, m = 0) => new Date(2026, 9, day, h, m) // phone clock, for a time shown on the phone (the alert's seen time)
+const d = (day: number, h: number, m = 0) => mnl(2026, 9, day, h, m) // October 2026, Manila clock
 const med = (o: Partial<Medication> = {}): Medication => ({ serverId: 'm1', personId: 'p1', name: 'Amlodipine', schedule: { v: 1, times: ['08:00'] }, medStatus: 'active', ...o })
 const take = (day: number, h: number, m: number, o: Partial<MedTaken> = {}): MedTaken => ({ personId: 'p1', name: 'Amlodipine', takenAt: d(day, h, m).toISOString(), medicationId: 'm1', slot: '08:00', ...o })
 
+// Stock counts on the phone's own days (stock.ts), so these fixtures use the phone clock `dl`, not Manila `d`.
 describe('stockInfo', () => {
   it('counts down per day: 12 tablets, 2 a day, counted 2 days ago = 8 left, 4 days, amber', () => {
-    const s = stockInfo(med({ schedule: { v: 1, times: ['08:00', '20:00'] }, stockQty: 12, stockSetAt: d(26, 8).toISOString() }), d(28, 9))
+    const s = stockInfo(med({ schedule: { v: 1, times: ['08:00', '20:00'] }, stockQty: 12, stockSetAt: dl(26, 8).toISOString() }), dl(28, 9))
     expect(s).toMatchObject({ kind: 'counted', left: 8, days: 4, low: true, chip: 'Refill in 4 days', line: '8 tablets left' })
   })
   it('7 days left is not amber; 1 day is singular; 0 runs out today', () => {
-    const base = { stockSetAt: d(28, 7).toISOString() }
-    expect(stockInfo(med({ ...base, stockQty: 7 }), d(28, 9))).toMatchObject({ days: 7, low: true, chip: 'Refill in 7 days' }) // stock.ts: low is <= 7, same as the Refill screen
-    expect(stockInfo(med({ ...base, stockQty: 8 }), d(28, 9))).toMatchObject({ days: 8, low: false, chip: '8 days left' })
-    expect(stockInfo(med({ ...base, stockQty: 1 }), d(28, 9))).toMatchObject({ days: 1, low: true, chip: 'Refill in 1 day' })
-    expect(stockInfo(med({ ...base, stockQty: 0 }), d(28, 9))).toMatchObject({ days: 0, low: true, chip: 'Runs out today' })
+    const base = { stockSetAt: dl(28, 7).toISOString() }
+    expect(stockInfo(med({ ...base, stockQty: 7 }), dl(28, 9))).toMatchObject({ days: 7, low: true, chip: 'Refill in 7 days' }) // stock.ts: low is <= 7, same as the Refill screen
+    expect(stockInfo(med({ ...base, stockQty: 8 }), dl(28, 9))).toMatchObject({ days: 8, low: false, chip: '8 days left' })
+    expect(stockInfo(med({ ...base, stockQty: 1 }), dl(28, 9))).toMatchObject({ days: 1, low: true, chip: 'Refill in 1 day' })
+    expect(stockInfo(med({ ...base, stockQty: 0 }), dl(28, 9))).toMatchObject({ days: 0, low: true, chip: 'Runs out today' })
   })
   it('no count and as-needed are not zero', () => {
-    expect(stockInfo(med(), d(28, 9))).toMatchObject({ kind: 'not-counted', days: null, left: null, chip: null, line: 'No count yet' })
-    expect(stockInfo(med({ asNeeded: true, stockQty: 5 }), d(28, 9))).toMatchObject({ kind: 'as-needed', days: null, chip: null })
+    expect(stockInfo(med(), dl(28, 9))).toMatchObject({ kind: 'not-counted', days: null, left: null, chip: null, line: 'No count yet' })
+    expect(stockInfo(med({ asNeeded: true, stockQty: 5 }), dl(28, 9))).toMatchObject({ kind: 'as-needed', days: null, chip: null })
   })
 })
 
@@ -64,7 +67,7 @@ describe('weekStrip', () => {
 /** The strip must say what the one counter says, on the same data. */
 const same = (m: Medication, takes: MedTaken[], now: Date) => {
   const w = weekStrip(m, takes, now)
-  const n = countDoses({ meds: [m], takes, personId: 'p1', now, days: lastDays(now) })
+  const n = countDoses({ meds: [m], takes, personId: 'p1', now, days: manilaDaysEnding(now, 7) })
   expect([w.taken, w.due]).toEqual([n.done, n.want])
   return w
 }
@@ -104,11 +107,11 @@ describe('missNote', () => {
   const alert = (o: Partial<AlertRow>): AlertRow => ({ id: 'a', personId: 'p1', kind: 'dose_missed', template: 'dose_missed' as AlertRow['template'], ref: 'p1:2026-10-24:08:00', createdAt: d(24, 8, 31).toISOString(), pushedAt: null, seenAt: null, expiresAt: d(31, 8).toISOString(), ...o })
   it('names the day; says what this phone saw', () => {
     expect(missNote(cells, [], m)).toBe('Saturday: missed.')
-    expect(missNote(cells, [alert({ seenAt: d(24, 8, 30).toISOString() })], m)).toBe('Saturday: missed. You saw the alert at 8:30 AM.')
+    expect(missNote(cells, [alert({ seenAt: dl(24, 8, 30).toISOString() })], m)).toBe('Saturday: missed. You saw the alert at 8:30 AM.')
     expect(missNote(cells, [alert({})], m)).toBe('Saturday: missed. The family was told. You have not opened the alert yet.')
   })
   it('ignores an alert for another day, person or kind', () => {
-    expect(missNote(cells, [alert({ ref: 'p1:2026-10-23:08:00', seenAt: d(24, 8, 30).toISOString() }), alert({ personId: 'p2' }), alert({ kind: 'digest' as AlertRow['kind'] })], m)).toBe('Saturday: missed.')
+    expect(missNote(cells, [alert({ ref: 'p1:2026-10-23:08:00', seenAt: dl(24, 8, 30).toISOString() }), alert({ personId: 'p2' }), alert({ kind: 'digest' as AlertRow['kind'] })], m)).toBe('Saturday: missed.')
   })
   it('null when nothing was missed', () => {
     expect(missNote(weekStrip(m, [], d(20, 7)).cells, [], m)).toBeNull()

@@ -3,7 +3,9 @@ import type { MedTaken, Medication } from '../log/store'
 import type { HeroCard } from './heroCards'
 import { joinNames, nextDoses, pickNext, whenLine } from './nextPick'
 
-const at = (h: number, m = 0) => new Date(2026, 9, 19, h, m)
+// Fixed instants: h:mm Manila clock time (D-148, ML-38), so the file passes on a phone in any zone.
+const man = (d: number, h: number, m = 0) => new Date(Date.UTC(2026, 9, d, h - 8, m))
+const at = (h: number, m = 0) => man(19, h, m)
 const med = (o: Partial<Medication> & { personId: string; name: string; times: string[] }): Medication => ({ serverId: `${o.personId}-${o.name}`, medStatus: 'active', schedule: { v: 1, times: o.times }, ...o })
 const me = { personId: 'me', name: 'Rey', isMe: true }
 const ma = { personId: 'ma', name: 'Ma', isMe: false }
@@ -39,7 +41,7 @@ describe('nextDoses', () => {
 describe('nextDoses across midnight', () => {
   const sleeper = med({ personId: 'me', name: 'Sleeper', times: ['23:00'] })
   const early = med({ personId: 'me', name: 'Early', times: ['00:30'] })
-  const on = (d: number, h: number, m = 0) => new Date(2026, 9, d, h, m)
+  const on = man
   it('a 23:00 dose stays open until 01:00 the next morning', () => {
     expect(nextDoses([me], [sleeper], [], on(20, 0, 30))[0]).toMatchObject({ status: 'missed', at: 1380 })
     expect(nextDoses([me], [sleeper], [], on(20, 1, 1))).toEqual([])

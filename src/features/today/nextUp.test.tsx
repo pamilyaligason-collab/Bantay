@@ -5,10 +5,10 @@ const h = vi.hoisted(() => ({ can: null as null | { log: boolean; edit: boolean;
 vi.mock('./useDueMeds', () => ({ markDue: h.markDue, markTaken: h.markTaken }))
 vi.mock('../viewas/viewAs', () => ({ useActingCan: () => h.can }))
 import NextUp from './NextUp'
-import { pickNext, type DuePerson } from './nextPick'
+import { nextDoses, pickNext, type DuePerson } from './nextPick'
 
 afterEach(() => { cleanup(); h.can = null; h.markDue.mockClear(); h.markTaken.mockClear() })
-const now = new Date(2026, 9, 19, 9)
+const now = new Date(Date.UTC(2026, 9, 19, 1, 0)) // 9:00 AM Manila, fixed (D-148, ML-38)
 const ma: DuePerson = { personId: 'ma', name: 'Ma', isMe: false, at: 480, rel: 480, status: 'missed', slots: [{ name: 'Aspirin', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'ma', dose: '1 tablet' }] }
 const dose = (d = ma) => pickNext({ due: [d], plan: null, storm: null }, now)
 const run = (item = dose(), review = 0, notify = () => undefined) => render(<NextUp item={item} review={review} notify={notify} />)
@@ -114,6 +114,39 @@ describe('NextUp unmounted early', () => {
       if (shown) expect((b.getAttribute('aria-label') ?? shown).toLowerCase()).toContain(shown.toLowerCase())
     }
     expect(screen.getByRole('button', { name: 'Snooze, in 10 minutes' })).toBeTruthy()
+  })
+  it('D-148: Snooze works 3 times; after the 3rd the button is gone and the card says the dose is still due (Take stays)', async () => {
+    localStorage.clear()
+    run()
+    expect(screen.queryByText('This dose is still due.')).toBeNull()
+    for (let i = 0; i < 3; i++) fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Snooze, in 10 minutes' })).toBeNull())
+    expect(screen.getByText('This dose is still due.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Take, mark as taken' })).toBeTruthy()
+    localStorage.clear()
+  })
+  it('D-148: a real 23:30 dose snoozed 3 times across Manila midnight counts as one day, so the button is gone after the 3rd (needs the dose day wired into NextUp)', async () => {
+    localStorage.clear()
+    const man = (d: number, h: number, m = 0) => new Date(Date.UTC(2026, 9, d, h - 8, m)) // a fixed Manila instant, any phone zone
+    const sleeper = { personId: 'me', name: 'Sleeper', medStatus: 'active', schedule: { v: 1, times: ['23:30'] }, serverId: 'm1' } as never
+    const card = (at: Date) => {
+      vi.setSystemTime(at)
+      return <NextUp item={pickNext({ due: nextDoses([{ personId: 'me', name: 'Rey', isMe: true }], [sleeper], [], at), plan: null, storm: null }, at)} review={0} notify={() => undefined} />
+    }
+    const snooze = () => screen.queryByRole('button', { name: 'Snooze, in 10 minutes' })
+    vi.useFakeTimers({ toFake: ['Date'] })
+    try {
+      const view = render(card(man(27, 23, 40))) // 27 Oct 23:40: the dose is 10 min late
+      fireEvent.click(snooze()!)
+      view.rerender(card(man(27, 23, 55)))
+      fireEvent.click(snooze()!)
+      view.rerender(card(man(28, 0, 5))) // 28 Oct 00:05: still the 27th's dose
+      expect(snooze()).toBeTruthy() // two used, one left
+      fireEvent.click(snooze()!)
+      await waitFor(() => expect(snooze()).toBeNull())
+      expect(screen.getByText('This dose is still due.')).toBeTruthy()
+      expect(screen.getByRole('button', { name: 'Take, mark as taken' })).toBeTruthy()
+    } finally { vi.useRealTimers(); localStorage.clear() }
   })
   it('acting without the log right: one locked View only button with the reason; Take, Snooze and Skip are not offered and nothing is written', () => {
     h.can = { log: false, edit: false, rollcall: false, mood: false, reason: 'You can see Mama but not log for her.' }

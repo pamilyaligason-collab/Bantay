@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { cadenceWord, computeNudge } from './nudgeLogic'
+const mnl = (y: number, mo: number, d: number, h = 0, mi = 0, s = 0) => new Date(Date.UTC(y, mo, d, h - 8, mi, s)) // a fixed Manila instant, the same in every phone zone (ML-38)
 
-const now = new Date(2026, 9, 22, 10, 0)
-const at = (back: number, h = 8) => new Date(2026, 9, 22 - back, h).toISOString()
+const now = mnl(2026, 9, 22, 10, 0)
+const at = (back: number, h = 8) => mnl(2026, 9, 22 - back, h).toISOString()
 const base = { personId: 'p', readings: [], takes: [], activity: [], food: [], water: [], meds: [], now }
 const bp = (back: number) => ({ personId: 'p', takenAt: at(back), test: 'bp_systolic', value: 130, unit: 'mmHg' })
 

@@ -1,6 +1,7 @@
 import { formatNumber } from '../../lib/labFormat'
 import { countDoses, ON_TIME_MIN } from '../health/doseCount'
 import { dayOf } from '../health/meds'
+import { manilaDaysEnding } from './nextPick'
 import { readingPosition } from '../health/model'
 import { rangeState, toCanonicalReading, type RangeState } from '../health/ranges'
 import type { Position, Reading } from '../health/ranges'
@@ -110,7 +111,7 @@ export function computeMyWeek(i: { personId: string; readings: Reading[]; activi
   }
 
   // doses on time (H1): the one shared counter (health/doseCount.ts)
-  const { done, want, perDay } = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days })
+  const { done, want, perDay } = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days: manilaDaysEnding(i.now, DAYS) }) // dose days are Manila's, same as the report and the visit summary
   if (want > 0) tiles.push({ code: 'doses', href: '#health', label: 'Doses on time', value: `${done} of ${want}`, unit: '', sub: done >= want ? 'all within 2 hours of the time' : 'taken within 2 hours of the time', spark: perDay })
 
   // resting heart rate: the lowest reading of each day, averaged

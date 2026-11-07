@@ -2,7 +2,7 @@ import { HeroCard } from '../look/HeroCard'
 import { CardActionButton, type CardAction } from '../look/cardParts'
 import type { Attention } from './attention'
 import { LabBar, VerdictChip } from './LabsList'
-import { attentionLine, labDate, labNum, rangeSource } from './labsLogic'
+import { attentionLine, labDate, labNum, rangeSource, useLabGlossary } from './labsLogic'
 import { metricLabel } from './model'
 import type { Range } from './ranges'
 import './health.css'
@@ -11,6 +11,7 @@ const lock = 'You can see this person but not log for them.'
 
 /** Overview lead card: the one result that needs a look (or the newest in range), its number line and two doors. With nothing to show it is the empty card: + Reading and Scan, gated like the old body hero (D-99). */
 export function AttentionHero({ attention, family, canLog, canEdit, lockReason, onAdd }: { attention: Attention | null; family?: Range; canLog: boolean; canEdit: boolean; lockReason?: string | null; onAdd: () => void }) {
+  useLabGlossary() // re-render when the glossary chunk lands, so the subtext fills in
   if (!attention) {
     const add: CardAction = canLog ? { label: '+ Reading', onClick: onAdd } : { label: '+ Reading', disabled: true, lockReason: lockReason ?? lock }
     const scan: CardAction = canEdit ? { label: 'Scan', href: '#scan' } : { label: 'Scan', disabled: true }

@@ -7,7 +7,7 @@ const act = vi.hoisted(() => ({ rows: [] as unknown[], asked: [] as unknown[] })
 vi.mock('../health/useHealthPerson', () => ({ useHealthPerson: () => ({ personId: who.personId, ownId: 'p1', ready: true, people: [{ id: 'p1', name: 'Me Self' }, { id: 'other', name: 'Ana Reyes' }] }) }))
 vi.mock('../health/useActivity', () => ({ useActivity: (id: unknown) => (act.asked.push(id), act.rows) }))
 vi.mock('../viewas/viewAs', () => ({ useActing: () => ({ acting, personId: acting ? 'm' : null, name: 'Mama' }) }))
-vi.mock('../nutrition/MoveFoodRows', () => ({ FoodBlock: () => <p data-testid="saltwater">rows</p> }))
+vi.mock('../nutrition/MoveFoodRows', () => ({ FoodBlock: ({ name }: { name?: string }) => <p data-testid="saltwater" data-name={name ?? ""}>rows</p> }))
 vi.mock('./MovePanel', () => ({ default: ({ lockLog, hideRing }: { lockLog?: string; hideRing?: boolean }) => <p data-testid="panel" data-ring={hideRing ? 'off' : 'on'}>{lockLog ?? 'free'}</p> }))
 
 import MoveScreen from './MoveScreen'
@@ -97,5 +97,18 @@ describe('MoveScreen Steps follow the person (own only)', () => {
     who.personId = 'p1'
     render(<MoveScreen />)
     expect(screen.getByTestId('panel').getAttribute('data-ring')).toBe('on')
+  })
+})
+
+describe('MoveScreen passes the shown person name to FoodBlock', () => {
+  it('another person: their name; self: none', () => {
+    acting = false
+    who.personId = 'other'
+    render(<MoveScreen />)
+    expect(screen.getByTestId('saltwater').getAttribute('data-name')).toBe('Ana Reyes')
+    cleanup()
+    who.personId = 'p1'
+    render(<MoveScreen />)
+    expect(screen.getByTestId('saltwater').getAttribute('data-name')).toBe('')
   })
 })

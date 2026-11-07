@@ -3,8 +3,9 @@ import { dayOf } from '../health/meds'
 import type { Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
 import { lastDays } from '../today/myWeekLogic'
+import { manilaDaysEnding } from '../today/nextPick'
 
-/** The Sunday recap, from the member's OWN week (the 7 local days ending `now`). Pure.
+/** The Sunday recap, from the member's OWN week. Pure. The BP days are this phone's 7 local days ending `now`; the dose days (medDays) are the 7 Manila days ending `now` (D-148).
  *  avg: the average top and bottom of every BP reading in the week, null when there is none (never 0).
  *  checks: days with a BP reading before noon, of 7. medDays: days when every dose due was taken, of the days that had a dose due (null when no medicine has a time).
  *  What may be shared is `recapShareText`: counts only, never a reading. */
@@ -26,7 +27,7 @@ export function recap(i: { personId: string; readings: Reading[]; meds: Medicati
   const morning = new Set(top.concat(bottom).filter((r) => new Date(r.takenAt).getHours() < 12).map((r) => dayOf(r.takenAt)))
   let want = 0
   let done = 0
-  for (const d of days) {
+  for (const d of manilaDaysEnding(i.now, 7)) {
     const c = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days: [d] })
     if (c.want === 0) continue
     want++

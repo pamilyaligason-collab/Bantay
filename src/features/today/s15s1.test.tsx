@@ -74,6 +74,7 @@ describe('DS-8: the In 10 min toast follows the alarm health', () => {
     const notify = vi.fn()
     render(<NextUp item={pickNext({ due: [late], plan: null, storm: null }, now)} review={0} notify={notify} />)
     await waitFor(() => {
+      localStorage.clear() // the 3-a-day snooze cap must not end the retry taps
       fireEvent.click(screen.getByRole('button', { name: 'Snooze, in 10 minutes' }))
       expect(notify).toHaveBeenLastCalledWith(want)
     })

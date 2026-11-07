@@ -20,8 +20,10 @@ async function setup(page: Page, role: 'admin' | 'member') {
     if (url.pathname === '/auth/v1/user') return reply(user)
     if (url.pathname === '/rest/v1/rpc/ensure_self_person') return reply('p-mama')
     if (url.pathname === '/rest/v1/carers') return reply(url.searchParams.get('carer_id') ? [{ person_id: 'p-lola' }] : [])
-    if (url.pathname === '/rest/v1/people') return reply({ id: 'p-mama', display_name: NAME, consent_at: '2026-10-26T01:00:00Z' })
-    if (url.pathname === '/rest/v1/app_roles') return reply({ role, handle: 'mama' })
+    // PostgREST answers one object only for .single()/.maybeSingle() (Accept: vnd.pgrst.object); a list read such as the full people pull gets an array.
+    const one = (row: unknown) => reply(/vnd\.pgrst\.object/.test(req.headers()['accept'] ?? '') ? row : [row])
+    if (url.pathname === '/rest/v1/people') return one({ id: 'p-mama', display_name: NAME, consent_at: '2026-10-26T01:00:00Z' })
+    if (url.pathname === '/rest/v1/app_roles') return one({ role, handle: 'mama' })
     return reply([])
   })
   await skipOnboarding(page)

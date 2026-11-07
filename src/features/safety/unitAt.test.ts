@@ -74,3 +74,57 @@ describe('NCR (D-147)', () => {
     expect(hazardsEntry('1381300000', manifest, rows)).toMatchObject({ pack: '1380600000', path: 'p' })
   })
 })
+
+describe('cities with their own outline (S23 F)', () => {
+  it('a point in a highly urbanized city lands in that city, not the province or nothing', async () => {
+    const { readFileSync } = await import('node:fs')
+    const f = JSON.parse(readFileSync('public/geo/units.json', 'utf8'))
+    expect(unitAt({ lat: 6.1164, lon: 125.1716 }, f.units)).toBe('1230800000') // General Santos
+    expect(unitAt({ lat: 10.3157, lon: 123.8854 }, f.units)).toBe('0730600000') // Cebu City
+    expect(unitAt({ lat: 7.0731, lon: 125.6128 }, f.units)).toBe('1130700000') // Davao City
+    expect(unitAt({ lat: 11.2447, lon: 125.0048 }, f.units)).toBe('0831600000') // Tacloban
+    expect(unitAt({ lat: 14.5547, lon: 121.0244 }, f.units)).toBe('1380600000') // Makati stays in the NCR union that owns the hazard pack
+  })
+})
+
+describe('a point in a city is claimed exactly once (S23 F fix round)', () => {
+  const load = async () => (JSON.parse((await import('node:fs')).readFileSync('public/geo/units.json', 'utf8')) as { units: Unit[] }).units
+  it('claims() is 1 in the real file for the city centres and for two province points', async () => {
+    const units = await load()
+    const pts: [string, number, number, string][] = [
+      ['GenSan', 6.1164, 125.1716, '1230800000'], ['Cebu', 10.3157, 123.8854, '0730600000'], ['Davao', 7.0731, 125.6128, '1130700000'], ['Tacloban', 11.2447, 125.0048, '0831600000'],
+      ['Baguio', 16.4023, 120.596, ''], ['Zamboanga', 6.9214, 122.079, ''], ['Iloilo', 10.7202, 122.5621, ''], ['Bacolod', 10.6713, 122.9511, ''],
+      ['Bohol province', 9.85, 124.15, '0701200000'], ['South Cotabato province', 6.3, 124.85, '1206300000']
+    ]
+    for (const [name, lat, lon, code] of pts) {
+      expect({ name, n: claims({ lat, lon }, units) }).toEqual({ name, n: 1 })
+      if (code) expect(unitAt({ lat, lon }, units)).toBe(code)
+    }
+  })
+  it('every city that has a parent is claimed once at its own outline points and its parent is a bigger unit', async () => {
+    const units = await load()
+    const kids = units.filter((u) => u.parent)
+    expect(kids.length).toBe(17)
+    for (const k of kids) {
+      expect(units.some((p) => p.code === k.parent && (p.bbox[2] - p.bbox[0]) * (p.bbox[3] - p.bbox[1]) > (k.bbox[2] - k.bbox[0]) * (k.bbox[3] - k.bbox[1]))).toBe(true)
+      const r = k.polys[0]![0]!, c = r.slice(0, -1).reduce((a, q) => [a[0]! + q[0]!, a[1]! + q[1]!], [0, 0]) // vertex mean of the biggest-first polygon
+      const p = { lon: c[0]! / (r.length - 1), lat: c[1]! / (r.length - 1) }
+      if (unitAt(p, units) === k.code) expect(claims(p, units)).toBe(1)
+    }
+  })
+  it('a nested city does not hide a real border overlap: two provinces both holding a point still count 2, and a city plus its province counts 1', () => {
+    const a: Unit = { code: 'A', name: 'A', bbox: [0, 0, 10, 10], polys: [[sq(0, 10)]] }
+    const b: Unit = { code: 'B', name: 'B', bbox: [9, 0, 20, 10], polys: [[[[9, 0], [20, 0], [20, 10], [9, 10], [9, 0]]]] }
+    const c: Unit = { code: 'C', name: 'City of C', bbox: [2, 2, 4, 4], polys: [[sq(2, 4)]], parent: 'A' }
+    expect(claims({ lat: 5, lon: 9.5 }, [a, b, c])).toBe(2) // strip held by A and B
+    expect(claims({ lat: 3, lon: 3 }, [a, b, c])).toBe(1) // C and A: the city only
+    expect(claims({ lat: 1, lon: 1 }, [a, b, c])).toBe(1) // A only
+    expect(claims({ lat: 3, lon: 3 }, [a, b, { ...c, parent: undefined }])).toBe(2) // without the parent record the old double claim comes back
+  })
+  it('a city sliver outside its province outline is not proven (S23 release review)', () => {
+    const a: Unit = { code: 'A', name: 'A', bbox: [0, 0, 10, 10], polys: [[sq(0, 10)]] }
+    const c: Unit = { code: 'C', name: 'City of C', bbox: [8, 8, 12, 12], polys: [[sq(8, 12)]], parent: 'A' }
+    expect(claims({ lat: 9, lon: 9 }, [a, c])).toBe(1) // inside both: the city
+    expect(claims({ lat: 11, lon: 11 }, [a, c])).toBe(0) // city only, province does not hold it
+  })
+})

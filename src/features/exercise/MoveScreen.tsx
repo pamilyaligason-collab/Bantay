@@ -3,6 +3,7 @@ import { LargeTitle, Row } from '../look'
 import { latestSteps } from '../health/stepsDay'
 import { FoodBlock } from '../nutrition/MoveFoodRows'
 import { useActivity } from '../health/useActivity'
+import { properName } from '../health/medName'
 import { useHealthPerson } from '../health/useHealthPerson'
 import { WhoLine } from '../health/WhoLine'
 import { useActing } from '../viewas/viewAs'
@@ -20,13 +21,13 @@ function useSteps() {
 export default function MoveScreen() {
   const { acting } = useActing()
   const steps = useSteps()
-  const { personId, ownId, canMark } = useHealthPerson()
+  const { personId, ownId, canMark, people } = useHealthPerson()
   return (
     <>
       <LargeTitle back={{ href: '#health', label: 'Health' }} title="Move and food" tone="teal" />
       <WhoLine />
       <div className="mv-page" data-hero><MovePanel lockLog={acting || personId !== ownId ? MOVE_LOCK : undefined} hideRing={personId !== ownId} /></div>
-      <FoodBlock personId={personId} canMark={canMark} />
+      <FoodBlock personId={personId} canMark={canMark} name={personId !== ownId ? properName(people.find((p) => p.id === personId)?.name ?? '') : undefined} />
       {personId === ownId && <Row icon="walk" tint="teal" title="Steps" sub={steps === null ? 'Connect your phone to count steps' : 'From your phone'} value={steps === null ? 'Not connected' : steps.today ? `${steps.total.toLocaleString('en-US')} steps today` : `${steps.total.toLocaleString('en-US')} on ${steps.day}`} href="#health/metric/steps" testId="steps-door" />}
       <Row icon="meal" title="Food and salt" sub="Meals, salt and nutrients" href="#health/nutrition" testId="food-door" />
     </>

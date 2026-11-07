@@ -165,32 +165,37 @@ describe('Explore your body', () => {
 })
 
 describe('Medicines dose rows: who marked it (D-83, 0039)', () => {
-  const at812 = () => { const d = new Date(); d.setHours(8, 12, 0, 0); return d.toISOString() }
+  // Fixed Manila instants (D-148, ML-38): the clock is noon Wed 4 Nov Manila and the dose was taken at 08:12 Manila, the same Manila day on any phone.
+  // The row prints the take on this phone's own clock, so the expected words use the same clock.
+  const at812 = () => '2026-11-04T00:12:00Z'
+  const t812 = () => `Taken ${new Date(at812()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`
   const dose = (over: Record<string, unknown> = {}) => ({ personId: 'p1', name: 'Metformin', takenAt: at812(), medicationId: 's-Metformin', slot: '08:00', ...over }) as never
   // The row shows "Not yet" until the live query hands over the dose, so wait on the settled text.
   const row = async () => { const today = await screen.findByTestId('meds-today', {}, SLOW); return waitFor(() => within(today).getByText(/^Taken \d/), SLOW) }
 
+  afterEach(() => { vi.useRealTimers() })
   beforeEach(async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-04T04:00:00Z') })
     location.hash = '#health/meds'
     await ldb.medications.clear()
     await ldb.medications.bulkAdd([med({ name: 'Metformin' })])
   })
 
-  it('a dose the person marked themself reads "Taken 8:12 AM" with nothing after it', async () => {
+  it('a dose the person marked themself reads "Taken <time>" with nothing after it', async () => {
     await ldb.meds.add(dose({ markedBy: 'u-me' })) // marked_by is set but the server sends no name when it is the owner
     render(<Health />)
-    expect((await row()).textContent).toBe('Taken 8:12 AM')
+    expect((await row()).textContent).toBe(t812())
   })
 
-  it('a dose with no marker at all (an older row) reads "Taken 8:12 AM"', async () => {
+  it('a dose with no marker at all (an older row) reads "Taken <time>"', async () => {
     await ldb.meds.add(dose())
     render(<Health />)
-    expect((await row()).textContent).toBe('Taken 8:12 AM')
+    expect((await row()).textContent).toBe(t812())
   })
 
-  it('a dose another person marked reads "Taken 8:12 AM · marked by Joy"', async () => {
+  it('a dose another person marked reads "Taken <time> · marked by Joy"', async () => {
     await ldb.meds.add(dose({ markedBy: 'u-joy', markedByName: 'Joy' }))
     render(<Health />)
-    expect((await row()).textContent).toBe('Taken 8:12 AM · marked by Joy')
+    expect((await row()).textContent).toBe(`${t812()} · marked by Joy`)
   })
 })

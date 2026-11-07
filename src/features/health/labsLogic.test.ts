@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, overBy, lastThree, moveWords, plainWords, previousResult, rangeSource, trendOfLastThree } from './labsLogic'
+import { beforeAll, describe, expect, it } from 'vitest'
+import { loadLabGlossary, groupLabs, labBand, labDate, labInfo, labNum, labRow, labVerdict, overBy, lastThree, moveWords, plainWords, previousResult, rangeSource, trendOfLastThree } from './labsLogic'
 import type { Reading } from './ranges'
 
 const r = (test: string, value: number, extra: Partial<Reading> = {}): Reading => ({ personId: 'p1', takenAt: '2026-10-01T08:00:00Z', test, value, unit: 'mg/dL', ...extra })
@@ -79,6 +79,8 @@ describe('lastThree', () => {
     expect(lastThree([...rs, r('ldl', 3, { takenAt: '2026-10-02T00:00:00Z', unit: 'mmol/L' })], 'ldl').map((x) => x.value)).toEqual([3])
   })
 })
+
+beforeAll(async () => { await loadLabGlossary() }) // the glossary is its own lazy chunk
 
 describe('labInfo', () => {
   it('knows common tests and falls back to a neutral line', () => {

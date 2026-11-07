@@ -32,7 +32,8 @@ const BATCH = 50
 /** Minutes to wait after the Nth network failure in a row: 1, 2, 4, 8, 16, then 30 at most. */
 export const backoffMinutes = (fails: number) => (fails <= 0 ? 0 : Math.min(2 ** (fails - 1), 30))
 
-export interface DeadLetter { table: string; op: string; clientId: string | null; code: string; at: number; payload: unknown }
+/** `status` is the HTTP status of the last answer (absent on letters written before it was kept), so the sheet words a 5xx as a server problem whatever its code. */
+export interface DeadLetter { table: string; op: string; clientId: string | null; code: string; at: number; payload: unknown; status?: number }
 export interface SyncConfig { url?: string; key?: string; getToken?: () => Promise<string | null> }
 export interface SyncState { ready: boolean; signedIn: boolean; offline: boolean; paused: boolean }
 
@@ -42,7 +43,7 @@ export const LAST_PULL_KEY = 'sync.lastPull'
 const cursorKey = (t: string) => `sync.cursor.${t}`
 
 class SyncError extends Error {
-  constructor(public kind: 'net' | 'transient' | 'auth' | 'perm' | 'soft', public code = '') { super(kind) }
+  constructor(public kind: 'net' | 'transient' | 'auth' | 'perm' | 'soft', public code = '', public status = 0) { super(kind) }
 }
 
 // ---- status store (module level, read by <SyncStatus/> through useSyncExternalStore)
@@ -82,10 +83,10 @@ const errCode = async (res: Response) => {
   return `HTTP${res.status}`
 }
 
-async function deadLetter(row: OutboxRow, code: string) {
+async function deadLetter(row: OutboxRow, code: string, status?: number) {
   const list = ((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined) ?? []
   const clientId = (row.payload as { client_id?: string } | null)?.client_id ?? null
-  list.push({ table: row.table, op: row.op, clientId, code, at: Date.now(), payload: row.payload }) // kept locally so nothing is lost
+  list.push({ table: row.table, op: row.op, clientId, code, at: Date.now(), payload: row.payload, ...(status ? { status } : {}) }) // kept locally so nothing is lost
   await db.kv.put({ key: DEAD_KEY, value: list })
   await db.outbox.delete(row.id!)
 }
@@ -93,17 +94,23 @@ async function deadLetter(row: OutboxRow, code: string) {
 const localTable = (t: string): Table<{ id?: number }, number> | undefined =>
   ({ readings: hdb.readings, consults: hdb.consults, meds_taken: ldb.meds, activity: ldb.activity, medications: ldb.medications, family_tasks: fdb.tasks, family_events: fdb.events, family_notes: fdb.notes, appointments: vdb.appointments, prescriptions: vdb.followUps, food_entries: ldb.food, water_entries: ldb.water } as Record<string, Table<{ id?: number }, number>>)[t]
 
-/** The server table a row writes to: sos_events_update PATCHes sos_events, so both share one hold. */
+/** The server table a row writes to: sos_events_update PATCHes sos_events, so an update finds its insert across the two. */
 const serverTable = (t: string) => TABLES[t].patch?.table ?? t
+
+/** The server row an update aims at (`server table:id`), or the row an insert creates; null when there is none. */
+const rowKey = (r: OutboxRow): string | null => {
+  const p = r.payload as Record<string, unknown> | null
+  const patch = TABLES[r.table]?.patch
+  const id = r.op === 'update' ? p?.[patch ? patch.idField : 'id'] : r.op === 'insert' ? p?.id : null
+  return id == null ? null : `${serverTable(r.table)}:${String(id)}`
+}
 
 /** True when this update's target row is still waiting as an insert: the server cannot have it yet, so a PATCH would answer 0 rows. */
 async function insertQueued(row: OutboxRow): Promise<boolean> {
   if (row.op !== 'update') return false
-  const p = row.payload as Record<string, unknown>
-  const patch = TABLES[row.table].patch
-  const id = patch ? p[patch.idField] : p.id
-  if (id == null) return false
-  return (await db.outbox.where('table').equals(serverTable(row.table)).toArray()).some((r) => r.op === 'insert' && (r.payload as Record<string, unknown> | null)?.id === id)
+  const k = rowKey(row)
+  if (k == null) return false
+  return (await db.outbox.where('table').equals(serverTable(row.table)).toArray()).some((r) => r.op === 'insert' && rowKey(r) === k)
 }
 
 async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow }) {
@@ -130,7 +137,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
       // shortcut: two phones can still cross between this read and the PATCH; a server-side rule would need a migration.
       const read = await fetch(`${url}/rest/v1/${row.table}?select=steps&client_id=eq.${encodeURIComponent(cid)}`, { headers: { apikey: key!, Authorization: `Bearer ${token}` } })
       // A read that may work later must not let a lower total through unchecked. A 401 or other 4xx goes on: the PATCH below answers with its own, which pauses sync or dead-letters the row.
-      if (read.status === 408 || read.status === 429 || read.status >= 500) { failed.row = row; throw new SyncError('transient', await errCode(read)) }
+      if (read.status === 408 || read.status === 429 || read.status >= 500) { failed.row = row; throw new SyncError('transient', await errCode(read), read.status) }
       const [onServer] = (read.ok ? await read.json().catch(() => []) : []) as { steps?: number | null }[]
       if ((onServer?.steps ?? -1) >= (payload.steps as number)) return
     }
@@ -154,7 +161,8 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     // A PATCH that RLS filters out answers 200 with no rows: treat it as refused, not saved.
     if ((spec.patch || upd) && !((await res.json().catch(() => [])) as unknown[]).length) {
       if (await insertQueued(row)) { failed.row = row; throw new SyncError('soft', 'insert-queued') } // its insert is still queued: retry, never a dead letter
-      return deadLetter({ ...row, payload }, '0rows')
+      if (spec.urgent) { failed.row = row; throw new SyncError('transient', '0rows', res.status) } // an urgent PATCH (sos_events_update) that matched nothing is held, never parked: push() holds only this row with its own wait
+      return deadLetter({ ...row, payload }, '0rows', res.status)
     }
     const lt = localTable(row.table)
     if (lt && !upd && typeof payload.id === 'number') await lt.update(payload.id, { clientId: payload.client_id } as never) // so pull recognises it
@@ -170,49 +178,88 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
     return sendRow({ ...row, payload: rest }, token, failed)
   }
   if (res.status === 403 && row.table === 'push_subscriptions') { void track('error', 'push_failed'); return void (await db.outbox.delete(row.id!)) } // not allowed to subscribe (e.g. disabled): drop, no dead letter, visible in admin usage
-  if (res.status === 401) { failed.row = row; throw new SyncError('auth', code) }
-  if (WAIT_FOR_TABLE.has(row.table) && (NO_TABLE.test(code) || res.status === 404)) { failed.row = row; throw new SyncError('soft', code) }
-  if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code) }
+  if (res.status === 401) { failed.row = row; throw new SyncError('auth', code, res.status) }
+  // A missing table waits as a whole. An urgent row's bare 404 (no table code) may be about this row only, so it is held below, row by row.
+  if (WAIT_FOR_TABLE.has(row.table) && (NO_TABLE.test(code) || (res.status === 404 && !spec.urgent))) { failed.row = row; throw new SyncError('soft', code, res.status) }
+  // Urgent rows (SOS) are never dead-lettered, whatever the answer, and every answer (4xx, 5xx, 408, 429) is held as this row's own: push() skips only this row with its own next-try time, so an older stuck row never blocks a newer SOS. backoffMinutes caps at 30 min, so the retry is forever by design.
+  if (spec.urgent) { failed.row = row; throw new SyncError('transient', code, res.status) }
+  if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code, res.status) }
   // 400/403/404/409/422 are the same answer every time: park the row at once (payload kept locally), keep going.
   if (row.table === 'usage_events' && (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES)) return void (await db.outbox.delete(row.id!)) // tracking is never worth a banner: drop silently
-  if (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code)
+  if (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code, res.status)
   throw new SyncError('perm', code)
 }
 
-/** `waiting` collects the tables the server does not have yet: left queued for this run, the other rows go on. */
-async function push(token: string, waiting: Set<string>): Promise<SyncError | null> {
+/** Held urgent rows by outbox id: each waits out its own next-try time (1, 2, 4 ... 30 min), so one old held SOS never puts the rest of sync into backoff. */
+export const HELD_KEY = 'sync.held'
+type Held = Record<string, { fails: number; nextAt: number }>
+/** Urgent rows already held in this sync flight: each is tried at most once per flight, so many old held rows cannot cost extra drain passes or a retry per run. */
+let heldThisFlight = new Set<number>()
+
+/** `waiting` collects the tables the server does not have yet, `skip` the rows this run will not send (held, not due, or behind an insert that is not going): left queued, the other rows go on. `force` tries held rows before their next-try time. */
+async function push(token: string, waiting: Set<string>, skip: Set<number>, force = false): Promise<SyncError | null> {
   let last: SyncError | null = null
-  let urgentErr: SyncError | null = null // a failing urgent table is held back for this run, never parked
-  const hold = new Set<string>()
+  const ids = new Set(await db.outbox.toCollection().primaryKeys())
+  const stored = ((await db.kv.get(HELD_KEY))?.value as Held | undefined) ?? {}
+  const held: Held = Object.fromEntries(Object.entries(stored).filter(([id]) => ids.has(Number(id)))) // a sent or discarded row forgets its wait
+  if (Object.keys(held).length !== Object.keys(stored).length) await db.kv.put({ key: HELD_KEY, value: held })
+  const now = Date.now()
+  const blocked = new Set<string>() // inserts this run will not send: an update aimed at one waits with it, row by row, never its whole table
+  const sendable = (r: OutboxRow) => {
+    if (!isSyncable(r.table)) return false
+    const h = held[r.id!]
+    if (waiting.has(r.table) || skip.has(r.id!) || heldThisFlight.has(r.id!) || (h && !force && now < h.nextAt)) {
+      skip.add(r.id!)
+      if (r.op === 'insert') { const k = rowKey(r); if (k) blocked.add(k) }
+      return false
+    }
+    const k = r.op === 'update' ? rowKey(r) : null
+    if (k && blocked.has(k)) { skip.add(r.id!); return false }
+    return true
+  }
   for (let pass = 0; pass < MAX_TRIES; pass++) {
     const failed: { row?: OutboxRow } = {}
     last = null
     await drain(async (row) => {
       try { await sendRow(row, token, failed) } catch (e) {
         last = e as SyncError
-        await db.outbox.update(row.id!, { lastCode: e instanceof SyncError ? e.code || e.kind : 'error', lastAt: Date.now() }) // the sheet shows why a row waits
+        await db.outbox.update(row.id!, { lastCode: e instanceof SyncError ? e.code || e.kind : 'error', lastStatus: e instanceof SyncError ? e.status || undefined : undefined, lastAt: Date.now() }) // the sheet shows why a row waits
         throw e
       }
-    }, (r) => isSyncable(r.table) && !waiting.has(r.table) && !hold.has(serverTable(r.table)), { first: (r) => !!TABLES[r.table].urgent, max: BATCH })
+    }, sendable, { first: (r) => !!TABLES[r.table].urgent, max: BATCH })
     const err = last as SyncError | null
-    // An SOS must always get sent eventually: its try is given back (never a dead letter), its table is skipped for the rest of this run so later rows still go, and the error is returned for backoff.
+    // An SOS must always get sent eventually: its try is given back (never a dead letter), any server answer skips only that row with its own next-try time, so every other row (a newer SOS too) still goes, and the run is not put into backoff.
     if (err && err.kind === 'transient' && failed.row && TABLES[failed.row.table].urgent) {
+      const id = failed.row.id!
+      await db.outbox.update(id, { tries: failed.row.tries })
+      const fails = (held[id]?.fails ?? 0) + 1
+      held[id] = { fails, nextAt: Date.now() + backoffMinutes(fails) * 60_000 }
+      if (fails === 1) void track('error', 'sync_failed') // a stuck SOS stays visible in admin usage, once per streak as before
+      await db.kv.put({ key: HELD_KEY, value: held })
+      heldThisFlight.add(id); skip.add(id)
+      last = null
+      pass-- // each hold adds a new row to skip, so this is bounded by the due urgent rows, each once per flight
+      continue
+    }
+    // An update whose insert is still queued waits by itself (its try is not counted); the rest of its table goes on.
+    if (err?.kind === 'soft' && err.code === 'insert-queued' && failed.row) {
       await db.outbox.update(failed.row.id!, { tries: failed.row.tries })
-      hold.add(serverTable(failed.row.table)); urgentErr = err; last = null
-      pass-- // holding a table is bounded by the urgent tables, so it does not use up a pass
+      skip.add(failed.row.id!)
+      last = null
+      pass-- // bounded like a hold: each adds a new row to skip
       continue
     }
     // Network and 401 are not the row's fault: give back the try that drain counted. A 5xx/408/429 keeps it, so a row the server always fails on parks after MAX_TRIES and stops blocking the rows behind it.
     if (err && err.kind === 'transient' && failed.row && failed.row.tries + 1 >= MAX_TRIES) {
       const cur = (await db.outbox.get(failed.row.id!)) ?? failed.row
       if (cur.table === 'usage_events') await db.outbox.delete(cur.id!)
-      else await deadLetter(cur, err.code || 'HTTP500')
+      else await deadLetter(cur, err.code || 'HTTP500', err.status)
       last = null
       continue
     }
     if (err && err.kind !== 'perm' && err.kind !== 'transient' && failed.row) await db.outbox.update(failed.row.id!, { tries: failed.row.tries })
     if (err?.kind === 'soft') { waiting.add(failed.row!.table); last = null; continue }
-    if (!err || err.kind !== 'perm') return err ?? urgentErr
+    if (!err || err.kind !== 'perm') return err
   }
   return last // a permanent error that is still pending after MAX_TRIES passes cannot happen (it is dead-lettered); defensive
 }
@@ -525,9 +572,10 @@ async function run(force: boolean): Promise<boolean> {
   if (!force && bo && Date.now() < bo.nextAt) return false
   try {
     const waiting = new Set<string>()
-    const err = await push(token, waiting)
+    const skip = new Set<number>()
+    const err = await push(token, waiting, skip, force)
     if (err) throw err
-    const left = () => db.outbox.filter((r) => isSyncable(r.table) && !waiting.has(r.table)).count()
+    const left = () => db.outbox.filter((r) => isSyncable(r.table) && !waiting.has(r.table) && !skip.has(r.id!)).count() // held rows are not "left": they wait for their own time, not for another run
     if (await left()) await pullAlerts(url!, key!, token) // a failing pull table must not hold back the rows behind this batch
     else {
       await pull(token)
@@ -557,6 +605,7 @@ let forceJoined = false
 const MAX_RUNS = 40
 
 async function runAll(force: boolean) {
+  heldThisFlight = new Set()
   for (let i = 0; i < MAX_RUNS || forceJoined; i++) { // a joined SOS gets its run even at the cap; each extra run needs a new forced call
     force ||= forceJoined
     forceJoined = false
@@ -577,6 +626,7 @@ export function resetSyncForTests() {
   inflight = null
   forceJoined = false
   pausedToken = null
+  heldThisFlight = new Set()
   state = { ready: false, signedIn: false, offline: false, paused: false }
 }
 

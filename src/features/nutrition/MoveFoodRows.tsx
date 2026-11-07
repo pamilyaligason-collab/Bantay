@@ -34,8 +34,8 @@ function SaltWeek({ personId, goalMg }: { personId: string; goalMg: number }) {
   )
 }
 
-/** Move and food, board "Food" block: Log a meal, Salt today, Salt last 7 days and Water, all from the person's own logs. `canMark` false (someone else, or view only) hides the log buttons. */
-export function FoodBlock({ personId, canMark }: { personId: string; canMark: boolean }) {
+/** Move and food, board "Food" block: Log a meal, Salt today, Salt last 7 days and Water, all from the person's own logs. `canMark` false (someone else, or view only) hides the log buttons. `name` is the first name of the shown person when that is not the signed-in self. */
+export function FoodBlock({ personId, canMark, name }: { personId: string; canMark: boolean; name?: string }) {
   const now = useMemo(() => new Date(), [])
   const food = useFood(personId, 2)
   const water = useWater(personId, 2)
@@ -57,7 +57,7 @@ export function FoodBlock({ personId, canMark }: { personId: string; canMark: bo
       {goal.waterMl != null && ( // no water goal under 1 year: no Water card
         <div className="mf-card" data-testid="water-card">
           <h3 className="mf-h">Water</h3>
-          <WaterPanel rows={water} goalMl={goal.waterMl} source={goal.waterSource} now={now} canAdd={canMark} personId={personId} />
+          <WaterPanel rows={water} goalMl={goal.waterMl} source={goal.waterSource} now={now} canAdd={canMark} personId={personId} name={name} />
         </div>
       )}
     </section>

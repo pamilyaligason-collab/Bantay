@@ -7,6 +7,9 @@ import { averageNodes, byVitalOrder, isVital, labFlagLine, positionOf, weekAvera
 
 const NOW = new Date(2026, 9, 20, 10, 0)
 const at = (daysAgo: number, h = 7, m = 30) => new Date(2026, 9, 20 - daysAgo, h, m).toISOString()
+// Fixed Manila instants for the dose count (D-148, ML-38): 10:00 Tue 20 Oct Manila, and `mAt` is a Manila clock time N days back.
+const MNOW = new Date('2026-10-20T02:00:00Z')
+const mAt = (daysAgo: number, h: number, m = 0) => new Date(Date.UTC(2026, 9, 20 - daysAgo, h - 8, m)).toISOString()
 const r = (test: string, value: number, daysAgo: number, h = 7, m = 30, unit = ''): Reading => ({ personId: 'p1', takenAt: at(daysAgo, h, m), test, value, unit })
 const readings: Reading[] = [
   r('bp_systolic', 128, 0, 7, 30, 'mmHg'), r('bp_diastolic', 82, 0, 7, 31, 'mmHg'), r('bp_systolic', 140, 2, 8, 0, 'mmHg'), r('bp_diastolic', 90, 2, 8, 0, 'mmHg'),
@@ -41,10 +44,10 @@ describe('My KPIs: the latest reading, not the average', () => {
     expect(bp.spark[0]).toBeNull()
   })
   it('steps: the newest day total with the goal; doses on time from the same computation as My week', () => {
-    const activity = [{ kind: 'steps', steps: 2000, startedAt: at(0, 8), personId: 'p1' }, { kind: 'steps', steps: 2210, startedAt: at(0, 9), personId: 'p1' }]
+    const activity = [{ kind: 'steps', steps: 2000, startedAt: mAt(0, 8), personId: 'p1' }, { kind: 'steps', steps: 2210, startedAt: mAt(0, 9), personId: 'p1' }]
     const meds: Medication[] = [{ personId: 'p1', name: 'Losartan', serverId: 's1', medStatus: 'active', startedOn: '2026-10-19', schedule: { v: 1, times: ['08:00'] } }]
-    const takes: MedTaken[] = [{ personId: 'p1', name: 'Losartan', medicationId: 's1', slot: '08:00', takenAt: at(1, 8, 10) }, { personId: 'p1', name: 'Losartan', medicationId: 's1', slot: '08:00', takenAt: at(0, 8, 12) }]
-    const k = computeKpis({ personId: 'p1', readings: [], activity, meds, takes, now: NOW })
+    const takes: MedTaken[] = [{ personId: 'p1', name: 'Losartan', medicationId: 's1', slot: '08:00', takenAt: mAt(1, 8, 10) }, { personId: 'p1', name: 'Losartan', medicationId: 's1', slot: '08:00', takenAt: mAt(0, 8, 12) }]
+    const k = computeKpis({ personId: 'p1', readings: [], activity, meds, takes, now: MNOW })
     expect(k.find((x) => x.code === 'steps')).toMatchObject({ value: '4,210', when: 'today so far', sub: 'Goal 6,000' })
     expect(k.find((x) => x.code === 'doses')).toMatchObject({ value: '2 of 2', when: 'last 7 days' })
   })

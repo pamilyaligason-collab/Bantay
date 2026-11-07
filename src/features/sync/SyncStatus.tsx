@@ -16,8 +16,16 @@ export function statusText(s: { ready: boolean; signedIn: boolean; offline: bool
   return text
 }
 
-/** One plain sentence per server code. Never quotes row values. */
-export function reasonText(code: string): string {
+const PROBLEM = 'The server had a problem. Try again later.'
+const BUSY = 'The server was busy. It will try again.'
+/** One plain sentence per answer, worded by the HTTP status when it is known: a 5xx is always a server problem and a 4xx never is, whatever its code. Never quotes row values. */
+export function reasonText(code: string, status = 0): string {
+  if (status >= 500) return PROBLEM
+  if (status === 408 || status === 429) return BUSY
+  const t = codeText(code)
+  return status >= 400 && (t === PROBLEM || t === BUSY) ? 'The server refused it.' : t
+}
+function codeText(code: string): string {
   if (code === '0rows') return 'The server had no matching row to change.'
   if (/^(401|auth|PGRST30[13]|HTTP401)$/.test(code)) return 'Sign in again to send this.'
   if (/^(403|42501|PGRST30\d|HTTP403)$/.test(code)) return 'The server said this phone is not allowed to save it.'
@@ -27,18 +35,22 @@ export function reasonText(code: string): string {
   if (code === 'insert-queued') return 'Waiting for the first part to be sent.'
   if (code === 'error') return 'Something went wrong while sending. It will try again.'
   if (code === 'net') return 'This phone could not reach the server. It will try again.'
-  if (/^HTTP(408|429)$/.test(code)) return 'The server was busy. It will try again.'
-  if (/^HTTP5/.test(code)) return 'The server had a problem. Try again later.'
+  if (/^HTTP(408|429)$/.test(code)) return BUSY
+  // no status (an old row): HTTP 5xx, PostgREST connection codes and Postgres server-side classes (53 resources, 57 operator, 58 system, XX internal)
+  if (/^(HTTP5\d\d|PGRST00\d|5[378][0-9A-Z]{3}|XX[0-9A-Z]{3})$/.test(code)) return PROBLEM
   return 'The server refused it.'
 }
 /** A network failure gives its try back, so tries 0 with a code is not "Tried 0 times". */
-export function queuedNote(r: { tries: number; lastCode?: string; table?: string }): string {
+export function queuedNote(r: { tries: number; lastCode?: string; lastStatus?: number; table?: string }): string {
   // an SOS is never given up on: any server failure on an urgent row is retried (5xx with or without a PostgREST code)
-  if (r.table && isSyncable(r.table) && TABLES[r.table].urgent && r.lastCode && r.lastCode !== 'net' && r.lastCode !== 'insert-queued' && !/^(auth|HTTP401|PGRST30[123])$/.test(r.lastCode)) return 'The server had a problem. It will keep trying.'
+  if (r.table && isSyncable(r.table) && TABLES[r.table].urgent && r.lastCode && r.lastCode !== 'net' && r.lastCode !== 'insert-queued' && !/^(auth|HTTP401|PGRST30[123])$/.test(r.lastCode)) {
+    // worded by the HTTP status when known (reasonText); the one "It will keep trying." replaces the "try again" tail of the plain text
+    return `${reasonText(r.lastCode, r.lastStatus).replace(/ (It will try again|Try again later)\.$/, '')} It will keep trying. Code ${r.lastCode}.`
+  }
   const tried = r.tries > 0 ? `Tried ${r.tries} ${r.tries === 1 ? 'time' : 'times'}. ` : ''
   if (r.lastCode === 'net') return `${tried}Waiting for a connection.`
   if (r.lastCode === 'insert-queued') return `${tried}${reasonText(r.lastCode)}` // an internal wait, not a server code
-  return r.lastCode ? `${tried}${reasonText(r.lastCode)} Code ${r.lastCode}.` : tried.trim() || 'Not tried yet.'
+  return r.lastCode ? `${tried}${reasonText(r.lastCode, r.lastStatus)} Code ${r.lastCode}.` : tried.trim() || 'Not tried yet.'
 }
 const fields = (p: unknown) => (p && typeof p === 'object' ? Object.keys(p as object).join(', ') : '')
 const timeText = (at: number) => new Date(at).toLocaleString('en-PH', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
@@ -102,7 +114,7 @@ export function DeadSheet({ onClose }: { onClose: () => void }) {
         {list.map((d) => (
           <div className="sh-card" key={`${d.table}-${d.clientId}-${d.at}`} data-testid="dead-row">
             <b>{d.table.replace(/_/g, ' ')} ({d.op})</b>
-            <p className="sh-sub" style={{ margin: '4px 0' }}>{reasonText(d.code)} Code {d.code}, {timeText(d.at)}.{fields(d.payload) && ` Fields: ${fields(d.payload)}.`}</p>
+            <p className="sh-sub" style={{ margin: '4px 0' }}>{reasonText(d.code, d.status)} Code {d.code}, {timeText(d.at)}.{fields(d.payload) && ` Fields: ${fields(d.payload)}.`}</p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="button" className="btn2" onClick={() => void retry([d])}>Try again</button>
               <button type="button" className="btn2" onClick={() => void discard([d])}>Discard</button>

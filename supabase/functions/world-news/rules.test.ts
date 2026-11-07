@@ -87,10 +87,26 @@ describe('GDACS filter', () => {
   it('a title that names the Philippines keeps any event, even with no position', () => {
     expect(gdacsKeep({ title: 'Green earthquake alert in Philippines' })).toBe(true)
   })
-  it('a typhoon whose text names PAR or the Philippines stays even with a far point', () => {
-    expect(gdacsKeep({ title: 'Tropical cyclone ROSAL', desc: 'Expected to enter PAR on Sunday', lat: 15, lon: 145 })).toBe(true)
+  it('a typhoon whose text names PAR or the Philippines stays when it has no position or is within 1500 km', () => {
+    expect(gdacsKeep({ title: 'Tropical cyclone ROSAL', desc: 'Expected to enter PAR on Sunday', lat: 15, lon: 135 })).toBe(true)
     expect(gdacsKeep({ title: 'Tropical cyclone ROSAL', desc: 'It affects the Philippines.' })).toBe(true)
     expect(gdacsKeep({ title: 'Forest fire', desc: 'Near the Philippines Hotel' })).toBe(false)
+  })
+  it('a cyclone with a position counts out to 1500 km of the PH box, not beyond', () => {
+    expect(gdacsKeep({ title: 'Green notification for tropical cyclone ALPHA', lat: 14, lon: 138 })).toBe(true) // about 1100 km east
+    expect(gdacsKeep({ title: 'Orange tropical cyclone BETA', lat: 14, lon: 146 })).toBe(false) // about 1900 km east
+    expect(gdacsKeep({ title: 'Tropical cyclone GAMMA', desc: 'Expected to enter PAR', lat: 15, lon: 150 })).toBe(false) // description alone does not keep a far one
+    // lat 14 is inside the box band, so distance is lon gap x 111.19 x cos(14 deg) = 107.9 km per degree east of 128
+    expect(gdacsKeep({ title: 'Tropical cyclone EDGE-IN', lat: 14, lon: 141.5 })).toBe(true) // 13.5 deg, about 1457 km
+    expect(gdacsKeep({ title: 'Tropical cyclone EDGE-OUT', lat: 14, lon: 142.3 })).toBe(false) // 14.3 deg, about 1543 km
+    // a title naming the Philippines or PAR keeps a cyclone beyond 1500 km (days from landfall)
+    expect(gdacsKeep({ title: 'Tropical cyclone DELTA heading to the Philippines', lat: 14, lon: 160 })).toBe(true)
+    expect(gdacsKeep({ title: 'Typhoon EPSILON toward PAR', lat: 20, lon: 170 })).toBe(true)
+    // cyclone word only in the description, with coordinates
+    expect(gdacsKeep({ title: 'Orange alert ZETA', desc: 'Tropical cyclone, may enter PAR', lat: 14, lon: 150 })).toBe(true)
+    expect(gdacsKeep({ title: 'Orange alert ETA', desc: 'Tropical cyclone over open sea', lat: 14, lon: 150 })).toBe(false)
+    expect(gdacsKeep({ title: 'Orange alert THETA', desc: 'Tropical cyclone over open sea', lat: 14, lon: 132 })).toBe(true) // 4 deg, about 432 km
+    expect(gdacsKeep({ title: 'Green earthquake in Japan', lat: 14, lon: 138 })).toBe(false) // other kinds keep the 500 km rule
   })
 })
 

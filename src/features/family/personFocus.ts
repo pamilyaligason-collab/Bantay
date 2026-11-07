@@ -1,5 +1,5 @@
 import type { Tint } from '../look'
-import { dayOf } from '../health/meds'
+import { manilaDay } from '../health/meds'
 import { shortMedName } from '../health/medName'
 import { slotAgo, type ReviewAsk } from './CarerCards'
 import { lastCheckInWords } from './FacesRow'
@@ -37,7 +37,7 @@ export function personFocus(p: Pick<FamilyPerson, 'id' | 'name' | 'isMe' | 'phon
   }
   if (d.missed.length) {
     const first = d.missed[0]!
-    const ago = slotAgo(dayOf(d.now), slotOf(first), d.now)
+    const ago = slotAgo(manilaDay(d.now), slotOf(first), d.now)
     const more = d.later + d.missed.length - 1
     return {
       kind: 'missed', tint: 'red',

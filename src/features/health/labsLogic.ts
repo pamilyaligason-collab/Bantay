@@ -4,9 +4,10 @@ import { providerName } from '../../lib/labFormat'
 import type { DocBundle, SourceFile } from '../records/api'
 import { verdictFor } from './verdict'
 import type { IconName } from '../shell/Icon'
-import { labEntry, type LabEntry } from './labGlossary'
+import { useEffect, useSyncExternalStore } from 'react'
+import type { LabEntry } from './labGlossary'
 
-/** Pure logic for the lab results list and detail page (session 8). No React, no storage. Unknown is null, never 0. */
+/** Logic for the lab results list and detail page (session 8). Pure except the lab glossary loader (a lazy import, plus an idle prefetch at module load) and its useLabGlossary hook. No storage. Unknown is null, never 0. */
 
 export interface LabVerdict { word: string; icon: IconName; pos: Position }
 /** A plain word plus an icon, never colour alone. No range gives no verdict (null), never "In range". */
@@ -114,6 +115,30 @@ export function lastThree(readings: Reading[], test: string, family?: Range | nu
 }
 
 // ---- static text: what a test is and questions to ask. Comes from the one lab glossary (labGlossary.ts, MedlinePlus, FOR CLINICIAN REVIEW); nothing here diagnoses. ----
+// The glossary (~9 KB gz of wording) is its own chunk: loaded once, on the first lab screen or at idle, never in the main bundle. Until it is in, a test reads as unknown (neutral text), never a guess.
+type Glossary = typeof import('./labGlossary')
+let glossary: Glossary | null = null
+let pending: Promise<Glossary> | null = null
+const subs = new Set<() => void>()
+/** Fetch the lab glossary chunk once. Resolves with the module; a failed fetch is retried on the next call. */
+export function loadLabGlossary(): Promise<Glossary> {
+  pending ??= import('./labGlossary').then((m) => { glossary = m; subs.forEach((f) => f()); return m }, (e) => { pending = null; throw e })
+  return pending
+}
+/** The glossary once loaded, else null. Starts the load. */
+export function labGlossaryNow(): Glossary | null {
+  if (!glossary) void loadLabGlossary().catch(() => undefined)
+  return glossary
+}
+/** React: the glossary module, or null while it loads (render the existing Loading... style). Re-renders when it arrives. */
+export function useLabGlossary(): Glossary | null {
+  const g = useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f) } }, () => glossary, () => null)
+  useEffect(() => { if (!g) void loadLabGlossary().catch(() => undefined) }, [g])
+  return g
+}
+if (typeof setTimeout === 'function') setTimeout(() => { void loadLabGlossary().catch(() => undefined) }, 0) // idle prefetch so sync callers (lab detail, list, report) find it ready
+const labEntry = (test: string): LabEntry | null => labGlossaryNow()?.labEntry(test) ?? null
+
 export interface LabInfo { measures: string; short: string; questions: string[] }
 const NEUTRAL: LabInfo = { short: 'A test from your lab results', measures: 'A test from your lab results. Your doctor can explain what it shows for you.', questions: ['What does this result mean for me?', 'Do I need to do anything about it, or repeat the test?'] }
 export function labInfo(test: string): LabInfo & { known: boolean; entry: LabEntry | null } {

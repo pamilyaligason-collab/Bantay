@@ -513,6 +513,7 @@ describe('push', () => {
     const dead = (await db.kv.get(DEAD_KEY))?.value as DeadLetter[]
     expect(dead.map((d) => [d.table, d.code])).toEqual([['readings', 'HTTP500']])
     expect((dead[0].payload as { test: string }).test).toBe('ldl')
+    expect(dead[0].status).toBe(500) // kept, so the sheet words it as a server problem whatever the code
     expect(await db.outbox.count()).toBe(0)
     expect(posts().some((c) => c.body?.includes('"hdl"'))).toBe(true)
   })
@@ -539,8 +540,8 @@ describe('push', () => {
     const left = await db.outbox.toArray()
     expect(left.map((r) => [r.table, r.tries])).toEqual([['sos_events', 0]]) // queued, its try given back
     expect(posts().some((c) => c.url.includes('/readings'))).toBe(true)
-    expect(posts().filter((c) => c.url.includes('/sos_events'))).toHaveLength(11) // startSync's run plus ten syncNow runs, one POST each: the table is held for the rest of a run
-    expect(posts()).toHaveLength(12) // plus the one reading
+    expect(posts().filter((c) => c.url.includes('/sos_events'))).toHaveLength(10) // one POST per sync flight: startSync's flight (the first forced call joins it) plus nine forced flights; a held row is tried once per flight
+    expect(posts()).toHaveLength(11) // plus the one reading
   })
   const sosRow = { id: 'e9', personId: 'p1', at: '2026-10-26T10:00:00.000Z', lat: null, lon: null, gps: false, callTo: 'family' }
   it('an sos_events_update waits while its insert answers 503, then goes once; no dead letter', async () => {
@@ -552,17 +553,17 @@ describe('push', () => {
     startSync(cfg())()
     for (let i = 0; i < 3; i++) await syncNow(true)
     expect(calls.filter((c) => c.method === 'PATCH')).toHaveLength(0) // not sent while the insert fails
-    expect(posts()).toHaveLength(4) // the insert, once per run
+    expect(posts()).toHaveLength(3) // the insert, once per sync flight (the first forced call joins startSync's flight)
     expect(await db.kv.get(DEAD_KEY)).toBeUndefined()
     expect(await db.outbox.count()).toBe(3)
     up = true
     await syncNow(true)
-    expect(posts()).toHaveLength(5) // the insert goes
+    expect(posts()).toHaveLength(4) // the insert goes
     expect(calls.filter((c) => c.method === 'PATCH').map((c) => JSON.parse(c.body!))).toEqual([{ sms_opened: true }, { cancelled_at: '2026-10-26T10:01:00.000Z' }]) // each update once, in order
     expect(await db.kv.get(DEAD_KEY)).toBeUndefined()
     expect(await db.outbox.count()).toBe(0)
   })
-  it('an update that answers 0 rows while its insert is queued meanwhile is retried, not parked', async () => {
+  it('an update that answers 0 rows while its insert is queued meanwhile is retried, and an urgent one stays held after', async () => {
     let late = true
     mockFetch(async (c) => {
       if (c.method === 'PATCH') { if (late) { late = false; await enqueue('sos_events', 'insert', { id: 'e9', personId: 'p1', at: '2026-10-26T10:00:00.000Z', lat: null, lon: null, gps: false, callTo: 'family' }) } return json([]) } // the insert is queued while the PATCH is on the wire
@@ -572,9 +573,10 @@ describe('push', () => {
     startSync(cfg())()
     await syncNow(true)
     await syncNow(true)
-    // first PATCH answered 0 rows with its insert queued: retried, not parked; the insert went; the retry found no insert left, so its 0 rows are a real refusal
-    expect(calls.filter((c) => c.method !== 'GET').map((c) => c.method + ' ' + c.url.split('/rest/v1/')[1].split('?')[0])).toEqual(['PATCH sos_events', 'POST sos_events', 'PATCH sos_events'])
-    expect(((await db.kv.get(DEAD_KEY))?.value as DeadLetter[]).map((d) => [d.table, d.code])).toEqual([['sos_events_update', '0rows']])
+    // first PATCH answered 0 rows with its insert queued: retried, not parked; the insert went; the retry found no insert left; 0 rows on an urgent update is held with its code, never parked
+    expect(calls.filter((c) => c.method !== 'GET').map((c) => c.method + ' ' + c.url.split('/rest/v1/')[1].split('?')[0])).toEqual(['PATCH sos_events', 'POST sos_events', 'PATCH sos_events', 'PATCH sos_events'])
+    expect(await db.kv.get(DEAD_KEY)).toBeUndefined()
+    expect((await db.outbox.toArray()).map((r) => [r.table, r.lastCode])).toEqual([['sos_events_update', '0rows']])
   })
   it('sos_acks still go while an sos_events insert answers 503', async () => {
     mockFetch((c) => (c.url.includes('/sos_events') ? new Response(null, { status: 503 }) : new Response(null, { status: 201 })))

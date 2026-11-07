@@ -4,7 +4,7 @@ import { ldb, type Activity, type FoodEntry, type MedTaken, type WaterEntry } fr
 import { Ring } from '../look/Ring'
 import { lastDays } from '../today/myWeekLogic'
 import { labDate, groupLabs, labRow } from './labsLogic'
-import { dayOf, matchDoses, slotsFor, type DoseState } from './meds'
+import { dayOf, manilaDay, matchDoses, slotsFor, type DoseState } from './meds'
 import { localDay, readingPosition } from './model'
 import { cadenceWord, computeNudge, type Goal } from './nudgeLogic'
 import { latestByTest, type Range, type Reading } from './ranges'
@@ -47,14 +47,14 @@ export function useTodayDoses(personId: string): { doses: DoseState[]; hasMeds: 
   const [takes, setTakes] = useState<MedTaken[]>([])
   useEffect(() => {
     if (!personId) return setTakes([])
-    const since = new Date(); since.setHours(0, 0, 0, 0)
+    const since = new Date(`${manilaDay(new Date())}T00:00:00+08:00`) // Manila midnight
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since.toISOString()).filter((m) => m.personId === personId).toArray()).subscribe({ next: setTakes, error: () => setTakes([]) })
     return () => sub.unsubscribe()
   }, [personId])
   return useMemo(() => {
     if (meds === undefined) return null
-    const day = dayOf(new Date())
-    return { doses: matchDoses(slotsFor(meds, personId, day), takes, day), hasMeds: meds.length > 0 }
+    const day = manilaDay(new Date())
+    return { doses: matchDoses(slotsFor(meds, personId, day), takes, day, manilaDay), hasMeds: meds.length > 0 }
   }, [meds, takes, personId])
 }
 

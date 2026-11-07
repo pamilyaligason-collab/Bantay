@@ -60,6 +60,9 @@ export const isWellbeingStory = (title: string): boolean => WELL.test(title)
 export interface GeoProbe { title?: string; desc?: string; lat?: number | null; lon?: number | null; country?: string }
 const BOX = { s: 4, n: 22, w: 114, e: 128 }
 export const NEAR_KM = 500
+/** A tropical cyclone (a storm that travels for days) counts out to ~1500 km of the PH box, about the PAR plus its approach. */
+export const CYCLONE_KM = 1500
+const CYCLONE = /typhoon|cyclone|tropical/i
 /** Great-circle kilometres from a point to the nearest point of the Philippines box (0 inside it). */
 export function kmFromPh(lat: number, lon: number): number {
   const la = Math.min(Math.max(lat, BOX.s), BOX.n), lo = Math.min(Math.max(lon, BOX.w), BOX.e)
@@ -69,14 +72,17 @@ export function kmFromPh(lat: number, lon: number): number {
 }
 const PH_NAMED = W('philippines?|pagasa|philippine area of responsibility')
 const mentionsPh = (s: string) => PH_NAMED.test(s) || PAR.test(s)
-/** A GDACS event is kept when its country tag names the Philippines, its point lies within 500 km of the PH box, or (a typhoon) its text names the Philippines or PAR.
+/** A GDACS event is kept when its country tag names the Philippines, its point lies within 500 km of the PH box (a cyclone: 1500 km), or (a typhoon, no position) its text names the Philippines or PAR.
  *  No position and no mention: dropped, so a far forest fire never shows. */
 export function gdacsKeep(g: GeoProbe): boolean {
   if (/philippines/i.test(g.country ?? '')) return true
+  if (mentionsPh(g.title ?? '')) return true // a title naming the Philippines or PAR counts for any event, a far cyclone days from landfall included
   const text = `${g.title ?? ''} ${g.desc ?? ''}`
-  if (typeof g.lat === 'number' && typeof g.lon === 'number' && Number.isFinite(g.lat) && Number.isFinite(g.lon) && kmFromPh(g.lat, g.lon) <= NEAR_KM) return true
-  if (mentionsPh(g.title ?? '')) return true // a title naming the Philippines or PAR counts for any event
-  return /typhoon|cyclone|tropical/i.test(text) && mentionsPh(text)
+  const has = typeof g.lat === 'number' && typeof g.lon === 'number' && Number.isFinite(g.lat) && Number.isFinite(g.lon)
+  // cyclone with a position: distance alone decides (a PAR mention in the description alone no longer keeps a far one); no position falls to the text rule below
+  if (has && CYCLONE.test(g.title ?? '')) return kmFromPh(g.lat as number, g.lon as number) <= CYCLONE_KM
+  if (has && kmFromPh(g.lat as number, g.lon as number) <= NEAR_KM) return true
+  return CYCLONE.test(text) && mentionsPh(text)
 }
 
 // ---- the category tag on a card ----

@@ -2,8 +2,9 @@
 // (geoBoundaries PHL ADM2, CC BY 3.0 IGO, built by scripts/local-data/units.mjs). No position is sent anywhere.
 import type { LatLon } from '../location/geo'
 
-/** polys: one entry per polygon; a polygon is a list of rings; a ring is [lon, lat] pairs. */
-export interface Unit { code: string; name: string; bbox: [number, number, number, number]; polys: number[][][][] }
+/** polys: one entry per polygon; a polygon is a list of rings; a ring is [lon, lat] pairs.
+ *  parent: the code of the unit whose outline contains this one (a city inside its province; set by scripts/local-data/units.mjs nest). */
+export interface Unit { code: string; name: string; bbox: [number, number, number, number]; polys: number[][][][]; parent?: string }
 export interface UnitsFile { format: 1; source: string; sha256: string; units: Unit[] }
 
 const inRing = (x: number, y: number, ring: number[][]): boolean => {
@@ -50,8 +51,14 @@ export class UnitTracker {
 }
 
 /** How many outlines hold the point. The outlines are simplified (~440 m), so neighbours overlap in thin border strips; a point two units both claim is not proven
- *  (each hazard file is clipped at its own border, so reading the wrong one would give a false 0, ML-05). */
-export const claims = (p: LatLon, units: readonly Unit[]): number => (Number.isFinite(p.lat) && Number.isFinite(p.lon) ? units.filter((u) => holds(u, p)).length : 0)
+ *  (each hazard file is clipped at its own border, so reading the wrong one would give a false 0, ML-05). A province that holds a city outline (`parent`) does not count
+ *  while that city holds the point too: the city is inside it on purpose, so a point in a city is claimed once. A city counts only where its province also holds the point:
+ *  a city sliver outside the province outline is read from the province's hazard file, which may not cover it, so it stays unproven. */
+export const claims = (p: LatLon, units: readonly Unit[]): number => {
+  if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) return 0
+  const held = units.filter((u) => holds(u, p))
+  return held.filter((u) => !held.some((c) => c.parent === u.code) && (!u.parent || held.some((q) => q.code === u.parent))).length
+}
 
 let cache: Promise<Unit[]> | null = null
 /** shortcut: units.json is fetched once per load; a failed fetch is retried on the next load. */
