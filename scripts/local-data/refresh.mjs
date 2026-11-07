@@ -107,7 +107,8 @@ async function packs() {
   const index = []
   for (const unit of units) {
     const pack = buildPack(unit, places)
-    if (!pack.rowCount) continue
+    // a unit with no rows yet but a hazard file (NCR, owned by the City of Manila) still gets an empty places pack: the app downloads hazards only into a unit row it holds
+    if (!pack.rowCount && !hazardsEntry(unit.psgc_code, hazardManifest, hazardRows)) continue
     const prev = latest.find((l) => l.province_code === unit.psgc_code)
     const { version, changed } = nextVersion(prev, pack.checksum)
     const path = `${unit.psgc_code}/${pack.checksum}.json`

@@ -2,7 +2,7 @@ import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { db, type PackRow } from '../../db'
 import '../shell/shell.css'
-import { PINNED, syncPacks } from './packs'
+import { PACK_NAMES, PINNED, syncPacks } from './packs'
 
 const kb = (n: number) => (n < 1_000_000 ? `${Math.max(1, Math.round(n / 1000))} KB` : `${(n / 1_000_000).toFixed(1)} MB`)
 const size = (r: PackRow) => JSON.stringify(r.places).length + (r.hazards?.blob.size ?? 0) + (r.basemap?.blob.size ?? 0)
@@ -31,15 +31,15 @@ export default function PacksSettings() {
       </div>
       {(rows ?? []).map((r) => (
         <div key={r.code} data-testid={`pack-row-${r.code}`}>
-          <div className="sh-grow"><b>{r.name}</b><div className="sh-sub">{kb(size(r))}{r.hazards ? ' · hazard map' : ''}{r.basemap ? ' · street map' : ''}{(PINNED as readonly string[]).includes(r.code) ? ' · home area' : ''}</div></div>
-          <button type="button" className="sh-pill sh-ghost sh-small" aria-label={`Delete ${r.name}`} onClick={() => void db.packs.delete(r.code)}>Delete</button>
+          <div className="sh-grow"><b>{PACK_NAMES[r.code] ?? r.name}</b><div className="sh-sub">{kb(size(r))}{r.hazards ? ' · hazard map' : ''}{r.basemap ? ' · street map' : ''}{(PINNED as readonly string[]).includes(r.code) ? ' · home area' : ''}</div></div>
+          <button type="button" className="sh-pill sh-ghost sh-small" aria-label={`Delete ${PACK_NAMES[r.code] ?? r.name}`} onClick={() => void db.packs.delete(r.code)}>Delete</button>
         </div>
       ))}
       <div>
         <div className="sh-grow"><b>Download nearby areas</b><div className="sh-sub">{note || 'Places and numbers for the areas around you. Wi-Fi is best.'}</div></div>
         <button type="button" className="sh-pill sh-ghost sh-small" onClick={() => void nearby()}>Download</button>
       </div>
-      <p className="sh-sub sh-note">Hazard data: UP NOAH Center (Project NOAH), ODbL 1.0.</p>
+      <p className="sh-sub sh-note">Hazard data: UP NOAH Center (Project NOAH), ODbL 1.0. Area outlines: geoBoundaries, CC BY 3.0 IGO.</p>
     </div>
   )
 }

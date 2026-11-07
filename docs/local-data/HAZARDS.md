@@ -91,6 +91,25 @@ own geocoded barangay point, which the page does not show; it is not the home pi
 125.24 E (surge); parts of eastern and coastal GenSan may fall outside. Needs a GenSan outline; until then the bounds rule in step 3 answers
 "Not on this phone yet" outside them rather than "No mapped hazard".
 
+### NCR (Metro Manila), D-147
+
+One unit for the whole region, owned by the **City of Manila** (`1380600000`). Why not a region code: `region_packs.province_code` references
+`coverage(psgc_code)` and `coverage.kind` allows province, huc, icc and municipality only (0045), so `1300000000` cannot own a file without a migration.
+The pack was built from NOAH's NCR source zips ("Metro Manila.zip" / "MetroManila.zip", prefix `MetroManila`); `hazards_check.py`: 900 points, 898 exact,
+2 edge under-reports, 0 real misses. File: `hazards-cab7167a8b8d96006664f1ff47a6806447472b982ecdfbbec2afff4ab8e1c3d8.pmtiles`, 5,930,579 B.
+Bounds (in `hazards.json`): flood [120.906739, 14.351791, 121.135036, 14.784376], landslide [120.908724, 14.351861, 121.133416, 14.78513], surge [120.906395, 14.446421, 121.016527, 14.737182].
+Outline: `units.mjs` files geoBoundaries' four NCR district shapes ("NCR, City of Manila, First District", "NCR, Second/Third/Fourth District") under `1380600000`
+(`ALIAS`), so `unitAt` returns it for any point in NCR. The 16 other NCR cities and Pateros have no shape of their own, so they are never returned and need no
+pointer; if a city outline is added later, give that city `{ "pack": "1380600000" }` in `hazards.json` like General Santos. The coverage name is "City of Manila";
+the app shows "Metro Manila" (PACK_NAMES in packs.ts). `refresh.mjs` now emits an index entry, with an empty places pack, for a unit that has a hazard file but no verified rows yet:
+the app stores hazards only in a unit row it holds, so without this the NCR file could never download until Manila had places.
+
+Orchestrator upload steps (nothing here ran them):
+1. Copy the file to a relative path, then `supabase storage cp <relative path> ss:///region-packs/1380600000/hazards-cab7167a8b8d96006664f1ff47a6806447472b982ecdfbbec2afff4ab8e1c3d8.pmtiles --experimental --linked --project-ref wuakimpssycbtnmoexuc --content-type application/vnd.pmtiles --cache-control max-age=31536000` (the build output folder is named `1300000000`: the storage code must be `1380600000`).
+2. Insert the `region_packs` row: `province_code` `1380600000`, `layer` `hazards`, `version` 1, `checksum` `cab7167a8b8d96006664f1ff47a6806447472b982ecdfbbec2afff4ab8e1c3d8`, `size_bytes` 5930579, `row_count` = exploded source features (the build prints no count; the column only needs >= 0), `storage_path` `1380600000/hazards-cab7167a8b8d96006664f1ff47a6806447472b982ecdfbbec2afff4ab8e1c3d8.pmtiles` (0045 checks this equals code + '/hazards-' + checksum + '.pmtiles').
+3. `node scripts/local-data/refresh.mjs packs --upload` (writes the empty Manila places pack, its `region_packs` places row, and the new `index.json`).
+4. Ship the app build that carries `public/geo/units.json` (geoBoundaries release 41af8f1, CC BY 3.0 IGO). It is fetched on demand (`loadUnits`), not precached (`globPatterns` takes js, css, html only).
+
 ## 5. "Open NOAH"
 
 Button opens `https://noah.up.edu.ph/know-your-hazards` in the system browser (Capacitor Browser) and copies the member's coordinates to the

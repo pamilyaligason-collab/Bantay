@@ -4,7 +4,7 @@ import { coversHere } from './dial'
 import type { Entry } from './entries'
 import { FLAGS } from './flags'
 import { cleanup, loadPack, syncPacks } from './packs'
-import { loadUnits, type Unit, UnitTracker, unitAt } from './unitAt'
+import { claims, loadUnits, type Unit, UnitTracker, unitAt } from './unitAt'
 
 interface PlaceLike { source: string; zone: string; weather: { lat: number; lon: number } }
 
@@ -31,7 +31,7 @@ export function useUnitInfo(place: PlaceLike | null): { unit: string | null; pro
       const u = place.source === 'zone' || !units.length ? (coversHere(place) ? (HOME_UNIT[place.zone] ?? null) : null) : unitAt({ lat, lon }, units)
       const cur = u !== null && place.source === 'zone' ? u : tracker.push(u, Date.now())
       // Proven only for a picked zone, or when an outline put THIS position in the unit we are returning (the tracker may still hold the old unit: a point in no outline, or a pending switch).
-      if (live) setInfo({ unit: cur, proven: cur !== null && (place.source === 'zone' || (units.length > 0 && u === cur)), key })
+      if (live) setInfo({ unit: cur, proven: cur !== null && (place.source === 'zone' || (units.length > 0 && u === cur && claims({ lat, lon }, units) === 1)), key })
     })().catch(() => { if (live) setInfo({ unit: null, proven: false, key }) })
     return () => { live = false }
   }, [lat, lon, place?.source, place?.zone]) // eslint-disable-line react-hooks/exhaustive-deps

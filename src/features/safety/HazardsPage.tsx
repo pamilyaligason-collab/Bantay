@@ -57,10 +57,20 @@ const mb = (n: number) => `${Math.max(1, Math.round(n / 1_000_000))} MB`
 /** Flag localPacks: where the NOAH reading comes from, or how to get it onto the phone. Nothing when the flag is off. */
 function HazardFile({ hzs }: { hzs: HazardState }) {
   if (hzs.status === 'off' || hzs.status === 'checking') return null
-  if (hzs.status === 'ready') return <p className="hz-foot" data-testid="noah-credit">Hazard data: UP NOAH Center (Project NOAH), ODbL 1.0</p>
+  if (hzs.status === 'ready') return (
+    <>
+      {hzs.online && <p className="hz-foot" data-testid="noah-online">Read online just now. The map is not saved on this phone yet, so it will not show offline until it downloads on Wi-Fi.</p>}
+      <p className="hz-foot" data-testid="noah-credit">Hazard data: UP NOAH Center (Project NOAH), ODbL 1.0. Area outlines: geoBoundaries, CC BY 3.0 IGO.</p>
+    </>
+  )
+  if (hzs.gap === 'nopack') return (
+    <div className="card hz-help" data-testid="noah-nopack">
+      <div className="rw-txt"><b className="hz-name">No NOAH hazard map for this area yet</b><span className="rw-sub">NOAH has no pack here yet. Use the NOAH or HazardHunterPH buttons below to check your street.</span></div>
+    </div>
+  )
   return (
     <div className="card hz-help" data-testid="noah-missing">
-      <div className="rw-txt"><b className="hz-name">Hazard map not on this phone yet</b><span className="rw-sub">Flood, landslide and storm surge levels need a map file. It downloads on Wi-Fi.</span></div>
+      <div className="rw-txt"><b className="hz-name">Hazard map not on this phone yet</b><span className="rw-sub">{hzs.gap === 'unread' ? 'The hazard levels for this area could not be read right now. Try again in a moment; the map downloads on Wi-Fi to keep for offline.' : hzs.gap === 'offline' ? 'This area is not saved on this phone yet. Flood, landslide and storm surge levels show when you are online, and the map downloads on Wi-Fi to keep for offline.' : 'Flood, landslide and storm surge levels need a map file. It downloads on Wi-Fi.'}</span></div>
       {hzs.size !== null && <button type="button" className="btn2 hz-map" disabled={hzs.busy} onClick={hzs.download}>{hzs.busy ? 'Downloading' : `Download hazard map (${mb(hzs.size)})`}</button>}
     </div>
   )

@@ -142,7 +142,7 @@ export function PackDial({ place, onInfo }: { place: Place; onInfo: (e: Entry) =
 export function MapSub({ place }: { place: Place }) {
   const { entries } = usePackEntries(place)
   // Our places are listed per home area. Away from that area (another city, abroad) we show no list rather than a far one.
-  if (!entries && !coversHere(place)) return <OutsideCover />
+  if (!entries?.length && !coversHere(place)) return <OutsideCover />
   return (
     <>
       <RescueMap lat={place.weather.lat} lon={place.weather.lon} zoneName={HOME_ZONES.find((z) => z.id === place.zone)?.name} seed={entries ?? undefined} />

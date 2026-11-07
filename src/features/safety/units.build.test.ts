@@ -33,3 +33,15 @@ describe('units.mjs', () => {
     expect(unitAt({ lat: 1, lon: 1 }, r.file.units)).toBe('P1')
   })
 })
+
+describe('units.mjs NCR aliases', () => {
+  it('files the four district shapes under one unit and Compostela Valley under Davao de Oro', () => {
+    const gj = { features: [shape('NCR, City of Manila, First District', [ring(0, 1)]), shape('NCR, Second District', [ring(2, 3)]), shape('NCR, Fourth District', [ring(4, 5)]), shape('Compostela Valley', [ring(8, 9)])] }
+    const r = buildUnits(gj, [{ code: 'M', name: 'City of Manila' }, { code: 'D', name: 'Davao de Oro' }], 'x')
+    expect(r.noUnit).toEqual([])
+    const m = r.file.units.find((u) => u.code === 'M')!
+    expect(m.polys).toHaveLength(3)
+    expect(m.bbox).toEqual([0, 0, 5, 5])
+    expect(r.file.units.find((u) => u.code === 'D')!.bbox).toEqual([8, 8, 9, 9])
+  })
+})
