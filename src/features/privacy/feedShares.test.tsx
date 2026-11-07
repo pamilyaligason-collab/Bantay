@@ -14,6 +14,9 @@ vi.mock('../sharing/api', async (orig) => ({ ...(await orig<typeof import('../sh
 import { CHECKING, FeedSharesCard, NOT_CHECKED, OFFLINE_NOTE } from './feedShares'
 import { feedSheetBody, feedSheetTitle } from './FeedShareSheet'
 
+// these cases are about the map being off (low-accuracy plain reads, the four feed switches): the family map is on by default since D-143
+beforeEach(() => { localStorage.setItem('bantay.flag.places', '0') })
+
 const sw = (p: string, c: string) => screen.getByTestId(`feed-share-${p}-${c}`)
 const ready = () => waitFor(() => expect((sw('me', 'bp') as HTMLButtonElement).disabled).toBe(false)) // the read answered
 const online = (v: boolean) => Object.defineProperty(navigator, 'onLine', { value: v, configurable: true })

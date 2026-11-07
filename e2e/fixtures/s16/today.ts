@@ -41,12 +41,12 @@ export const STORM = { id: 'pagasa-tcws-rosal-champi-dampas', kind: 'tcws', leve
 export const row = (a: typeof QUAKE | typeof STORM) => ({ id: a.id, kind: a.kind, level: a.level, title: a.title, what: a.what, where_text: a.where, when_text: a.when, do_now: a.doNow, source: a.source, source_url: a.sourceUrl, issued_at: a.issuedAt, lat: a.lat, lon: a.lon, bulletin: a.bulletin, fetched_at: a.checkedAt, stale: false })
 
 /** Opens #today as Rey (an invented first name) (signed in, mocked) with the variant's data. `dose` seeds a late Losartan so Next up shows. */
-export async function startToday(page: Page, variant: Variant = 'calm', opts: { dose?: boolean; scheme?: 'light' | 'dark'; notice?: boolean | 'sos'; alertsOff?: boolean; alert?: typeof QUAKE } = {}) {
+export async function startToday(page: Page, variant: Variant = 'calm', opts: { dose?: boolean; scheme?: 'light' | 'dark'; notice?: boolean | 'sos'; alertsOff?: boolean; alert?: typeof QUAKE; places?: boolean } = {}) {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.clock.setFixedTime(NOW)
   await skipOnboarding(page)
   await stubWindy(page) // the Weather screen's live map (r11-card-order and s16-today open #weather)
-  await page.addInitScript(() => localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }])))
+  await page.addInitScript((places) => { localStorage.setItem('bantay.family', JSON.stringify([{ personId: 'me', displayName: 'Rey' }])); if (!places) localStorage.setItem('bantay.flag.places', '0') }, !!opts.places) // the one-time place notice: places: true (s22-place-notice spec)
   await mock(page)
   await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: NOW, temp: 31, humidity: 60, feels: 33, code: variant === 'storm' ? 95 : 2, hourlyProb: (h) => (h >= 14 && h <= 17 ? 80 : 10) }) }))
   const served = opts.alert ? [row(opts.alert)] : variant === 'quake' ? [row(QUAKE)] : variant === 'storm' ? [row(STORM)] : []

@@ -6,18 +6,19 @@ export const BUDGET_MS = 110_000 // no new feed starts after this; one feed take
 export const MAX_PER_FEED = 15
 export type Topic = 'prepping' | 'health' | 'national' | 'wellbeing'
 export interface Feed { url: string; source: string; world?: boolean; topic?: Topic; noImage?: boolean }
-const gn = (q: string) => `https://news.google.com/rss/search?q=${q}&hl=en-PH&gl=PH&ceid=PH:en`
 export const FEEDS: Feed[] = [
-  { url: 'https://www.who.int/rss-feeds/news-english.xml', source: 'WHO', world: true, topic: 'health' },
-  { url: 'https://rss.cnn.com/rss/edition_world.rss', source: 'CNN', world: true },
+  { url: 'https://www.who.int/rss-feeds/news-english.xml', source: 'WHO', world: true, topic: 'health' }, // may be blocked from a datacenter; harmless
   { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', source: 'BBC', world: true, noImage: true }, // no BBC images (licence)
   { url: 'https://www.gdacs.org/xml/rss.xml', source: 'GDACS', topic: 'prepping' },
-  { url: gn('philippines+typhoon+flood+earthquake'), source: 'Google News', topic: 'prepping' },
-  { url: gn('DOH+Philippines+health+advisory'), source: 'Google News', topic: 'health' },
+  { url: 'https://newsinfo.inquirer.net/tag/weather/feed', source: 'Inquirer', topic: 'prepping' },
+  { url: 'https://www.rappler.com/environment/disasters/feed/', source: 'Rappler', topic: 'prepping' },
+  { url: 'https://newsinfo.inquirer.net/tag/health/feed', source: 'Inquirer', topic: 'health' },
+  { url: 'https://data.gmanetwork.com/gno/rss/lifestyle/healthandwellness/feed.xml', source: 'GMA News', topic: 'health' },
+  { url: 'https://newsinfo.inquirer.net/tag/mental-health/feed', source: 'Inquirer', topic: 'wellbeing' },
+  { url: 'https://data.gmanetwork.com/gno/rss/lifestyle/feed.xml', source: 'GMA News', topic: 'wellbeing' },
   { url: 'https://www.inquirer.net/fullfeed', source: 'Inquirer', topic: 'national' },
   { url: 'https://www.rappler.com/feed/', source: 'Rappler', topic: 'national' },
-  { url: 'https://data.gmanetwork.com/gno/rss/news/feed.xml', source: 'GMA News', topic: 'national' },
-  { url: gn('mental+health+Philippines'), source: 'Google News', topic: 'wellbeing' }
+  { url: 'https://data.gmanetwork.com/gno/rss/news/feed.xml', source: 'GMA News', topic: 'national' }
 ]
 
 export interface WorldRow { id: string; title: string; url: string; source_domain: string; seen_at: string; lang: string; theme: string }

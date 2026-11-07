@@ -106,7 +106,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
         <>
           {panels.forecasts && <Section title="Forecasts to watch"><Rows label="Forecasts to watch" rows={forecasts} empty={stale ? NOT_SAID : FLAGS.eonet ? 'No forecasts listed right now.' : 'No forecasts listed yet.'} /></Section>}
           {panels.macro && (
-            <Section title="Macro and news" meta="WHO, CNN, BBC">
+            <Section title="Macro and news" meta="WHO, BBC">
               {feed.news.length ? <News items={feed.news} old={newsIsOld(feed.news, now)} />
                 : <p className="wd-empty">{feed.state === 'loading' ? 'Loading headlines.' : feed.state === 'error' ? 'Could not load headlines. Try again later.' : 'No headlines yet.'}</p>}
             </Section>

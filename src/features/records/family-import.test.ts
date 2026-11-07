@@ -38,6 +38,7 @@ describe('lane classification', () => {
   it('skips picasa only; desktop.ini is a file-level skip in sync', () => {
     expect(classifyPath(['P', '.picasaoriginals', 'a.jpg'])).toEqual({ lane: null, skip: 'picasa' })
     expect(classifyPath(['P', 'desktop.ini']).skip).toBeNull()
+    expect(classifyPath(['P', 'From Bantay', '2024', 'x.pdf'])).toEqual({ lane: null, skip: 'writeback' })
   })
   it('maps lanes to prompts; document_only gets none', () => {
     expect([promptFor('health'), promptFor('identity'), promptFor('insurance'), promptFor('document_only')]).toEqual(['health', 'identity', 'identity', null])

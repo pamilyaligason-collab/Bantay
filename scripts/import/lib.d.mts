@@ -3,6 +3,7 @@ export function isSkipped(segments: string[]): boolean
 export function classifyType(text: string): 'laboratory' | 'consultation' | 'ultrasound' | 'urinalysis' | 'other'
 export function dateFrom(text: string): string
 export function csvRow(r: Record<string, string>): string
+export function csvLine(vals: unknown[]): string
 export function walk(
   list: (id: string) => Promise<{ id: string; name: string; mime: string; size?: string | null; modified?: string | null; md5?: string | null }[]>,
   rootId: string,

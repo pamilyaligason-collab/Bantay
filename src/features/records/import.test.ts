@@ -71,6 +71,7 @@ describe('inventory helpers', () => {
   })
   it('skips only picasa folders (D-68: the other folders get a lane instead)', () => {
     expect(isSkipped(['Test Person', '.picasaoriginals'])).toBe(true)
+    expect(isSkipped(['P', 'From Bantay', '2024', 'x.pdf'])).toBe(true)
     for (const s of ['Birth Cert - X.pdf', '- HMO', '- IDs and Documents', '- Insurance', '- Home Lot Documents', 'Visa', '2024.01.01 Laboratory']) expect(isSkipped(['Test Person', s])).toBe(false)
   })
   it('walks a fake tree, skipping and quoting', async () => {
