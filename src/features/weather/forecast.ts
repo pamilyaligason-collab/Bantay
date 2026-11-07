@@ -97,9 +97,11 @@ export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boo
     const ctl = new AbortController() // not AbortSignal.timeout: it needs Chrome 103, so an older Android WebView would fail every refresh
     const hung = setTimeout(() => ctl.abort(), o.timeoutMs ?? FETCH_TIMEOUT_MS)
     try {
-      const res = await f(forecastUrl(p), { signal: ctl.signal }) // a hung connection ends as a failure, so the screen says "could not refresh"
+      // The timeout ends the request even when a fetch ignores the signal: the request is shared, so one that never settles would leave every caller loading for good.
+      const timedOut = new Promise<never>((_, no) => ctl.signal.addEventListener('abort', () => no(new Error('timeout')), { once: true }))
+      const res = await Promise.race([f(forecastUrl(p), { signal: ctl.signal }), timedOut]) // a hung connection ends as a failure, so the screen says "could not refresh"
       if (!res.ok) throw new Error(String(res.status))
-      const fc = parseForecast(await res.json(), new Date(now).toISOString())
+      const fc = parseForecast(await Promise.race([res.json(), timedOut]), new Date(now).toISOString())
       if (!fc) throw new Error('bad forecast')
       void db.kv.put({ key, value: fc }).then(() => pruneForecasts()).catch(() => undefined)
       return { fc, fromCache: false }

@@ -102,6 +102,12 @@ describe('a hung connection', () => {
     const r = await getForecast(P, hung, { now: NOW.getTime() + 11 * 60_000, timeoutMs: 20 })
     expect(r.fromCache).toBe(true)
   })
+  it('is cut off by the timeout even when the fetch ignores the signal, so the shared request cannot hang every later caller', async () => {
+    const deaf = (() => new Promise<Response>(() => undefined)) as unknown as typeof fetch // never settles, never listens
+    await expect(getForecast(P, deaf, { now: NOW.getTime(), timeoutMs: 20 })).rejects.toThrow('timeout')
+    const r = await getForecast(P, ok(fixture({ now: NOW })), { now: NOW.getTime() }) // the next caller gets a fresh request, not the dead one
+    expect(r.fromCache).toBe(false)
+  })
   it('sends a timeout signal with the default wait', async () => {
     const f = vi.fn(async (_u: string, _i?: RequestInit) => new Response(JSON.stringify(fixture({ now: NOW })), { status: 200 }))
     await getForecast(P, f as unknown as typeof fetch, { now: NOW.getTime() })
