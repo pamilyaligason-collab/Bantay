@@ -35,8 +35,16 @@ export function batteryWords(pct: number | null | undefined, charging?: boolean 
   return charging ? `${p}% · charging` : p < LOW_BATTERY ? `${p}% · low` : `${p}%`
 }
 
-/** One sub line for a person on the map list and in People: "12 min ago · Battery 18% · low". The battery part is left out when the phone could not say. */
-export function placeSub(p: { fixedAt: number; accuracyM: number | null; batteryPct: number | null; charging: boolean | null }, now: number): string {
+const BATTERY_NEWER_MS = 5 * 60_000 // a battery written within 5 minutes of the place needs no time of its own
+
+/** One sub line for a person on the map list and in People: "12 min ago · Battery 18% · low". The battery part is left out when the phone could not say.
+ *  The daily background check-in (D-151) refreshes the battery without moving the place, so a battery newer than the place says when: "Battery 18% · low (checked 3 h ago)". */
+export function placeSub(p: { fixedAt: number; accuracyM: number | null; batteryPct: number | null; charging: boolean | null; batteryAt?: number | null; checkedAt?: number | null }, now: number): string {
   const line = placeLine(placeAge(p.fixedAt, now, p.accuracyM))
-  return p.batteryPct === null ? line : `${line} · Battery ${batteryWords(p.batteryPct, p.charging)}`
+  if (p.batteryPct === null) { // no battery to show: the check-in time still says the phone is alive (D-151)
+    return typeof p.checkedAt === 'number' && Number.isFinite(p.checkedAt) && p.checkedAt - p.fixedAt > BATTERY_NEWER_MS ? `${line} · checked in ${placeAge(p.checkedAt, now).text}` : line
+  }
+  const bat = `Battery ${batteryWords(p.batteryPct, p.charging)}`
+  const checked = typeof p.batteryAt === 'number' && Number.isFinite(p.batteryAt) && p.batteryAt - p.fixedAt > BATTERY_NEWER_MS ? ` (checked ${placeAge(p.batteryAt, now).text})` : ''
+  return `${line} · ${bat}${checked}`
 }

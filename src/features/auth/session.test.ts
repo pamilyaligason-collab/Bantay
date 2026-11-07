@@ -10,9 +10,16 @@ vi.mock('./client', () => ({
       onAuthStateChange: (cb: () => void) => { cb(); return { data: { subscription: { unsubscribe: () => { state.rows.unsub = true } } } } },
       signOut: async () => { state.rows.out = true }
     },
+    rpc: async (n: string, a: unknown) => { state.rows.rpc = [...((state.rows.rpc as unknown[]) ?? []), [n, a]]; return { data: null, error: null } },
     from: (t: string) => ({ select: (cols: string) => ({ eq: () => ({ maybeSingle: async () => (cols === 'is_owner' && state.rows.ownerError ? { data: null, error: state.rows.ownerError } : { data: state.rows[t] ?? null, error: null }) }) }) })
   }
 }))
+
+// signOut ordering guard: with stubClear set, bgPlaceClear does nothing, so only bgPlaceStash (called BEFORE the place. wipe) can queue the revoke
+vi.mock('../family/bgPlace', async (orig) => {
+  const real = await orig<typeof import('../family/bgPlace')>()
+  return { ...real, bgPlaceClear: (...a: Parameters<typeof real.bgPlaceClear>) => (state.rows.stubClear ? Promise.resolve('off' as const) : real.bgPlaceClear(...a)) }
+})
 
 import { db } from '../../db'
 import { getAccessToken, getMember, onAuthChange, signOut } from './session'
@@ -69,5 +76,20 @@ describe('session', () => {
     await signOut()
     expect((await db.kv.toCollection().primaryKeys()).filter((k) => String(k).startsWith('place.'))).toEqual([])
     expect(await db.kv.get('loc.other')).toBeDefined()
+  })
+  it('signOut revokes the background place key of this phone on the server before the wipe (D-150), and leaves none behind', async () => {
+    await db.kv.bulkPut([{ key: 'place.bgkey:p1', value: { k: 'bpk_session_test_key_0000000000000001', at: Date.now() } }, { key: 'place.sharing:p1', value: true }])
+    await signOut()
+    expect(state.rows.rpc).toEqual([['device_place_key_revoke', { p_key: 'bpk_session_test_key_0000000000000001' }]])
+    expect(await db.kv.get('place.bgkey:p1')).toBeUndefined()
+  })
+  it('signOut calls bgPlaceStash before the place. wipe: the held key is queued even when bgPlaceClear does nothing (D-151, ordering)', async () => {
+    state.rows.stubClear = true
+    await db.kv.bulkPut([{ key: 'place.bgkey:p1', value: { k: 'bpk_session_test_key_0000000000000002', at: Date.now() } }, { key: 'place.sharing:p1', value: true }])
+    await signOut()
+    expect(await db.kv.toCollection().primaryKeys().then((k) => k.filter((x) => String(x).startsWith('place.')))).toEqual([])
+    // the held record is wiped, so the only copy left is the revoke queue that bgPlaceStash filled first
+    const queued = (await db.kv.toCollection().toArray()).filter((r) => JSON.stringify(r).includes('bpk_session_test_key_0000000000000002'))
+    expect(queued.length).toBeGreaterThan(0)
   })
 })

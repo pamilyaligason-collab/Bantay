@@ -1,3 +1,6 @@
 export const KEEP: string[]
 export function check(xml: string): string[]
 export function checkPush(xml: string): string[]
+export function checkExactAlarm(xml: string): string[]
+export function permissions(xml: string): string[]
+export function checkNoBackgroundLocation(xml: string): string[]

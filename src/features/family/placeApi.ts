@@ -7,7 +7,7 @@ import { familyPlacesOn } from './flags'
 
 /** Family place data (D-136, D-138, migration 0052). Never throws; never logs a coordinate (B-7). */
 export interface PlaceFix { lat: number; lon: number; accuracy?: number | null; at: number }
-export interface Place { personId: string; lat: number; lon: number; accuracyM: number | null; fixedAt: number; batteryPct: number | null; charging: boolean | null }
+export interface Place { personId: string; lat: number; lon: number; accuracyM: number | null; fixedAt: number; batteryPct: number | null; charging: boolean | null; batteryAt?: number | null; checkedAt?: number | null }
 
 /** Both kv values are per person, not per phone: a second person on the same phone must see the notice themself (D-138). signOut clears every kv key that starts with 'place.'. */
 /** Cached copy of this person's own switch, `place.sharing:<personId>`. Unset means ON (D-138: on by default); only an explicit false stops the write. */
@@ -26,6 +26,7 @@ export async function putLivePlace(fix: PlaceFix, battery?: BatteryNow | null, p
   if (!supabase || !familyPlacesOn() || !validFix(fix)) return 'skipped'
   // Who is signed in unknown (signed out, or offline with no cached id): never send, never guess (ML-05).
   const me = personId ?? await import('../sync/profile').then((m) => m.selfIdOrCached()).catch(() => null)
+  void import('./bgPlace').then((m) => m.bgPlaceSync(me)).catch(() => {}) // D-149, D-150, D-151: arm or disarm the daily background check-in (APK 2.8.0+; battery and a time only, never a place)
   if (!me || !(await placeNoticeSeen(me)) || !(await placeSharingOn(me))) return 'skipped'
   try {
     const bat = battery === undefined ? await batteryNow() : battery
@@ -37,7 +38,7 @@ export async function putLivePlace(fix: PlaceFix, battery?: BatteryNow | null, p
   } catch { return 'failed' }
 }
 
-type Row = { person_id: string; lat: number; lon: number; accuracy_m: number | null; fixed_at: string; battery_pct: number | null; charging: boolean | null }
+type Row = { person_id: string; lat: number; lon: number; accuracy_m: number | null; fixed_at: string; battery_pct: number | null; charging: boolean | null; battery_at?: string | null; checked_at?: string | null }
 /** Everyone sharing, latest point each. null when unknown (offline, 0052 not applied, not allowed): unknown is never an empty family (ML-05). */
 export async function fetchPlaces(): Promise<Place[] | null> {
   if (!supabase) return null
@@ -47,7 +48,7 @@ export async function fetchPlaces(): Promise<Place[] | null> {
     return (data as Row[]).flatMap((r) => {
       const t = Date.parse(r.fixed_at)
       return validFix({ lat: r.lat, lon: r.lon }) && Number.isFinite(t)
-        ? [{ personId: r.person_id, lat: r.lat, lon: r.lon, accuracyM: r.accuracy_m ?? null, fixedAt: t, batteryPct: r.battery_pct ?? null, charging: r.charging ?? null }]
+        ? [{ personId: r.person_id, lat: r.lat, lon: r.lon, accuracyM: r.accuracy_m ?? null, fixedAt: t, batteryPct: r.battery_pct ?? null, charging: r.charging ?? null, batteryAt: r.battery_at ? Date.parse(r.battery_at) || null : null, checkedAt: r.checked_at ? Date.parse(r.checked_at) || null : null }]
         : []
     })
   } catch { return null }
