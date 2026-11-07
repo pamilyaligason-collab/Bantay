@@ -101,7 +101,7 @@ export function getForecast(p: LatLon, f: typeof fetch = fetch, o: { force?: boo
       const timedOut = new Promise<never>((_, no) => ctl.signal.addEventListener('abort', () => no(new Error('timeout')), { once: true }))
       const res = await Promise.race([f(forecastUrl(p), { signal: ctl.signal }), timedOut]) // a hung connection ends as a failure, so the screen says "could not refresh"
       if (!res.ok) throw new Error(String(res.status))
-      const fc = parseForecast(await res.json(), new Date(now).toISOString())
+      const fc = parseForecast(await Promise.race([res.json(), timedOut]), new Date(now).toISOString())
       if (!fc) throw new Error('bad forecast')
       void db.kv.put({ key, value: fc }).then(() => pruneForecasts()).catch(() => undefined)
       return { fc, fromCache: false }
