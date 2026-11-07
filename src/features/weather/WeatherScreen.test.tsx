@@ -6,6 +6,7 @@ import { resetRefresh } from '../location/useLocation'
 import { ALERTS_KEY, CHECKED_KEY, type Alert } from '../safety/alerts'
 import { parseHash } from '../shell/routes'
 import { openMeteoFixture } from './fixture'
+import { forecastWritesSettled } from './forecast'
 import WeatherScreen from './WeatherScreen'
 import { WX_PAUSE_KEY } from './WxLive'
 
@@ -15,6 +16,7 @@ vi.mock('../admin/events', () => ({ track }))
 const calls: string[] = []
 beforeEach(async () => {
   resetRefresh()
+  await forecastWritesSettled() // a late cache write from the last test would otherwise land after the clear
   await db.kv.clear()
   calls.length = 0
   track.mockClear()

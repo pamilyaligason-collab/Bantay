@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from '../safety/alerts'
@@ -23,6 +23,6 @@ describe('NearbyList', () => {
     render(<NearbyList />)
     expect(await screen.findByText('Air is poor')).toBeTruthy()
     expect(screen.queryByText(/Wind Signal No. 2/)).toBeNull()
-    expect(screen.queryByText('Water interruption')).toBeNull()
+    await waitFor(() => expect(screen.queryByText('Water interruption')).toBeNull()) // the dismissed list loads after the first render
   })
 })
