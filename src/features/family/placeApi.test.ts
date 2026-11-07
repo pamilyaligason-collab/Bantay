@@ -71,11 +71,11 @@ describe('putLivePlace (D-138)', () => {
 describe('fetchPlaces', () => {
   it('maps rows and drops a row with a bad position or time', async () => {
     h.rpc.mockResolvedValue({ data: [
-      { person_id: 'p1', lat: 14.6, lon: 121, accuracy_m: 20, fixed_at: '2026-11-06T04:00:00Z', battery_pct: 82, charging: true },
+      { person_id: 'p1', lat: 14.6, lon: 121, accuracy_m: 20, fixed_at: '2026-11-06T04:00:00Z', battery_pct: 82, charging: true, battery_at: '2026-11-06T09:30:00Z', checked_at: '2026-11-06T09:45:00Z' },
       { person_id: 'p2', lat: 0, lon: 0, accuracy_m: null, fixed_at: '2026-11-06T04:00:00Z', battery_pct: null, charging: null },
       { person_id: 'p3', lat: 14.6, lon: 121, accuracy_m: null, fixed_at: 'nope', battery_pct: null, charging: null }
     ], error: null })
-    expect(await fetchPlaces()).toEqual([{ personId: 'p1', lat: 14.6, lon: 121, accuracyM: 20, fixedAt: Date.UTC(2026, 10, 6, 4), batteryPct: 82, charging: true }])
+    expect(await fetchPlaces()).toEqual([{ personId: 'p1', lat: 14.6, lon: 121, accuracyM: 20, fixedAt: Date.UTC(2026, 10, 6, 4), batteryPct: 82, charging: true, batteryAt: Date.UTC(2026, 10, 6, 9, 30), checkedAt: Date.UTC(2026, 10, 6, 9, 45) }]) // battery_at: when the battery was last written (D-151); absent on an older server reads as null
     expect(h.rpc).toHaveBeenCalledWith('family_places')
   })
   it('unknown is null, never an empty family', async () => {

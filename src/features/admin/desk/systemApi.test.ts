@@ -171,7 +171,7 @@ describe('migrations.json', () => {
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
     expect(files.length).toBeGreaterThan(20)
     // Written but not yet applied, so absent from migrations.json (which lists applied versions only). Each entry leaves this list when applied.
-    const writtenNotApplied: string[] = []
+    const writtenNotApplied: string[] = ['0053'] // D-150 device place key: the owner applies it, then moves it to KNOWN_MIGRATIONS
     expect(writtenNotApplied.filter((v) => KNOWN_MIGRATIONS.includes(v))).toEqual([]) // an applied version must leave the allowlist
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v) && !writtenNotApplied.includes(v))).toEqual([])
   })

@@ -62,9 +62,10 @@
     <!-- Reminders: notifications (Android 13+). Exact alarms: USE_EXACT_ALARM is auto-granted on API 33+ (fine for this
          sideloaded family app, which is not Play-distributed); SCHEDULE_EXACT_ALARM is only the user-grantable
          "Alarms and reminders" toggle on API 31-32, so it is capped there. canScheduleExactAlarms() is true on both paths.
+         The Background Runner plugin (APK 2.8.0) declares SCHEDULE_EXACT_ALARM with no cap; tools:replace keeps this cap in the merged manifest (scripts/check-manifest.mjs asserts it).
          REQUEST_IGNORE_BATTERY_OPTIMIZATIONS enables the one-tap "let Bantay run in the background" system prompt. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" tools:replace="android:maxSdkVersion" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- SOS: CallPlugin places the call with ACTION_CALL (Q32 auto-dial). Runtime permission, asked in setup and Me only, never inside the SOS flow; 911 is never auto-dialled. -->
@@ -72,6 +73,9 @@
     <!-- Location: WebView navigator.geolocation needs these; Capacitor's BridgeWebChromeClient asks at runtime. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- APK 2.8.0 (D-151): the daily background run sends only the battery and a check-in time, never a position, so it needs no location at all while Bantay is closed.
+         The Background Runner plugin manifest declares ACCESS_BACKGROUND_LOCATION; remove it so the merged manifest never asks (scripts/check-manifest.mjs asserts it is absent). -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" tools:node="remove" />
     <!-- AppUpdater installs signed Bantay updates downloaded from GitHub Releases. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 

@@ -71,4 +71,15 @@ describe('battery in words, never by colour alone', () => {
     expect(placeSub({ fixedAt: NOW - 12 * MIN, accuracyM: 20, batteryPct: 18, charging: false }, NOW)).toBe('12 min ago · Battery 18% · low')
     expect(placeSub({ fixedAt: NOW - 12 * MIN, accuracyM: 20, batteryPct: null, charging: null }, NOW)).toBe('12 min ago')
   })
+  it('placeSub gives the battery its own check-in time when it is newer than the place (the daily background check-in, D-151)', () => {
+    const base = { accuracyM: 20, batteryPct: 18, charging: false }
+    expect(placeSub({ ...base, fixedAt: NOW - 5 * H, batteryAt: NOW - 3 * H }, NOW)).toBe('5 h ago · Battery 18% · low (checked 3 h ago)')
+    expect(placeSub({ ...base, fixedAt: NOW - 8 * H, batteryAt: NOW - 20 * MIN }, NOW)).toBe('8 h ago · may be out of date · Battery 18% · low (checked 20 min ago)')
+    expect(placeSub({ ...base, fixedAt: NOW - 12 * MIN, batteryAt: NOW - 10 * MIN }, NOW)).toBe('12 min ago · Battery 18% · low') // within 5 minutes of the place: no second time
+    expect(placeSub({ ...base, fixedAt: NOW - 12 * MIN, batteryAt: null }, NOW)).toBe('12 min ago · Battery 18% · low')
+    expect(placeSub({ ...base, batteryPct: null, fixedAt: NOW - 5 * H, batteryAt: NOW - 3 * H }, NOW)).toBe('5 h ago') // unknown battery shows no battery, whatever batteryAt says
+    expect(placeSub({ ...base, batteryPct: null, charging: null, fixedAt: NOW - 5 * H, checkedAt: NOW - 3 * H }, NOW)).toBe('5 h ago · checked in 3 h ago') // the check-in time stands on its own
+    expect(placeSub({ ...base, batteryPct: null, charging: null, fixedAt: NOW - 12 * MIN, checkedAt: NOW - 10 * MIN }, NOW)).toBe('12 min ago') // within 5 minutes of the place: no second time
+    expect(placeSub({ ...base, batteryPct: null, charging: null, fixedAt: NOW - 8 * H, checkedAt: null }, NOW)).toBe('8 h ago · may be out of date')
+  })
 })

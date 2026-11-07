@@ -17,6 +17,7 @@ import { installErrorLogging } from './features/monitor/errors'
 
 reloadOnPreloadError() // a failed lazy chunk after a deploy: one reload
 watchNarrow() // 200% text on the phone: see narrowMode.ts
+void import('./features/family/bgPlace').then((m) => m.bgPlaceStart()).catch(() => {}) // D-150: background place update watchers from app start (APK 2.8.0+ only; a no-op on web)
 installErrorLogging() // hashed client error counter (S8); no stack, no URL, no values
 
 createRoot(document.getElementById('root')!).render(

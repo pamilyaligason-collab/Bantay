@@ -16,7 +16,7 @@ vi.mock('../sharing/api', async (orig) => ({ ...(await orig<typeof import('../sh
 import { placeSharingOn } from '../family/placeApi'
 import { FeedSharesCard } from './feedShares'
 import { feedSheetBody, feedSheetTitle, PLACE_BODY } from './FeedShareSheet'
-import { FEED_PRIVACY, PLACE_PRIVACY } from './PrivacyScreen'
+import { FEED_PRIVACY, PLACE_PRIVACY, PLACE_PRIVACY_BG } from './PrivacyScreen'
 
 const sw = (p: string, c: string) => screen.getByTestId(`feed-share-${p}-${c}`)
 const ready = () => waitFor(() => expect((sw('me', 'place') as HTMLButtonElement).disabled).toBe(false))
@@ -79,7 +79,9 @@ describe('place words (ML-45)', () => {
     for (const w of ['latest point', 'never a trail', 'Family map', 'updates when Bantay opens', 'turn it off any time']) expect(PLACE_BODY).toContain(w)
   })
   it('the privacy screen line lists place: latest point only, whole family, Family map, on by default for sign-in, updated on open, off any time', () => {
-    for (const w of ['Family map', 'sign in', 'shared with their family by default', 'updated when Bantay opens', 'off any time in Me, Privacy', 'exact latest place', 'Only the latest point', '7 days']) expect(PLACE_PRIVACY).toContain(w)
+    for (const w of ['Family map', 'sign in', 'shared with their family by default', 'updated when Bantay opens', 'off any time in Me, Privacy', 'exact latest place', 'Only the latest point', '7 days']) { expect(PLACE_PRIVACY).toContain(w); expect(PLACE_PRIVACY_BG).toContain(w) }
+    expect(PLACE_PRIVACY).not.toMatch(/background|once a day/) // web and the 2.7.0 app do no background update (ML-12)
+    for (const w of ['version 2.8.0', 'once a day in the background', 'only the battery level and that the phone checked in', 'never a new place', 'signing out']) expect(PLACE_PRIVACY_BG).toContain(w)
   })
   it('the feed line says off by default, per kind, who switches it on, and leaves place out', () => {
     for (const w of ['off by default', 'each kind', 'switches that kind on for themself', 'without a login the family owner may switch it on', 'switched off any time', 'place is separate']) expect(FEED_PRIVACY).toContain(w)
@@ -88,7 +90,7 @@ describe('place words (ML-45)', () => {
   })
   it('the public privacy page says the same', () => {
     const html = readFileSync('public/privacypolicy.html', 'utf8')
-    expect(html).toContain(PLACE_PRIVACY.replace(/'/g, '&#39;'))
+    expect(html).toContain(PLACE_PRIVACY_BG.replace(/'/g, '&#39;'))
     expect(html).toContain(FEED_PRIVACY)
     expect(html).toContain('Offline maps are on by default')
     expect(html).not.toContain('Offline maps off (the usual setting)')

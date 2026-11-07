@@ -3,6 +3,8 @@ import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
 import { useKv } from '../shell/useKv'
 import { useSelfPersonId } from '../setup/useProfile'
+import { isNativeAndroid } from '../safety/settingsOpener'
+import { initShell, shellAtLeast } from '../../native/shell'
 import { consentDate, ensureConsent } from './consent'
 import { ConsentNotice } from './ConsentNotice'
 import { familyFeedOn, familyPlacesOn } from '../family/flags'
@@ -15,6 +17,11 @@ import './privacy.css'
 // Where the data goes (contract D-78 copy rule): exactly what this build uses. No Sentry or SMS gateway. Firebase Cloud Messaging is used in the Android app only: the release build adds the owner's git-ignored google-services.json (APK 2.7.0 was built with it), so push registers once notifications are allowed (notify/fcm.ts). Web and a build without that file send none.
 /** D-138 / ML-45: what the live system does with the family place. Shown only while the places flag is on, so the screen never promises more than the build does. */
 export const PLACE_PRIVACY = 'When the Family map is on in the app, the exact latest place and battery level of people who sign in is shared with their family by default, updated when Bantay opens, and off any time in Me, Privacy. Only the latest point is kept, deleted when turned off or after 7 days without an update.'
+/** The same line for the Android app from 2.8.0 (D-149, D-150), the only build with the daily background update. Web and 2.7.0 show PLACE_PRIVACY: a line must be true for the build that shows it (ML-45). Mirrored in public/privacypolicy.html. */
+export const PLACE_PRIVACY_BG = 'When the Family map is on in the app, the exact latest place and battery level of people who sign in is shared with their family by default, updated when Bantay opens and, in the Android app from version 2.8.0, once a day in the background (that daily run shares only the battery level and that the phone checked in, never a new place), and off any time in Me, Privacy. Turning sharing off, or signing out, stops the background update and ends its key. Only the latest point is kept, deleted when turned off or after 7 days without a new place.'
+/** Does this build run the daily background update? Only the Android shell 2.8.0 or later has the plugin. */
+export const hasBgPlace = (): boolean => isNativeAndroid() && shellAtLeast('2.8.0')
+export const placePrivacy = (): string => (hasBgPlace() ? PLACE_PRIVACY_BG : PLACE_PRIVACY)
 
 /** The Family feed (D-127, D-134): shown only while the feed flag is on. Mirrored in public/privacypolicy.html. */
 export const FEED_PRIVACY = 'The Family feed is off by default. For each person, and each kind (blood pressure, lab results, photos, check-ins), the person switches that kind on for themself, and for a family member without a login the family owner may switch it on. Only the kinds switched on are shown to the family in the feed, and each can be switched off any time in Me, Privacy. The family place is separate and is not part of the feed.'
@@ -46,6 +53,8 @@ export default function PrivacyScreen({ acting = false }: { acting?: boolean }) 
   const [confirm, setConfirm] = useState(false)
   const [busy, setBusy] = useState(false)
   const [note, setNote] = useState('')
+  const [, shellKnown] = useState(false) // the shell version is read once at start; re-render when it arrives so the place line matches this build
+  useEffect(() => { void initShell().then(() => shellKnown(true)) }, [])
 
   useEffect(() => {
     if (!personId || acting) { setAgreed(null); return } // no consent write while acting (C-9)
@@ -131,7 +140,7 @@ export default function PrivacyScreen({ acting = false }: { acting?: boolean }) 
 
       {!acting && <FeedSharesCard selfId={personId} />} {/* shows only with the feed or places flag on; no writes while acting */}
       {familyFeedOn() && <p className="sh-sub pv-place" data-testid="feed-privacy">{FEED_PRIVACY}</p>}
-      {familyPlacesOn() && <p className="sh-sub pv-place" data-testid="place-privacy">{PLACE_PRIVACY}</p>}
+      {familyPlacesOn() && <p className="sh-sub pv-place" data-testid="place-privacy">{placePrivacy()}</p>}
 
       {confirm && !pending && (
         <div className="sh-card pv-confirm" role="alertdialog" aria-label="Delete my data">

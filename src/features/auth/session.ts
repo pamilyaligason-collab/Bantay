@@ -44,6 +44,8 @@ export async function signOut(): Promise<void> {
   await import('../../db').then((m) => m.clearFeed()).catch(() => {}) // other members' shared values (D-134)
   await import('../sync/profile').then((m) => m.forgetSelf()).catch(() => {}) // before the session goes
   await import('../notify/fcm').then((m) => m.forgetPushToken()).catch(() => {}) // lane E: delete this phone's push token BEFORE the session goes (ML-07)
+  await import('../family/bgPlace').then((m) => m.bgPlaceStash()).catch(() => {}) // D-151: queue this phone's held place key for revoking (local, fast) BEFORE the `place.` wipe below, so a slow dispatch can never lose it
+  await Promise.race([import('../family/bgPlace').then((m) => m.bgPlaceClear()), new Promise((r) => setTimeout(r, 4000))]).catch(() => {}) // D-150: revoke this phone's place key and disarm the background runner BEFORE the session goes (never holds sign-out more than 4 s; the queue above, the SIGNED_OUT watcher and the server's 30-day idle expiry back it up)
   await import('../../db').then(async ({ db }) => db.kv.bulkDelete((await db.kv.toCollection().primaryKeys()).filter((k) => String(k).startsWith('place.')))).catch(() => {}) // place sharing and its notice are per person (D-138)
   await supabase?.auth.signOut({ scope: 'local' })
   await import('../../db').then((m) => m.clearFeed()).catch(() => {}) // again: a pull that started before the session went may have written rows back
