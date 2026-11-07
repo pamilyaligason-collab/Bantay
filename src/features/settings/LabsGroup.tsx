@@ -19,16 +19,18 @@ export function setFlag(k: keyof Flags, on: boolean, reload: () => void = () => 
   reload()
 }
 
-/** Per-phone switches that live in their own localStorage keys (family/flags.ts, weather/flags.ts): '1' is on, no key is off. */
-const KEYED: [key: string, title: string, sub: string][] = [
-  ['bantay.flag.places', 'Family map (place sharing)', 'Your place on the family map'],
-  ['bantay.flag.feed', 'Family feed', 'What each person shares, in Family'],
-  ['bantay.flag.wx.blend', 'Weather blend (beta)', 'Blended forecast, beta']
+/** Per-phone switches that live in their own localStorage keys (family/flags.ts, weather/flags.ts). Off by default: '1' is on, no key is off. On by default (the family map, D-143): '0' is off, no key is on. */
+const KEYED: [key: string, title: string, sub: string, defOn: boolean][] = [
+  ['bantay.flag.places', 'Family map (place sharing)', 'Your place on the family map', true],
+  ['bantay.flag.feed', 'Family feed', 'What each person shares, in Family', false],
+  ['bantay.flag.wx.blend', 'Weather blend (beta)', 'Blended forecast, beta', false]
 ]
-const keyedOn = (k: string) => { try { return localStorage.getItem(k) === '1' } catch { return false } }
-/** Writes '1' or removes the key, then reloads (these flags are read at use, but screens already mounted keep the old answer). */
+const defOnOf = (k: string) => KEYED.find(([key]) => key === k)?.[3] ?? false
+const keyedOn = (k: string) => { const d = defOnOf(k); try { const v = localStorage.getItem(k); return d ? v !== '0' : v === '1' } catch { return d } }
+/** Stores the change from the default ('1' on, '0' off) or removes the key when it matches the default, then reloads (screens already mounted keep the old answer). */
 export function setKeyedFlag(k: string, on: boolean, reload: () => void = () => location.reload()) {
-  try { if (on) localStorage.setItem(k, '1'); else localStorage.removeItem(k) } catch { return }
+  const d = defOnOf(k)
+  try { if (on === d) localStorage.removeItem(k); else localStorage.setItem(k, on ? '1' : '0') } catch { return }
   reload()
 }
 

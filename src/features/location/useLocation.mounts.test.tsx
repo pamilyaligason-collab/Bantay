@@ -8,6 +8,9 @@ vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.nativ
 vi.mock('@capacitor/geolocation', () => ({ Geolocation: { checkPermissions: () => Promise.resolve(h.perm), getCurrentPosition: () => Promise.reject(new Error('plugin off')) } }))
 import { resetRefresh, resolveLocation, useLocation } from './useLocation'
 
+// these cases are about the map being off (low-accuracy plain reads, the four feed switches): the family map is on by default since D-143
+beforeEach(() => { localStorage.setItem('bantay.flag.places', '0') })
+
 const fix = { coords: { latitude: 6.11, longitude: 125.17, accuracy: 900 }, timestamp: Date.now() }
 const stub = (geo: (ok: (p: unknown) => void, no: (e: unknown) => void, o: { enableHighAccuracy: boolean }) => void, perm = 'granted') => {
   const g = vi.fn(geo)

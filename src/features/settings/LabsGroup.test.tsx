@@ -37,8 +37,20 @@ describe('Labs switches', () => {
     expect(r).not.toHaveBeenCalled()
     vi.restoreAllMocks()
   })
+  it('Family map (place sharing): on by default (D-143), off writes 0 and reloads, on again removes the key', () => {
+    localStorage.removeItem('bantay.flag.places')
+    render(<LabsGroup reload={reload} />)
+    const name = 'Family map (place sharing)'
+    expect(screen.getByRole('switch', { name }).getAttribute('aria-checked')).toBe('true')
+    fireEvent.click(screen.getByRole('switch', { name }))
+    expect(localStorage.getItem('bantay.flag.places')).toBe('0')
+    expect(reload).toHaveBeenCalledTimes(1)
+    cleanup(); render(<LabsGroup reload={reload} />)
+    expect(screen.getByRole('switch', { name }).getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(screen.getByRole('switch', { name }))
+    expect(localStorage.getItem('bantay.flag.places')).toBeNull()
+  })
   it.each([
-    ['Family map (place sharing)', 'bantay.flag.places'],
     ['Family feed', 'bantay.flag.feed'],
     ['Weather blend (beta)', 'bantay.flag.wx.blend']
   ])('%s: off by default, on writes 1 and reloads, off removes the key and reloads', (name, key) => {

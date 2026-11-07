@@ -1,8 +1,8 @@
 // Shared helpers for the historical-records import. No file contents are read here.
 import { classifyPath } from './folders.mjs'
 
-// D-68: only Picasa leftovers are skipped by folder now. Every other folder gets a lane (folders.mjs).
-export const SKIP_RE = /\.picasaoriginals/i
+// D-68: Picasa leftovers and our own write-back folder (From Bantay) are skipped by folder now. Every other folder gets a lane (folders.mjs).
+export const SKIP_RE = /\.picasaoriginals|^from bantay$/i
 export const CSV_HEADER = 'person,date,type,file_id,mime,path'
 
 export const isSkipped = (segments) => segments.some((s) => SKIP_RE.test(s.trim()))
@@ -29,8 +29,9 @@ export function dateFrom(text) {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : ''
 }
 
-const q = (v) => (/[",\n]/.test(v) ? `"${v.replaceAll('"', '""')}"` : v)
-export const csvRow = (r) => [r.person, r.date, r.type, r.file_id, r.mime, r.path].map((v) => q(String(v ?? ''))).join(',')
+const q = (v) => (/[",\r\n]/.test(v) ? `"${v.replaceAll('"', '""')}"` : v)
+export const csvLine = (vals) => vals.map((v) => q(String(v ?? ''))).join(',')
+export const csvRow = (r) => csvLine([r.person, r.date, r.type, r.file_id, r.mime, r.path])
 
 /** list(folderId) returns child items {id,name,mime}. Returns inventory rows (files only). */
 /** people: names of the top-level person folders (from the git-ignored import/people.json). */

@@ -29,6 +29,7 @@ async function open(page: Page, hash: string, o: { owner: boolean; flag?: boolea
     localStorage.setItem('sb-bantay-test-auth-token', JSON.stringify({ access_token: token, refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, user: u }))
     localStorage.setItem('bantay.family', JSON.stringify(fam))
     if (flag) localStorage.setItem('bantay.flag.feed', '1')
+    localStorage.setItem('bantay.flag.places', '0') // the place switch has its own specs; these check the four feed switches
   }, [jwt(), user, FAMILY, o.flag !== false] as const)
   await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ status: 200, headers: { ...cors, 'content-type': 'application/json' }, body: '{}' }))
   await page.route(`${API}/**`, async (route) => {

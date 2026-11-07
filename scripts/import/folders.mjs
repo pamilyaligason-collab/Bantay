@@ -24,6 +24,7 @@ export function classifyPath(segments) {
   const segs = segments.map((s) => String(s).trim())
   if (segs.some((s) => PICASA.test(s))) return { lane: null, skip: 'picasa' }
   const folders = segs.slice(0, -1)
+  if (segs.some((s) => /^from bantay$/i.test(s))) return { lane: null, skip: 'writeback' }
   return { lane: laneOf(folders) ?? laneOf(segs.slice(-1)) ?? 'health', skip: null }
 }
 

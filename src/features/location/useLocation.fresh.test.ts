@@ -11,6 +11,9 @@ import { placeLineOf, placeNameOf } from '../today/placeName'
 import { placeName } from '../safety/warningsLogic'
 import { quietQuakeWords } from '../safety/alerts'
 
+// these cases are about the map being off (low-accuracy plain reads, the four feed switches): the family map is on by default since D-143
+beforeEach(() => { localStorage.setItem('bantay.flag.places', '0') })
+
 const stub = (coords: Record<string, number>, timestamp?: number, perm = 'granted') => {
   const g = vi.fn((ok: (p: unknown) => void) => ok({ coords: { latitude: 6.11, longitude: 125.17, ...coords }, timestamp }))
   vi.stubGlobal('navigator', { geolocation: { getCurrentPosition: g }, permissions: { query: () => Promise.resolve({ state: perm }) } })

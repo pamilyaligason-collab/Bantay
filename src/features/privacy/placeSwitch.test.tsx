@@ -57,7 +57,7 @@ describe('place switch in Share with the family (D-138)', () => {
     expect(await placeSharingOn('me')).toBe(true)
   })
   it('renders nothing with both flags off', () => {
-    localStorage.removeItem('bantay.flag.places')
+    localStorage.setItem('bantay.flag.places', '0')
     render(<FeedSharesCard selfId="me" />)
     expect(screen.queryByTestId('feed-shares')).toBeNull()
   })

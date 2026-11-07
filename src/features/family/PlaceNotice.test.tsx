@@ -81,7 +81,7 @@ describe('first-open place notice (D-138)', () => {
     expect(await placeSharingOn('me')).toBe(true)
   })
   it('never shows with the flag off, with no person, while viewing as someone, or when the server says it is already off', async () => {
-    localStorage.removeItem('bantay.flag.places')
+    localStorage.setItem('bantay.flag.places', '0')
     const a = render(<PlaceNotice />); await new Promise((r) => setTimeout(r, 30)); expect(shown()).toBeNull(); a.unmount()
     localStorage.setItem('bantay.flag.places', '1'); h.self = null
     const b = render(<PlaceNotice />); await new Promise((r) => setTimeout(r, 30)); expect(shown()).toBeNull(); b.unmount()

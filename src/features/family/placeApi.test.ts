@@ -43,7 +43,7 @@ describe('putLivePlace (D-138)', () => {
     expect(h.rpc).not.toHaveBeenCalled()
   })
   it('is skipped while the places flag is off', async () => {
-    localStorage.removeItem('bantay.flag.places')
+    localStorage.setItem('bantay.flag.places', '0')
     expect(await putLivePlace(fix, null)).toBe('skipped')
     expect(h.rpc).not.toHaveBeenCalled()
   })

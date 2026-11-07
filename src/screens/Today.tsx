@@ -67,11 +67,11 @@ export default function Today() {
       <LargeTitle testId="today-head" kicker={dateKicker(new Date())} title={greeting(new Date(), viewing.acting ? viewing.name : name)} actions={<HeadActions />} />
       <AlarmFixedToast />
       <IncomingSos placement="today" />
-      <PlaceNotice />
       <WeatherCard hero expanded review={0} noJack storm={!!warn.storm} />
       <AlertsOffCard />
       <WarningCard notify={notify} />
       <AlertCardToday />
+      <PlaceNotice />
       <MyDay notify={notify} />
       <BatteryCard />
       <TodayNews />
