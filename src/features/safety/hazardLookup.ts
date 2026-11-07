@@ -6,6 +6,33 @@ import type { LatLon } from '../location/geo'
 export interface Bytes { get(offset: number, length: number): Promise<Uint8Array> }
 export const blobBytes = (b: Blob): Bytes => ({ get: async (o, l) => new Uint8Array(await b.slice(o, o + l).arrayBuffer()) })
 
+const SMALL = 2_000_000 // header, metadata, directories and z12 tiles are far below this; only these are kept for the session
+const sources = new Map<string, Bytes>()
+/** A pack file read straight from its public URL with HTTP Range requests (HAZ-ONLINE, D-147): the 30 MB file is never downloaded whole.
+ *  A server that ignores Range (answers 200) is refused, so a misconfigured host can never cost the whole file. Small ranges are kept per URL for the session; a failed read is never kept. */
+export function urlBytes(url: string, f: typeof fetch = fetch): Bytes {
+  const mine = sources.get(url)
+  if (mine && f === fetch) return mine
+  const memo = new Map<string, Promise<Uint8Array>>()
+  const b: Bytes = {
+    get(o, l) {
+      const k = `${o}:${l}`, hit = memo.get(k)
+      if (hit) return hit
+      const p = (async () => {
+        const r = await f(url, { headers: { Range: `bytes=${o}-${o + l - 1}` }, signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(15_000) : undefined })
+        if (r.status !== 206) { void r.body?.cancel().catch(() => undefined); throw new Error(`range not honoured (${r.status})`) }
+        const buf = new Uint8Array(await r.arrayBuffer())
+        if (buf.byteLength !== l) throw new Error('short range')
+        return buf
+      })()
+      if (l <= SMALL) { memo.set(k, p); p.catch(() => memo.delete(k)) }
+      return p
+    }
+  }
+  if (f === fetch) sources.set(url, b)
+  return b
+}
+
 export interface Header {
   rootOffset: number; rootLength: number; metaOffset: number; metaLength: number; leafOffset: number; leafLength: number; dataOffset: number; dataLength: number
   internalCompression: number; tileCompression: number; minZoom: number; maxZoom: number; bounds: [number, number, number, number]
@@ -85,8 +112,9 @@ export async function getTile(src: Bytes, h: Header, z: number, x: number, y: nu
 /** Layers the file's own metadata lists with a "level" field (tippecanoe writes vector_layers). Anything not listed is not trusted: a layer-name mismatch must not read as "no hazard". */
 export async function metaLayers(src: Bytes, h: Header): Promise<Set<string>> {
   if (!h.metaLength) return new Set()
+  const raw = await src.get(h.metaOffset, h.metaLength) // a read failure rejects: it must never look like "the file lists no layers"
   try {
-    const m = JSON.parse(new TextDecoder().decode(await inflate(await src.get(h.metaOffset, h.metaLength), h.internalCompression))) as { vector_layers?: { id?: unknown; fields?: Record<string, unknown> }[] }
+    const m = JSON.parse(new TextDecoder().decode(await inflate(raw, h.internalCompression))) as { vector_layers?: { id?: unknown; fields?: Record<string, unknown> }[] }
     return new Set((m.vector_layers ?? []).filter((l) => typeof l.id === 'string' && l.fields && Object.hasOwn(l.fields, 'level')).map((l) => l.id as string))
   } catch { return new Set() }
 }
@@ -209,3 +237,8 @@ export async function hazardsAt(p: LatLon, src: Bytes, bounds?: LayerBounds): Pr
   }
   return out
 }
+
+/** Levels at a point read online from the pack's public URL. urlBytes keeps the header, directories and tile ranges for the session, so a nearby point costs no new request.
+ *  `key` names the file version (its checksum) and is kept for callers. Throws when the read fails: the caller treats that as "not checked", never as "no hazard". */
+export const hazardsOnline = (p: LatLon, url: string, _key: string, bounds?: LayerBounds, f: typeof fetch = fetch): Promise<HazardLevels> => hazardsAt(p, urlBytes(url, f), bounds)
+export const resetOnlineCache = () => sources.clear()

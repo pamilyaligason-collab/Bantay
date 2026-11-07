@@ -6,10 +6,10 @@ import PacksSettings from './PacksSettings'
 afterEach(cleanup)
 
 describe('PacksSettings credits', () => {
-  it('credits the hazard data, and does not credit area outlines while public/geo/units.json is not shipped', () => {
+  it('credits the hazard data and the area outlines (public/geo/units.json ships)', () => {
     render(<PacksSettings />)
     const t = screen.getByTestId('packs-settings').textContent ?? ''
     expect(t).toContain('UP NOAH Center (Project NOAH), ODbL 1.0')
-    expect(t).not.toMatch(/outlines|geoBoundaries/i)
+    expect(t).toContain('Area outlines: geoBoundaries, CC BY 3.0 IGO')
   })
 })

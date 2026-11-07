@@ -25,6 +25,9 @@ export const packBase = (url = import.meta.env.VITE_SUPABASE_URL as string | und
 export const strictWifi = (conn: Conn | null | undefined = (typeof navigator === 'undefined' ? null : (navigator as unknown as { connection?: Conn }).connection)) => (conn?.type === 'wifi' || conn?.type === 'ethernet') && conn.saveData !== true
 export const onWifi = (conn: Conn | null | undefined = (typeof navigator === 'undefined' ? null : (navigator as unknown as { connection?: Conn }).connection)) => !pauseOnData(conn, true)
 
+/** The anonymous public URL of a file the index lists (a hazard file's `path`), or null when no storage URL is configured. */
+export const packFileUrl = (path: string, base = packBase()) => (base ? `${base}${path}` : null)
+
 export async function sha256Hex(buf: ArrayBuffer): Promise<string> {
   const d = new Uint8Array(await crypto.subtle.digest('SHA-256', buf))
   return [...d].map((b) => b.toString(16).padStart(2, '0')).join('')
@@ -171,3 +174,6 @@ export const clearLoaded = () => loaded.clear()
 
 /** The server's pack list (5-minute cache), or null offline. Used to offer the hazard download with its size. */
 export const getIndex = (f: typeof fetch = fetch, base = packBase()) => (base ? loadIndex(f, base, Date.now()) : Promise.resolve(null))
+
+/** Display names where the pack's PSGC unit name misleads: the NCR pack is filed under the City of Manila code but covers all of Metro Manila. */
+export const PACK_NAMES: Record<string, string> = { '0701200000': 'Bohol', '1206300000': 'South Cotabato and General Santos', '1380600000': 'Metro Manila' }

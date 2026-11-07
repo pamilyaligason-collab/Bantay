@@ -9,7 +9,7 @@ import type { Unit } from './unitAt'
 const h = vi.hoisted(() => ({ units: [] as Unit[], gate: null as Promise<Unit[]> | null }))
 vi.mock('./flags', () => ({ FLAGS: { get localPacks() { return true } } }))
 vi.mock('./unitAt', async (orig) => ({ ...(await orig<typeof import('./unitAt')>()), loadUnits: () => h.gate ?? Promise.resolve(h.units) }))
-vi.mock('./packs', () => ({ loadPack: async () => null, syncPacks: async () => ({ fetched: [], bad: [], offline: true }), cleanup: async () => [], getIndex: async () => null, downloadHazards: async () => 'offline' }))
+vi.mock('./packs', () => ({ loadPack: async () => null, syncPacks: async () => ({ fetched: [], bad: [], offline: true }), cleanup: async () => [], getIndex: async () => null, downloadHazards: async () => 'offline', packFileUrl: () => null }))
 import { tracker } from './usePacks'
 import { useHazards } from './useHazards'
 

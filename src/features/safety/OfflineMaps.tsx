@@ -6,14 +6,12 @@ import { Switch } from '../world/Switch'
 import { OFFLINE_PREFS_KEY } from './autoMaps'
 import { basemapEntries, downloadBasemap, removeBasemap, type StoredBasemap, useStoredBasemaps } from './basemap'
 import { FLAGS } from './flags'
-import { getIndex, type PackIndex, syncPacks } from './packs'
+import { getIndex, type PackIndex, PACK_NAMES as NAMES, syncPacks } from './packs'
 import { putKv, useKv } from './store'
 import './offline.css'
 
 const KEY = OFFLINE_PREFS_KEY
 const DEFAULT = { wifiOnly: true, autoDownload: true }
-/** The two basemap zones (D-131). The index names the packs; these are the names members know. */
-const NAMES: Record<string, string> = { '0701200000': 'Bohol', '1206300000': 'South Cotabato and General Santos' }
 
 export const mb = (n: number) => (n <= 0 ? 'None' : n < 1_000_000 ? `${Math.max(1, Math.round(n / 1000))} KB` : n < 1_000_000_000 ? `${(n / 1_000_000).toFixed(1)} MB` : `${(n / 1_000_000_000).toFixed(1)} GB`)
 const when = (iso: string) => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-PH', { day: 'numeric', month: 'short' }) }

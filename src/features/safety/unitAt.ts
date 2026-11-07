@@ -14,6 +14,12 @@ const inRing = (x: number, y: number, ring: number[][]): boolean => {
   }
   return inside
 }
+const holds = (u: Unit, p: LatLon): boolean => {
+  const [w, s, e, n] = u.bbox
+  if (p.lon < w || p.lon > e || p.lat < s || p.lat > n) return false
+  // even-odd over all rings of a polygon: a hole (a second ring inside the first) takes the point out
+  return u.polys.some((poly) => poly.reduce((c, ring) => c + (inRing(p.lon, p.lat, ring) ? 1 : 0), 0) % 2 === 1)
+}
 const area = (u: Unit) => (u.bbox[2] - u.bbox[0]) * (u.bbox[3] - u.bbox[1])
 
 /** The unit holding the point, or null (at sea, abroad, no data). Bounding box first; the smallest box wins, so a city beats the province around it. */
@@ -21,11 +27,8 @@ export function unitAt(p: LatLon, units: readonly Unit[]): string | null {
   if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) return null
   let best: Unit | null = null
   for (const u of units) {
-    const [w, s, e, n] = u.bbox
-    if (p.lon < w || p.lon > e || p.lat < s || p.lat > n) continue
     if (best && area(u) >= area(best)) continue
-    // even-odd over all rings of a polygon: a hole (a second ring inside the first) takes the point out
-    if (u.polys.some((poly) => poly.reduce((c, ring) => c + (inRing(p.lon, p.lat, ring) ? 1 : 0), 0) % 2 === 1)) best = u
+    if (holds(u, p)) best = u
   }
   return best?.code ?? null
 }
@@ -45,6 +48,10 @@ export class UnitTracker {
     return this.cur
   }
 }
+
+/** How many outlines hold the point. The outlines are simplified (~440 m), so neighbours overlap in thin border strips; a point two units both claim is not proven
+ *  (each hazard file is clipped at its own border, so reading the wrong one would give a false 0, ML-05). */
+export const claims = (p: LatLon, units: readonly Unit[]): number => (Number.isFinite(p.lat) && Number.isFinite(p.lon) ? units.filter((u) => holds(u, p)).length : 0)
 
 let cache: Promise<Unit[]> | null = null
 /** shortcut: units.json is fetched once per load; a failed fetch is retried on the next load. */

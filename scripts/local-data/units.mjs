@@ -32,6 +32,13 @@ export function simplify(ring, tol) {
   return out.length >= 4 ? out : ring.slice(0, 4)
 }
 
+/** geoBoundaries names that PSGC writes differently. The 4 NCR district shapes are one unit: the NCR hazards pack is owned by the City of Manila (the
+ *  coverage table has no region-level unit, and region_packs.province_code must be a coverage code), so the union of the districts is filed under it. */
+export const ALIAS = {
+  'ncr, city of manila, first district': 'City of Manila', 'ncr, second district': 'City of Manila', 'ncr, third district': 'City of Manila', 'ncr, fourth district': 'City of Manila',
+  'compostela valley': 'Davao de Oro'
+}
+
 /** geojson: FeatureCollection with shapeName; units: [{code, name}] pack units. Returns the units file and the names that did not match. */
 export function buildUnits(geojson, units, sha256, tol = 0.004) {
   // exact name first; the folded name only when it is unique ("City of Cebu" and "Cebu" fold together, so they are matched exactly or not at all)
@@ -41,7 +48,7 @@ export function buildUnits(geojson, units, sha256, tol = 0.004) {
   const byName = { get: (n) => exact.get(String(n).trim().toLowerCase()) ?? (folds.get(plain(n))?.length === 1 ? folds.get(plain(n))[0] : undefined) }
   const out = new Map(), noUnit = []
   for (const f of geojson.features) {
-    const u = byName.get(f.properties.shapeName ?? '')
+    const u = byName.get(ALIAS[String(f.properties.shapeName ?? '').trim().toLowerCase()] ?? f.properties.shapeName ?? '')
     if (!u) { noUnit.push(f.properties.shapeName ?? '(no name)'); continue }
     const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates
     const cur = out.get(u.code) ?? { code: u.code, name: u.name, bbox: [180, 90, -180, -90], polys: [] }

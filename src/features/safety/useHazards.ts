@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
 import { FLAGS } from './flags'
 import type { HazardLevels } from './hazardLookup' // type only: the reader itself is imported lazily below
-import { downloadHazards, getIndex, syncPacks } from './packs'
+import { downloadHazards, getIndex, packFileUrl, syncPacks } from './packs'
 import { useUnitInfo } from './usePacks'
 
 interface PlaceLike { source: string; zone: string; weather: { lat: number; lon: number } }
@@ -14,12 +14,16 @@ export interface HazardState {
   size: number | null
   busy: boolean
   download: () => void
+  /** True when 'ready' levels were read online from the public file (HAZ-ONLINE), not from a file on this phone. */
+  online?: boolean
+  /** Why there is no reading when 'missing': the area is not saved on this phone (offline or not downloaded yet), or NOAH has no pack for it. */
+  gap?: 'offline' | 'nopack' | 'unread' | null
 }
 
 /** Hazard levels for the place from the unit's NOAH file. The file downloads by itself on Wi-Fi, or when the member taps. Never reads without a file on the phone. */
 export function useHazards(place: PlaceLike | null): HazardState {
   const { unit, proven } = useUnitInfo(place)
-  const [s, setS] = useState<{ status: HazardState['status']; levels: HazardLevels | null; size: number | null; at?: string }>({ status: 'off', levels: null, size: null })
+  const [s, setS] = useState<{ status: HazardState['status']; levels: HazardLevels | null; size: number | null; at?: string; online?: boolean; gap?: HazardState['gap'] }>({ status: 'off', levels: null, size: null })
   const [busy, setBusy] = useState(false)
   const [tick, setTick] = useState(0)
   const lat = place?.weather.lat, lon = place?.weather.lon
@@ -42,11 +46,26 @@ export function useHazards(place: PlaceLike | null): HazardState {
       if (live) setS((o) => ({ ...o, status: 'missing', levels: null }))
       const idx = await getIndex()
       const size = idx?.packs.find((p) => p.code === unit)?.hazards?.size ?? null
-      if (live) setS({ status: 'missing', levels: null, size })
-      if (!tick) { // Wi-Fi only; mobile data waits for the tap
+      const hz = idx?.packs.find((p) => p.code === unit)?.hazards
+      const gap = idx && !hz ? 'nopack' as const : 'offline' as const // only a loaded index can say NOAH has nothing here; no index = we cannot tell, so say "not saved"
+      if (live) setS({ status: 'missing', levels: null, size, gap })
+      // Online fallback: read just this point from the public file with Range requests. Order: stored file > online > empty. Failure leaves the empty state.
+      const url = hz ? packFileUrl(hz.path) : null
+      const isOnline = typeof navigator === 'undefined' || navigator.onLine !== false
+      // The Wi-Fi download starts first and the online read runs beside it, so a slow host never delays the download.
+      const wifi = !tick ? (async () => { // Wi-Fi only; mobile data waits for the tap
         await syncPacks(unit)
         if ((await downloadHazards(unit)) === 'done' && live) setTick(1)
+      })().catch(() => undefined) : Promise.resolve() // a failed sync never undoes a good online reading
+      if (hz && url && isOnline) {
+        try {
+          const { hazardsOnline } = await import('./hazardLookup')
+          const levels = await hazardsOnline({ lat, lon }, url, hz.checksum, hz.bounds && !Array.isArray(hz.bounds) ? hz.bounds : undefined)
+          // A failed read throws (metadata, range, status). All null after a good read = the point is outside every layer's bounds: 'Not checked', as with a stored file.
+          if (live) setS({ status: 'ready', levels, size, at: where, online: true })
+        } catch { if (live) setS({ status: 'missing', levels: null, size, gap: 'unread' }) }
       }
+      await wifi
     })().catch(() => { if (live) setS({ status: 'missing', levels: null, size: null }) })
     return () => { live = false }
   }, [unit, proven, lat, lon, tick]) // eslint-disable-line react-hooks/exhaustive-deps

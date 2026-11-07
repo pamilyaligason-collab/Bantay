@@ -63,6 +63,33 @@ describe('HazardsPage with the hazard file', () => {
     expect(screen.getByTestId('noah-missing')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /Download hazard map/ })).toBeNull()
   })
+  it('offline with no file: says the area is not saved on this phone yet, keeps the download and the source buttons', async () => {
+    hz = { ...hz, status: 'missing', size: 33_100_000, gap: 'offline' }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={dampas} />)
+    expect(screen.getByTestId('noah-missing').textContent).toContain('This area is not saved on this phone yet')
+    expect(screen.getByRole('button', { name: 'Download hazard map (33 MB)' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Open in NOAH/ })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Open HazardHunterPH/ })).toBeTruthy()
+  })
+  it('area not covered by NOAH: says NOAH has no pack here yet, no download button, NOAH and HazardHunterPH buttons stay', async () => {
+    hz = { ...hz, status: 'missing', size: null, gap: 'nopack' }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={away} />)
+    expect(screen.getByTestId('noah-nopack').textContent).toContain('NOAH has no pack here yet')
+    expect(screen.queryByTestId('noah-missing')).toBeNull()
+    expect(screen.queryByRole('button', { name: /Download hazard map/ })).toBeNull()
+    expect(screen.getByRole('link', { name: /Open in NOAH/ })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Open HazardHunterPH/ })).toBeTruthy()
+  })
+  it('an online reading shows the level, says it was read online, and keeps the credit', async () => {
+    hz = { ...hz, status: 'ready', online: true, levels: { flood: 3, landslide: 0, surge: 0 } }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={dampas} />)
+    expect(screen.getByTestId('layer-caption').textContent).toContain('Flood level from NOAH: High')
+    expect(screen.getByTestId('noah-online').textContent).toContain('Read online just now')
+    expect(screen.getByTestId('noah-credit')).toBeTruthy()
+  })
 })
 
 describe('HazardsPage rings and the map layer (flag localPacks)', () => {
