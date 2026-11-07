@@ -9,8 +9,10 @@ const F = vi.hoisted(() => ({ localPacks: false, offlineMaps: false }))
 vi.mock('./flags', () => ({ FLAGS: F }))
 vi.mock('./store', () => ({ useKv: (_k: string, fb: unknown) => fb }))
 let hz: HazardState = { status: 'off', levels: null, size: null, busy: false, download: () => {} }
+const U = vi.hoisted(() => ({ unit: null as string | null }))
+vi.mock('./usePacks', async (orig) => { const m = await orig<typeof import('./usePacks')>(); return { ...m, useUnit: (p: never) => { const u = m.useUnit(p); return U.unit ?? u } } })
 vi.mock('./useHazards', () => ({ useHazards: () => hz }))
-afterEach(() => { cleanup(); hz = { status: 'off', levels: null, size: null, busy: false, download: () => {} } })
+afterEach(() => { cleanup(); U.unit = null; hz = { status: 'off', levels: null, size: null, busy: false, download: () => {} } })
 
 const dampas = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone' } as never
 const away = { weather: { lat: 14.5, lon: 121 }, zone: 'dampas', source: 'gps' } as never
@@ -141,5 +143,35 @@ describe('HazardsPage rings and the map layer (flag localPacks)', () => {
     const { default: Page } = await import('./HazardsPage')
     render(<Page place={dampas} />)
     expect(screen.getByTestId('layer-caption').textContent).toContain('Flood level from NOAH: High (about 10 m accuracy).')
+  })
+})
+
+describe('HazardsPage away from the home zones (NOAH reading, no home card)', () => {
+  afterEach(() => { F.localPacks = false })
+  it('with levels: This place card with the unit name and NOAH meta, three rings, status, no empty sentence; null stays not checked, never 0', async () => {
+    F.localPacks = true
+    U.unit = '1380600000'
+    hz = { ...hz, status: 'ready', online: true, levels: { flood: 1, landslide: null, surge: 0 } }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={away} />)
+    expect(screen.queryByText(/No hazard readings for/)).toBeNull()
+    const zone = screen.getByTestId('hazards-zone')
+    expect(zone.textContent).toContain('Metro Manila')
+    expect(zone.closest('section')?.textContent).toContain('NOAH')
+    expect(within(screen.getByTestId('hz-rings')).getAllByRole('img').map((i) => i.getAttribute('aria-label'))).toEqual(['Flood: Low', 'Landslide: not checked', "Storm surge: no mapped hazard in NOAH's maps (100-year scenario). Not a promise of safety."])
+    expect(['flood', 'landslide', 'surge'].map((id) => screen.getByTestId(`hz-ring-${id}`).getAttribute('data-state'))).toEqual(['filled', 'dashed', 'none'])
+    expect(zone.querySelector('.hz-status')!.textContent).toBe('Highest NOAH level among the layers checked: Low (flood).')
+    expect(screen.getByTestId('layer-caption').textContent).toContain('Flood level from NOAH: Low')
+    expect(screen.getByTestId('hazards-map')).toBeTruthy()
+    expect(screen.getByTestId('noah-online')).toBeTruthy()
+  })
+  it('no levels at all: only the empty sentence, no card, no rings', async () => {
+    F.localPacks = true
+    hz = { ...hz, status: 'ready', levels: { flood: null, landslide: null, surge: null } }
+    const { default: Page } = await import('./HazardsPage')
+    render(<Page place={away} />)
+    expect(screen.getByText(/No hazard readings for where you are yet/)).toBeTruthy()
+    expect(screen.queryByTestId('hazards-zone')).toBeNull()
+    expect(screen.queryByTestId('hz-rings')).toBeNull()
   })
 })

@@ -12,6 +12,7 @@ export const seed = async (page: Page, dbName: string, rows: Rows) => {
     const o = indexedDB.open(name as string)
     o.onupgradeneeded = () => o.transaction!.abort()
     o.onerror = (e) => { e.preventDefault(); res(false) }
+    o.onblocked = () => res(false) // a blocked open never answers: retry instead of hanging
     o.onsuccess = () => {
       const db = o.result
       const stores = Object.keys(data as Rows)

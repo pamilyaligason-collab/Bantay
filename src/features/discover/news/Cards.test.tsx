@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { NewsPic } from './Cards'
+import { LatestRow, LeadCard, NewsPic, StoryRow, Tag } from './Cards'
 import { IMAGE_HOSTS } from './hosts'
 import type { NewsRow } from './model'
 
@@ -33,4 +33,20 @@ describe('NewsPic', () => {
 
 describe('IMAGE_HOSTS', () => {
   it('lists the Commons thumbnail host and the news site images', () => { expect([...IMAGE_HOSTS]).toEqual(['thumb.wikimedia.org', 'news site images']) })
+})
+
+describe('Tag on the cards', () => {
+  const tagged = { ...row(null), title: 'Typhoon Rosal enters PAR', topic: 'prepping' } as NewsRow
+  it('shows the category on the lead, story and latest cards, with the source and time still there', () => {
+    const now = Date.parse('2026-10-28T10:20:00Z')
+    for (const el of [<LeadCard key="l" n={tagged} now={now} />, <StoryRow key="s" n={tagged} now={now} />, <LatestRow key="t" n={tagged} now={now} saved={false} />]) {
+      const c = render(el).container
+      expect(c.querySelector('.nw-tag')!.textContent).toBe('TYPHOON')
+      expect(c.querySelector('.nw-src')!.textContent).toContain('PNA')
+      cleanup()
+    }
+  })
+  it('no tag when nothing fits', () => {
+    expect(render(<Tag n={{ title: 'Plain headline' }} />).container.innerHTML).toBe('')
+  })
 })

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { forChip, layout } from './View'
-import { freshLine, hueOf, initialOf, latestFirst, topicOf, topStories, type NewsRow } from './model'
+import { capPerCategory, categoryTag, freshLine, hueOf, initialOf, isStale, latestFirst, topicOf, topStories, type NewsRow } from './model'
 import { watchPlan } from '../today/watchPlan'
 
 const r = (id: string, min: number, topic?: string | null): NewsRow => ({ id, title: id, url: 'https://news.test/' + id, source: 'PNA', kind: 'article', published_at: new Date(Date.UTC(2026, 9, 28, 12, 0) - min * 60_000).toISOString(), topic })
@@ -107,5 +107,27 @@ describe('layout: a story shows once', () => {
   it('two rows: lead and one story, no Latest section', () => {
     const l = layout([r('a', 5), r('b', 9)], 'top')
     expect(l.lead!.id).toBe('a'); expect(ids(l.stories)).toEqual(['b']); expect(l.latest).toEqual([])
+  })
+})
+
+describe('category tag, per-category cap, stale note (NEWS-PH)', () => {
+  const t = (id: string, title: string, topic?: string): NewsRow => ({ ...r(id, 0, topic), title })
+  it('tags from the headline and topic', () => {
+    expect(categoryTag(t('a', 'Typhoon Rosal enters PAR', 'prepping'))).toBe('TYPHOON')
+    expect(categoryTag(t('b', 'Oil prices jump as Iran tensions rise'))).toBe('OIL AND PRICES')
+    expect(categoryTag(t('c', 'Clinic opens', 'health'))).toBe('HEALTH')
+    expect(categoryTag(t('d', 'Plain headline'))).toBeNull()
+  })
+  it('keeps at most 2 per category in the given order; untagged rows are never counted', () => {
+    const rows = [t('a', 'Typhoon one'), t('b', 'Typhoon two'), t('c', 'Typhoon three'), t('d', 'Plain one'), t('e', 'Plain two'), t('f', 'Plain three'), t('g', 'Clinic', 'health')]
+    expect(ids(capPerCategory(rows, 2))).toEqual(['a', 'b', 'd', 'e', 'f', 'g'])
+  })
+  it('stale means the newest row is over 36 h old; exactly 36 h is fresh; no rows is not stale', () => {
+    const now = Date.UTC(2026, 9, 28, 12, 0)
+    expect(isStale([r('a', 36 * 60 + 1), r('b', 50 * 60)], now)).toBe(true)
+    expect(isStale([r('a', 36 * 60)], now)).toBe(false)
+    expect(isStale([r('a', 10), r('b', 90 * 60)], now)).toBe(false)
+    expect(isStale([], now)).toBe(false)
+    expect(isStale([{ ...r('x', 0), published_at: 'nope' }], now)).toBe(true)
   })
 })

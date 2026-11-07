@@ -2,6 +2,7 @@ import { kindMarker } from '../world/KindMark'
 import { useState } from 'react'
 import { type HazardState, useHazards } from './useHazards'
 import { useUnit } from './usePacks'
+import { PACK_NAMES } from './packs'
 import places from '../../data/safety/places.json'
 import { HOME_ZONES } from '../location/geo'
 import { GroupedList, Row, Section, Segmented, type Tint } from '../look'
@@ -11,7 +12,7 @@ import { coversHere } from './dial'
 import { type Entry, OVERRIDES_KEY, type Overrides } from './entries'
 import { hazardLabel, hazardsFor, hazardStatus, type HazardCard, type Tone } from './hazardCards'
 import { FLAGS } from './flags'
-import { hazardOverlay, LAYERS, layerState, NOAH_URL, noneRingText, readDate, ringsFor, useHazardBlob, type LayerId, type RingData } from './hazardsLayers'
+import { hazardOverlay, LAYERS, layerState, levelsStatus, NOAH_URL, noneRingText, pickHazardSource, readDate, ringsFor, useHazardBlob, useHazardUrl, type LayerId, type RingData } from './hazardsLayers'
 import LazyMap from './LazyMap'
 import type { Place } from './SafetyPages'
 import { useKv } from './store'
@@ -39,11 +40,11 @@ const cardRow = (c: HazardCard) => (
 )
 
 /** One ring: filled to the level, empty when NOAH maps nothing, dashed when there is no reading on this phone. The text is inside the ring and in its name (ML-40). */
-function HzRing({ r }: { r: RingData }) {
+function HzRing({ r, away }: { r: RingData; away?: boolean }) {
   const len = 2 * Math.PI * 26
   return (
     <div className="hz-ring" data-testid={`hz-ring-${r.id}`} data-state={r.state} data-level={r.level}>
-      <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label={r.state === 'none' ? noneRingText(r.label) : `${r.label}: ${r.state === 'dashed' ? 'from HazardHunterPH' : r.word}`}>
+      <svg width="64" height="64" viewBox="0 0 64 64" role="img" aria-label={r.state === 'none' ? noneRingText(r.label) : `${r.label}: ${r.state === 'dashed' ? (away ? 'not checked' : 'from HazardHunterPH') : r.word}`}>
         <circle className="hz-rg-track" cx="32" cy="32" r="26" fill="none" strokeWidth="7" />
         {r.state === 'filled' && <circle className="hz-rg-val" cx="32" cy="32" r="26" fill="none" strokeWidth="7" strokeLinecap="round" strokeDasharray={`${len * r.fill} ${len}`} transform="rotate(-90 32 32)" />}
         <text className="hz-rg-t" x="32" y="36" textAnchor="middle">{r.word}</text>
@@ -82,6 +83,9 @@ export default function HazardPage({ place }: { place: Place }) {
   // The NOAH layer over the map: only where a hazard file is on the phone and has a level for this place (null = not checked here).
   const unit = useUnit(place)
   const blob = useHazardBlob(place.weather.lat, place.weather.lon, layer, FLAGS.localPacks && hzs.status === 'ready' && hzs.levels?.[layer] != null, unit)
+  // Read online just now (no stored file): the same pmtiles straight from the public pack URL. The stored Blob wins when the phone has it.
+  const url = useHazardUrl(place.weather.lat, place.weather.lon, layer, FLAGS.localPacks && hzs.status === 'ready' && hzs.online === true && hzs.levels?.[layer] != null, unit)
+  const src = pickHazardSource(blob, url)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const v = coversHere(place) ? hazardsFor(place.zone) : null
   const zone = HOME_ZONES.find((z) => z.id === place.zone) ?? HOME_ZONES[0]
@@ -93,19 +97,43 @@ export default function HazardPage({ place }: { place: Place }) {
       </GroupedList>
     </Section>
   )
-  if (!v) return (
-    <div className="hz">
-      <p className="sf-empty" role="status">No hazard readings for {place.source === 'zone' ? 'this zone' : 'where you are'} yet. Check HazardHunterPH or NOAH for your street.</p>
-      {hzs.status !== 'off' && (
-        <>
-          <Segmented label="Hazard layer" value={layer} onChange={setLayer} options={LAYERS.map((l) => ({ id: l.id, label: l.label }))} />
-          <p className="hz-cap" data-testid="layer-caption"><span>{layerState(layer, null, hzs.levels).text}</span></p>
-          <HazardFile hzs={hzs} />
-        </>
-      )}
-      {sources}
-    </div>
+  const map = (
+    <LazyMap height={180} center={[place.weather.lat, place.weather.lon]} zoom={13} depKey={`hz|${place.weather.lat}|${place.weather.lon}|${src ? layer : '-'}|${blob ? blob.size : url ? 'u' : 0}`} label="Map of your place" testId="hazards-map"
+      setup={(L, m) => { if (src) hazardOverlay(L, src, layer).addTo(m); kindMarker(L, [place.weather.lat, place.weather.lon], 'you', false).addTo(m) }} />
   )
+  if (!v) {
+    const away = levelsStatus(hzs.levels)
+    const awayLs = layerState(layer, null, hzs.levels)
+    return (
+      <div className="hz">
+        {!away && <p className="sf-empty" role="status">No hazard readings for {place.source === 'zone' ? 'this zone' : 'where you are'} yet. Check HazardHunterPH or NOAH for your street.</p>}
+        {away && (
+          <Section title="This place" meta="NOAH">
+            <div className="card hz-zone" data-testid="hazards-zone">
+              <div className="hz-zone-top">
+                <span className="rw-lead rw-ic" data-tint="red"><Icon name="pin" size={24} /></span>
+                <div className="rw-txt"><b className="hz-name">{(unit && PACK_NAMES[unit]) ?? 'Where you are'}</b><span className="rw-sub">{place.source === 'zone' ? 'Picked zone' : 'Where you are now'}</span></div>
+              </div>
+              <p className="hz-status" data-tone={away.tone}>{away.text}.</p>
+              <div className="hz-rings" data-testid="hz-rings">{ringsFor(null, hzs.levels).filter((r) => r.id === 'flood' || r.id === 'landslide' || r.id === 'surge').map((r) => <HzRing key={r.id} r={r} away />)}</div>
+              <p className="hz-ringnote">Dashed rings are not checked for this place.</p>
+            </div>
+          </Section>
+        )}
+        {hzs.status !== 'off' && (
+          <>
+            <Segmented label="Hazard layer" value={layer} onChange={setLayer} options={LAYERS.map((l) => ({ id: l.id, label: l.label }))} />
+            {away && map}
+            {away && src && <p className="hz-legend" data-testid="hz-legend"><b>{awayLs.label} level</b><i data-level="1">Low</i><i data-level="2">Medium</i><i data-level="3">High</i></p>}
+            <p className="hz-cap" data-testid="layer-caption"><span>{awayLs.text}</span>{awayLs.reading !== null && <b className="rw-badge" data-tint={BADGE[awayLs.tone]}>{awayLs.reading}</b>}</p>
+            <HazardFile hzs={hzs} />
+          </>
+        )}
+        {sources}
+        {away && <p className="hz-foot">Hazard maps show where harm is possible. They do not predict when.</p>}
+      </div>
+    )
+  }
   const ls = layerState(layer, v, hzs.levels)
   const quake = v.cards.find((c) => c.id === 'quake')!
   const help = spotsFor(place.zone, overrides, places as Entry[]).find((s) => s.kind === 'health')
@@ -129,9 +157,8 @@ export default function HazardPage({ place }: { place: Place }) {
         </div>
       </Section>
       <Segmented label="Hazard layer" value={layer} onChange={setLayer} options={LAYERS.map((l) => ({ id: l.id, label: l.label }))} />
-      <LazyMap height={180} center={[place.weather.lat, place.weather.lon]} zoom={13} depKey={`hz|${place.weather.lat}|${place.weather.lon}|${blob ? layer : '-'}|${blob?.size ?? 0}`} label="Map of your place" testId="hazards-map"
-        setup={(L, m) => { if (blob) hazardOverlay(L, blob, layer).addTo(m); kindMarker(L, [place.weather.lat, place.weather.lon], 'you', false).addTo(m) }} />
-      {blob && <p className="hz-legend" data-testid="hz-legend"><b>{ls.label} level</b><i data-level="1">Low</i><i data-level="2">Medium</i><i data-level="3">High</i></p>}
+      {map}
+      {src && <p className="hz-legend" data-testid="hz-legend"><b>{ls.label} level</b><i data-level="1">Low</i><i data-level="2">Medium</i><i data-level="3">High</i></p>}
       <p className="hz-cap" data-testid="layer-caption"><span>{ls.text}</span>{ls.reading !== null && <b className="rw-badge" data-tint={BADGE[ls.tone]}>{ls.reading}</b>}</p>
       <HazardFile hzs={hzs} />
       <Section title="Ground and shaking">

@@ -7,6 +7,7 @@ import { useHealthPerson } from './useHealthPerson'
 import AddReadingSheet from './AddReadingSheet'
 import { MetricChart } from './MetricChart'
 import { LabDetail } from './LabDetail'
+import { STEP_GOAL } from '../today/myWeekLogic'
 import { entrySpec } from './readingPreview'
 import {
   ACTIVITY_CODES, ADVICE, ADVICE_FALLBACK, MORE_INFO, MOOD_WORD, activitySeries, hoursMinutes, inPeriod, isActivityCode,
@@ -112,7 +113,7 @@ export default function MetricScreen({ code }: { code: string }) {
             {shown.length === 0 ? (
               <p className="sub" style={{ margin: 0, padding: 16 }}>Nothing in the last {period === 'week' ? '7' : '30'} days. Newer readings will show here.</p>
             ) : (
-              <MetricChart pts={shown} days={period === 'week' ? 7 : 30} now={now} band={band} label={`${label} ${period === 'week' ? 'this week' : 'this month'}`} unit={unit} />
+              <MetricChart pts={shown} days={period === 'week' ? 7 : 30} now={now} band={band} label={`${label} ${period === 'week' ? 'this week' : 'this month'}`} unit={unit} goal={activity && code === 'steps' ? STEP_GOAL : null} />
             )}
           </div>}
           {!lab && <section aria-labelledby="hv-ma">

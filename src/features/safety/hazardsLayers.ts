@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import type { HazardView, Tone } from './hazardCards'
 import type { HazardLevels } from './hazardLookup'
+import { getIndex, packFileUrl } from './packs'
 
 const NOAH_WORD = ['Low', 'Medium', 'High'] as const
 
@@ -81,6 +82,34 @@ export function useHazardBlob(lat: number, lon: number, id: LayerId, on: boolean
   return blob
 }
 
+/** Where the overlay reads from: the stored file when the phone has it, else the public pack URL (Range requests, same host as the online reading). */
+export const pickHazardSource = (blob: Blob | null, url: string | null): Blob | string | null => blob ?? url
+
+/** The public pack URL for this unit's layer when the index lists a hazard file that covers the point. Null while off, no index, or no file listed. Same host as the online reading, so no new request target. */
+export function useHazardUrl(lat: number, lon: number, id: LayerId, on: boolean, unit: string | null): string | null {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!on || !unit) { setUrl(null); return }
+    let live = true
+    void getIndex().then((idx) => {
+      const hz = idx?.packs.find((p) => p.code === unit)?.hazards
+      if (live) setUrl(hz && covers(hz.bounds, id, lat, lon) ? packFileUrl(hz.path) : null)
+    }).catch(() => { if (live) setUrl(null) })
+    return () => { live = false }
+  }, [on, lat, lon, id, unit])
+  return url
+}
+
+/** The status line for a place away from the home zones, from NOAH levels only (null = not checked, never 0). Null when there is no reading at all. */
+export function levelsStatus(hz: HazardLevels | null | undefined): { text: string; tone: Tone } | null {
+  const have = LAYERS.flatMap((l) => { const v = hz?.[l.id]; return v === undefined || v === null ? [] : [{ label: l.label.toLowerCase(), v }] })
+  if (!have.length) return null
+  const top = Math.max(...have.map((h) => h.v))
+  const part = have.length < LAYERS.length // some layers have no reading: say so, never imply all three were checked (ML-12)
+  if (top === 0) return { text: part ? "No mapped hazard in the NOAH layers checked here. That is not a promise of safety" : "No mapped hazard here in NOAH's maps. That is not a promise of safety", tone: 'none' }
+  return { text: `Highest NOAH level ${part ? 'among the layers checked' : 'here'}: ${NOAH_WORD[top - 1]!} (${have.filter((h) => h.v === top).map((h) => h.label).join(' and ')})`, tone: top === 1 ? 'good' : 'warn' }
+}
+
 /** The text a level-0 ring says to a screen reader: the layerState wording, never "safe". */
 export const noneRingText = (label: string) => `${label}: no mapped hazard in NOAH's maps (100-year scenario). Not a promise of safety.`
 
@@ -102,7 +131,7 @@ export function hazardPaintRules<S>(Sym: new (o: { fill: string; opacity: number
 
 /** A Leaflet layer painting one NOAH layer from a stored hazard file: a polygon per level, token colours, translucent so the street map shows through.
  *  The files stop at their own max zoom; protomaps-leaflet scales those tiles up past it (blocky, not missing). Libraries load when the layer is added. */
-export function hazardOverlay(L: Leaflet, blob: Blob, id: LayerId) {
+export function hazardOverlay(L: Leaflet, src: Blob | string, id: LayerId) {
   const group = L.layerGroup()
   let run = 0, inner: import('leaflet').Layer | null = null
   group.on('add', () => {
@@ -110,10 +139,12 @@ export function hazardOverlay(L: Leaflet, blob: Blob, id: LayerId) {
     void (async () => {
       const [{ leafletLayer, PolygonSymbolizer }, { PMTiles }, { blobSource }, { parseHeader }] = await Promise.all([import('protomaps-leaflet'), import('pmtiles'), import('./basemap'), import('./hazardLookup')])
       if (mine !== run) return
-      const head = parseHeader(new Uint8Array(await blob.slice(0, 127).arrayBuffer()))
+      const pm = new PMTiles(typeof src === 'string' ? src : blobSource(src, `hazard:${id}:${src.size}`))
+      const head = typeof src === 'string' ? await pm.getHeader() : parseHeader(new Uint8Array(await src.slice(0, 127).arrayBuffer()))
+      if (mine !== run) return
       const css = getComputedStyle(document.documentElement)
       const paintRules = hazardPaintRules(PolygonSymbolizer, (t) => css.getPropertyValue(t).trim(), id)
-      inner = leafletLayer({ url: new PMTiles(blobSource(blob, `hazard:${id}:${blob.size}`)), paintRules, labelRules: [], maxDataZoom: head.maxZoom, maxZoom: 19, pane: 'overlayPane', attribution: '' }) as unknown as import('leaflet').Layer
+      inner = leafletLayer({ url: pm, paintRules, labelRules: [], maxDataZoom: head.maxZoom, maxZoom: 19, pane: 'overlayPane', attribution: '' }) as unknown as import('leaflet').Layer
       group.addLayer(inner)
     })().catch(warnOnce)
   })

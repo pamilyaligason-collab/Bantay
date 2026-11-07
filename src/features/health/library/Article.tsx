@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { SubHeader } from '../../shell/SubHeader'
 import { loadTopic, parseKey, SOURCE_LINE, type Topic } from './medline'
+import { labEntry } from '../labGlossary'
+import { LabExplain } from './LabExplain'
 import '../health.css'
 import '../m7a.css'
 
@@ -8,6 +10,28 @@ type View = { s: 'loading' } | { s: 'ok'; topic: Topic; old: boolean } | { s: 'n
 
 /** #discover/learn/library/<key> (was #health/library/<key>): one summary from MedlinePlus Connect (one request when it is not cached), its source line, and a link to the full page. */
 export default function Article({ rawKey }: { rawKey: string }) {
+  const lab = rawKey.startsWith('t:') ? labEntry(rawKey.slice(2)) : null
+  if (lab) return <LabArticle code={lab.code} />
+  return <TopicArticle rawKey={rawKey} />
+}
+
+/** t:<code>: a lab test from the glossary, shown without a network request. Same text as the lab detail page. */
+function LabArticle({ code }: { code: string }) {
+  const e = labEntry(code)!
+  return (
+    <>
+      <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
+      <article className="card ar-art" data-testid="article">
+        <h2 className="ar-h">{e.name}</h2>
+        <p className="sub">{e.short}</p>
+      </article>
+      <LabExplain entry={e} />
+      <p className="sub ar-src" style={{ margin: '8px 4px 0' }}>{SOURCE_LINE}</p>
+    </>
+  )
+}
+
+function TopicArticle({ rawKey }: { rawKey: string }) {
   const key = parseKey(rawKey)
   const [view, setView] = useState<View>({ s: 'loading' })
   useEffect(() => {

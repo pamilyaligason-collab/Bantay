@@ -2,7 +2,7 @@ import { HeroCard } from '../look/HeroCard'
 import { CardActionButton, type CardAction } from '../look/cardParts'
 import type { Attention } from './attention'
 import { LabBar, VerdictChip } from './LabsList'
-import { labDate, labNum, rangeSource } from './labsLogic'
+import { attentionLine, labDate, labNum, rangeSource } from './labsLogic'
 import { metricLabel } from './model'
 import type { Range } from './ranges'
 import './health.css'
@@ -25,11 +25,12 @@ export function AttentionHero({ attention, family, canLog, canEdit, lockReason, 
   const { reading: r, row, pair } = attention
   const src = rangeSource(r, family)
   const date = labDate(r.takenAt, true)
+  const what = attentionLine(row)
   const hue = 'none' // board: a white card; the verdict chip and the bar carry the state, not a tinted card
   return (
     <div data-hero className="ah" data-testid="bodyhero">
       <section className="card hc ah-card" data-hue={hue} aria-label={metricLabel(r.test)}>
-        <span className="hc-kicker">{metricLabel(r.test)}</span>
+        <div className="ah-kick"><span className="hc-kicker">{metricLabel(r.test)}</span>{what && <span className="sub ah-what" data-testid="ah-what" title={what}>{what}</span>}</div>
         <div className="ah-top">
           <p className="ah-val">{pair ? `${pair.top}/${pair.bottom}` : labNum(r.value)}{r.unit ? <small> {r.unit}</small> : null}</p>
           <VerdictChip row={row} />

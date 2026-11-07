@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Reading } from '../health/ranges'
-import { numberTiles, pickLeadLab } from './numbers'
+import { numberTiles, pickExtraTile, pickLeadLab } from './numbers'
 const now = new Date(2026, 9, 31)
 const r = (test: string, value: number, d: Date, extra: Partial<Reading> = {}): Reading => ({ personId: 'me', test, value, unit: 'x', takenAt: d.toISOString(), ...extra })
 describe('numberTiles', () => {
@@ -73,5 +73,29 @@ describe('pickLeadLab (T1)', () => {
       expect(numberTiles([lab(170), okNew], at)[0]!.kicker).toBe('ALT') // inside the window leads
       expect(numberTiles([lab(190), okNew], at)[0]!.kicker).toBe('Blood pressure') // 190 days old: the in-range result leads
     }
+  })
+})
+
+describe('pickExtraTile', () => {
+  const act = (kind: string, d: Date, f: { minutes?: number; steps?: number }) => ({ kind, minutes: f.minutes ?? null, steps: f.steps ?? null, startedAt: d.toISOString() })
+  const noon = new Date(2026, 9, 31, 12)
+  const today = new Date(2026, 9, 31, 8)
+  it('no data at all: no card, never a zero', () => {
+    expect(pickExtraTile([], [], noon)).toBeUndefined()
+    expect(pickExtraTile([], [act('steps', today, { steps: null as unknown as number })], noon)).toBeUndefined()
+  })
+  it('weight wins over sleep, steps and pulse', () => {
+    const t = pickExtraTile([r('weight', 61.5, day(2)), r('heart_rate', 70, day(1))], [act('sleep', today, { minutes: 425 }), act('steps', today, { steps: 4000 })], noon)
+    expect(t).toMatchObject({ kicker: 'Weight', value: '61.5 kg', href: '#health/metric/weight' })
+  })
+  it('no weight: sleep last night, hand-computed 425 min = 7h 05', () => {
+    expect(pickExtraTile([], [act('sleep', today, { minutes: 425 }), act('steps', today, { steps: 4000 })], noon)).toMatchObject({ kicker: 'Sleep', value: '7h 05', sub: 'last night' })
+  })
+  it('no weight or sleep: steps today, then pulse', () => {
+    expect(pickExtraTile([r('heart_rate', 70, day(1))], [act('steps', today, { steps: 4000 })], noon)).toMatchObject({ kicker: 'Steps', value: '4,000' })
+    expect(pickExtraTile([r('heart_rate', 70, day(1))], [], noon)).toMatchObject({ kicker: 'Pulse', value: '70' })
+  })
+  it('steps from yesterday are not "today": skipped', () => {
+    expect(pickExtraTile([], [act('steps', day(1), { steps: 4000 })], noon)).toBeUndefined()
   })
 })

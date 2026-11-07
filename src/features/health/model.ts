@@ -204,8 +204,15 @@ export function activitySeries(acts: Activity[], code: 'steps' | 'sleep' | 'mood
     .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
 }
 
+/** Whole local days from `iso` to today (0 = today). Local calendar days, so a DST change or a late evening never shifts a day. */
+export function daysBefore(iso: string, now: Date): number {
+  const [y, mo, da] = localDay(iso).split('-').map(Number)
+  return Math.round((Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) - Date.UTC(y!, mo! - 1, da!)) / DAY)
+}
+
+/** The last 7 or 30 local days including today: the one window the list and the chart share (a day-anchored point at 12:00Z is 20:00 Manila and must not fall out before then). */
 export const inPeriod = (pts: Point[], period: Period, now: Date) =>
-  pts.filter((p) => { const t = Date.parse(p.takenAt); return Number.isFinite(t) && now.getTime() - t <= (period === 'week' ? 7 : 30) * DAY && t <= now.getTime() + DAY })
+  pts.filter((p) => { if (!Number.isFinite(Date.parse(p.takenAt))) return false; const b = daysBefore(p.takenAt, now); return b >= 0 && b < (period === 'week' ? 7 : 30) })
 
 /** Average per calendar month for the last `months` months, newest last. Months with no points are left out. */
 export function monthlyAverages(pts: Point[], now: Date, months = 5): { month: string; label: string; avg: number; n: number }[] {

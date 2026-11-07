@@ -18,6 +18,19 @@ describe('TodayNews', () => {
     expect(screen.getAllByRole('link', { name: /Headline/ }).map((a) => a.querySelector('.tn-body')!.textContent)).toEqual(['Example Daily, 1 h agoHeadline a', 'Example Daily, 2 h agoHeadline c', 'Example Daily, 5 h agoHeadline b'])
     expect(screen.getByRole('link', { name: 'All news' }).getAttribute('href')).toBe('#discover/news')
   })
+  it('shows a category tag per row and at most 2 of one category in the strip', async () => {
+    h.items = [row('a', 1, { title: 'Typhoon Aling nears PAR', topic: 'prepping' }), row('b', 2, { title: 'Typhoon Bino update', topic: 'prepping' }), row('c', 3, { title: 'Typhoon Carlo forms', topic: 'prepping' }), row('d', 4, { title: 'Oil prices jump', topic: 'national' })]
+    const { container } = render(<TodayNews now={NOW} />)
+    await waitFor(() => expect(container.querySelectorAll('.tn-row')).toHaveLength(3))
+    expect(Array.from(container.querySelectorAll('.tn-row')).map((a) => a.querySelector('.nw-tag')!.textContent)).toEqual(['TYPHOON', 'TYPHOON', 'OIL AND PRICES'])
+    expect(container.querySelector('.tn-stale')).toBeNull()
+  })
+  it('says so when the newest headline is over 36 hours old, and only then', async () => {
+    h.items = [row('a', 37), row('b', 40)]
+    const { container } = render(<TodayNews now={NOW} />)
+    await waitFor(() => expect(container.querySelectorAll('.tn-row')).toHaveLength(2))
+    expect(container.querySelector('.tn-stale')!.textContent).toMatch(/over 36 hours old/)
+  })
   it('drops rows older than 7 days and unreadable times', () => {
     expect(freshHeadlines([row('old', 24 * 7 + 1), row('new', 3), row('bad', 1, { published_at: 'x' })], NOW).map((n) => n.id)).toEqual(['new'])
   })

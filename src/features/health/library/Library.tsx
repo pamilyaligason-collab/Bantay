@@ -6,6 +6,7 @@ import { isLive, normaliseDrug } from '../meds'
 import { useHealthPerson } from '../useHealthPerson'
 import { useMedications } from '../useMedications'
 import { articleHref, SOURCE_LINE } from './medline'
+import { LAB_GLOSSARY, labEntry } from '../labGlossary'
 import '../health.css'
 import '../m7a.css'
 
@@ -30,7 +31,7 @@ export default function Library() {
     }
     return out
   }, [profile, meds])
-  const go = () => { const t = q.trim(); if (t) location.hash = articleHref('s', t) }
+  const go = () => { const t = q.trim(); const lab = labEntry(t); if (lab) location.hash = articleHref('t', lab.code); else if (t) location.hash = articleHref('s', t) }
 
   return (
     <>
@@ -55,6 +56,17 @@ export default function Library() {
           ))}
         </ul>
       )}
+      <h2 className="hd" id="lib-labs">Lab tests</h2>
+      <ul className="grp lb-list" aria-labelledby="lib-labs" data-testid="library-labs">
+        {LAB_GLOSSARY.map((e) => (
+          <li key={e.code}>
+            <a className="row hl-row" href={articleHref('t', e.code)}>
+              <span className="grow"><b>{e.name}</b><span className="sub">{e.organ} · MedlinePlus</span></span>
+              <span className="hl-go" aria-hidden="true">&rsaquo;</span>
+            </a>
+          </li>
+        ))}
+      </ul>
       <p className="sub lb-src">{SOURCE_LINE}. English only for now.</p>
     </>
   )

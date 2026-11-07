@@ -16,6 +16,7 @@ export async function seed(page: Page, dbName: string, store: string, rows: Row[
         const open = indexedDB.open(name as string)
         open.onupgradeneeded = () => { open.transaction?.abort() }
         open.onerror = () => res(false)
+        open.onblocked = () => res(false) // a blocked open never answers: retry instead of hanging
         open.onsuccess = () => {
           const db = open.result
           if (!db.objectStoreNames.contains(st as string)) { db.close(); res(false); return }

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { RefreshDetail } from '../../look/refresh'
 import { Icon } from '../../shell/Icon'
 import { LatestRow, LeadCard, StoryRow } from './Cards'
-import { freshLine, latestFirst, topicOf, topStories, TOPIC_LABEL, type NewsRow, type NewsTopic } from './model'
+import { freshLine, isStale, latestFirst, STALE_NOTE, topicOf, topStories, TOPIC_LABEL, type NewsRow, type NewsTopic } from './model'
 import { useSaved } from './saved'
 import { loadFeed, OFFICIAL_LINKS } from './Screen'
 
@@ -56,6 +56,7 @@ export default function NewsView({ zone, now = Date.now() }: { zone: string | nu
         <Icon name={feed.offline ? 'off' : 'cloud'} size={18} />
         <span>{freshLine(rows, now, feed.offline)}</span>
       </div>
+      {isStale(rows, now) && <p className="fp-note nw-stale" role="status">{STALE_NOTE}</p>}
       {!lead && !latest.length && <p className="fp-note">{feed.items === null ? 'The news feed is not connected yet.' : chip === 'top' || chip === 'latest' ? 'No headlines to show yet.' : `No ${label.toLowerCase()} stories yet.`}</p>}
       {lead && <LeadCard n={lead} now={now} testId="nw-lead" />}
       {stories.length > 0 && <section aria-label="Top stories"><h2 className="nw-h">Top stories</h2>{stories.map((n) => <StoryRow key={n.id} n={n} now={now} />)}</section>}

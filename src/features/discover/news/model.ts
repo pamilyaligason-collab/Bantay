@@ -1,4 +1,5 @@
 import type { NewsItem } from '../../safety/news'
+import { categoryOf } from '../../../../supabase/functions/world-news/rules'
 
 /** A news_items row. image_url and topic arrive with migration 0051: both may be missing (older server) or null. */
 export interface NewsRow extends NewsItem { image_url?: string | null; topic?: string | null }
@@ -36,3 +37,26 @@ export function freshLine(rows: NewsRow[], now: number, offline: boolean): strin
   const head = days >= 1 ? `Newest headline ${days} ${days === 1 ? 'day' : 'days'} old.` : min < 1 ? 'Updated just now.' : min < 60 ? `Updated ${min} min ago.` : `Updated ${Math.floor(min / 60)} h ago.`
   return offline ? `${head} Headlines saved. New ones when there is signal.` : head
 }
+
+/** The tag on a card (TYPHOON, OIL AND PRICES, HEALTH, PHILIPPINES ...): the same word lists the ingest uses (supabase/functions/world-news/rules.ts), so the two cannot drift. Null when nothing fits. */
+export const categoryTag = (n: Pick<NewsRow, 'title' | 'topic'>): string | null => categoryOf(n.title, n.topic)
+
+/** At most `max` rows per category tag, in the order given; a row with no tag is never counted against a category. */
+export function capPerCategory<T extends Pick<NewsRow, 'title' | 'topic'>>(rows: T[], max: number): T[] {
+  const seen = new Map<string, number>()
+  return rows.filter((n) => {
+    const c = categoryTag(n)
+    if (!c) return true
+    const k = (seen.get(c) ?? 0) + 1
+    seen.set(c, k)
+    return k <= max
+  })
+}
+
+export const STALE_HOURS = 36
+/** True when the newest row is over 36 h old (an unreadable date counts as old; no rows is not stale, it has its own message). */
+export function isStale(rows: Pick<NewsRow, 'published_at'>[], now: number): boolean {
+  const ts = rows.map((n) => Date.parse(n.published_at)).filter(Number.isFinite)
+  return rows.length > 0 && (ts.length === 0 || now - Math.max(...ts) > STALE_HOURS * 3_600_000)
+}
+export const STALE_NOTE = 'The newest headline is over 36 hours old, so this list may be out of date.'

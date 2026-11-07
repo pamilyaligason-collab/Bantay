@@ -53,6 +53,7 @@ for (const width of [320, 360, 390]) {
       // News gets no allowance. At 320 My day's own Log button (MyDay.tsx, lane B) is 71% tappable next to Jack with or without News; it is named here, not hidden.
       await assertJackHitRestAndEnd(page, width === 320 ? [{ name: 'My day Log (pre-existing, lane B)', sel: '[data-testid="myday"] a.td-todo-go' }] : [], `today-news ${width} ${scheme} rest`)
       await assertJackClear(page, { at: 'rest', allow: width === 320 ? '[data-testid="myday"] a.td-todo-go' : undefined })
+      expect(await page.evaluate(() => { const a = document.querySelector('[data-testid="numbers"]'), b = document.querySelector('[data-testid="today-news"]'); return !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) }), 'News sits below Your numbers').toBe(true)
       await news.scrollIntoViewIfNeeded()
       await expect(news.locator('.tn-img img')).toHaveCount(1)
       await expect.poll(() => news.locator('.tn-img img').evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true)
