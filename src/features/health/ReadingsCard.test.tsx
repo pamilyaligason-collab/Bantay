@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import { ReadingsCard } from './ReadingsCard'
 import type { Reading } from './ranges'
 
@@ -67,6 +67,9 @@ describe('Readings card', () => {
 
 describe('D-142 Readings card', () => {
   it('a watch pulse logged many times a day is one point per day with a low-high band, not a dot per sample', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 10, 9, 12, 0)) // local midday: samples up to 2 hours old stay on today (just after midnight they split over two days)
+    onTestFinished(() => { vi.useRealTimers() })
     const samples = [0, 0.02, 0.04, 0.06, 0.08].map((f, i) => rd('heart_rate', 60 + i * 5, 'bpm', f)).concat([rd('heart_rate', 70, 'bpm', 2), rd('heart_rate', 80, 'bpm', 2.02)])
     show(samples)
     const chart = screen.getByTestId('metric-chart')
