@@ -32,8 +32,9 @@ interface LearnTile { id: string; hue: Hue; icon: IconName; label: string; value
 export default function Screen() {
   const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
   const [, , view, id] = useHash().replace(/^#/, '').split('/')
+  useEffect(() => { if (view === 'repairs') location.replace('#discover/learn/farm-diy') }, [view]) // the S24 rename: old deep links land on the new page
   if (view === 'recipes') return <Recipes />
-  const topic = READY_TOPICS.find((t) => t.id === view)
+  const topic = READY_TOPICS.find((t) => t.id === (view === 'repairs' ? 'farm-diy' : view))
   if (topic) return <ReadyTopic id={topic.id} />
   if (view === 'recipe' && id) return <Recipe id={id} />
   if (view === 'cook' && id) return <Cook id={id} />

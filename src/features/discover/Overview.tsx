@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Carousel, EmptyState, JackArt, LargeTitle, PreviewTile, Section } from '../look'
 import { HeadActions } from '../shell/HeadActions'
 import { Icon } from '../shell/Icon'
@@ -15,17 +15,26 @@ import Saved from './Saved'
 import { DiscoverTabs, panelId, tabId, type View } from './Tabs'
 import { WATCH_PICK } from './watch/Screen'
 import { playable, VIDEOS, type Video } from '../health/library/videosLogic'
-import { READY_SHELVES, READY_TOPICS, READY_VIDEOS, countLine } from './learn/ready'
+import { READY_TOPICS, countLine, readyShelf as shelf } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
 import './today.css'
 
-/** A still picture (i.ytimg.com, no cookies, no referrer), the same one Watch's poster row loads. If it cannot load it hides itself and the tile keeps its text. */
+/** A still picture (i.ytimg.com, no cookies, no referrer), the same one Watch's poster row loads. If it cannot load it hides itself and the tile keeps its text. The Ken Burns zoom is paused while the card is off screen. */
 function Thumb({ id }: { id: string }) {
   const [off, setOff] = useState(false)
+  const [seen, setSeen] = useState(true) // no IntersectionObserver (old webview, jsdom): keep it running
+  const ref = useRef<HTMLSpanElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setSeen(!!e?.isIntersecting))
+    io.observe(el)
+    return () => io.disconnect()
+  }, [off])
   if (off) return null
   return (
-    <span className="dc-still">
+    <span className={`dc-still${seen ? '' : ' is-paused'}`} ref={ref}>
       <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt="" width={320} height={180} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />
     </span>
   )
@@ -36,12 +45,10 @@ const Pick = ({ id, children }: { id: string; children: ReactNode }) => (
   <span className="dc-pick" onClick={(e) => { if (e.ctrlKey || e.metaKey || e.shiftKey) return; try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } }}>{children}</span>
 )
 
-/** The checked videos of one ready.json shelf, through playable() like everywhere else they are shown. */
-const shelf = (id: string) => { const topic = READY_SHELVES.find((t) => t.id === id)?.video; return READY_VIDEOS.filter((v) => v.topic === topic && playable(v)) }
-/** k videos from the list starting at today's turn (wrapping): the same day always gives the same picks, and the shelf changes day by day. */
+/** k videos from the list starting at today's turn (wrapping): the same day always gives the same picks, and the shelf changes day by day. The day number comes from dayKey (Date.parse of YYYY-MM-DD is UTC midnight). */
 function turn<T>(list: T[], now: Date, k: number): T[] {
   if (!list.length) return []
-  const start = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 864e5) % list.length
+  const start = Math.floor(Date.parse(dayKey(now)) / 864e5) % list.length
   return Array.from({ length: Math.min(k, list.length) }, (_, i) => list[(start + i) % list.length]!)
 }
 
@@ -63,6 +70,7 @@ function TopStory({ now }: { now: Date }) {
   const [hero, ...rest] = turn(shelf('prepping'), now, 5)
   return (
     <Section title="Top story" link={{ href: '#discover/learn/prepping', label: 'All prepping' }} testId="dc-top-story">
+      <p className="sub dc-sub">Survival and prepping, a new pick each day.</p>
       {hero
         ? (
           <div className="nw">
@@ -117,6 +125,7 @@ function Learn() {
   const farm = READY_TOPICS.find((t) => t.id === 'farm-diy')
   return (
     <Section title="Learn" link={{ href: '#discover/learn', label: 'All topics' }} testId="dc-learn">
+      <p className="sub dc-sub">Short reads you can open offline.</p>
       <div className="dc-lgrid">
         <LearnCard tint="purple" title="Health topics" sub="Plain reads on heart, sugar and more" href="#discover/learn/library" testId="dc-learn-topics" />
         {prep && <LearnCard tint="amber" title="Be prepared" sub={countLine(prep)} href="#discover/learn/prepping" testId="dc-learn-prepping" />}

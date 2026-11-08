@@ -49,7 +49,7 @@ test('five tabs in order; Discover opens with its five sub-tabs; Watch is regist
   }
   // D-135: News is a view of Discover (Today | News | Saved), not a Section link on the overview
   expect(await page.getByRole('tablist', { name: 'Discover views' }).getByRole('tab').allTextContents()).toEqual(['Today', 'News', 'Saved'])
-  await page.getByTestId('dc-hero').getByRole('link').click()
+  await page.getByTestId('dc-hero').click()
   await expect(page).toHaveURL(/#discover\/watch$/)
   await expect(page.getByTestId('watch')).toBeVisible() // session 13 registered Watch
   const subs = page.getByRole('group', { name: 'Discover sections' })

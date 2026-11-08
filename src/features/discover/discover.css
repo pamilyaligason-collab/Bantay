@@ -106,6 +106,8 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-vc-pic { position: relative; display: flex; align-items: center; justify-content: center; height: 96px; flex: none; background: var(--tint-fill, var(--card2)); }
 .dc-vc[data-tint="teal"] { --tint-fill: var(--tint-teal); --tint-ink: var(--tint-teal-ink); }
 .dc-vc[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
+.dc-vc[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
+.dc-vc[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
 .dc-vc-pic .dc-still { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
 .dc-vc-play { position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--tint-ink); }
 .dc-vc-body { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; min-width: 0; }

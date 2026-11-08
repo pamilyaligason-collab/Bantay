@@ -35,7 +35,7 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
-    test('rainy season row: a soft wash, no lone rain streaks', async ({ page }) => {
+    test('rainy day: Discover Today no longer draws the season row (S24), so no rain streaks', async ({ page }) => {
       await page.clock.setFixedTime(RAIN)
       await page.emulateMedia({ reducedMotion: 'no-preference' })
       await page.goto('/#discover')

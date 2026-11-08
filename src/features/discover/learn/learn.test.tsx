@@ -74,6 +74,12 @@ describe('Learn screen and the learn.medcards flag', () => {
     expect(screen.queryByText('Medicine wiki')).toBeNull()
     expect(screen.queryByTestId('medcard')).toBeNull()
   })
+  it('the old #discover/learn/repairs link redirects to the Farming and DIY page', async () => {
+    location.hash = '#discover/learn/repairs'
+    render(<Screen />)
+    expect(await screen.findByTestId('ready-farm-diy')).toBeTruthy()
+    await waitFor(() => expect(location.hash).toBe('#discover/learn/farm-diy'))
+  })
   it('flag off: Recipes, Library, Learn together and a full-width Your benefits tile, each a link to its screen (no Medicine wiki)', async () => {
     location.hash = '#discover/learn'
     render(<Screen />)

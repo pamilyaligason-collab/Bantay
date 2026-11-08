@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadFeed } from './news/Screen'
 import type { NewsRow } from './news/model'
@@ -8,6 +8,7 @@ import { RECIPES } from './learn/data'
 import { phFactOf } from './facts/onThisDay'
 import { dayKey } from './play/score'
 import css from './today.css?raw'
+import discoverCss from './discover.css?raw'
 import Overview from './Overview'
 
 vi.mock('./news/Screen', async (orig) => ({ ...(await orig<typeof import('./news/Screen')>()), useNewsZone: () => null, loadFeed: vi.fn() }))
@@ -333,5 +334,27 @@ describe('Saved (read later)', () => {
     fireEvent.click(tab('Saved'))
     expect(await screen.findByText('Nothing saved yet')).toBeTruthy()
     get.mockRestore(); set.mockRestore()
+  })
+})
+
+describe('S24 fix round 1', () => {
+  it('Learn blobs are a darker hue of each tint (not the card colour); green and amber video cards carry their tint', () => {
+    expect(css).toMatch(/\.dc-lc-blob \{[^}]*opacity: \.35;[^}]*--blob: color-mix\(in srgb, var\(--tint-ink\)/)
+    expect(css).not.toMatch(/\.dc-lc-blob \{[^}]*var\(--card\)/)
+    expect(discoverCss).toMatch(/\.dc-vc\[data-tint="green"\] \{ --tint-fill: var\(--tint-green\); --tint-ink: var\(--tint-green-ink\); \}/)
+    expect(discoverCss).toMatch(/\.dc-vc\[data-tint="amber"\] \{ --tint-fill: var\(--tint-amber\); --tint-ink: var\(--tint-amber-ink\); \}/)
+  })
+  it('the Ken Burns zoom of a card that scrolls off screen is paused, and resumes when it comes back', () => {
+    const cbs: IntersectionObserverCallback[] = []
+    vi.stubGlobal('IntersectionObserver', class { constructor(c: IntersectionObserverCallback) { cbs.push(c) } observe() {} disconnect() {} })
+    render(<Overview now={now} />)
+    expect(document.querySelectorAll('.dc-still.is-paused').length).toBe(0)
+    const fire = (isIntersecting: boolean) => act(() => { cbs[0]!([{ isIntersecting } as IntersectionObserverEntry], {} as IntersectionObserver) })
+    fire(false)
+    expect(document.querySelectorAll('.dc-still.is-paused').length).toBe(1)
+    fire(true)
+    expect(document.querySelectorAll('.dc-still.is-paused').length).toBe(0)
+    vi.unstubAllGlobals()
+    expect(css).toMatch(/\.dc-still\.is-paused img \{ animation-play-state: paused; \}/)
   })
 })
