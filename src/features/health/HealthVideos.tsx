@@ -48,7 +48,7 @@ export function HealthVideos() {
       <MoreGrid key={sub ?? 'all'} label={sub ? `${SUBS.find((s) => s.sub === sub)!.label} videos` : 'Health videos'} testId="hv-grid">
         {list.map((v) => <VideoCard key={v.id} video={v} open={openId === v.id} onOpen={() => setOpenId(v.id)} />)}
       </MoreGrid>
-      <p className="sub">Checked videos only. Play inside Bantay.</p>
+      <p className="sub">Videos from named health channels. Not medical advice.</p>
     </Section>
   )
 }

@@ -168,7 +168,7 @@ prev: Talk with children about drugs ; Keep busy with healthy activities ; Treat
 
 = headache | Headache | mind | ph
 mp: Headache
-aka: headache, sakit ng ulo, masakit ang ulo, hilab ng ulo, pananakit ng ulo
+aka: headache, sakit ng ulo, masakit ang ulo, pananakit ng ulo
 wiki: Headache
 s: Most headaches are harmless and ease with rest and water.
 s: Some headaches are warning signs and need care at once.

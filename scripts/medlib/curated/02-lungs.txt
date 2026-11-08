@@ -55,7 +55,7 @@ aka: TB, tuberkulosis, ubong may dugo, sakit sa baga, pagdura ng dugo
 wiki: Tuberculosis
 s: TB is a germ that spreads in the air and mostly harms the lungs.
 s: Free tests and treatment are given at health centres.
-s: It is curable when you finish all the medicine, about six months.
+s: It can usually be cured if you take all the medicine, usually for six months or more.
 g: Coughing up blood
 g: Chest pain, or very hard breathing
 g: High fever with severe weakness, or a child who is very sick
@@ -63,7 +63,7 @@ what: TB is an infection caused by a germ. It spreads when a person with TB in t
 signs: A cough that lasts more than two weeks ; Coughing up blood ; Night sweats and fever ; Weight loss and no appetite ; Tiredness
 home: Take all medicine every day for the whole time, even when you feel well ; Cover your mouth when you cough and open windows ; Go to the health centre for free TB tests and care (DOTS) ; Eat well
 prev: Test people living with someone who has TB ; Open windows to let in fresh air ; Complete the full treatment so it cannot spread ; Have newborns vaccinated with BCG
-v: ZG6BnDQX3gI | Sakit sa Baga: Paano Maalis ang TB (Tuberculosis) | Doc Willie Ong
+v: ZG6BnDQX3gI | Tuberculosis (TB): signs and treatment (in Filipino) | Doc Willie Ong
 
 = bronchitis | Bronchitis | lungs
 mp: Acute Bronchitis

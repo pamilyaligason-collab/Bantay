@@ -129,6 +129,9 @@ export function FullArticle({ articleKey }: { articleKey: string }) {
         )}
       </article>
       {a && (
+        <p className="sub">For learning only. Not medical advice. Ask a doctor before changing any medicine. Emergency: call 911.</p>
+      )}
+      {a && (
         <p className="fl-credit">
           {MDWIKI_CREDIT}{' '}
           <a href={MDWIKI_LICENCE_URL} target="_blank" rel="noreferrer">CC BY-SA 4.0 licence</a>{' '}

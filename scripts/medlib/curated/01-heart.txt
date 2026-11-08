@@ -8,6 +8,7 @@ s: Over the years it can harm the heart, brain and kidneys.
 g: Sudden weakness or numbness of the face, arm or leg, or trouble speaking
 g: Crushing chest pain or pain that spreads to the arm or jaw
 g: A very bad headache with confusion, or trouble seeing
+g: A reading of 180/120 or higher with chest pain, short breath, a bad headache, or trouble seeing or speaking: call 911
 what: Blood pressure is the push of blood against the walls of your blood vessels. When the top number stays at 140 or higher, or the bottom number at 90 or higher, it is called high blood pressure. Your doctor will say what number is right for you.
 signs: Often none at all ; Headache, dizziness or a pounding in the chest can happen, but not always ; A check at the health centre or at home is the only sure way
 home: Take your medicine every day, even when you feel well ; Eat less salt, patis, toyo and instant noodles ; Walk most days if your doctor says it is safe ; Do not smoke, and limit alcohol
@@ -29,14 +30,14 @@ g: Trouble breathing, or feeling faint with chest discomfort
 g: Call 911 or go to the nearest hospital now. Do not drive yourself.
 what: A heart attack happens when a blocked blood vessel stops blood from reaching part of the heart. The heart muscle starts to be damaged. Women, older people and people with diabetes may have fewer clear signs.
 signs: Pressure, squeezing or heavy feeling in the chest ; Pain that moves to the arm, back, neck or jaw ; Cold sweat, feeling sick, short of breath ; In women and older people: unusual tiredness or tummy discomfort
-home: While you wait for help, sit down and stay calm ; Loosen tight clothes ; If a doctor has told you to take aspirin for this, follow that advice ; Never wait to see if it passes
+home: While you wait for help, sit down and stay calm ; Loosen tight clothes ; If a doctor has told you to take aspirin for this, follow that advice ; Never wait to see if it passes ; If the person collapses and is not breathing normally, start hands-only CPR
 prev: Keep blood pressure, sugar and cholesterol in check ; Do not smoke ; Eat less salty and fatty food ; Stay active and keep a healthy weight
-v: PXhBoH5aD_s | 8 Warning Signs ng Heart Attack Bago Ito Mangyari | Doc Willie Ong
+v: PXhBoH5aD_s | Warning signs of a heart attack (in Filipino) | Doc Willie Ong
 pic: heartattack.webp | Blausen Medical Communications, Inc | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0463_HeartAttack.png
 
 = stroke | Stroke | heart | ph
 mp: Stroke
-aka: brain attack, na-stroke, pagkaparalisa, hilab ng ulo
+aka: brain attack, na-stroke, pagkaparalisa
 wiki: Stroke
 s: A stroke is a sudden loss of blood flow to part of the brain.
 s: Learn BE FAST: Balance, Eyes, Face, Arm, Speech, Time.
@@ -45,9 +46,10 @@ g: One side of the face droops when the person smiles
 g: One arm is weak or numb, or cannot be lifted
 g: Speech is slurred or strange, or the person cannot understand you
 g: Sudden loss of balance or vision, or a very bad headache. Call 911 now and note the time it began.
+g: Go now even if the signs go away after a few minutes.
 what: A stroke happens when a blood vessel in the brain is blocked or bursts. Brain cells start to die within minutes. Quick treatment can save brain and life. High blood pressure is the biggest cause.
 signs: Face drooping on one side ; Arm or leg weakness on one side ; Slurred speech or confusion ; Sudden trouble seeing or walking ; Sudden very bad headache
-home: Do not give food, drink or medicine by mouth ; Lay the person down with the head a little raised ; Note the time the signs began and tell the hospital ; After a stroke, follow your rehab plan and take medicines as told
+home: Do not give food, drink or medicine by mouth ; Lay the person down with the head a little raised ; Note the time the signs began and tell the hospital ; After a stroke, follow your rehab plan and take medicines as told ; Do not prick the fingers or ears, or give any medicine
 prev: Keep blood pressure under control ; Do not smoke ; Stay active ; Eat less salt and less fatty food ; Take heart medicines as prescribed
 pic: stroke.webp | Blausen Medical Communications, Inc. | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0836_Stroke.png
 v: adNWwnudyTc | Stroke: 8 Warning Signs | Doc Willie Ong
@@ -60,7 +62,7 @@ wiki: Angina
 s: Angina is chest pain when the heart does not get enough blood.
 s: It often comes with effort and eases with rest.
 s: It is a warning sign. See a doctor soon.
-g: Chest pain that lasts more than 15 minutes, or does not ease with rest
+g: Chest pain that lasts more than 5 minutes, or does not ease with rest or your heart medicine: call 911 now. Do not drive yourself.
 g: Pain with sweating, feeling faint, or trouble breathing
 g: Pain that is new, worse, or comes at rest
 what: Angina is a pressure or squeezing pain in the chest. It happens when the heart muscle does not get enough blood, often because vessels are narrowed. It is not a heart attack, but it can be a warning of one.
@@ -135,11 +137,9 @@ s: In cardiac arrest the heart stops and the person collapses.
 s: Hands-only CPR can keep blood moving until help arrives.
 s: Anyone can do it. You cannot make it worse.
 g: A person who suddenly collapses, will not wake and is not breathing normally: call 911 now
-g: Start pushing hard and fast on the centre of the chest
-g: Send someone to find an AED (a shock machine) if there is one
 what: When the heart stops, blood stops reaching the brain. Hands-only CPR means pushing hard and fast on the centre of the chest, about twice a second. Do this until help or an AED arrives, or the person wakes.
 signs: Collapse without warning ; Will not wake when you shout and shake the shoulders ; Not breathing, or only gasping
-home: Call 911 or ask someone to call ; Place the heel of one hand on the centre of the chest, the other hand on top ; Push down hard, about 5 cm for an adult, and let the chest come back up ; Keep going without stopping until help takes over
+home: Call 911 or ask someone to call ; Send someone to find an AED (a shock machine) if there is one ; Place the heel of one hand on the centre of the chest, the other hand on top ; Push down hard, about 5 cm for an adult, and let the chest come back up ; Start pushing hard and fast on the centre of the chest ; Start pushing hard and fast on the centre of the chest ; Keep going without stopping until help takes over
 prev: Learn CPR from the Red Cross ; Treat heart disease early ; Know where the nearest AED is in your building
 v: M4ACYp75mjU | Hands-only CPR | American Heart Association
 v: ffzm2RGb0vU | Be prepared for emergencies with hands-only CPR | American Red Cross

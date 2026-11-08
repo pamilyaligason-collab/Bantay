@@ -27,7 +27,7 @@ export default function Videos() {
       <ul className="vd-list">
         {list.map((v) => <Card key={v.id} v={v} />)}
       </ul>
-      <p className="sub">Checked videos only. Play inside Bantay.</p>
+      <p className="sub">Videos from named health channels. Not medical advice.</p>
     </>
   )
 }

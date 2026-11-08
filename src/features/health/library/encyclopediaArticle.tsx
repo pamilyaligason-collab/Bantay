@@ -6,7 +6,7 @@ import '../health.css'
 import '../m7a.css'
 import './encyclopedia.css'
 
-export const ARTICLE_FOOT = 'From MedlinePlus.gov, in plain words. Not medical advice.'
+export const ARTICLE_FOOT = 'Written in plain words for Bantay, based on MedlinePlus.gov. Not medical advice. In an emergency call 911.'
 
 /** One section text: lines split by a new line become a bullet list, one line stays a paragraph. */
 function Lines({ text }: { text: string }) {
@@ -27,7 +27,7 @@ export function TopicView({ t }: { t: MedTopic }) {
         <ul className="ax-list" data-testid="article-short">{t.short.map((s) => <li key={s}>{s}</li>)}</ul>
       </section>
       <section className="ax-go" aria-labelledby="ax-go" data-testid="article-gonow">
-        <h3 className="ax-h" id="ax-go">Go to the hospital now if</h3>
+        <h3 className="ax-h" id="ax-go">Call 911 or go to the hospital now if</h3>
         <ul className="ax-list">{t.goNow.map((s) => <li key={s}>{s}</li>)}</ul>
       </section>
       {t.sections.map((s, i) => (

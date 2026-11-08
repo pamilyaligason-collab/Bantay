@@ -9,6 +9,7 @@ g: Very sleepy or confused, breathing fast, or fruity-smelling breath
 g: Vomiting that does not stop, or cannot keep fluids down
 g: Sugar very high with extreme thirst and passing a lot of urine
 g: A foot sore with fever or black skin
+g: Shaking, sweating, confusion or passing out (low sugar): give sugar if awake, call 911 if not
 what: In type 2 diabetes the body does not make enough insulin or does not use it well. Sugar then stays high in the blood. It is often linked to weight, family history and age. It can be controlled and sometimes put into remission, but it needs long-term care.
 signs: Very thirsty ; Passing urine a lot, especially at night ; Tired, blurred vision ; Slow-healing sores ; Tingling in the feet; many people have no signs
 home: Take medicines or insulin as prescribed ; Eat regular meals with less sugar and white rice, more vegetables ; Walk after meals if your doctor allows ; Check your feet daily ; Keep check-ups, eye and kidney tests
@@ -43,7 +44,7 @@ g: Extreme thirst, passing lots of urine, blurred vision: see a doctor soon
 g: Very sleepy or confused: go to the hospital
 what: In prediabetes, blood sugar is higher than normal but not high enough for diabetes. Without change, many people get type 2 diabetes within a few years. Losing even a small amount of weight and walking daily can cut the risk a lot.
 signs: Usually none ; Darker skin on the neck or armpits ; Found on a blood test
-home: Walk 30 minutes most days ; Lose 5 to 7 of every 100 kg of body weight if overweight ; Eat less sugar and white rice, more vegetables ; Re-test your sugar every year
+home: Walk 30 minutes most days ; Lose a little weight: about 4 to 5 kg if you weigh 70 kg ; Eat less sugar and white rice, more vegetables ; Re-test your sugar every year
 prev: Keep a healthy weight ; Move every day ; Cut sweet drinks ; Do not smoke
 
 = hypoglycemia | Low blood sugar | sugar
@@ -114,7 +115,7 @@ aka: obesity, overweight, mataba, sobra sa timbang, pagbaba ng timbang
 wiki: Obesity
 s: Extra body fat raises the risk of diabetes, high blood pressure and heart disease.
 s: Small changes you can keep work better than crash diets.
-s: Losing 5 of every 100 kg of weight already helps your health.
+s: Losing even 3 to 5 kg helps your health.
 g: Chest pain, short of breath, or signs of a stroke
 g: Very high sugar signs: extreme thirst and confusion
 what: Obesity means having so much body fat that it harms health. A waist over 90 cm in men or 80 cm in women is a warning. It is caused by food, activity, sleep, genes and stress. Slow steady loss is safest.

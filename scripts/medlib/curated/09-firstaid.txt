@@ -10,7 +10,7 @@ g: A person who goes limp or unconscious: start CPR
 g: A baby who is choking: back blows and chest thrusts, call 911
 what: When something blocks the windpipe, air cannot get in. A person who can cough strongly should keep coughing. If they cannot cough, speak or breathe, act at once. For an adult or child: give 5 firm back blows between the shoulder blades, then 5 belly thrusts (Heimlich) until the object comes out. For a baby: 5 back blows then 5 chest thrusts with two fingers.
 signs: Hands clutching the throat ; Cannot speak, cough or breathe ; High-pitched or no sound ; Face turns red then blue ; Panic
-home: Stand behind the person, lean them forward and give 5 back blows with the heel of your hand ; Then 5 belly thrusts: fist above the navel, pull in and up ; Alternate until the object is out or help comes ; For pregnant or very large people do chest thrusts ; Everyone who was choking needs a check by a doctor after
+home: Stand behind the person, lean them forward and give 5 back blows with the heel of your hand ; Then 5 belly thrusts: fist above the navel, pull in and up ; Alternate until the object is out or help comes ; For pregnant or very large people do chest thrusts ; Everyone who was choking needs a check by a doctor after ; Never do belly thrusts on a baby under 1 year
 prev: Cut food small for children and the old ; Sit down to eat, no talking or laughing with food in the mouth ; Keep small objects and coins from babies ; Do not give nuts or hard sweets to small children
 v: 2dn13zneEjo | Mayo Clinic Minute: the Heimlich maneuver | Mayo Clinic
 pic: choking.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Heimlich_Adult_&_Child.png
@@ -28,7 +28,7 @@ g: A burn from fire in a closed room, chemicals or electricity, or with trouble 
 g: Any burn on a baby or an older person
 what: Burns happen from heat, hot liquids (scalds), fire, chemicals, electricity or sun. The first minutes matter. Cool the burn quickly with cool running water, and remove rings and watches before swelling starts. Do not pop blisters.
 signs: Red, painful skin ; Blisters ; White or black skin with little pain in a deep burn ; Swelling
-home: Run cool (not ice cold) tap water over the burn for 20 minutes ; Take off rings, watches and loose clothes near it, but not anything stuck to the skin ; Cover loosely with a clean non-stick cloth or cling film ; Paracetamol for pain ; Do not use ice, butter, oil, toothpaste or egg
+home: Run cool (not ice cold) tap water over the burn for 20 minutes ; Take off rings, watches and loose clothes near it, but not anything stuck to the skin ; Cover loosely with a clean non-stick cloth or cling film ; Paracetamol for pain ; Do not use ice, butter, oil, toothpaste or egg ; For a baby or a large burn, keep the rest of the body warm while cooling
 prev: Keep hot pots and kettles out of children's reach ; Turn pot handles inward ; Keep matches, lighters and candles away from children ; Test bath water by hand before use
 v: B10sth4zjuI | First aid for a burn | Mayo Clinic
 pic: burns.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Burns.png
@@ -78,7 +78,7 @@ g: Drooping eyelids, trouble speaking, swallowing or breathing
 g: Dizziness, faintness or vomiting
 what: Some Philippine snakes, such as cobras, are venomous. Even a bite from an unknown snake needs a medical check. Hospitals give antivenom and care. Do not waste time with home remedies, which can do harm.
 signs: Two puncture marks ; Pain and swelling ; Bruising or bleeding ; Weakness, drooping eyelids, trouble breathing
-home: Move away from the snake ; Keep the person calm and as still as possible ; Keep the bitten limb still, at or below heart level ; Take off rings and tight clothing ; Go to the hospital by vehicle, do not walk ; Do not cut, suck, burn or tie the bite ; Do not use ice
+home: Move away from the snake ; Keep the person calm and as still as possible ; Keep the bitten limb still, at or below heart level ; Take off rings and tight clothing ; Go to the hospital by vehicle, do not walk ; Do not cut, suck, burn or tie the bite ; Do not use ice ; Do not go to an albularyo
 prev: Wear boots in tall grass ; Shine a light at night ; Do not handle snakes ; Keep the yard clear of heaps and rats
 
 = dogbite | Dog and cat bites, rabies | firstaid | ph
@@ -93,7 +93,7 @@ g: Fear of water, fits, confusion or sudden strange behaviour
 g: A bite to the head, face or neck, or a wound that bleeds a lot
 what: Rabies is a virus in the spit of infected animals, mostly dogs in the Philippines. It spreads through bites and scratches. Once signs show it is almost always deadly, but rabies shots right after a bite can stop it. Animal bite centres give them free or low cost.
 signs: A bite or scratch from an animal ; Pain and tingling at the wound ; Fever ; Later: fear of water, confusion, fits
-home: Wash the wound well with soap and running water for 15 minutes ; Cover loosely ; Go to the animal bite centre or hospital the same day ; Take all the shots on schedule ; If you can, watch the animal for 14 days, but do not wait for signs to get the shots
+home: Wash the wound well with soap and running water for 15 minutes ; Cover loosely ; Go to the animal bite centre or hospital the same day ; Take all the shots on schedule ; If you can, watch the animal for 14 days, but do not wait for signs to get the shots ; Do not put garlic, herbs or anything else on the wound. Do not go to a tandok or albularyo instead of the bite centre
 prev: Vaccinate dogs and cats every year ; Do not tease or touch stray animals ; Keep dogs on a leash ; Teach children to stay away from strange animals
 
 = heatstroke | Heat stroke | firstaid | ph dry
@@ -124,14 +124,14 @@ g: Anyone who needed help in the water, even if they seem fine now
 g: Coughing, vomiting or trouble breathing in the hours after
 what: Drowning can happen in a few minutes, even in shallow water. Children can drown in a bucket. The danger is lack of air. Get the person out safely, without putting yourself in danger. Throw a rope, a float or a bottle instead of jumping in.
 signs: Quiet in the water, no splashing ; Head back, mouth at water level ; Not breathing when pulled out ; Blue lips
-home: Call 911 ; Throw something that floats ; Lay the person on their back on a firm surface ; Give 5 rescue breaths, then CPR with 30 chest pushes and 2 breaths ; Place on side when breathing returns, and keep them warm ; Go to the hospital even if recovered
+home: Call 911 ; Throw something that floats ; Lay the person on their back on a firm surface ; If they are not breathing normally, give 5 rescue breaths, then 30 chest pushes and 2 breaths. If you cannot give breaths, push on the chest without stopping ; Place on side when breathing returns, and keep them warm ; Go to the hospital even if recovered
 prev: Never leave a child alone near water ; Fence pools and cover wells and drums ; Wear life jackets on boats ; Learn to swim and learn CPR
 
 = poisoning | Poisoning | firstaid | ph
 mp: Poisoning
 aka: poisoning, nalason, nakalunok ng lason, kemikal, pesticide, lason, overdose
 wiki: Poisoning
-s: Call a poison centre or 911 at once. Do not make the person vomit.
+s: Call 911 or the UP-PGH National Poison Management and Control Center at once. Do not make the person vomit.
 s: Keep the container to show the doctor.
 s: A child who swallows medicines or chemicals needs a check, even if well.
 g: Call 911 or go to the hospital now for swallowed chemicals, pesticides, cleaning fluids or too many tablets
@@ -140,7 +140,7 @@ g: Burns around the mouth or smell of chemicals
 g: Any swallowed button battery or magnet
 what: Poisons can be swallowed, breathed in or touched. Common ones at home are medicines, cleaning fluids, pesticides, petrol, and carbon monoxide. Do not give salt water or milk, and do not make the person vomit unless a poison expert says so. Bring the container.
 signs: Vomiting, tummy pain ; Drowsiness, confusion ; Burns on lips ; Odd smell on the breath ; Trouble breathing ; Fits
-home: Call 911 or the poison centre ; Take the person away from fumes into fresh air ; Wash skin with water if chemicals touched the skin ; Rinse eyes for 15 minutes ; Keep the container and bring it ; Do not induce vomiting
+home: Call 911 or the UP-PGH National Poison Management and Control Center ; Take the person away from fumes into fresh air ; Wash skin with water if chemicals touched the skin ; Rinse eyes for 15 minutes ; Keep the container and bring it ; Do not induce vomiting
 prev: Keep medicines and chemicals out of reach, in their own bottles ; Never put chemicals in drink bottles ; Use pesticides with gloves and keep children away ; Check gas stoves and heaters have air
 
 = nosebleed | Nosebleed | firstaid | ph
@@ -186,9 +186,9 @@ g: Anyone who was shocked and is unconscious, not breathing, or has burns: call 
 g: A shock from a high voltage line or lightning
 g: Chest pain, irregular heartbeat or trouble breathing
 g: A shock to a pregnant woman or a child
-what: Electric current can burn the skin and also harm the heart. The skin burn is often small but the damage inside can be bigger. Never touch a person who is still in contact with the current. Turn the power off, or push the wire away with a dry wooden stick.
+what: Electric current can burn the skin and also harm the heart. The skin burn is often small but the damage inside can be bigger. Never touch a person who is still in contact with the current. For a plug or house wiring: turn off the main switch, or push the person away with dry wood. For a fallen power line: stay at least 10 metres away, never touch the person or the wire, and call 911 and the power company.
 signs: Burns where the current went in and out ; Muscle pain ; Fast or uneven heartbeat ; Confusion ; Fainting
-home: Turn off the main switch or unplug ; If you cannot, push the person away with a dry, non-metal object such as wood ; Call 911 ; Check breathing and start CPR if needed ; Cool burns with running water ; Always get a medical check
+home: Turn off the main switch or unplug ; If you cannot, push the person away with a dry, non-metal object such as wood ; Call 911 ; Check breathing and start CPR if needed ; Cool burns with running water ; Always get a medical check ; For a fallen power line: stay at least 10 metres away and call 911 and the power company
 prev: Keep wires, sockets and appliances in good repair ; Keep water away from electrics ; Cover sockets near children ; Stay indoors in a lightning storm and away from tall trees
 
 = eyeinjury | Eye injury | firstaid | ph
@@ -218,9 +218,10 @@ g: Swelling of the face, lips or tongue, trouble breathing or hives all over: ca
 g: Dizziness, fainting, a fast pulse or a rapid spread of the rash
 g: Many stings at once, or stings in the mouth or throat
 g: Fever or spreading redness after a few days
+g: A jellyfish sting with severe pain, confusion, trouble breathing or collapse: call 911
 what: A sting puts a small amount of venom under the skin. It causes pain, redness and swelling. A few people are allergic and can have a severe reaction within minutes. Jellyfish stings may cause lines of stinging welts.
 signs: Sharp pain ; A red swelling ; Itching ; Warmth ; A raised bump
-home: Scrape out the stinger with a flat edge such as a card, do not squeeze it ; Wash with soap and water ; Put a cold pack on for 10 minutes ; Rinse jellyfish stings with vinegar if you have it, or sea water, not fresh water ; An antihistamine can help itching ; Watch for 30 minutes for a severe reaction
+home: Scrape out the stinger with a flat edge such as a card, do not squeeze it ; Wash with soap and water ; Put a cold pack on for 10 minutes ; Rinse jellyfish stings with vinegar if you have it, or sea water, not fresh water ; An antihistamine can help itching ; Watch for 30 minutes for a severe reaction ; Use an adrenaline pen if prescribed
 prev: Do not swat bees ; Keep food and drinks covered outdoors ; Wear shoes and long sleeves in bush ; Stay out of the sea when jellyfish are around
 
 = anaphylaxis | Severe allergic reaction | firstaid
@@ -250,6 +251,7 @@ g: Passing out, a fit, or no waking up easily
 g: Repeated vomiting, a bad headache that grows, or confusion
 g: Clear fluid or blood from the nose or ear, or weakness or numbness
 g: Unequal pupils, or a soft spot on a baby that bulges
+g: Anyone over 65 or on blood thinners (such as warfarin or aspirin) who hit their head, even if they seem fine
 what: A blow to the head can bruise the brain (concussion) or cause bleeding inside the skull, which may show hours later. Older people, those on blood thinners and children are at higher risk. Anyone with warning signs needs a doctor now.
 signs: Headache, dizziness ; Nausea ; Confusion or memory gap ; Sleepy ; Ringing in ears
 home: Hold a cold pack on a bump for 10 minutes ; Rest and avoid screens, sport and alcohol ; Paracetamol for pain, not aspirin ; Wake a sleeping person once or twice to check they respond ; Have another adult watch for 24 hours ; Do not drive

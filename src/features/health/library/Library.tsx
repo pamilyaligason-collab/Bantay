@@ -81,6 +81,7 @@ function LibraryHome() {
       <SubHeader title="Health library" backHref="#health" backLabel="Back to Health" />
       <WhoLine />
       <p className="sub lx-intro" data-testid="lib-intro">{lib ? `${lib.topics.length} topics in plain words. Works without internet.` : 'Plain words. Works without internet.'}</p>
+      <p className="sub" data-testid="lib-911"><strong>Emergency? Call 911.</strong></p>
       <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); go() }}>
         <label htmlFor="lb-q" className="hv-sr">Search topics, in English or Tagalog</label>
         <input id="lb-q" type="search" placeholder="Search: ubo, sipon, altapresyon" autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />

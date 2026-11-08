@@ -8,10 +8,10 @@ s: Fluids and rest help. Watch for the warning signs.
 g: A baby under 3 months with a fever of 38 C or more
 g: Stiff neck, fits, a rash that does not fade when pressed, or very hard to wake
 g: Fast or hard breathing, blue lips, or cannot drink
-g: Fever for more than 3 days, or a child who looks very ill
+g: Fever for 2 days or more, or a child who looks very ill
 what: A fever is a body temperature of 38 C or more. It often comes with colds, flu, ear infections, dengue and other infections. Most fevers in children settle in a few days. Look at how the child acts. A child who plays and drinks is usually less worrying than one who is limp and will not drink.
 signs: Hot skin, flushed face, chills ; Tired or cranky ; Not wanting to eat ; Sweating when the fever breaks
-home: Give plenty of fluids, breast milk or oral rehydration salts ; Light clothes and a cool room, no cold baths ; Paracetamol by the weight on the pack if the child is uncomfortable ; Never give aspirin to a child ; Check often and see a doctor if unsure
+home: Give plenty of fluids, breast milk or oral rehydration salts ; Light clothes and a cool room, no cold baths ; Paracetamol by the weight on the pack if the child is uncomfortable ; Never give aspirin to a child ; Check often and see a doctor if unsure ; Do not rub with alcohol or give cold baths
 prev: Wash hands often ; Keep vaccines up to date ; Keep sick children home ; Clean up standing water against dengue
 
 = dehydration | Dehydration | children | ph
@@ -105,7 +105,7 @@ prev: Limit sweet drinks and instant noodles ; Wash fruit and vegetables ; Keep 
 
 = earinfection | Ear infection | children | ph
 mp: Ear Infections
-aka: ear infection, sakit sa tainga, otitis, tutuli, pamamaga ng tainga
+aka: ear infection, sakit sa tainga, otitis, pamamaga ng tainga
 wiki: Ear_infection
 s: Ear infections are common in small children after a cold.
 s: Pain in the ear, pulling at the ear and fever are the usual signs.
@@ -123,12 +123,13 @@ mp: Prenatal Care
 aka: pregnancy, buntis, prenatal, pagbubuntis, check-up ng buntis
 wiki: Prenatal_care
 s: Regular check-ups keep both mother and baby safe.
-s: Go at least 4 times, and more if the doctor says.
+s: Go to every visit the health centre sets, at least 4; 8 is better.
 s: Eat well, take folic acid and iron if advised, and avoid alcohol and smoking.
 g: Bleeding from the vagina
 g: Strong tummy pain, or the baby moves much less
 g: Water breaks early, or labour before 37 weeks
 g: Bad headache, blurred vision, swelling of the face or hands
+g: Fits, fainting, high fever or trouble breathing: call 911
 what: Pregnancy lasts about 40 weeks. Check-ups look at blood pressure, weight, sugar and the baby's growth. Free care is available at the barangay health centre and rural health unit. A trained health worker should attend the birth.
 signs: Missed period, nausea, tiredness ; Tender breasts ; Passing urine often ; The baby starts to move around 5 months
 home: Take folic acid and iron if advised ; Eat more fruit, vegetables, fish and eggs ; Rest and drink water ; Take tetanus shots ; Avoid alcohol, smoking and herbal remedies unless a doctor says so
@@ -145,7 +146,10 @@ s: It is found at check-ups. That is another reason to go.
 g: Severe headache, blurred vision or flashing lights
 g: Pain under the ribs on the right side
 g: Swelling of the face and hands, or sudden weight gain
-g: Fits, or a baby that moves much less
+g: Fits: call 911 now
+g: A baby that moves much less
+g: Trouble breathing
+g: These signs can also start in the 6 weeks after birth
 what: In pre-eclampsia blood pressure rises and the kidneys leak protein. It usually starts after week 20. It can lead to fits (eclampsia) or to early birth. Treatment may include medicine and, at times, early delivery to keep both safe.
 signs: Blood pressure 140/90 or higher ; Protein in the urine ; Swelling of the face and hands ; Bad headache or vision changes
 home: Go to every check-up ; Rest on your left side ; Follow your doctor's plan and medicine ; Know when to go to hospital
@@ -153,7 +157,7 @@ prev: Early and regular prenatal care ; Tell your doctor if you had it before, o
 
 = febrileseizure | Fits with fever in a child | children | ph
 mp: Seizures
-aka: febrile seizure, kombulsyon, nanginginig sa lagnat, kombulsyon ng bata, pasma
+aka: febrile seizure, kombulsyon, nanginginig sa lagnat, kombulsyon ng bata
 wiki: Febrile_seizure
 s: Some young children have a fit when the fever rises quickly.
 s: It looks scary but is usually harmless and lasts under 5 minutes.

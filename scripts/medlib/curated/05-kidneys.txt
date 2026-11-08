@@ -32,7 +32,7 @@ prev: Control diabetes and blood pressure ; Avoid unneeded painkillers ; Treat k
 
 = kidneystone | Kidney stones | kidneys | ph
 mp: Kidney Stones
-aka: kidney stones, bato sa bato, bato sa apdo, nephrolithiasis, masakit ang tagiliran
+aka: kidney stones, bato sa bato, nephrolithiasis, masakit ang tagiliran
 wiki: Kidney_stone_disease
 s: Stones are hard lumps that form in the kidney from salts.
 s: They cause sudden, very bad pain in the side.
