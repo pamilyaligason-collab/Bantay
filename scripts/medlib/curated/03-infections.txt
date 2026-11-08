@@ -1,0 +1,389 @@
+= dengue | Dengue | infections | ph rainy
+mp: Dengue
+aka: dengue fever, break-bone fever, lagnat, lamok, dengue shock
+wiki: Dengue_fever
+s: Dengue is a virus spread by day-biting mosquitoes, most often in the rainy season.
+s: Many people recover at home, but some get very sick on days 3 to 7.
+s: Watch for warning signs once the fever drops.
+g: Bleeding from the nose or gums, black stools or vomit with blood
+g: Bad tummy pain that does not stop, or vomiting again and again
+g: Very sleepy, restless, or cold clammy skin when the fever goes down
+g: Cannot drink, or very little urine
+g: Go to the hospital now. Do not wait for the next day.
+what: Dengue is a virus spread by the bite of the Aedes mosquito, which bites in the daytime. Most people recover with rest and fluids. A small number get severe dengue, which can cause bleeding and shock. The risk is highest a few days after the fever starts, often just as the fever drops.
+signs: Sudden high fever for 2 to 7 days ; Bad headache and pain behind the eyes ; Muscle and joint pain ; Rash and mild bleeding of the nose or gums ; Feeling very tired
+home: Rest and drink lots of fluids such as water, oral rehydration salts and soup ; Use paracetamol for fever and follow the pack ; Do not take aspirin or ibuprofen as they can raise the risk of bleeding ; See a doctor for a blood test, then daily checks until the fever is gone for 2 days
+prev: Remove standing water weekly: tires, cans, pots, gutters ; Cover water drums and change vase water ; Use mosquito repellent and long sleeves in the daytime ; Use nets or screens for babies and bed-ridden people
+v: V1TPAmsn1us | WHO Science in 5: Dengue Fever | World Health Organization (WHO)
+v: BklPK1xKjkE | What is dengue? | WHO European Region
+
+= lepto | Leptospirosis | infections | ph rainy
+mp: Bacterial Infections
+aka: lepto, leptospirosis, baha, rat urine disease, sakit sa daga, lagnat pagkatapos lumusong sa baha
+wiki: Leptospirosis
+s: A germ in rat urine gets into water, especially floodwater.
+s: It can enter through cuts or the eyes, nose and mouth.
+s: Early treatment with antibiotics works best.
+g: Yellow eyes or skin, very little urine, or swollen face
+g: Trouble breathing or coughing blood
+g: Bad headache with stiff neck, or confusion
+g: Bleeding or purple spots on the skin
+g: Go to the hospital now. Say you waded in floodwater.
+what: Leptospirosis is caused by bacteria found in the urine of rats and other animals. It spreads when floodwater or mud with those germs touches cuts or the eyes, nose or mouth. It is common after floods and typhoons. Early treatment with antibiotics prevents serious illness.
+signs: Fever and chills, often 2 days to 2 weeks after contact ; Headache ; Muscle pain, especially the calves ; Red eyes ; Vomiting or diarrhoea
+home: Do not wait to see if it passes: see a doctor within a day if you had floodwater contact and a fever ; Wash your feet and legs with soap and clean water after wading ; Ask about a preventive antibiotic from the health centre after a flood ; Rest and drink fluids
+prev: Avoid wading in floodwater ; Wear boots and cover cuts ; Keep garbage covered and control rats ; Wash and dry your legs after contact
+v: hisdjEPue-A | Baha at Leptospirosis: Alamin ang Lunas | Doc Willie Ong
+v: uPBHwXyGxEU | Lumusong sa Baha, Babala sa Leptospirosis, Typhoid Fever | Doc Willie Ong
+
+= typhoid | Typhoid fever | infections | ph rainy
+mp: Salmonella Infections
+aka: typhoid, enteric fever, lagnat na matagal, tipus
+wiki: Typhoid_fever
+s: Typhoid comes from food or water dirtied with germs.
+s: It brings a fever that rises day by day.
+s: Antibiotics treat it, and a vaccine can prevent it.
+g: Bad tummy pain with a hard belly, or black stools
+g: Confusion, or very sleepy and weak
+g: Fever that keeps rising with vomiting, or cannot drink
+what: Typhoid is a bacterial infection spread by food or water that has the germ, often after floods. It is passed by people who do not wash hands after the toilet. A doctor can test the blood to be sure. Antibiotics work, but you must finish the course.
+signs: Fever that goes higher each day ; Headache, tiredness ; Tummy pain, constipation or diarrhoea ; Loss of appetite ; A few pink spots on the chest
+home: See a doctor for tests and antibiotics ; Finish the full antibiotics ; Drink clean, safe water and oral rehydration salts ; Do not prepare food for others until a doctor says it is safe
+prev: Drink boiled or bottled water ; Wash hands with soap after the toilet and before food ; Eat well-cooked food ; Ask about the typhoid vaccine
+
+= diarrhea | Diarrhoea | infections | ph rainy
+mp: Diarrhea
+aka: diarrhea, LBM, lbm, pagtatae, nagtatae, masakit ang tiyan, loose bowel
+wiki: Diarrhea
+s: Diarrhoea is loose, watery stools three or more times a day.
+s: The main danger is losing too much water.
+s: Oral rehydration salts (ORS) and clean water save lives.
+g: Signs of dehydration: very dry mouth, no tears, sunken eyes, very little urine
+g: Blood in the stool, or black stools
+g: A baby under 6 months, or a child too weak to drink
+g: High fever, or diarrhoea for more than 2 days (more than 1 day in a baby)
+what: Diarrhoea is often caused by a stomach infection from food or water. It usually clears in a few days. The risk is dehydration, especially in babies, young children and older people. ORS helps the body use the water you drink.
+signs: Loose, watery stools ; Tummy cramps ; Feeling sick or vomiting ; Fever ; Thirst
+home: Give ORS after each loose stool, a little at a time ; Keep eating or breastfeeding ; Zinc tablets for children as advised by a doctor ; Do not give anti-diarrhoea medicine to young children ; Wash hands well
+prev: Wash hands with soap ; Drink safe water ; Cook food well and keep it covered ; Breastfeed babies ; Give rotavirus vaccine to babies
+v: 3PmVJQUCm4E | How to wash your hands with soap and water | World Health Organization
+
+= cholera | Cholera | infections | ph rainy
+mp: Cholera
+aka: cholera, pagtatae ng tubig, sakit pagkatapos ng baha
+wiki: Cholera
+s: Cholera causes sudden, very watery diarrhoea.
+s: It spreads in dirty water and can kill within hours.
+s: Rehydration and early care save lives.
+g: Watery stools like rice water, many times a day
+g: Dry mouth, sunken eyes, dizziness or fainting
+g: Very little urine, cramps in the legs
+g: Go to a hospital now
+what: Cholera is a bacterial infection spread by contaminated water and food. It causes large amounts of watery diarrhoea and fast dehydration. It is treated with fluids and sometimes antibiotics. Outbreaks happen after floods and where water is unsafe.
+signs: Sudden, large watery diarrhoea ; Vomiting ; Thirst, muscle cramps ; Fast heartbeat, sunken eyes ; Weakness
+home: Start ORS right away and keep sipping on the way to care ; Go to the nearest clinic or hospital ; Wash hands well after caring for the sick
+prev: Drink boiled or treated water ; Wash hands with soap ; Cook food well ; Use a clean toilet and keep water sources clean
+
+= hepa | Hepatitis A | infections | ph
+mp: Hepatitis A
+aka: hepatitis A, hepa A, paninilaw, jaundice, dilaw ang mata
+wiki: Hepatitis_A
+s: Hepatitis A is a liver infection from dirty food or water.
+s: It makes the skin and eyes yellow.
+s: It usually gets better by itself, and a vaccine prevents it.
+g: Confusion, very sleepy, or bleeding easily
+g: Constant vomiting and cannot drink
+g: Yellow skin and eyes with severe tummy pain
+what: Hepatitis A is caused by a virus that spreads through food or water with traces of stool, or by close contact. It inflames the liver. Most people recover in a few weeks and then cannot catch it again. It is rarely serious in children but can be in older people.
+signs: Yellow skin and eyes ; Dark urine, pale stools ; Tiredness, loss of appetite ; Nausea, tummy pain ; Fever
+home: Rest ; Drink plenty of fluids ; Avoid alcohol and ask before taking any medicine ; See a doctor for a check
+prev: Wash hands with soap ; Drink safe water and eat well-cooked food ; Get the hepatitis A vaccine
+
+= hepb | Hepatitis B and C | infections | ph
+mp: Hepatitis B
+aka: hepatitis B, hepa B, hepatitis C, liver virus, atay
+wiki: Hepatitis_B
+s: Hepatitis B and C are viruses that can harm the liver for years.
+s: Many people feel well and do not know they have it.
+s: A blood test finds it. Hepatitis B can be prevented by vaccine.
+g: Yellow skin or eyes with confusion
+g: Vomiting blood or black stools
+g: A swollen tummy with fever and tummy pain
+what: Hepatitis B spreads through blood and body fluids, and from mother to baby at birth. Hepatitis C spreads mostly through blood. Over time both can cause scarring (cirrhosis) or liver cancer. Treatments can protect the liver, so testing is useful.
+signs: Often no signs for years ; Tiredness ; Yellow skin or eyes ; Dark urine ; Tummy pain
+home: See a doctor for blood tests and regular liver checks ; Avoid alcohol ; Ask before taking any herbal or other medicine ; Do not share razors or toothbrushes
+prev: Hepatitis B vaccine for all babies and at-risk adults ; Do not share needles ; Use protection during sex ; Test pregnant women
+
+= malaria | Malaria | infections | ph
+mp: Malaria
+aka: malaria, lamig na lagnat, panginginig, kagat ng lamok sa bundok
+wiki: Malaria
+s: Malaria is spread by the bite of night-biting mosquitoes in some rural and forest areas.
+s: Fever with shivering after travel there needs a blood test at once.
+s: It can be treated, and sleeping under a net prevents it.
+g: Fever with confusion, fits, or yellow skin
+g: Very hard breathing or very little urine
+g: Heavy bleeding or a child who cannot drink
+what: Malaria is caused by a parasite carried by the Anopheles mosquito. In the Philippines it is found in some parts of Palawan and a few other places. It is treated with medicine from a health centre. Tell the clinic where you have been.
+signs: Fever with chills and sweats ; Headache and muscle pain ; Nausea or vomiting ; Tiredness ; Signs often come in waves
+home: Get a blood test at the nearest health centre ; Take the full course of the medicine given ; Rest and drink fluids
+prev: Sleep under a net with insecticide ; Use repellent at dusk and night ; Ask about preventive medicine before travel to risk areas
+
+= measles | Measles | infections | ph
+mp: Measles
+aka: tigdas, tigdas hangin, rubeola, German measles, tigdas ng bata
+wiki: Measles
+s: Measles spreads very easily through the air.
+s: It brings fever and a rash, and can cause pneumonia or harm the brain.
+s: Two doses of vaccine protect children very well.
+g: Trouble breathing or fast breathing
+g: A child who is very drowsy, has fits or a stiff neck
+g: Cannot drink, or signs of dehydration
+g: Ear pain or eye infection that gets worse
+what: Measles is a highly catching virus. One sick person can pass it to most unvaccinated people nearby. The rash starts on the face and spreads down. Complications include pneumonia, ear infection and brain swelling. There is no cure, but care at a clinic and vitamin A can help.
+signs: Fever, cough and runny nose ; Red, watery eyes ; White spots inside the cheeks ; A red rash, face first, spreading down ; Feeling very unwell
+home: See a doctor or the health centre ; Keep the child at home to protect others ; Give fluids and keep feeding ; Ask about vitamin A as advised by a health worker
+prev: Give the measles vaccine at 9 and 12 months, or as the health centre advises ; Catch up on missed doses, adults too ; Keep sick children home
+
+= chickenpox | Chickenpox | infections
+mp: Chickenpox
+aka: bulutong, bulutong-tubig, varicella, chicken pox
+wiki: Chickenpox
+s: Chickenpox gives an itchy rash with blisters.
+s: It spreads easily and is milder in children than in adults.
+s: A vaccine prevents it.
+g: Trouble breathing, or a cough that gets worse
+g: Spots that turn red, swollen, warm or leak pus
+g: A stiff neck, confusion, or very drowsy
+g: Newborns, pregnant women and people with weak immunity need a doctor at once
+what: Chickenpox is caused by the varicella virus. Itchy blisters appear in waves and then crust over. People can spread it from 1 to 2 days before the rash until all blisters are dry. It can be more serious in newborns, adults, pregnant women and people with weak immunity.
+signs: Fever, tiredness ; Itchy red spots that become blisters ; New spots for 3 to 5 days ; Scabs after a week
+home: Keep nails short and clean ; Cool baths or wet cloths ease itching ; Wear loose cotton clothes ; Paracetamol for fever, no aspirin for children ; Stay home until all blisters are dry
+prev: Chickenpox vaccine (two doses) ; Keep away from people with chickenpox if you are not immune ; Wash hands
+
+= shingles | Shingles | infections
+mp: Shingles
+aka: shingles, herpes zoster, sinturon ng apoy, apoy-apoy
+wiki: Shingles
+s: Shingles is a painful rash on one side of the body.
+s: It comes from the chickenpox virus waking up.
+s: See a doctor within 3 days of the rash for best treatment.
+g: A rash near an eye, or eye pain or changes in vision
+g: A rash with severe pain over the face or ear
+g: Fever with a spreading rash, or weak immunity
+what: After chickenpox, the virus stays asleep in the body. Years later it can wake up and cause shingles, often in older adults. The rash usually forms a band on one side. Antiviral medicine works best if started early. The pain can last for weeks.
+signs: Burning, tingling or pain on one side ; Then a band of blisters ; Fever and tiredness ; Itching
+home: See a doctor within 3 days ; Keep the rash clean and dry, cover loosely ; Cool, damp cloths for pain ; Avoid contact with babies, pregnant women and people with weak immunity until blisters crust
+prev: Shingles vaccine for adults, ask your doctor ; Keep healthy and manage stress
+
+= mumps | Mumps | infections
+mp: Mumps
+aka: beke, pamamaga ng pisngi, mumps
+wiki: Mumps
+s: Mumps swells the glands near the ears and cheeks.
+s: It spreads through coughs and sneezes.
+s: The MMR vaccine prevents it.
+g: Bad headache with stiff neck, vomiting or confusion
+g: Severe tummy pain
+g: A swollen, painful testicle
+what: Mumps is a virus that makes the glands near the jaw swell. It spreads by coughing and sneezing. It usually clears in about two weeks. Rarely it can cause meningitis or swelling of the testicles or ovaries.
+signs: Swollen, painful cheeks or jaw ; Fever, headache ; Pain when chewing or swallowing ; Tiredness
+home: Rest at home until the swelling is gone, about 5 days ; Soft foods and plenty of fluids ; Paracetamol for pain or fever ; Warm or cool packs on the swollen part
+prev: MMR vaccine for children ; Wash hands ; Do not share cups
+
+= tetanus | Tetanus | infections | ph
+mp: Tetanus
+aka: tetano, lockjaw, tetanus shot, kalawang na pako, sugat sa lupa
+wiki: Tetanus
+s: Tetanus germs live in soil and enter through wounds.
+s: It causes painful muscle spasms and can kill.
+s: A tetanus shot every 10 years prevents it.
+g: Stiff jaw or neck, or muscle spasms after a wound
+g: Trouble swallowing or breathing
+g: A deep or dirty wound, and you have not had a tetanus shot in 5 to 10 years
+what: Tetanus is caused by bacteria in soil, dust and animal waste. They enter through cuts, puncture wounds or burns. The poison causes painful muscle spasms, first in the jaw. Tetanus is preventable with vaccine, and it needs hospital care.
+signs: Jaw stiffness (lockjaw) ; Stiff neck and muscles ; Painful spasms ; Trouble swallowing ; Fever and sweating
+home: Wash any wound well with clean water and soap right away ; Cover it with a clean cloth ; See a clinic for a tetanus shot if the wound is deep, dirty or old
+prev: Tetanus vaccine in childhood and booster every 10 years ; Pregnant women get tetanus shots ; Clean all wounds well
+
+= hiv | HIV | infections | ph
+mp: HIV
+aka: HIV, AIDS, HIV test, PrEP, PEP
+wiki: HIV/AIDS
+s: HIV weakens the body's defence against germs.
+s: Medicine lets people with HIV live long, healthy lives.
+s: Testing is free and private at many clinics.
+g: Within 72 hours of a possible exposure: go to a clinic and ask about PEP
+g: Fever, severe cough or weight loss in a person with HIV
+g: Confusion, severe headache or trouble breathing
+what: HIV is a virus that attacks the immune system. It spreads through blood, sex without a condom, and from mother to baby. Medicine called ART keeps the virus down so people stay healthy and do not pass it on. A test at a clinic can tell you your status.
+signs: Flu-like illness a few weeks after infection ; Often no signs for years ; Weight loss, night sweats ; Frequent infections ; Mouth sores
+home: Take HIV medicine every day, as told ; Go to your clinic regularly ; Eat well and rest ; Use condoms
+prev: Use condoms every time ; Do not share needles ; PrEP for people at higher risk, ask a clinic ; Pregnant women should be tested
+
+= sti | Sexually transmitted infections | infections | ph
+mp: Sexually Transmitted Infections
+aka: STI, STD, sexually transmitted infection, tulo, gonorrhea, syphilis, chlamydia, HPV
+wiki: Sexually_transmitted_infection
+s: STIs spread through sex and often have no signs.
+s: Most can be treated, and some can be cured.
+s: Condoms and regular tests protect you.
+g: Severe tummy pain with fever
+g: Pain, swelling or a sore in the genital area that gets worse
+g: Pregnant with any signs
+what: Sexually transmitted infections include chlamydia, gonorrhoea, syphilis, herpes and HPV. Many have no signs for a long time, but can still harm health and spread. Some cause problems in pregnancy or infertility. A clinic can test and treat.
+signs: Unusual discharge or smell ; Burning when you pass urine ; Sores or blisters in the genital area ; Pain during sex ; Often no signs at all
+home: See a clinic for a private test ; Take all medicines as given ; Tell your partner so they can be treated ; Avoid sex until treated
+prev: Use condoms every time ; Get tested with a new partner ; HPV vaccine for girls and young women ; Limit the number of partners
+
+= scabies | Scabies (galis) | infections | ph
+mp: Scabies
+aka: galis, scabies, makati ang balat, kati sa gabi
+wiki: Scabies
+s: Scabies is a skin infestation by tiny mites that cause strong itching.
+s: Itching is worst at night.
+s: It spreads by close contact, so the whole household needs treatment.
+g: Skin turns red, warm, painful or leaks pus
+g: Fever with spreading redness
+g: A baby or a person with weak immunity
+what: Scabies is caused by tiny mites that burrow under the skin. It spreads by close skin contact and shared clothes or bedding. It causes strong itching and a rash, often between the fingers, on the wrists and the waist. A doctor can prescribe a cream or tablet that kills the mites.
+signs: Strong itching, worse at night ; Small red bumps ; Thin lines between fingers or on wrists ; Scratch marks, sores
+home: See a doctor or health worker for the right cream ; Treat everyone in the home at the same time ; Wash clothes, towels and bedding in hot water and dry in the sun ; Keep nails short
+prev: Avoid sharing clothes, towels and beds ; Wash and sun-dry bedding often ; Treat family members together
+
+= ringworm | Skin fungus (hadhad) | infections | ph
+mp: Fungal Infections
+aka: hadhad, buni, an-an, ringworm, athlete's foot, alipunga, fungus
+wiki: Dermatophytosis
+s: Fungus likes warm, damp skin.
+s: It causes itchy, round or scaly patches.
+s: Cream from the pharmacy usually clears it.
+g: Skin that is very red, swollen, painful or leaks pus
+g: Fever with a spreading rash
+g: A rash on the scalp or nails that does not improve, or in a person with diabetes
+what: Fungus can grow on skin, nails and scalp. Ringworm makes red, round, scaly patches. Athlete's foot is between the toes. Fungal infections spread by touch, towels and damp floors. They are not caused by worms. Anti-fungal cream usually works in a few weeks.
+signs: Itchy, red, scaly rings ; Peeling skin between toes ; Thick, yellow nails ; Hair loss in patches on the scalp
+home: Keep the skin clean and dry ; Use antifungal cream as directed, past when it looks healed ; Wear loose cotton clothes and dry socks ; Do not share towels
+prev: Dry well after bathing, especially between toes ; Wear slippers in public showers ; Change sweaty clothes ; Do not share combs or towels
+
+= headlice | Head lice | infections | ph
+mp: Head Lice
+aka: kuto, lisa, head lice, nits, kuto sa ulo
+wiki: Head_louse
+s: Head lice are tiny insects that live on the scalp.
+s: They spread by close contact, mostly among children.
+s: They are not a sign of being dirty.
+g: Scalp sores that are red, swollen or leak pus
+g: Fever with swollen neck glands
+g: Lice that stay after proper treatment
+what: Head lice are small insects that live in hair and feed on the scalp. They spread when heads touch and by sharing combs or caps. They do not cause illness but itch a lot. A pharmacist can suggest a lotion, and a fine comb removes eggs.
+signs: Itchy scalp ; Tiny white eggs (nits) stuck to hair near the scalp ; Small red marks on the scalp or neck ; Feeling of something moving
+home: Use the lotion a pharmacist or doctor suggests ; Comb with a fine-toothed comb ; Wash combs, caps and bedding in hot water ; Check everyone at home
+prev: Do not share combs, caps or pillows ; Tie long hair back at school ; Check children's hair weekly
+
+= foodpoison | Food poisoning | infections | ph rainy
+mp: Foodborne Illness
+aka: food poisoning, nalason sa pagkain, pagsusuka, nagsusuka at nagtatae, panis na pagkain
+wiki: Foodborne_illness
+s: Food poisoning comes from food or drink with germs or poisons.
+s: It brings vomiting, diarrhoea and cramps within hours or days.
+s: Most people recover in a day or two with fluids.
+g: Blood in the stool or vomit
+g: Signs of dehydration: very dry mouth, no urine, dizziness
+g: Fever above 38.5 C, or double vision or trouble speaking
+g: Pregnant, very young, older, or has other illness
+what: Food poisoning happens when you eat food with germs, or toxins, from poor storage or cooking. It is common in hot weather, after parties and after floods. Seafood, rice left out, raw eggs and unwashed vegetables are common causes.
+signs: Vomiting ; Watery diarrhoea ; Tummy cramps ; Fever ; Weakness
+home: Sip fluids or ORS often in small amounts ; Rest the stomach for a few hours then eat plain food like rice or bread ; Do not use anti-diarrhoea medicine without a doctor's advice ; Wash hands well
+prev: Wash hands before cooking and eating ; Cook meat, fish and eggs well ; Keep cooked food covered and in the fridge ; Do not leave rice or food out for hours
+
+= worms | Intestinal worms | infections | ph
+mp: Parasitic Diseases
+aka: bulate, worms, parasites, uod, deworming, pinworms
+wiki: Intestinal_parasite_infection
+s: Worms in the gut are common in children.
+s: They come from dirty hands, soil and water.
+s: Deworming medicine is safe and often free.
+g: Severe tummy pain, vomiting and a swollen belly
+g: A worm in the vomit or stool with fever
+g: Very pale, weak child with a swollen tummy
+what: Roundworm, hookworm, whipworm and pinworm are common gut worms. Eggs spread through soil, unwashed food and dirty hands. They can cause poor growth and anaemia in children. Deworming tablets are given at school and health centres.
+signs: Tummy ache ; Itching around the bottom at night (pinworm) ; Poor appetite or a swollen belly ; Tiredness or pale skin ; Worms seen in stool
+home: Take deworming medicine as advised by a health worker ; Wash hands and trim nails ; Wash bedding and underwear in hot water
+prev: Wash hands with soap ; Wear slippers outside ; Wash fruit and vegetables ; Use a toilet and drink safe water ; Deworm every 6 months as advised
+
+= polio | Polio | infections | ph
+mp: Polio and Post-Polio Syndrome
+aka: polio, poliomyelitis, paralisis ng bata, bakuna sa polio
+wiki: Poliomyelitis
+s: Polio is a virus that can cause lasting paralysis.
+s: There is no cure, but the vaccine protects children.
+s: Any child with sudden weak legs needs care at once.
+g: A child with sudden weak or floppy arms or legs, with or without fever
+g: Trouble breathing or swallowing
+g: Go to the hospital and tell health workers at once
+what: Polio is a virus that spreads in dirty water and by close contact. Most infected people have no signs, but some are paralysed for life. Polio vaccines given in childhood are very effective. Health workers must be told of every sudden floppy weakness.
+signs: Fever and sore throat ; Headache, stiff neck ; Weakness in the arms or legs ; Muscle pain ; Floppy limbs in children
+home: Go to the hospital if there is sudden weakness ; Keep up vaccines
+prev: Polio vaccine on schedule ; Catch-up doses for missed children ; Wash hands ; Use a toilet and safe water
+
+= mpox | Mpox | infections
+mp: Mpox
+aka: mpox, monkeypox, bulutong-unggoy
+wiki: Mpox
+s: Mpox is a virus that causes a blistering rash.
+s: It spreads through close skin contact.
+s: Most people recover in 2 to 4 weeks.
+g: Trouble breathing, or confusion
+g: Rash in the eyes or severe pain
+g: Pregnant, a child or a person with weak immunity who has a rash
+what: Mpox is a virus that spreads by close skin contact, sex, and by touching infected bedding or clothes. It causes fever and a rash with blisters. Most people get better in a few weeks. A vaccine exists for people at higher risk.
+signs: Fever, headache, swollen glands ; Rash that turns into blisters ; Sores in the mouth or on the genitals ; Tiredness
+home: Stay away from others until the rash heals ; Do not scratch the blisters ; Cover sores with a clean bandage ; See a health worker to report and be tested
+prev: Avoid close contact with someone who has the rash ; Do not share bedding or towels ; Ask about the vaccine if you are at higher risk
+
+= sepsis | Sepsis | infections
+mp: Sepsis
+aka: sepsis, impeksyon sa dugo, blood poisoning, matinding impeksyon
+wiki: Sepsis
+s: Sepsis is a life-threatening reaction to an infection.
+s: It can start from a small wound, pneumonia or a urine infection.
+s: It needs hospital care at once.
+g: Fever or low temperature with fast heartbeat and fast breathing
+g: Confusion, very sleepy, or slurred speech
+g: Cold, clammy, blotchy skin, or very little urine
+g: Go to the hospital now
+what: Sepsis happens when the body's reaction to an infection harms its own organs. Blood pressure can fall. It can start from any infection and needs fast treatment with antibiotics and fluids. Older people, babies and people with weak immunity are at higher risk.
+signs: Fever or shivering ; Fast heartbeat and fast breathing ; Confusion ; Very weak or sleepy ; Pale, cold or blotchy skin
+home: There is no safe home treatment: go to the hospital ; Tell staff you worry about sepsis ; Treat wounds and infections early
+prev: Clean wounds ; Keep vaccines up to date ; Treat infections early ; Wash hands
+
+= schisto | Schistosomiasis | infections | ph
+mp: Parasitic Diseases
+aka: schistosomiasis, snail fever, bilharzia, sakit sa kuhol, Leyte, Mindanao
+wiki: Schistosomiasis
+s: A parasite in water with certain snails can enter through the skin.
+s: It is found in parts of Mindanao, Leyte and Samar.
+s: Tablets given at the health centre treat it.
+g: Vomiting blood or black stools
+g: A swollen belly with fever, or yellow eyes
+g: Bloody stool or urine that lasts
+what: Schistosomiasis is caused by worms whose young live in snails in ponds, rice fields and streams. They enter the skin when you wade or wash in the water. Over time they can harm the liver and bowel. A single treatment with praziquantel from the health centre works.
+signs: Itchy rash after wading ; Fever, tiredness ; Tummy pain ; Bloody diarrhoea ; Swollen belly later
+home: Go to the rural health unit for testing and treatment ; Avoid more contact with infected water
+prev: Do not wade or swim in water where the snails live ; Wear boots in rice fields ; Get treated at the yearly drives ; Use toilets
+
+= filariasis | Filariasis (elephantiasis) | infections | ph
+mp: Lymphatic Diseases
+aka: filariasis, elephantiasis, malaking binti, namamaga ang binti
+wiki: Lymphatic_filariasis
+s: Filariasis is caused by tiny worms spread by mosquitoes.
+s: It can cause huge swelling of the leg or other parts.
+s: Yearly tablets in affected areas help stop it.
+g: Fever with a red, hot, painful swollen leg
+g: Skin cracks that leak or smell, or a wound that will not heal
+g: Trouble breathing or severe pain in the scrotum
+what: Filariasis is caused by thread-like worms that live in the lymph vessels. Mosquitoes spread them. The damage can lead to swelling called lymphoedema or elephantiasis. Tablets given once a year in affected provinces clear the young worms.
+signs: Swollen leg, arm or scrotum ; Fever and chills that come and go ; Painful lymph glands ; Thick, hard skin
+home: Take part in the yearly drug-treatment drive ; Wash the swollen part with soap and water daily ; Keep it raised when resting ; See a health worker for care
+prev: Sleep under a net ; Use repellent ; Remove standing water where mosquitoes breed

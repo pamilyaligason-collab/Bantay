@@ -1,0 +1,151 @@
+= diabetes2 | Diabetes (type 2) | sugar | ph
+mp: Diabetes Type 2
+aka: diabetes, type 2 diabetes, asukal, mataas na asukal, sakit sa asukal, blood sugar
+wiki: Type_2_diabetes
+s: Your body cannot use sugar well, so it builds up in the blood.
+s: Over the years high sugar harms eyes, kidneys, nerves and feet.
+s: Food, activity, medicine and regular checks keep it in range.
+g: Very sleepy or confused, breathing fast, or fruity-smelling breath
+g: Vomiting that does not stop, or cannot keep fluids down
+g: Sugar very high with extreme thirst and passing a lot of urine
+g: A foot sore with fever or black skin
+what: In type 2 diabetes the body does not make enough insulin or does not use it well. Sugar then stays high in the blood. It is often linked to weight, family history and age. It can be controlled and sometimes put into remission, but it needs long-term care.
+signs: Very thirsty ; Passing urine a lot, especially at night ; Tired, blurred vision ; Slow-healing sores ; Tingling in the feet; many people have no signs
+home: Take medicines or insulin as prescribed ; Eat regular meals with less sugar and white rice, more vegetables ; Walk after meals if your doctor allows ; Check your feet daily ; Keep check-ups, eye and kidney tests
+prev: Keep a healthy weight ; Move 30 minutes on most days ; Cut sweet drinks ; Get your sugar tested from age 35, or earlier if family has diabetes
+v: 5R1ORrDOrn4 | 10 tips to control diabetes (in Filipino) | Doc Willie Ong
+v: nxIJeHWlhF4 | How to measure your blood sugar | Mayo Clinic
+
+= diabetes1 | Type 1 diabetes | sugar
+mp: Diabetes Type 1
+aka: type 1 diabetes, juvenile diabetes, diabetes sa bata, insulin
+wiki: Type_1_diabetes
+s: In type 1 diabetes the body makes no insulin.
+s: It often starts in children and young people.
+s: Insulin every day is a must, and never stopped.
+g: Vomiting, tummy pain, fast breathing, fruity breath (a sign called DKA)
+g: Very sleepy, confused or unconscious
+g: Sugar very high and ketones in the urine
+what: Type 1 diabetes happens when the body's own defence harms the cells that make insulin. Insulin must be given by injection or pump for life. With good care, children and adults can live full lives. Missing insulin can cause a dangerous emergency called diabetic ketoacidosis.
+signs: Very thirsty and hungry ; Passing a lot of urine ; Weight loss ; Tired ; Stomach pain or fruity breath if serious
+home: Take insulin exactly as taught ; Check sugar as advised ; Always carry quick sugar for lows ; Never skip insulin when sick ; Keep clinic visits
+prev: It cannot be prevented ; Early diagnosis prevents emergencies ; Teach family and school what to do for lows
+
+= prediabetes | Prediabetes | sugar | ph
+mp: Prediabetes
+aka: prediabetes, borderline na asukal, mataas na asukal sa dugo, pre-diabetes
+wiki: Prediabetes
+s: Prediabetes means your sugar is above normal but not yet diabetes.
+s: Many people do not know they have it.
+s: Activity and weight loss can turn it back.
+g: Extreme thirst, passing lots of urine, blurred vision: see a doctor soon
+g: Very sleepy or confused: go to the hospital
+what: In prediabetes, blood sugar is higher than normal but not high enough for diabetes. Without change, many people get type 2 diabetes within a few years. Losing even a small amount of weight and walking daily can cut the risk a lot.
+signs: Usually none ; Darker skin on the neck or armpits ; Found on a blood test
+home: Walk 30 minutes most days ; Lose 5 to 7 of every 100 kg of body weight if overweight ; Eat less sugar and white rice, more vegetables ; Re-test your sugar every year
+prev: Keep a healthy weight ; Move every day ; Cut sweet drinks ; Do not smoke
+
+= hypoglycemia | Low blood sugar | sugar
+mp: Hypoglycemia
+aka: hypoglycemia, low sugar, mababang asukal, nanginginig, hilo sa gutom
+wiki: Hypoglycemia
+s: Sugar that is too low can make you shaky, sweaty and confused.
+s: It is most common in people who use insulin or some diabetes pills.
+s: Quick sugar fixes it in minutes.
+g: The person cannot swallow, is very confused, or has a fit
+g: The person passes out: call 911, do not put anything in the mouth
+g: Sugar does not rise after 15 minutes of treatment, or they pass out
+what: Low blood sugar, usually under 70 mg/dL in a person with diabetes, can come on quickly. Missing a meal, extra exercise, too much insulin or alcohol are common causes. Treat it at once. Unchecked it can cause fits and unconsciousness.
+signs: Shaky, sweaty, fast heartbeat ; Hunger, headache ; Confusion, odd behaviour ; Blurry vision ; Fainting
+home: If awake: give 15 g of quick sugar, such as half a glass of juice or 3 teaspoons of sugar in water ; Re-check in 15 minutes and repeat if still low ; Then eat a snack or meal ; Tell your doctor it happened
+prev: Eat meals on time ; Always carry sugar or candy ; Check sugar before driving and exercise ; Talk to your doctor about medicine doses
+v: gDBzUF4E1IU | Diabetic emergency: what to do | British Red Cross
+
+= diabeticfoot | Diabetic foot care | sugar | ph
+mp: Diabetic Foot
+aka: diabetic foot, sugat sa paa, paa ng diabetic, ulcer sa paa, sugat na hindi gumagaling
+wiki: Diabetic_foot
+s: High sugar can numb the feet and slow healing.
+s: A small sore can turn into a serious infection.
+s: Check your feet every day.
+g: A sore with pus, redness, warmth or a bad smell
+g: Black or blue skin on a toe or foot
+g: Fever with a foot sore, or a hot, swollen foot
+what: Diabetes can damage nerves and blood vessels in the feet. You may not feel a cut or blister, and it heals slowly. Untreated sores can lead to infection and, in the worst cases, loss of a toe or foot. Daily care prevents most of this.
+signs: Numbness or tingling ; Burning pain ; Dry, cracked skin ; Cuts or blisters you did not feel ; Colour change
+home: Look at your feet and between toes every day ; Wash with lukewarm water, dry well ; Moisturise but not between toes ; Wear clean cotton socks and shoes that fit ; Never walk barefoot ; Do not cut corns yourself
+prev: Keep sugar in range ; Do not smoke ; Get a foot check at every visit ; Cut toenails straight across
+v: AeKK5TzXqis | WARNING SIGNS! Diabetes-Related Feet Complications | Gabay sa Kalusugan - Dr. Gary Sy
+
+= diabeticeye | Diabetes and the eyes | sugar
+mp: Diabetic Eye Problems
+aka: diabetic retinopathy, malabo ang mata, eye problems in diabetes, mata at diabetes
+wiki: Diabetic_retinopathy
+s: High sugar can damage the tiny vessels in the eye.
+s: It can cause blindness, but early signs are silent.
+s: A yearly eye check protects your sight.
+g: Sudden loss of vision, or a curtain over the vision
+g: Many new floaters or flashes of light
+g: Sudden eye pain or redness with blurred vision
+what: Diabetic retinopathy is damage to the back of the eye. At first there may be no symptoms. Without treatment it can lead to blindness. Laser or injections can protect sight if found early. Good sugar and blood pressure control slows it.
+signs: Often none at first ; Blurred or wavy vision ; Dark spots (floaters) ; Poor night vision ; Colours look dull
+home: Get an eye exam with dilated pupils every year ; Keep sugar and blood pressure in range ; Do not smoke ; Tell your eye doctor you have diabetes
+prev: Control sugar, blood pressure and cholesterol ; Yearly eye checks ; Stop smoking
+
+= thyroid | Thyroid problems | sugar | ph
+mp: Thyroid Diseases
+aka: thyroid, bosyo, goiter, hyperthyroid, hypothyroid, hipo, pamamaga sa leeg
+wiki: Thyroid
+s: The thyroid is a small gland in the neck that controls energy.
+s: It can work too fast or too slow.
+s: A blood test finds it and medicine treats it.
+g: Trouble breathing or swallowing with a neck swelling
+g: Very fast heartbeat, high fever and confusion
+g: Extreme sleepiness or very cold body and confusion
+what: The thyroid makes hormones that control how your body uses energy. Underactive thyroid makes you tired, cold and heavy. Overactive thyroid makes you hot, shaky and thin. A swelling in the neck (goitre) can have many causes. Treatment is often a daily tablet or other care.
+signs: Under: tiredness, weight gain, constipation, feeling cold ; Over: weight loss, racing heart, sweating, anxiety ; A lump or swelling in the neck
+home: Take thyroid medicine at the same time each day on an empty stomach ; Do not stop without your doctor ; Keep blood test follow-ups
+prev: Use iodised salt ; See a doctor for a lump in the neck ; Do not smoke
+
+= obesity | Overweight and obesity | sugar | ph
+mp: Obesity
+aka: obesity, overweight, mataba, sobra sa timbang, pagbaba ng timbang
+wiki: Obesity
+s: Extra body fat raises the risk of diabetes, high blood pressure and heart disease.
+s: Small changes you can keep work better than crash diets.
+s: Losing 5 of every 100 kg of weight already helps your health.
+g: Chest pain, short of breath, or signs of a stroke
+g: Very high sugar signs: extreme thirst and confusion
+what: Obesity means having so much body fat that it harms health. A waist over 90 cm in men or 80 cm in women is a warning. It is caused by food, activity, sleep, genes and stress. Slow steady loss is safest.
+signs: Often none at first ; Short of breath on effort ; Snoring ; Joint pain ; Tiredness
+home: Eat smaller portions of rice and sweets ; Swap sweet drinks for water ; Walk 30 minutes a day, building up ; Sleep 7 hours ; Ask for help from a doctor or dietician
+prev: Eat plenty of vegetables ; Limit fried and sweet foods ; Move every day ; Weigh yourself monthly
+v: b-uX6N4RZjg | Five a day: eating more fruit and vegetables | NHS
+
+= metsyn | Metabolic syndrome | sugar
+mp: Metabolic Syndrome
+aka: metabolic syndrome, malaking tiyan, mataba sa tiyan, belly fat
+wiki: Metabolic_syndrome
+s: A group of problems: a big waist, high blood pressure, sugar and cholesterol.
+s: Together they raise the risk of heart disease and diabetes.
+s: Healthy living can reverse it.
+g: Chest pain, signs of stroke, or very high sugar signs: go to the hospital
+what: Metabolic syndrome means you have several of these together: a large waist, high blood pressure, high blood sugar, high triglycerides and low HDL cholesterol. It raises the chance of diabetes, heart attack and stroke.
+signs: Large waist ; Often no signs ; Found on checks of blood pressure, sugar and cholesterol
+home: Walk daily ; Cut sweet drinks and fried food ; Lose a little weight ; Take any prescribed medicines
+prev: Keep a healthy weight ; Be active ; Eat plenty of vegetables ; Do not smoke
+
+= gestational | Diabetes in pregnancy | sugar | ph
+mp: Diabetes and Pregnancy
+aka: gestational diabetes, diabetes sa buntis, buntis na may diabetes
+wiki: Gestational_diabetes
+s: Some women get high sugar for the first time in pregnancy.
+s: It usually goes away after birth, but raises the risk of later diabetes.
+s: Good control protects mother and baby.
+g: Baby moves much less than usual
+g: Very thirsty, vomiting, fast breathing or confusion
+g: Headache, vision changes or swelling of the face
+what: Gestational diabetes is high blood sugar that starts in pregnancy. It can make the baby grow large and cause problems at birth. A sugar test between weeks 24 and 28 checks for it. Food, activity and sometimes insulin keep it under control.
+signs: Often none ; Very thirsty ; Passing more urine ; Tiredness
+home: Follow the meal plan from your doctor or dietician ; Walk after meals ; Check sugar as advised ; Keep all prenatal visits ; Test sugar again 6 to 12 weeks after birth
+prev: Keep a healthy weight before pregnancy ; Be active ; Get a sugar test in pregnancy

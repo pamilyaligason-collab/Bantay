@@ -1,0 +1,257 @@
+= depression | Depression | mind | ph
+mp: Depression
+aka: depression, depresyon, malungkot, walang gana, kalungkutan, sad
+wiki: Major_depressive_disorder
+s: Depression is more than feeling sad: it lasts for weeks and affects daily life.
+s: It is an illness, not weakness, and it can be treated.
+s: Talking to someone and sometimes medicine help.
+g: Thoughts of ending your life or hurting yourself: call the NCMH crisis hotline 1553 or 911 now
+g: Hearing or seeing things that are not there
+g: You cannot care for yourself, or a person you know says they want to die
+what: Depression is a medical illness that causes ongoing sadness or loss of interest for two weeks or more. It can affect sleep, appetite, energy and thinking. It is common, and more common after loss, illness or hard times. Counselling, medicine or both work well for most people.
+signs: Low mood most of the day ; Loss of interest in things you liked ; Sleeping too little or too much ; Tired, poor appetite or eating more ; Feeling worthless or guilty ; Trouble thinking
+home: Talk to someone you trust ; Keep a daily routine, sleep and eat regularly ; Take a short walk in daylight ; Avoid alcohol ; See a doctor, health worker or counsellor
+prev: Stay connected with family and friends ; Move your body ; Ask for help early ; Limit alcohol
+v: AQimPkd7g5I | Lusog-Isip: looking after your mental health | Department of Health (Philippines)
+
+= anxiety | Anxiety | mind | ph
+mp: Anxiety
+aka: anxiety, pagkabalisa, kabado, takot, nerbyos, nerbiyos, panic
+wiki: Anxiety_disorder
+s: Anxiety is strong worry or fear that does not go away.
+s: It can cause a racing heart, shaking and poor sleep.
+s: Slow breathing, talking therapy and sometimes medicine help.
+g: Chest pain, or an attack you think may be a heart attack
+g: Thoughts of hurting yourself: call the NCMH hotline 1553 or 911
+g: Cannot breathe, or faint
+what: Everyone feels worried at times. Anxiety disorders cause worry, fear or panic that is strong, lasts a long time and gets in the way of life. They are common and treatable. A doctor can check that nothing else, like a thyroid problem, is causing the signs.
+signs: Constant worry ; Restless or on edge ; Racing heart, sweating, shaking ; Trouble sleeping ; Tight muscles, stomach upset ; Avoiding places or people
+home: Breathe in for 4, out for 6, a few minutes ; Walk or stretch daily ; Cut down coffee and alcohol ; Talk to a trusted person ; Ask a doctor or counsellor for help
+prev: Sleep and exercise regularly ; Limit caffeine and alcohol ; Manage stress ; Ask for support early
+v: IYTZwBzjNC0 | Steps for Stress: a breathing exercise | NHS inform
+
+= panic | Panic attacks | mind
+mp: Panic Disorder
+aka: panic attack, panic disorder, atake ng nerbiyos, hindi makahinga sa takot
+wiki: Panic_disorder
+s: A panic attack is a sudden wave of intense fear.
+s: It feels frightening, but it passes, usually within 20 minutes.
+s: Slow breathing helps, and treatment can stop them coming back.
+g: Chest pain that may be a heart attack: go to the hospital to be safe the first time
+g: Thoughts of ending your life: call 1553 or 911
+what: A panic attack is a rush of fear with strong body signs: pounding heart, chest tightness, shaking, a feeling of unreality. It peaks within minutes and then passes. If attacks keep coming, or you fear the next one, it is called panic disorder, and treatment works.
+signs: Racing heart ; Chest tightness ; Shortness of breath ; Dizziness, tingling ; Feeling you may die or lose control
+home: Sit, breathe in slowly for 4, out for 6 ; Tell yourself: this will pass ; Name 5 things you can see ; Avoid caffeine and alcohol ; See a doctor if it keeps happening
+prev: Regular sleep and exercise ; Limit coffee ; Learn breathing and relaxing skills ; Therapy helps
+
+= dementia | Dementia and Alzheimer's | mind | ph
+mp: Dementia
+aka: dementia, alzheimer's, Alzheimer, pagkalimot, makakalimutin, nagiging makakalimutin, matanda na nalilito
+wiki: Dementia
+s: Dementia is a loss of memory and thinking that gets in the way of daily life.
+s: It is not a normal part of getting old.
+s: Early checks, a routine and caring support help families cope.
+g: Sudden confusion, speech trouble or weakness: this could be a stroke, go to hospital now
+g: A person who wanders and is lost, or unsafe at home
+g: Hurting self or others, or severe agitation
+what: Dementia is a group of illnesses, including Alzheimer's disease, that slowly harm memory, thinking and behaviour. It is more common with age, but it is not a normal part of ageing. There is no cure, but care and some medicines can help. Some memory loss has other causes that can be treated, so see a doctor.
+signs: Forgetting recent events and repeating questions ; Getting lost in familiar places ; Trouble with words and daily tasks ; Changes in mood or personality ; Confusion about time and place
+home: Keep a calm routine ; Use notes, labels and a calendar ; Keep the home safe: night lights, no clutter, locked stove ; Keep active and social ; Caregivers need rest and support too
+prev: Control blood pressure, sugar and cholesterol ; Stay active, mentally and physically ; Do not smoke ; Treat hearing loss ; Stay connected with others
+v: NbaU_DqwULw | Caring for someone with Alzheimer's or dementia (in Filipino) | Doc Willie Ong
+
+= insomnia | Trouble sleeping | mind | ph
+mp: Insomnia
+aka: insomnia, hindi makatulog, puyat, mahirap matulog, gising sa gabi
+wiki: Insomnia
+s: Trouble falling or staying asleep for weeks needs attention.
+s: Habits and a calm bedtime help most people.
+s: Sleeping pills are a short-term answer at best.
+g: Falling asleep while driving or at work
+g: Thoughts of hurting yourself
+g: Loud snoring with choking at night
+what: Insomnia is trouble falling asleep, staying asleep, or waking too early, and feeling tired in the day. Stress, worry, pain, caffeine, screens and some medicines can cause it. Good sleep habits are the first treatment.
+signs: Lying awake at night ; Waking often or too early ; Tired in the day ; Poor focus ; Irritable
+home: Go to bed and get up at the same time each day ; Keep the room dark, cool and quiet ; No coffee after noon, no alcohol before bed ; Put phones away an hour before bed ; Get out of bed if you cannot sleep for 20 minutes
+prev: Regular sleep time ; Daylight and exercise in the day ; Limit naps ; Do not use alcohol to sleep
+
+= stress | Stress | mind | ph
+mp: Stress
+aka: stress, tensyon, pagod sa isip, burnout, problema, pressure
+wiki: Psychological_stress
+s: Stress is the body's reaction to pressure.
+s: A little can help, but too much for too long harms health.
+s: Rest, movement and talking to someone ease it.
+g: Chest pain, or trouble breathing
+g: Thoughts of ending your life: call 1553 or 911
+g: Violence or fear of hurting someone
+what: Stress is how your body and mind respond to hard events like money worries, illness, work or family problems. Short-term stress can be useful. Long-term stress can lead to poor sleep, headaches, high blood pressure and low mood.
+signs: Tense muscles, headache ; Poor sleep ; Worry and irritability ; Upset stomach ; Eating or drinking more
+home: Slow breathing: in for 4, out for 6 ; Walk or stretch every day ; Talk to a family member, friend or priest ; Make a short to-do list and do one thing ; Take breaks, rest
+prev: Plan your day ; Say no sometimes ; Sleep and eat well ; Stay in touch with people ; Limit alcohol
+
+= suicide | Thoughts of suicide: how to help | mind | ph
+mp: Suicide
+aka: suicide, pagpapakamatay, ayaw na mabuhay, gusto nang mamatay, self-harm
+wiki: Suicide_prevention
+s: Thinking of suicide is a sign of deep pain, not weakness.
+s: Help works, and the feeling can pass.
+s: If you or someone is in danger now, call 911 or the NCMH hotline 1553.
+g: Someone says they want to die or has a plan: stay with them and call 1553 or 911
+g: Remove anything that could be used for harm
+g: Go to the nearest emergency room if you are in danger
+what: Many people have thoughts of suicide at some point, often when pain feels too big. It is not selfish or weak. Talking to someone caring and getting professional help can bring relief. Asking directly about suicide does not plant the idea. It can save a life.
+signs: Talking about death or being a burden ; Giving away things ; Withdrawing from people ; Big mood changes ; Using more alcohol or drugs
+home: Ask: are you thinking about ending your life? ; Listen without judging ; Stay with them, and remove means of harm ; Call 1553 (NCMH) or 911 ; Follow up after the crisis
+prev: Keep connected ; Treat depression ; Limit alcohol ; Store medicines and sharp tools safely ; Seek help early
+
+= bipolar | Bipolar disorder | mind
+mp: Bipolar Disorder
+aka: bipolar, manic depression, mania, sobrang saya at lungkot
+wiki: Bipolar_disorder
+s: Bipolar disorder causes big swings between high energy and deep lows.
+s: It can be managed with medicine and support.
+s: Stopping medicine suddenly can bring a relapse.
+g: Thoughts of suicide: call 1553 or 911
+g: Not sleeping for days with wild ideas, or risky behaviour
+g: Hearing voices or seeing things
+what: Bipolar disorder involves episodes of mania (very high energy, little sleep, fast talk, risky choices) and depression. Moods can last days or weeks. Medicine and talking therapy help people keep steady. Family support makes a big difference.
+signs: Mania: little need for sleep, racing thoughts, spending sprees ; Depression: low mood, tiredness, hopelessness ; Moods that swing over weeks
+home: Take medicine as prescribed ; Keep a regular sleep time ; Avoid alcohol and drugs ; Learn your early warning signs ; Keep regular check-ups
+prev: Take medicine every day ; Keep routines ; Reduce stress ; Seek help at the first signs
+
+= schizophrenia | Schizophrenia | mind
+mp: Schizophrenia
+aka: schizophrenia, nasisiraan ng bait, nawalan ng bait, naririnig na boses, baliw
+wiki: Schizophrenia
+s: Schizophrenia is a long-term illness that changes how a person thinks and perceives.
+s: It is a brain illness, not a curse or a personal failing.
+s: Medicine and family support help people live well.
+g: Thoughts of hurting self or others
+g: Not eating, drinking or sleeping for days, or cannot care for self
+g: Very frightened or aggressive
+what: Schizophrenia is an illness that can cause hearing voices, false beliefs, disorganised thinking and withdrawal. It often starts in young adults. Treatment with medicine, therapy and family support works. Stopping medicine without advice often leads to a relapse. People with this illness deserve respect and care.
+signs: Hearing voices ; Strong, false beliefs ; Confused speech ; Withdrawn, flat feelings ; Neglecting self-care
+home: Support them in taking medicine ; Keep a calm, kind routine at home ; Avoid arguing about the beliefs ; Go to follow-up visits ; Avoid alcohol and drugs
+prev: Early care limits the harm ; Avoid drug use ; Family support and a regular routine help
+
+= alcohol | Drinking too much alcohol | mind | ph
+mp: Alcohol Use Disorder (AUD)
+aka: alcohol, alcoholism, lasing, sobrang inom, alak, adik sa alak, paglalasing, tagay
+wiki: Alcohol_use_disorder
+s: Alcohol harms the liver, heart, brain and family life.
+s: It is hard to stop alone, and help is available.
+s: Sudden stopping after heavy use can be dangerous.
+g: Shaking, sweating, seeing things or fits after stopping alcohol
+g: Vomiting blood, black stools or yellow eyes
+g: Confusion, or a person who cannot be woken
+what: Alcohol use disorder means you cannot stop or control drinking even when it causes harm. Over time it can damage the liver, heart, brain and mood. If you drink every day, do not stop suddenly without a doctor's help, because withdrawal can be dangerous.
+signs: Drinking more or longer than planned ; Cravings ; Trouble at work or home ; Needing more to feel the effect ; Shaking or sweats when you do not drink
+home: Tell a trusted person and a doctor ; Do not stop suddenly if you drink heavily every day ; Counselling and medicine can help ; Avoid places where you drink ; Join a support group
+prev: Limit alcohol or avoid it ; Never drink and drive ; Eat before drinking ; Do not drink during pregnancy
+
+= druguse | Drug use and addiction | mind | ph
+mp: Drug Use and Addiction
+aka: drug addiction, shabu, marijuana, droga, adik, rehab, substance use
+wiki: Substance_use_disorder
+s: Addiction is a health problem that can be treated.
+s: Shabu and other drugs harm the brain and heart.
+s: Help is available without shame.
+g: Chest pain, fits, hard breathing or unconsciousness after using
+g: Violent behaviour, or a person who is a danger to self or others
+g: An overdose: call 911 now
+what: Drug addiction is when a person keeps using despite harm. Drugs such as shabu (methamphetamine) can cause heart problems, strokes, fits and serious mental illness. Recovery is possible with counselling, support, family and sometimes medicine.
+signs: Strong cravings ; Using more over time ; Neglecting work and family ; Secretive, changes in sleep and mood ; Withdrawal sickness when stopping
+home: Talk to a doctor, counsellor or the barangay health worker ; Join a community-based recovery programme ; Remove drugs from the home ; Support, not blame
+prev: Talk with children about drugs ; Keep busy with healthy activities ; Treat depression and stress early
+
+= headache | Headache | mind | ph
+mp: Headache
+aka: headache, sakit ng ulo, masakit ang ulo, hilab ng ulo, pananakit ng ulo
+wiki: Headache
+s: Most headaches are harmless and ease with rest and water.
+s: Some headaches are warning signs and need care at once.
+s: A "worst headache of my life" is an emergency.
+g: Sudden, severe headache that is the worst you have ever had
+g: Headache with stiff neck, fever, confusion, rash or fits
+g: Weakness, numbness, trouble speaking or seeing, or after a head injury
+g: Headache that wakes you or is getting worse over weeks
+what: Tension headaches from stress and tight muscles are the most common. Others come from dehydration, lack of sleep, eye strain, colds, high blood pressure, and migraines. Painkillers used too often can make headaches worse.
+signs: Tight band or pressure ; Pain behind the eyes ; Sore neck and shoulders ; Sensitivity to light or sound (migraine)
+home: Drink water and rest in a quiet, dark room ; Paracetamol may help (follow the pack) ; Cold or warm cloth on the head or neck ; Check your blood pressure ; Do not use painkillers more than 2 days a week
+prev: Sleep regularly ; Drink enough water ; Take breaks from screens ; Manage stress ; Keep a headache diary
+
+= migraine | Migraine | mind
+mp: Migraine
+aka: migraine, migrain, sakit ng ulo sa isang bahagi, hilo at suka
+wiki: Migraine
+s: A migraine is a throbbing headache, often with sickness and sensitivity to light.
+s: Triggers like stress and missed meals can start it.
+s: Medicine and a plan from a doctor can help a lot.
+g: Weakness, speech trouble or vision loss that does not clear in an hour
+g: Sudden worst headache of your life
+g: Headache with fever, stiff neck or confusion
+what: A migraine is a strong headache, often on one side, that throbs and can last hours to days. It can come with nausea, vomiting and sensitivity to light and sound. Some people see zigzag lights first (aura). Common triggers are stress, hunger, poor sleep, bright light and some foods.
+signs: Throbbing pain, often on one side ; Nausea or vomiting ; Light and sound hurt ; Zigzag lights before the pain
+home: Lie down in a dark, quiet room ; Take your migraine medicine at the first sign ; Drink water, eat small meals ; Keep a diary to find triggers ; Cool cloth on the forehead
+prev: Regular sleep and meals ; Limit stress and known triggers ; Ask your doctor about preventive medicine
+
+= epilepsy | Epilepsy and seizures | mind | ph
+mp: Epilepsy
+aka: epilepsy, seizure, kombulsyon, sumpong, pagkakumbulsyon, nagkakaroon ng sumpong
+wiki: Epilepsy
+s: Epilepsy causes repeated seizures from sudden bursts in the brain.
+s: Most people are well controlled with medicine.
+s: Learn how to help someone during a seizure.
+g: A seizure that lasts more than 5 minutes
+g: Seizures one after another, or the person does not wake up
+g: First seizure, or injury, or trouble breathing afterwards
+g: Call 911 for any of these
+what: A seizure is a burst of uncontrolled electrical activity in the brain. Epilepsy means having seizures again and again. Medicine controls them in most people. Do not put anything in the person's mouth. Keep them safe until it ends.
+signs: Stiff body, jerking ; Staring, not responding ; Falling, loss of awareness ; Confusion after
+home: Move hard things away and cushion the head ; Turn the person on their side when jerking stops ; Time the seizure ; Stay with them until awake ; Do not hold them down or put anything in the mouth
+prev: Take medicine every day ; Sleep well ; Avoid alcohol ; Wear a helmet when cycling ; Do not drive until your doctor agrees
+
+= parkinson | Parkinson's disease | mind
+mp: Parkinson's Disease
+aka: Parkinson, parkinsons, nanginginig na kamay, nanginginig
+wiki: Parkinson%27s_disease
+s: Parkinson's disease slowly causes shaking, stiffness and slow movement.
+s: Medicines can ease the signs for years.
+s: Falls are the biggest danger, so keep the home safe.
+g: A fall with injury
+g: Trouble swallowing or choking when eating
+g: Confusion or hallucinations that are new
+what: Parkinson's disease is caused by loss of brain cells that make dopamine, a chemical that helps control movement. It is more common in older people. Medicines such as levodopa help. Exercise, balance training and a safe home help people stay independent.
+signs: Hand tremor at rest ; Stiff muscles ; Slow movement and small handwriting ; Shuffling steps ; Stooped posture
+home: Take medicines on time ; Do daily walking and stretches ; Clear loose rugs and cords, add handrails ; Eat fibre and drink water ; Keep follow-up
+prev: Stay active ; Fall-proof the home ; It is not known how to prevent it
+
+= dizziness | Dizziness and vertigo | mind | ph
+mp: Dizziness and Vertigo
+aka: vertigo, hilo, nahihilo, umiikot ang paligid, pagkahilo, dizziness
+wiki: Vertigo
+s: Dizziness has many causes, most not serious.
+s: Spinning (vertigo) often comes from the inner ear.
+s: Sudden dizziness with other signs can be a stroke.
+g: Dizziness with weakness, numbness, drooping face, or speech trouble
+g: Dizziness with chest pain or a fast, uneven heartbeat
+g: Dizziness with a severe headache, fainting or double vision
+what: Dizziness can be feeling faint or feeling that the room is spinning (vertigo). Common causes are low blood pressure, dehydration, medicines and inner ear problems. The ear problem called BPPV is treatable with head movements done by a trained person.
+signs: Spinning feeling ; Lightheaded ; Unsteady walking ; Nausea ; Dizzy when turning in bed
+home: Sit or lie down until it passes ; Drink water ; Get up slowly ; Avoid driving ; See a doctor if repeated
+prev: Stay hydrated ; Review medicines with your doctor ; Rise slowly ; Keep blood pressure and sugar in check
+
+= memory | Forgetfulness | mind
+mp: Memory
+aka: memory loss, nakakalimot, makalimutin, pagkalimot, forgetfulness
+wiki: Memory_disorder
+s: Mild forgetfulness is common with age.
+s: Memory problems that get worse or affect daily life need a check.
+s: Some causes can be treated.
+g: Sudden confusion, trouble speaking or weakness: go to the hospital
+g: A person who gets lost or is unsafe alone
+what: Forgetting names or where you put keys can be normal. Forgetting how to do familiar tasks, getting lost or repeating questions over and over is not. Low vitamins, thyroid problems, depression, poor sleep, medicines and infections can all affect memory, and some of these can be treated.
+signs: Misplacing things often ; Repeating the same question ; Trouble following a conversation ; Getting lost on a familiar road
+home: Use lists, a calendar and a pill box ; Keep a routine ; Sleep well and stay active ; Ask your doctor to check medicines and blood tests
+prev: Keep active and social ; Control blood pressure and sugar ; Do not smoke ; Limit alcohol

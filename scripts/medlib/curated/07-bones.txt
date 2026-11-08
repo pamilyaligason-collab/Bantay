@@ -1,0 +1,214 @@
+= osteoarthritis | Arthritis of the joints (osteoarthritis) | bones | ph
+mp: Osteoarthritis
+aka: arthritis, osteoarthritis, rayuma, masakit ang tuhod, pananakit ng kasukasuan, joint pain
+wiki: Osteoarthritis
+s: The cushion in a joint wears down over the years.
+s: Knees, hips and hands are the usual places.
+s: Moving gently, a healthy weight and pain relief help.
+g: A hot, red, swollen joint with fever
+g: A joint that cannot be moved or bear weight after a fall
+g: Sudden severe swelling in one joint
+what: Osteoarthritis is the most common arthritis. The smooth cartilage that cushions a joint slowly wears away. The joint becomes stiff and painful, mostly in the knees, hips, spine and hands. It is more common with age, past injury and extra weight.
+signs: Joint pain that worsens with use ; Stiffness in the morning, less than 30 minutes ; Swelling or bony lumps ; Cracking sounds ; Less movement
+home: Keep moving: walking, swimming, gentle cycling ; Lose weight if overweight ; Warm packs for stiffness, cold for swelling ; Paracetamol for pain, or as your doctor advises ; Wear supportive shoes
+prev: Keep a healthy weight ; Stay active ; Protect joints from injury ; Strengthen leg muscles
+
+= rheumatoid | Rheumatoid arthritis | bones
+mp: Rheumatoid Arthritis
+aka: rheumatoid arthritis, RA, rayuma, kasu-kasuan, namamaga ang kamay
+wiki: Rheumatoid_arthritis
+s: The body's defence attacks the lining of the joints.
+s: Joints in both hands or feet swell and stiffen.
+s: Early treatment prevents lasting damage.
+g: A red, hot joint with fever
+g: Fever with chest pain, or new shortness of breath
+g: Sudden loss of function in a hand or foot
+what: Rheumatoid arthritis is an autoimmune illness. The immune system attacks the joint lining, causing swelling and pain on both sides of the body. Without treatment it can damage the joints. Medicines called DMARDs slow the damage, so see a doctor early.
+signs: Swollen, warm joints on both sides ; Morning stiffness for more than an hour ; Tiredness ; Low fever ; Small hand and foot joints first
+home: Take your medicines exactly as told ; Gentle movement and rest in balance ; Warm showers for stiffness ; Do not smoke ; Keep follow-up blood tests
+prev: Do not smoke ; Treat early ; Keep a healthy weight
+
+= gout | Gout | bones | ph
+mp: Gout
+aka: gout, uric acid, uric, rayuma sa paa, namamaga ang hinlalaki ng paa, mataas na uric acid
+wiki: Gout
+s: Gout is a sudden, very painful swelling of a joint, often the big toe.
+s: It is caused by too much uric acid in the blood.
+s: Diet, water and medicine can prevent attacks.
+g: Fever with a hot, red, swollen joint
+g: A joint that is red, hot and extremely painful and you cannot move it
+g: Gout with very little urine, or severe back pain
+what: Gout happens when uric acid forms sharp crystals in a joint. Attacks start suddenly, often at night. Triggers include alcohol (beer), organ meats, seafood, sweet drinks and dehydration. Medicines can lower uric acid over the long term.
+signs: Sudden severe pain in one joint, often the big toe ; Swelling, redness and warmth ; Even a bedsheet hurts ; Attacks last days
+home: Rest and raise the joint ; Cold packs help ; Drink plenty of water ; Take the medicine your doctor gave for attacks ; Limit alcohol, organ meats, shellfish and sweet drinks
+prev: Keep a healthy weight ; Drink water ; Limit beer, organ meats, sardines and soft drinks ; Take uric-acid-lowering medicine if your doctor prescribes
+v: XK6ZZw2xuVM | Gout and Heart Disease | Gabay sa Kalusugan - Dr. Gary Sy
+
+= osteoporosis | Weak bones (osteoporosis) | bones | ph
+mp: Osteoporosis
+aka: osteoporosis, buto, malutong na buto, manipis na buto, bone density
+wiki: Osteoporosis
+s: Bones become thin and easy to break.
+s: Many people find out only after a fracture.
+s: Calcium, vitamin D, activity and sometimes medicine protect bones.
+g: Sudden back pain after lifting or a small fall
+g: A fall followed by hip pain and unable to stand
+g: Loss of height or a rounded back
+what: In osteoporosis the bones lose density and become weak. A small fall can then break a hip, wrist or spine. It is common in women after menopause and in older men. A bone density scan (DEXA) shows how strong bones are.
+signs: Usually none until a fracture ; Loss of height ; Stooped back ; Back pain from a spine fracture
+home: Eat food rich in calcium: dilis, tofu, milk, malunggay, leafy greens ; Sit in morning sun for a short time for vitamin D ; Walk or do light weight exercise ; Make the home fall-safe ; Take medicine as prescribed
+prev: Calcium and vitamin D ; Weight-bearing exercise ; Do not smoke ; Limit alcohol ; Bone scan after 65, or earlier if at risk
+
+= backpain | Back pain | bones | ph
+mp: Back Pain
+aka: back pain, masakit ang likod, sakit sa likod, pananakit ng likod, lumbago, napilayan sa likod
+wiki: Low_back_pain
+s: Most back pain gets better in a few weeks.
+s: Staying gently active heals faster than bed rest.
+s: A few signs mean see a doctor at once.
+g: Loss of control of urine or stool, or numbness in the groin
+g: Weakness or numbness in both legs
+g: Back pain after a fall or accident, or with fever
+g: Pain that wakes you at night with weight loss
+what: Most back pain comes from strained muscles or joints, often after lifting or sitting long. It usually improves within weeks. Rarely it is a sign of a serious problem, like a pinched nerve, infection or fracture, so know the warning signs.
+signs: Dull ache or stiffness ; Sharp pain when moving ; Pain that spreads to the buttock or leg ; Better with rest, worse with lifting
+home: Keep moving gently, short walks ; Avoid bed rest for more than a day or two ; Warm packs ; Paracetamol if needed ; Lift with your knees, not your back
+prev: Exercise your core and legs ; Keep a healthy weight ; Lift properly ; Sit with a supported back ; Do not smoke
+
+= neckpain | Neck and shoulder pain | bones
+mp: Neck Injuries and Disorders
+aka: neck pain, stiff neck, pilay sa leeg, masakit ang batok, manas sa batok, shoulder pain
+wiki: Neck_pain
+s: Most neck pain is from strain and poor posture.
+s: It often eases in days to weeks.
+s: A stiff neck with fever or severe headache is an emergency.
+g: Stiff neck with fever, headache and confusion
+g: Weakness or numbness in the arms
+g: Neck pain after a fall or accident
+what: Sitting hunched over a phone or desk, sleeping in a bad position or a sudden jerk can strain the neck muscles. A pinched nerve can cause pain down the arm. Most cases settle with simple care.
+signs: Stiff, sore neck ; Pain turning the head ; Headache from the neck ; Shoulder tightness ; Tingling in the arm if a nerve is pinched
+home: Warm pack or warm shower ; Gentle neck stretches ; Keep moving ; Fix your pillow height ; Paracetamol if needed
+prev: Keep your screen at eye level ; Take breaks every 30 minutes ; Sleep with a supportive pillow ; Strengthen neck and shoulders
+
+= kneepain | Knee pain | bones | ph
+mp: Knee Injuries and Disorders
+aka: knee pain, masakit ang tuhod, tuhod, nanghihina ang tuhod, kneecap
+wiki: Knee_pain
+s: Knee pain is common with age, weight and activity.
+s: Rest, ice and gentle strength exercises help most.
+s: A knee that locks, gives way or swells fast needs a check.
+g: A hot, red, swollen knee with fever
+g: Cannot bear weight, or the knee looks out of shape
+g: Pain after a fall with a pop or sudden swelling
+what: The knee carries your whole body weight. Pain can come from arthritis, a sprain, a torn cartilage or overuse. Stronger thigh muscles, a healthy weight and the right shoes ease stress on the knee.
+signs: Pain on stairs or squatting ; Stiffness after sitting ; Swelling ; Clicking, locking, or giving way
+home: Rest the knee, raise it and use ice for swelling for 15 minutes at a time ; Use a cane in the opposite hand if needed ; Gentle thigh exercises ; Lose extra weight ; Wear supportive shoes
+prev: Keep a healthy weight ; Strengthen leg muscles ; Warm up before exercise ; Wear proper shoes
+
+= fracture | Broken bone | bones | ph
+mp: Fractures
+aka: fracture, nabali ang buto, bali, broken bone, putol na buto, pilay
+wiki: Bone_fracture
+s: A broken bone causes pain, swelling and sometimes a bent shape.
+s: Keep the area still and get help.
+s: Open breaks and breaks near the spine or head are emergencies.
+g: Bone sticking out of the skin, or heavy bleeding
+g: Neck, back or head injury: do not move the person
+g: Numb, cold or blue fingers or toes below the injury
+g: Cannot move or put weight on the limb
+what: A fracture is a crack or break in a bone. It usually follows a fall, accident or in weak bones, a small knock. A doctor will take an X-ray. Setting and a cast or surgery are needed so the bone heals straight.
+signs: Severe pain and swelling ; Bruising ; The limb looks bent or cannot move ; A grinding sound or feel ; Numbness
+home: Keep the injured part still, support it with a rolled cloth or splint ; Do not try to straighten it ; Apply a cold pack wrapped in cloth ; Do not eat or drink if surgery may be needed ; Go to the nearest emergency room
+prev: Make the home safe from falls ; Keep bones strong with calcium and vitamin D ; Wear helmets and seat belts
+
+= falls | Preventing falls | bones | ph
+mp: Falls
+aka: falls, nadulas, natumba, nahulog, hip fracture, matatanda, fall prevention
+wiki: Falls_in_older_adults
+s: Falls are a top cause of injury in older people.
+s: Strength, balance and a safe home prevent most of them.
+s: A fall with a head knock or hip pain needs a doctor.
+g: A fall with a head injury, drowsiness, vomiting or confusion
+g: Hip or leg pain and unable to stand
+g: Fall with heavy bleeding or numbness
+what: One in three older people falls each year. Causes include weak legs, poor balance, bad eyesight, some medicines, wet floors, loose rugs, poor lighting and low blood pressure. Most falls can be prevented by exercise and home changes.
+signs: Unsteady walking ; Dizziness ; Fear of falling ; Holding on to furniture
+home: Do balance and leg exercises, like standing on one foot while holding a chair ; Remove loose rugs and clutter ; Use night lights and non-slip mats ; Wear shoes that grip ; Ask your doctor to review medicines
+prev: Strength and balance exercises ; Eye checks yearly ; Handrails in bathroom and stairs ; Stand up slowly
+v: -Ru_cJhrNOA | Falls: level 1 balance and strength exercises | NHS inform
+
+= sprain | Sprain and strain | bones
+mp: Sprains and Strains
+aka: sprain, strain, pilay, napilayan, na-sprain, muscle strain, namaga ang paa
+wiki: Sprain
+s: A sprain is a stretched or torn ligament, and a strain is a pulled muscle.
+s: Remember: rest, ice, a snug wrap and raise it.
+s: A joint you cannot use may be broken.
+g: Cannot put weight on the limb or the joint looks out of shape
+g: Numbness, or cold and blue toes or fingers
+g: Severe pain or a pop at the time of injury
+what: A sprain happens when a ligament is stretched too far, as when you twist an ankle. A strain is a pulled or torn muscle. Both cause pain, swelling and bruising. Mild ones heal in days to weeks with simple care. If you cannot put weight on it, get an X-ray.
+signs: Pain ; Swelling ; Bruising ; Hard to move or put weight ; Sometimes a pop at the time
+home: Rest the joint for a day or two ; Apply a cold pack for 15 minutes every few hours ; Wrap with an elastic bandage that is snug but not tight ; Raise the limb above heart level ; Paracetamol for pain
+prev: Warm up before exercise ; Wear proper shoes ; Strengthen muscles ; Be careful on wet or uneven ground
+
+= cramps | Muscle cramps | bones
+mp: Muscle Cramps
+aka: muscle cramps, cramps, pulikat, pulikat sa binti, namumulikat
+wiki: Cramp
+s: A cramp is a sudden, tight, painful muscle squeeze.
+s: It is common in the legs at night.
+s: Stretching and water usually help.
+g: Cramps with weakness or numbness
+g: Cramps with swelling, redness or warmth in one leg
+g: Frequent cramps without a clear cause
+what: Muscle cramps come from tired muscles, dehydration, low salts or some medicines. They are common at night and in older people. They usually go away by themselves in seconds or minutes.
+signs: A sudden hard knot in the muscle ; Pain that lasts seconds to minutes ; Soreness afterwards
+home: Gently stretch and massage the muscle ; Walk around ; Warm cloth on the tight muscle ; Drink water, especially after sweating ; Eat bananas and leafy greens
+prev: Drink enough water ; Stretch before bed ; Warm up before exercise ; Review medicines with a doctor
+
+= carpal | Carpal tunnel and numb hands | bones
+mp: Carpal Tunnel Syndrome
+aka: carpal tunnel, manhid ang kamay, tusok-tusok, tingling hands, pamamanhid
+wiki: Carpal_tunnel_syndrome
+s: A squeezed nerve in the wrist makes the fingers tingle or go numb.
+s: It is worse at night or with repeated hand use.
+s: A wrist splint and rest often help.
+g: Weakness or loss of the grip
+g: Numbness with weakness in the face or arm or trouble speaking
+g: Constant numbness that does not ease
+what: The carpal tunnel is a narrow passage in the wrist. When the nerve inside is squeezed, you feel tingling or numbness in the thumb, index and middle fingers. It is more common in people who use their hands a lot, in pregnancy and with diabetes.
+signs: Tingling or numbness in the thumb and first 3 fingers ; Pain waking you at night ; Dropping things ; Weak grip
+home: Wear a wrist splint at night ; Rest the hand and take breaks ; Shake the hand out when numb ; Keep the wrist straight while typing ; See a doctor if no better in weeks
+prev: Take breaks from repeated hand work ; Keep wrists straight ; Control diabetes and weight
+
+= lupus | Lupus | bones
+mp: Lupus
+aka: lupus, SLE, autoimmune, butterfly rash
+wiki: Lupus
+s: Lupus is an illness where the body's defence attacks its own tissues.
+s: It can affect skin, joints, kidneys and more.
+s: Regular care and medicine keep most people well.
+g: Chest pain or trouble breathing
+g: Swelling of the face and legs with foamy urine
+g: Fits, severe headache or confusion
+g: Fever above 38.5 C with a flare
+what: Lupus is an autoimmune disease that causes swelling in different parts of the body. It is more common in women. Signs come and go in flares. Sunlight can trigger flares. Medicines can control it, and regular check-ups catch kidney and other problems early.
+signs: Butterfly-shaped rash on the face ; Joint pain ; Tiredness and fever ; Mouth sores ; Sun-sensitive skin
+home: Take medicine every day ; Use sunscreen, hats and shade ; Rest and manage stress ; Keep all follow-ups and urine tests ; Do not smoke
+prev: It cannot be prevented ; Avoid strong sun ; Stay up to date with vaccines
+
+= fibromyalgia | Widespread body pain | bones
+mp: Fibromyalgia
+aka: fibromyalgia, masakit ang buong katawan, pagod at sakit
+wiki: Fibromyalgia
+s: Fibromyalgia causes pain all over the body and deep tiredness.
+s: Tests are normal, but the pain is real.
+s: Gentle exercise and sleep help most.
+g: Chest pain or trouble breathing
+g: Fever, swelling or redness of a joint
+g: Thoughts of hurting yourself: call 1553 or 911
+what: Fibromyalgia causes long-term pain in muscles and soft tissues, with tiredness, poor sleep and trouble thinking. The cause is unclear. Doctors first rule out other illness. Exercise, sleep care, and talking therapy often help more than medicine.
+signs: Widespread pain for months ; Tiredness ; Poor sleep ; Foggy thinking ; Tender spots
+home: Gentle daily exercise such as walking or swimming ; Regular sleep time ; Warm baths ; Pace yourself ; Ask your doctor about treatment
+prev: Stay active ; Sleep well ; Manage stress

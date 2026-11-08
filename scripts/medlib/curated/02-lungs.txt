@@ -1,0 +1,214 @@
+= asthma | Asthma | lungs | ph
+mp: Asthma
+aka: hika, hirap huminga, wheezing, asma
+wiki: Asthma
+s: Asthma makes the breathing tubes swell and narrow.
+s: It comes in attacks of wheeze, cough and tight chest.
+s: A reliever inhaler and a plan from your doctor keep it safe.
+g: Lips or face turn blue or grey
+g: Cannot speak a full sentence, or struggles for each breath
+g: The reliever inhaler does not help, or helps for less than a few hours
+g: Call 911 or go to the hospital now
+what: Asthma is a long-term illness of the breathing tubes. They become swollen and tight, and make extra mucus. Dust, smoke, cold air, colds, pets and strong smells can start an attack. It can be well controlled.
+signs: Wheezing, a whistle when breathing out ; Cough, worse at night or early morning ; Tight chest ; Short of breath
+home: Sit upright, stay calm and use your reliever inhaler as your doctor taught you ; Take your daily controller medicine even when well ; Stay away from smoke, dust and mold ; Keep a written asthma plan
+prev: Learn and avoid your triggers ; Do not smoke and avoid smoky rooms ; Wash bedding often ; Get a flu shot every year
+
+= copd | COPD (long-term lung disease) | lungs | ph
+mp: COPD
+aka: emphysema, chronic bronchitis, sakit sa baga, hirap sa paghinga, ubong matagal
+wiki: Chronic_obstructive_pulmonary_disease
+s: COPD slowly makes it harder to breathe out.
+s: Smoking is the main cause.
+s: Stopping smoking and using inhalers slows it down.
+g: Breathing is much harder than usual, or you cannot speak in full sentences
+g: Blue lips or fingers, or new confusion or drowsiness
+g: Chest pain, or coughing up blood
+what: COPD is a long-term lung illness that includes chronic bronchitis and emphysema. The air tubes are damaged and narrowed, so air gets out slowly. It does not go away, but treatment and no smoking help you feel better and slow it down.
+signs: Cough that lasts for months, often with phlegm ; Short of breath with walking or stairs ; Wheezing ; Tight chest ; Many chest infections
+home: Stop smoking and stay away from smoke and cooking smoke ; Use inhalers as prescribed ; Get flu and pneumonia shots ; Ask about breathing exercises and rehab
+prev: Do not start smoking, or quit ; Use a chimney or open a window when cooking with wood ; Wear a mask in dust ; Treat chest infections early
+
+= pneumonia | Pneumonia | lungs | ph
+mp: Pneumonia
+aka: pulmonya, impeksyon sa baga, lung infection, namamaga ang baga
+wiki: Pneumonia
+s: Pneumonia is an infection that fills the lungs with fluid.
+s: It can be mild, or it can be life-threatening.
+s: Babies, older people and sick people need care fast.
+g: Fast, hard or painful breathing, or chest pulling in with each breath
+g: Blue lips, or a child too sleepy to feed or drink
+g: Confusion in an older person, or a high fever with shaking
+g: Coughing up blood
+what: Pneumonia is an infection of the lungs caused by germs such as bacteria and viruses. The tiny air sacs fill with fluid and it becomes hard to breathe. It can come after a cold or flu. Antibiotics help only when the cause is bacteria, so a doctor must decide.
+signs: Cough with phlegm ; Fever and chills ; Fast breathing and short of breath ; Chest pain when breathing or coughing ; Feeling very tired
+home: See a doctor, do not treat it alone ; Take the full course of any medicine prescribed ; Rest and drink plenty of fluids ; Do not smoke
+prev: Get the flu and pneumonia vaccines ; Wash hands often ; Do not smoke ; Keep children's vaccines up to date
+v: D6VJurxcQgY | Pneumonia: Simple Health Remedies | Doc Willie Ong
+
+= tb | Tuberculosis (TB) | lungs | ph
+mp: Tuberculosis
+aka: TB, tuberkulosis, ubong may dugo, sakit sa baga, pagdura ng dugo
+wiki: Tuberculosis
+s: TB is a germ that spreads in the air and mostly harms the lungs.
+s: Free tests and treatment are given at health centres.
+s: It is curable when you finish all the medicine, about six months.
+g: Coughing up blood
+g: Chest pain, or very hard breathing
+g: High fever with severe weakness, or a child who is very sick
+what: TB is an infection caused by a germ. It spreads when a person with TB in the lungs coughs or sneezes. Not everyone who is infected gets sick. TB is curable with medicines taken every day for months. Stopping early can make it come back stronger.
+signs: A cough that lasts more than two weeks ; Coughing up blood ; Night sweats and fever ; Weight loss and no appetite ; Tiredness
+home: Take all medicine every day for the whole time, even when you feel well ; Cover your mouth when you cough and open windows ; Go to the health centre for free TB tests and care (DOTS) ; Eat well
+prev: Test people living with someone who has TB ; Open windows to let in fresh air ; Complete the full treatment so it cannot spread ; Have newborns vaccinated with BCG
+v: ZG6BnDQX3gI | Sakit sa Baga: Paano Maalis ang TB (Tuberculosis) | Doc Willie Ong
+
+= bronchitis | Bronchitis | lungs
+mp: Acute Bronchitis
+aka: bronchitis, ubo na may plema, namamagang bronchi
+wiki: Bronchitis
+s: Bronchitis is swelling of the tubes that carry air to the lungs.
+s: Most cases come from a virus and get better on their own.
+s: A cough can last two or three weeks.
+g: Trouble breathing, or fast breathing
+g: Coughing up blood, or a fever above 38.5 C that stays
+g: A cough that lasts longer than three weeks
+what: In bronchitis the tubes that carry air in your lungs are swollen and make mucus. It often follows a cold or flu and is caused by a virus. Antibiotics do not help a virus. Rest and fluids are usually enough.
+signs: Cough with clear, white or yellow phlegm ; Sore chest ; Tired ; Mild fever and chills ; Wheeze
+home: Rest and drink plenty of water ; Warm drinks such as warm water with honey soothe the cough (not for babies under 1 year) ; Stay away from smoke ; Use a clean cloth or mask when you cough
+prev: Do not smoke ; Wash hands often ; Get the flu vaccine ; Stay away from people with colds when you can
+
+= cough | Cough | lungs | ph rainy
+mp: Cough
+aka: ubo, plema, tuyong ubo, ubo ng bata, may ubo, cough
+wiki: Cough
+s: Cough clears the airway and is often from a cold.
+s: A cough over two weeks should be checked for TB and other causes.
+s: Children, older people and smokers need extra care.
+g: Trouble breathing or fast breathing
+g: Coughing up blood
+g: Cough with chest pain, a high fever, or blue lips
+g: Choking, or a cough after eating or drinking
+what: A cough is the way your body clears the throat and airways. Most coughs come from a cold, flu or allergy and go away in a week or two. A cough that lasts longer needs a check. In the Philippines, a cough over two weeks should be checked for TB.
+signs: Dry cough or cough with phlegm ; Sore throat ; Blocked nose ; Cough at night from reflux, asthma or allergy
+home: Drink warm fluids ; Warm water with honey can soothe the cough (not for babies under 1 year) ; Do not give cough syrups to young children unless a doctor says ; Keep away from smoke and dust
+prev: Wash hands ; Do not smoke ; Cover your cough ; Keep rooms clean and dust-free
+
+= flu | Flu (influenza) | lungs | ph rainy
+mp: Flu
+aka: influenza, trangkaso, lagnat at ubo, flu
+wiki: Influenza
+s: The flu is a virus that spreads easily, most often in the rainy season.
+s: It brings fever, body aches, cough and tiredness.
+s: A yearly flu shot lowers the risk, mostly for older people and children.
+g: Trouble breathing or chest pain
+g: Confusion, or very hard to wake up
+g: Fever that goes away then comes back worse, or lasts more than 3 days in a child
+g: A baby with fever, or someone who cannot drink
+what: Influenza is a virus that infects the nose, throat and lungs. It spreads by cough, sneeze and touch. Most people get better in about a week. It can turn serious in babies, older people, pregnant women and people with heart, lung or kidney illness.
+signs: Sudden fever and chills ; Body aches and headache ; Dry cough ; Sore throat, runny nose ; Tiredness
+home: Rest and drink plenty of water ; Paracetamol may ease fever and aches (follow the pack, no aspirin for children) ; Stay home so others do not catch it ; Wear a mask around other people
+prev: Get a flu shot every year ; Wash hands often ; Cover your cough ; Stay home when sick
+
+= cold | Common cold | lungs | ph rainy
+mp: Common Cold
+aka: sipon, sipon at ubo, sinisipon, baradong ilong, colds
+wiki: Common_cold
+s: A cold is a mild virus infection of the nose and throat.
+s: It gets better by itself in about a week.
+s: Antibiotics do not help a cold.
+g: Trouble breathing
+g: A baby under 3 months with any fever
+g: Fever over 3 days, or signs that get worse after a week
+what: Many viruses cause the common cold. It spreads by hands, coughs and sneezes. Antibiotics do not work against viruses. Most people feel better in 7 to 10 days.
+signs: Runny or blocked nose ; Sneezing ; Sore throat ; Mild cough ; Mild tiredness
+home: Rest and drink plenty of water ; Warm drinks soothe the throat ; Salt water gargle for sore throat ; Wash hands and use tissue or your elbow when you sneeze
+prev: Wash your hands often ; Do not share cups ; Keep away from sick people ; Sleep well
+
+= covid | COVID-19 | lungs | ph
+mp: COVID-19 (Coronavirus Disease 2019)
+aka: covid, coronavirus, SARS-CoV-2, corona
+wiki: COVID-19
+s: COVID-19 is caused by a virus that spreads through the air.
+s: Many people have mild illness, but some become very sick.
+s: Vaccines lower the chance of serious illness.
+g: Trouble breathing, or fast breathing
+g: Chest pain or pressure that does not go away
+g: New confusion, blue lips, or unable to wake up
+what: COVID-19 is caused by the SARS-CoV-2 virus. It spreads when people breathe, cough or speak near each other. Older people and people with heart, lung, kidney or sugar problems are at higher risk of serious illness.
+signs: Fever or chills ; Cough ; Sore throat ; Loss of smell or taste ; Body aches and tiredness ; Short of breath
+home: Rest and drink plenty of fluids ; Stay home and wear a mask around others ; Paracetamol may ease fever ; Call your doctor early if you are at higher risk
+prev: Stay up to date with vaccines ; Wear a mask in crowded or closed places ; Wash hands ; Open windows for fresh air
+
+= sinusitis | Sinus infection | lungs
+mp: Sinusitis
+aka: sinusitis, sinus, masakit ang mukha, sipon na matagal
+wiki: Sinusitis
+s: Sinusitis is swelling in the air spaces behind the nose and cheeks.
+s: It often follows a cold.
+s: Most cases get better without antibiotics.
+g: Swelling or redness around the eye, or changes in eyesight
+g: A bad headache with stiff neck or confusion
+g: A high fever that does not go away
+what: The sinuses are small air spaces in the face. When they swell and fill with mucus, the face feels full and painful. A cold is the usual cause. Many cases go away in 10 days without antibiotics.
+signs: Blocked or runny nose ; Pain or pressure in the cheeks, forehead or around the eyes ; Headache ; Cough, bad breath ; Feeling tired
+home: Rest and drink water ; Breathe steam from a warm bowl, with care not to burn yourself ; Use salt-water nasal rinse that is clean ; See a doctor if it lasts more than 10 days
+prev: Treat colds and allergies early ; Do not smoke ; Wash hands
+
+= allergicrhinitis | Hay fever (allergic rhinitis) | lungs
+mp: Hay Fever
+aka: allergic rhinitis, allergy, alerhiya, sipon na allergy, bahing
+wiki: Allergic_rhinitis
+s: An allergy to dust, pollen or pets can cause a runny, itchy nose.
+s: It is not a cold and it is not catching.
+s: Avoiding triggers and allergy medicine help.
+g: Trouble breathing, wheeze or tight chest
+g: Swelling of the face, lips or tongue
+g: A rash with trouble breathing
+what: Allergic rhinitis happens when the body overreacts to something harmless like dust mites, pollen, mold or animal hair. The nose and eyes get itchy and runny. It is not an infection. If it comes with wheezing, it may be asthma.
+signs: Sneezing many times ; Runny, itchy or blocked nose ; Itchy, watery eyes ; Dark circles under the eyes
+home: Wash bedding often in hot water ; Keep pets out of bedrooms ; Dust with a damp cloth ; Ask a pharmacist about allergy medicine
+prev: Find and avoid your triggers ; Keep windows shut in high-pollen days ; Clean air filters ; Do not smoke
+
+= sleepapnea | Sleep apnea | lungs
+mp: Sleep Apnea
+aka: sleep apnea, malakas na hilik, humihilik, hilik, hirap huminga sa pagtulog
+wiki: Sleep_apnea
+s: Breathing stops for a few seconds again and again while you sleep.
+s: Loud snoring and daytime sleepiness are clues.
+s: It raises the risk of high blood pressure and stroke.
+g: Falling asleep while driving or at work
+g: Chest pain or a very fast heartbeat at night
+g: Waking up gasping often, with a morning headache
+what: In sleep apnea the airway at the back of the throat closes while you sleep. You wake just enough to breathe, many times a night, and you do not feel rested. Being overweight is a common cause. A sleep test confirms it.
+signs: Loud snoring ; Choking or gasping at night ; Very sleepy by day ; Morning headaches ; Low mood or trouble focusing
+home: Lose weight if overweight ; Sleep on your side ; Avoid alcohol and sleeping pills before bed ; Ask your doctor about a CPAP machine
+prev: Keep a healthy weight ; Do not smoke ; Limit alcohol ; See a doctor if you snore loudly
+
+= quitsmoking | Quit smoking | lungs | ph
+mp: Quitting Smoking
+aka: smoking, yosi, sigarilyo, tigil yosi, vape, tabako
+wiki: Smoking_cessation
+s: Quitting smoking helps your lungs and heart at any age.
+s: Most people need more than one try.
+s: Help is free through the DOH quitline and health centres.
+g: Chest pain, short of breath or coughing blood: see a doctor now
+g: Feeling hopeless or thinking of self-harm while quitting: get help now
+what: Smoking harms the lungs, heart and blood vessels and causes many cancers. Vapes also contain nicotine and are not safe. After you quit, your heart and lungs start to heal within weeks. Counselling and nicotine replacement can double your chance.
+signs: Cravings that pass in a few minutes ; Feeling edgy or sad for a few weeks ; Cough for a time as lungs clear ; Hunger
+home: Choose a quit date and tell your family ; Throw away all yosi and lighters ; Ask a doctor or pharmacist about nicotine patches or gum ; Keep busy, drink water, take a walk when a craving comes
+prev: Never start ; Avoid places with smoke ; Keep children away from secondhand smoke ; Ask for help when you want to quit
+
+= pertussis | Whooping cough | lungs
+mp: Whooping Cough
+aka: pertussis, whooping cough, ubo ng sanggol, ubong tuloy-tuloy
+wiki: Whooping_cough
+s: Whooping cough is a serious cough illness, most dangerous for babies.
+s: A vaccine in the baby shots protects against it.
+s: A baby with long coughing fits needs a doctor at once.
+g: A baby who stops breathing, turns blue, or gasps after coughing
+g: Vomiting after coughing, in a baby or child
+g: Any baby under 6 months with a long cough
+what: Whooping cough is a bacterial infection of the airways. It causes long coughing fits that end with a "whoop" sound when the child breathes in. Babies may not whoop, but may stop breathing. Antibiotics help if given early.
+signs: Runny nose and mild cough at first ; Then long, hard coughing fits ; A "whoop" sound on breathing in ; Vomiting after coughing ; Tired after a fit
+home: See a doctor, mostly for babies ; Keep the child away from others until treated ; Small feeds more often ; Keep the child upright after a fit
+prev: Give all baby vaccines on time ; Pregnant women can get a booster in late pregnancy, ask your doctor ; Keep sick people away from babies
