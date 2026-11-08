@@ -25,7 +25,7 @@ export function clipReasons(readings: Reading[], attention: Attention | null): C
 }
 
 export const MAX_CLIPS = 6
-/** Up to six checked videos (S24 row). Clips that fit a reason come first (up to two per reason), then today's pick and the next on the list; those carry their topic as the reason. */
+/** Up to six checked videos (S24 row). Clips that fit a reason come first (up to two per reason), then today's pick and the next on the list; those say what they cover ("Because it covers Move"). */
 export function forYouClips(list: Video[], reasons: ClipReason[], now = new Date()): { video: Video; reason: string }[] {
   if (!list.length) return []
   const out: { video: Video; reason: string }[] = []
@@ -35,7 +35,7 @@ export function forYouClips(list: Video[], reasons: ClipReason[], now = new Date
   const first = videoOfTheDay(now, list)
   for (let i = 0; out.length < Math.min(MAX_CLIPS, list.length) && i < list.length; i++) {
     const v = i === 0 ? first : list[(list.indexOf(first) + i) % list.length]!
-    if (!out.some((o) => o.video === v)) out.push({ video: v, reason: v.topic })
+    if (!out.some((o) => o.video === v)) out.push({ video: v, reason: `Because it covers ${v.topic}` })
   }
   return out
 }
@@ -80,7 +80,7 @@ export function ForYou({ personId, readings, attention, canLog, onAdd }: { perso
               <a className="card fy-link press" href="#health/visits" data-testid="foryou-visit">
                 <span className="pt-k">Because you have a visit coming</span>
                 <b>Questions to bring on {visit.text.replace('Next visit: ', '')}</b>
-                <span className="sub">Read</span>
+                <span className="sub">From your visit notes</span>
               </a>
             )}
           </div>

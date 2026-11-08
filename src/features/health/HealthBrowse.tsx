@@ -34,7 +34,7 @@ export function dosePills(doses: DoseState[]): { text: string; done: boolean }[]
   return doses.slice(0, 3).map((d) => (d.state === 'taken' ? { text: 'Taken', done: true } : d.state === 'skipped' ? { text: 'Skipped', done: false } : { text: clock(d.at), done: false }))
 }
 
-/** Browse photos (public/img/browse, credits in CREDITS.md): Wikimedia Commons, resized, stored in the app so they work offline. */
+/** Browse photos (public/img/browse, credits in CREDITS.md): Wikimedia Commons, resized, stored in the app (precached by the web service worker, bundled in the native app) so they work offline. */
 const PHOTOS: Record<string, { file: string; credit: string; licence: string; href: string }> = {
   labs: { file: 'labs', credit: 'Frankincense Diala', licence: 'CC0', href: 'https://commons.wikimedia.org/wiki/File:Laboratory_Test_Tubes;_from_a_medical_laboratory_in_Abuja,_Nigeria.jpg' },
   meds: { file: 'meds', credit: 'Stevepb', licence: 'CC0', href: 'https://commons.wikimedia.org/wiki/File:Pill_Organizer_With_Vitamins_And_Medicines.jpg' },

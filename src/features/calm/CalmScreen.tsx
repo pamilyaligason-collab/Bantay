@@ -16,8 +16,7 @@ export default function CalmScreen() {
   return (
     <div className="cm cm-root" data-testid="calm" data-contrast-bg="#0E1B3A">
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Calm" actions={<button type="button" className="cm-ask" aria-haspopup="dialog" onClick={() => window.dispatchEvent(new Event(CALM_JACK_EVENT))}>Ask Jack</button>} />
-      <CalmHero />
-      <AfterScare />
+      <CalmHero between={<AfterScare />} />
       <MoodCheck />
       <MediaLinks />
       <CrisisCard />

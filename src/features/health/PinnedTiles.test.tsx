@@ -207,6 +207,16 @@ describe('S24 inline row inside the Readings card: always two tiles', () => {
     await settled()
     expect(ids()).toEqual(['glance-progress', 'glance-steps'])
   })
+  it('a booked visit never flashes the no-visit pair: the row is empty until the visits answer, then Next visit + Medicines', async () => {
+    await book()
+    inline(bp(120, 80, 1))
+    const seen: (string | null)[][] = []
+    const obs = new MutationObserver(() => seen.push(ids()))
+    obs.observe(screen.getByTestId('pinned'), { childList: true, subtree: true })
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-meds']))
+    obs.disconnect()
+    expect(seen.some((s) => s.includes('glance-steps'))).toBe(false)
+  })
   it('the pins list does not change the inline row, and there is no Edit pins button', async () => {
     await db.kv.put({ key: 'health.pins', value: ['fasting_glucose', 'weight'] })
     await book()

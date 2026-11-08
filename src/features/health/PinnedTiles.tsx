@@ -12,7 +12,7 @@ import { toCanonicalReading, type Reading } from './ranges'
 import { latestSteps } from './stepsDay'
 import { useActivity } from './useActivity'
 import { useQuestions } from './useQuestions'
-import { useVisits } from './useVisits'
+import { useVisitsState } from './useVisits'
 import { nextVisitLine } from './visitsLogic'
 import './health.css'
 
@@ -25,7 +25,7 @@ export function bpThisWeek(readings: Reading[], now = new Date()): string | null
 }
 
 export const clock = (at: number) => `${Math.floor(at / 60) % 12 || 12}${at % 60 ? `:${String(at % 60).padStart(2, '0')}` : ''} ${at < 720 ? 'AM' : 'PM'}`
-/** The Medicines tile's words: the first dose not yet taken or skipped (an overdue one counts) and how many of today's are done. Null value when nothing is due today. */
+/** The Medicines tile's words: the first dose not yet taken or skipped (an overdue one counts) and how many of today's are done. Nothing due today reads "Nothing due" with the sub-line "Today". */
 export function doseSummary(doses: DoseState[]): { value: string; sub: string } {
   if (!doses.length) return { value: 'Nothing due', sub: 'Today' }
   const next = doses.find((d) => d.state === 'pending')
@@ -57,7 +57,8 @@ const cleanPins = (v: unknown): PinCode[] => (Array.isArray(v) ? [...new Set(v.f
 export function PinnedTiles({ personId, readings, canLog = true, inline = false }: { personId: string; readings: Reading[]; canLog?: boolean; inline?: boolean }) {
   const today = useTodayDoses(personId)
   const acts = useActivity(personId)
-  const visit = nextVisitLine(useVisits(personId))
+  const vs = useVisitsState(personId)
+  const visit = nextVisitLine(vs.list)
   const asks = useQuestionCount(personId)
   const [raw, setRaw, loaded] = useKv<unknown>(PIN_KEY, DEFAULT_PINS)
   const [editing, setEditing] = useState(false)
@@ -99,7 +100,7 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
   // S24 (inline, in the Readings card): always two tiles, never a gap. Next visit + Medicines; BP (Due pill and nudge) takes the Medicines place when due; no booked visit gives Medicines + Move (steps). The pins list only drives the full Pinned section.
   const inlinePair = (): PinCode[] => { const bpDueNow = dueOf('bp_systolic'); return visit ? ['visits', bpDueNow ? 'bp_systolic' : 'meds'] : [bpDueNow ? 'bp_systolic' : 'meds', 'steps'] }
   const shown = inline ? inlinePair() : pins
-  const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
+  const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded && (!inline || vs.ready) ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
   const empty = pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>
   const sheet = (
     <>

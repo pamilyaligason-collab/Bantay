@@ -12,14 +12,14 @@ import { CALM_JACK_EVENT } from './CalmJack'
 import CalmScreen from './CalmScreen'
 
 describe('S24 order', () => {
-  it('After a scare sits directly after the hero, before the mood check, media and the crisis card (which is unchanged)', () => {
+  it('After a scare sits directly after the breathing card (before the Exercises list), before the mood check, media and the crisis card (which is unchanged)', () => {
     render(<CalmScreen />)
     const root = screen.getByTestId('calm')
     const kids = Array.from(root.children)
     const at = (el: Element) => kids.findIndex((k) => k === el || k.contains(el))
-    const heroEnd = at(screen.getByTestId('calm-exercises')) // CalmHero renders the breathing card and the Exercises list; After a scare follows that block
-    expect(at(screen.getByTestId('calm-hero'))).toBeLessThan(heroEnd)
-    expect(at(screen.getByTestId('calm-scare-card'))).toBe(heroEnd + 1)
+    const hero = at(screen.getByTestId('calm-hero'))
+    expect(at(screen.getByTestId('calm-scare-card'))).toBe(hero + 1) // just under the breathing card, as the board
+    expect(at(screen.getByTestId('calm-exercises'))).toBe(hero + 2) // the Exercises list follows it
     expect(at(screen.getByTestId('calm-scare-card'))).toBeLessThan(at(screen.getByTestId('calm-media')))
     expect(at(screen.getByTestId('calm-crisis'))).toBe(kids.length - 1) // last
     expect(at(screen.getByTestId('calm-crisis'))).toBeGreaterThan(at(screen.getByTestId('calm-media')))

@@ -68,19 +68,19 @@ describe('For you videos show their still, length and reason', () => {
     expect(clipReasons([], null)).toEqual([])
     expect(clipReasons(r, pickAttention(r, () => undefined, new Date()))).toEqual([]) // LDL: no matching clip, no claim
   })
-  it('clips that fit a reason come first; the rest carry their topic; none playable shows none', () => {
+  it('clips that fit a reason come first; the rest say what they cover; none playable shows none', () => {
     const list = VIDEOS.filter(playable)
     const now = new Date(2026, 10, 6, 12)
     const bp = forYouClips(list, [{ text: 'Because you log blood pressure', match: (v) => /blood pressure/i.test(v.title) }], now)
     expect(bp[0]!.reason).toBe('Because you log blood pressure')
     expect(bp[0]!.video.title).toMatch(/blood pressure/i)
     expect(bp).toHaveLength(MAX_CLIPS) // a row of six when the list has them
-    expect(bp.at(-1)!.reason).toBe(bp.at(-1)!.video.topic)
+    expect(bp.at(-1)!.reason).toBe(`Because it covers ${bp.at(-1)!.video.topic}`)
     expect(new Set(bp.map((c) => c.video.id)).size).toBe(MAX_CLIPS) // no repeats
     const tied = forYouClips(list, [{ text: 'Because of a lab result', match: (v) => v.topic === 'Diabetes' }], now)
     expect(tied[0]!.video.topic).toBe('Diabetes')
     const plain = forYouClips(list, [], now)
-    expect(plain.map((c) => c.reason)).toEqual(plain.map((c) => c.video.topic))
+    expect(plain.map((c) => c.reason)).toEqual(plain.map((c) => `Because it covers ${c.video.topic}`))
     expect(plain[1]!.video).not.toBe(plain[0]!.video)
     expect(forYouClips([], [])).toEqual([])
     expect(forYouClips(list.slice(0, 1), [])).toHaveLength(1)
