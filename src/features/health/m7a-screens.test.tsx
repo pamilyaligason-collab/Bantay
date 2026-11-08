@@ -99,7 +99,7 @@ describe('Health library (moved to Discover, S16; the components are tested wher
     go('#discover/learn/library')
     render(<Library />)
     const link = await screen.findByRole('link', { name: /^Metformin/ })
-    expect(link.getAttribute('href')).toBe('#discover/learn/library/m%3Ametformin')
+    expect(link.getAttribute('href')).toBe('#health/library/m%3Ametformin')
     expect(screen.getByText(/From MedlinePlus \(U\.S\. National Library of Medicine\), summarised; not medical advice/)).toBeTruthy()
     cleanup()
     const f = vi.fn().mockRejectedValue(new Error('offline'))
@@ -160,7 +160,7 @@ describe('Explore your body', () => {
     // Medicines load after the readings; wait for them too (a slower machine showed the panel without them yet).
     await waitFor(() => expect(within(screen.getByTestId('acting-here')).getByText('Amlodipine 5 mg: relaxes vessels')).toBeTruthy())
     expect(panel.textContent).toMatch(/not medical advice/)
-    expect(within(panel).getByRole('link', { name: /Learn more: High blood pressure/ }).getAttribute('href')).toBe('#discover/learn/library/c%3AHigh%20blood%20pressure')
+    expect(within(panel).getByRole('link', { name: /Learn more: High blood pressure/ }).getAttribute('href')).toBe('#health/library/c%3AHigh%20blood%20pressure')
   })
 })
 

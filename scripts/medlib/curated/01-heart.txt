@@ -12,6 +12,7 @@ what: Blood pressure is the push of blood against the walls of your blood vessel
 signs: Often none at all ; Headache, dizziness or a pounding in the chest can happen, but not always ; A check at the health centre or at home is the only sure way
 home: Take your medicine every day, even when you feel well ; Eat less salt, patis, toyo and instant noodles ; Walk most days if your doctor says it is safe ; Do not smoke, and limit alcohol
 prev: Check your pressure at least once a year, more often if you are over 40 ; Keep a healthy weight ; Eat more vegetables and fruit ; Move your body every day
+pic: hypertension.webp | Patrick J. Lynch, medical illustrator | CC BY 2.5 | https://commons.wikimedia.org/wiki/File:Heart_anterior_exterior_view.jpg
 v: dgistW5hR4s | Tamang Pag-Check ng Blood Pressure | Gabay sa Kalusugan - Dr. Gary Sy
 v: X8Q2W50NsKU | 14 tips to control high blood pressure (in Filipino) | Doc Willie Ong
 
@@ -47,6 +48,7 @@ what: A stroke happens when a blood vessel in the brain is blocked or bursts. Br
 signs: Face drooping on one side ; Arm or leg weakness on one side ; Slurred speech or confusion ; Sudden trouble seeing or walking ; Sudden very bad headache
 home: Do not give food, drink or medicine by mouth ; Lay the person down with the head a little raised ; Note the time the signs began and tell the hospital ; After a stroke, follow your rehab plan and take medicines as told
 prev: Keep blood pressure under control ; Do not smoke ; Stay active ; Eat less salt and less fatty food ; Take heart medicines as prescribed
+pic: stroke.webp | Blausen Medical Communications, Inc. | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0836_Stroke.png
 v: adNWwnudyTc | Stroke: 8 Warning Signs | Doc Willie Ong
 v: C8EO3SM0Y_w | BE FAST: signs of a stroke | American Heart Association
 

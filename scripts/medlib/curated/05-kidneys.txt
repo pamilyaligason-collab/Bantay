@@ -12,6 +12,7 @@ what: The kidneys clean waste and extra water from the blood. In chronic kidney 
 signs: Often none early ; Swollen feet or puffy eyes ; Tired, poor appetite ; Foamy urine ; Itchy skin
 home: Take blood pressure and sugar medicines as told ; Avoid ibuprofen and similar painkillers and herbal remedies unless your doctor agrees ; Eat less salt ; Ask for a diet plan, with limits on some foods ; Get blood and urine tests regularly
 prev: Control blood pressure and diabetes ; Do not smoke ; Drink enough water ; Get yearly urine and blood tests if you are at risk
+pic: ckd.webp | BruceBlaus | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0592_KidneyAnatomy_01.png
 v: 8jcL3TlgF4A | Mayo Clinic Minute: Understanding chronic kidney disease | Mayo Clinic
 
 = kidneyfailure | Kidney failure and dialysis | kidneys | ph

@@ -13,6 +13,7 @@ what: In type 2 diabetes the body does not make enough insulin or does not use i
 signs: Very thirsty ; Passing urine a lot, especially at night ; Tired, blurred vision ; Slow-healing sores ; Tingling in the feet; many people have no signs
 home: Take medicines or insulin as prescribed ; Eat regular meals with less sugar and white rice, more vegetables ; Walk after meals if your doctor allows ; Check your feet daily ; Keep check-ups, eye and kidney tests
 prev: Keep a healthy weight ; Move 30 minutes on most days ; Cut sweet drinks ; Get your sugar tested from age 35, or earlier if family has diabetes
+pic: diabetes2.webp | BruceBlaus | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0301_Diabetes_GlucoseMonitoring.png
 v: 5R1ORrDOrn4 | 10 tips to control diabetes (in Filipino) | Doc Willie Ong
 v: nxIJeHWlhF4 | How to measure your blood sugar | Mayo Clinic
 

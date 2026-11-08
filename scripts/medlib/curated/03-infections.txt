@@ -14,6 +14,7 @@ what: Dengue is a virus spread by the bite of the Aedes mosquito, which bites in
 signs: Sudden high fever for 2 to 7 days ; Bad headache and pain behind the eyes ; Muscle and joint pain ; Rash and mild bleeding of the nose or gums ; Feeling very tired
 home: Rest and drink lots of fluids such as water, oral rehydration salts and soup ; Use paracetamol for fever and follow the pack ; Do not take aspirin or ibuprofen as they can raise the risk of bleeding ; See a doctor for a blood test, then daily checks until the fever is gone for 2 days
 prev: Remove standing water weekly: tires, cans, pots, gutters ; Cover water drums and change vase water ; Use mosquito repellent and long sleeves in the daytime ; Use nets or screens for babies and bed-ridden people
+pic: dengue.webp | Wee Hong | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Aedes_aegypti_on_leaf.jpg
 v: V1TPAmsn1us | WHO Science in 5: Dengue Fever | World Health Organization (WHO)
 v: BklPK1xKjkE | What is dengue? | WHO European Region
 

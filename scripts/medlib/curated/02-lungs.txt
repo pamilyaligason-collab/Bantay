@@ -13,6 +13,7 @@ what: Asthma is a long-term illness of the breathing tubes. They become swollen 
 signs: Wheezing, a whistle when breathing out ; Cough, worse at night or early morning ; Tight chest ; Short of breath
 home: Sit upright, stay calm and use your reliever inhaler as your doctor taught you ; Take your daily controller medicine even when well ; Stay away from smoke, dust and mold ; Keep a written asthma plan
 prev: Learn and avoid your triggers ; Do not smoke and avoid smoky rooms ; Wash bedding often ; Get a flu shot every year
+pic: asthma.webp | BruceBlaus | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0620_Lungs_NormalvsInflamedAirway.png
 
 = copd | COPD (long-term lung disease) | lungs | ph
 mp: COPD

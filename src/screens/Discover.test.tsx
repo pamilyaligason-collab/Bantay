@@ -95,16 +95,16 @@ describe('Discover sub pages', () => {
     expect(screen.queryByText('News lane screen')).toBeNull()
     expect(screen.getByTestId('watch')).toBeTruthy()
   })
-  it('#discover/learn/library draws the Health library, with its Back going to Learn', () => {
+  it('#discover/learn/library draws the Health library, with its Back going to Health', () => {
     location.hash = '#discover/learn/library'
     render(<Discover />)
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Health library')
-    expect(screen.getByRole('link', { name: 'Back to Learn' }).getAttribute('href')).toBe('#discover/learn')
+    expect(screen.getByRole('link', { name: 'Back to Health' }).getAttribute('href')).toBe('#health')
   })
   it('a library article goes back to the library list', () => {
     location.hash = '#discover/learn/library/c%3Adiabetes'
     render(<Discover />)
-    expect(screen.getByRole('link', { name: 'Back to the library' }).getAttribute('href')).toBe('#discover/learn/library')
+    expect(screen.getByRole('link', { name: 'Back to the library' }).getAttribute('href')).toBe('#health/library')
   })
 })
 
