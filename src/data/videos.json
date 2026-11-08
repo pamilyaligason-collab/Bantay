@@ -33,7 +33,7 @@
     { "id": "pr29CWlkg8Y", "placeholder": false, "title": "Blood pressure, explained", "topic": "Health", "source": "Cleveland Clinic", "minutes": 3, "sub": "heart-bp", "healthOnly": true },
     { "id": "PXhBoH5aD_s", "placeholder": false, "title": "8 warning signs of a heart attack (in Filipino)", "topic": "Health", "source": "Doc Willie Ong", "minutes": 13, "sub": "heart-bp", "ph": true, "healthOnly": true },
     { "id": "5_E9Gb4VF7s", "placeholder": false, "title": "3 sneaky signs of a heart attack (in Filipino)", "topic": "Health", "source": "Doc Willie Ong", "minutes": 9, "sub": "heart-bp", "ph": true, "healthOnly": true },
-    { "id": "adNWwnudyTc", "placeholder": false, "title": "Stroke: 8 warning signs (in Filipino) (in Filipino)", "topic": "Health", "source": "Doc Willie Ong", "minutes": 10, "sub": "heart-bp", "ph": true, "healthOnly": true },
+    { "id": "adNWwnudyTc", "placeholder": false, "title": "Stroke: 8 warning signs (in Filipino)", "topic": "Health", "source": "Doc Willie Ong", "minutes": 10, "sub": "heart-bp", "ph": true, "healthOnly": true },
     { "id": "DxD6eYEG1BM", "placeholder": false, "title": "6 signs of a possible stroke during sleep (in Filipino)", "topic": "Health", "source": "Doc Willie Ong", "minutes": 12, "sub": "heart-bp", "ph": true, "healthOnly": true },
     { "id": "XK6ZZw2xuVM", "placeholder": false, "title": "Gout and heart disease (in Filipino)", "topic": "Health", "source": "Gabay sa Kalusugan - Dr. Gary Sy", "minutes": 12, "sub": "heart-bp", "ph": true, "healthOnly": true },
     { "id": "AeKK5TzXqis", "placeholder": false, "title": "Warning signs of diabetes foot problems (in Filipino)", "topic": "Diabetes", "source": "Gabay sa Kalusugan - Dr. Gary Sy", "minutes": 14, "sub": "diabetes", "ph": true, "healthOnly": true },
@@ -41,8 +41,6 @@
     { "id": "BklPK1xKjkE", "placeholder": false, "title": "What is dengue?", "topic": "Health", "source": "WHO European Region", "minutes": 2, "sub": "infections", "healthOnly": true },
     { "id": "uPBHwXyGxEU", "placeholder": false, "title": "Floods: leptospirosis and typhoid fever (in Filipino)", "topic": "Health", "source": "Doc Willie Ong", "minutes": 12, "sub": "infections", "ph": true, "healthOnly": true },
     { "id": "ffzm2RGb0vU", "placeholder": false, "title": "Be ready for emergencies: hands-only CPR", "topic": "Safety", "source": "American Red Cross", "minutes": 2, "sub": "firstaid", "healthOnly": true },
-    { "id": "2Co5D1i9vdM", "placeholder": false, "title": "Quiet a busy mind at night: sleep meditation", "topic": "Mind", "source": "Headspace", "minutes": 10, "sub": "mind-sleep", "healthOnly": true },
-    { "id": "ft-vhYwHzxw", "placeholder": false, "title": "Racing thoughts at bedtime? Try this", "topic": "Mind", "source": "Headspace", "minutes": 10, "sub": "mind-sleep", "healthOnly": true },
     { "id": "IiFi0XSiTE0", "placeholder": false, "title": "Children and road safety (in Filipino)", "topic": "Health", "source": "Department of Health (Philippines)", "minutes": 1, "sub": "kids", "ph": true, "healthOnly": true },
     { "id": "dRV7VUcmGaU", "placeholder": false, "title": "Allergies in Filipino children (in Filipino)", "topic": "Health", "source": "Department of Health (Philippines)", "minutes": 1, "sub": "kids", "ph": true, "healthOnly": true },
     { "id": "YMjOHjeyh9s", "placeholder": false, "title": "Eat well: try urban gardening (in Filipino)", "topic": "Food", "source": "Department of Health (Philippines)", "minutes": 1, "sub": "food", "ph": true, "healthOnly": true }

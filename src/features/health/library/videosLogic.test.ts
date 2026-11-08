@@ -12,8 +12,8 @@ describe('videos playlist', () => {
     expect(playable({ ...real, placeholder: true })).toBe(false)
     expect(playable({ ...real, id: 'short' })).toBe(false)
   })
-  it('the 45 official videos (twelve first, seven blood pressure, cholesterol and handwashing added 2026-11-06, eight Filipino and Mayo Clinic videos added 2026-11-08, eighteen health videos added in S25) are in and playable, every length a positive whole number', () => {
-    expect(VIDEOS).toHaveLength(45)
+  it('the 43 official videos (twelve first, seven blood pressure, cholesterol and handwashing added 2026-11-06, eight Filipino and Mayo Clinic videos added 2026-11-08, sixteen health videos added in S25; two Headspace sleep clips live in the Discover Listen shelf) are in and playable, every length a positive whole number', () => {
+    expect(VIDEOS).toHaveLength(43)
     expect(VIDEOS.every(playable)).toBe(true)
     expect(videosAvailable()).toBe(true)
     expect(VIDEOS.every((v) => Number.isInteger(v.minutes) && v.minutes! > 0)).toBe(true)
@@ -24,12 +24,12 @@ describe('videos playlist', () => {
     expect(forTopic('Diabetes').every((v) => v.topic === 'Diabetes')).toBe(true)
     expect(forTopic('All')).toHaveLength(VIDEOS.length)
   })
-  it('every video has a sub chip or null, and every chip has at least one video (counted by hand: heart-bp 17, diabetes 5, infections 4, firstaid 5, mind-sleep 5, food 2, kids 2, five Move clips null)', () => {
+  it('every video has a sub chip or null, and every chip has at least one video (counted by hand: heart-bp 17, diabetes 5, infections 4, firstaid 5, mind-sleep 3, food 2, kids 2, five Move clips null)', () => {
     const subs = SUBS.map((s) => s.sub)
     expect(VIDEOS.every((v) => v.sub === null || subs.includes(v.sub))).toBe(true)
-    expect(SUBS.map((s) => forSub(s.sub).length)).toEqual([17, 5, 4, 5, 5, 2, 2])
+    expect(SUBS.map((s) => forSub(s.sub).length)).toEqual([17, 5, 4, 5, 3, 2, 2])
     expect(VIDEOS.filter((v) => v.sub === null).every((v) => v.topic === 'Move')).toBe(true)
-    expect(forSub(null)).toHaveLength(40)
+    expect(forSub(null)).toHaveLength(38)
   })
   it('a chip lists Philippine sources first and keeps the file order inside each group', () => {
     const heart = forSub('heart-bp')

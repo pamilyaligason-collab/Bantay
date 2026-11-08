@@ -66,7 +66,7 @@ describe('Health videos (S25)', () => {
   it('the section has the id the For you "More" link scrolls to, and no S25 health-only clip is in the Discover set', () => {
     render(<HealthVideos />)
     expect(document.getElementById('health-videos')).not.toBeNull()
-    expect(VIDEOS.filter((v) => v.healthOnly)).toHaveLength(18)
+    expect(VIDEOS.filter((v) => v.healthOnly)).toHaveLength(16)
     expect(DISCOVER_SET).toHaveLength(27)
     expect(DISCOVER_SET.some((v) => v.healthOnly)).toBe(false)
   })

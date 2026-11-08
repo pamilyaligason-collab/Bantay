@@ -5,9 +5,9 @@ const VIEWS = new Set(['me', 'notif', 'admin', 'scan', 'privacy', 'sharing'])
 /** Old links that moved (S16 C-3). The first matching rule wins; callers replace the hash with the result when it differs. */
 const REDIRECT: [RegExp, string][] = [
   [/^#(records|family\/records|health\/papers)$/, '#family/papers'],
-  [/^#health\/library$/, '#discover/learn/library'],
-  [/^#health\/library\/(.+)$/, '#discover/learn/library/$1'],
-  [/^#health\/videos$/, '#discover/watch'],
+  [/^#discover\/learn\/library$/, '#health/library'], // S25 (D-155): the library lives in Health again
+  [/^#discover\/learn\/library\/(.+)$/, '#health/library/$1'],
+  [/^#health\/videos$/, '#health'], // S25: Health videos are a section of the Health overview
   [/^#family\/people$/, '#family'],
   [/^#people$/, '#family']
 ]
