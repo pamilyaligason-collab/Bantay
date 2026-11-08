@@ -252,7 +252,7 @@
 /* Papers actions (S24 lane E): two real buttons, 48 px tall. */
 .fm-pa { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
 .fm-pa button { min-height: 48px; border-radius: 999px; font: inherit; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
-.fm-pa-up { background: var(--green); color: #fff; border: 0; }
+.fm-pa-up { background: var(--green); color: var(--on-green); border: 0; }
 .fm-pa-scan { background: var(--card); color: var(--green); border: 1.5px solid var(--green); }
 
 /* Papers-first card and the 2x2 Together grid. Tokens only. */

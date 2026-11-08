@@ -103,6 +103,7 @@ describe('Family root', () => {
     const first = render(<Family />)
     expect(screen.getByRole('link', { name: 'Back to Family' }).getAttribute('href')).toBe('#family')
     expect(screen.queryByText('Add to the plan')).toBeNull()
+    expect(screen.getByTestId('calendar')).toBeTruthy()
     first.unmount()
     location.hash = '#family/plan'
     render(<Family />)
