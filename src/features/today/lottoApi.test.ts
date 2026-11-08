@@ -23,6 +23,10 @@ describe('latestPerGame', () => {
     ])
     expect(out.map((x) => `${x.game}|${x.draw_date}`)).toEqual(['Ultra Lotto 6/58|2026-11-03', 'Mega Lotto 6/45|2026-11-04', 'Lotto 6/42|2026-11-07', '3D Lotto 9PM|2026-11-06'])
   })
+  it('takes the names lotto-pcso stores from the lottopcso.com page (D-153)', () => {
+    const out = latestPerGame([row('6/58 Ultra Lotto', '2026-11-06'), row('6/42 Lotto', '2026-11-07'), row('3D 2PM', '2026-11-08'), row('3D 9PM', '2026-11-07'), row('4D', '2026-11-06'), row('2D 9PM', '2026-11-07')])
+    expect(out.map((x) => x.game)).toEqual(['6/58 Ultra Lotto', '6/42 Lotto', '3D 9PM'])
+  })
 })
 
 describe('loadLotto', () => {

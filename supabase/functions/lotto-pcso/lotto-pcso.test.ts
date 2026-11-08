@@ -1,5 +1,5 @@
 // @vitest-environment node
-// The fixture is invented numbers in the real lottopcso.com table shapes; expected values are hand-counted, not copied from the parser.
+// The fixture follows the real lottopcso.com table shapes; most draw numbers are the public 6-8 Nov 2026 results (public draw data, no personal data), some amounts and all skip-rule rows are invented. Expected values are hand-counted, not copied from the parser.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import { isoDate, parseResults, runLotto, SOURCE_URL } from './lotto.ts'

@@ -51,7 +51,7 @@ export function parseResults(html: unknown, now: number): LottoRow[] | null {
   for (const t of html.matchAll(/<table[\s>][\s\S]*?<\/table>/gi)) {
     const c = Array.from(t[0].matchAll(/<t[dh][\s>][\s\S]*?<\/t[dh]>/gi), (x) => text(x[0]))
     const head = /^(6\/58|6\/55|6\/49|6\/45|6\/42|6D|4D|3D|2D)\s/.exec(c[0] ?? '')
-    if (!head || c.length < 4) continue // STL, prize charts, side tables
+    if (!head || c.length < 4 || c[0]!.length > 60) continue // STL, prize charts, side tables; a header over 60 chars would fail 0054's CHECK and sink the whole batch
     tables++
     const key = head[1]!
     const draw_date = isoDate(c[1]!)

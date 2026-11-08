@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { db } from '../../db'
 import { supabase } from '../auth/client'
 
-/** A lotto_results row (migration 0054). jackpot_php and winners are null when PCSO did not post a readable value. */
+/** A lotto_results row (migration 0054). jackpot_php and winners are null when the results page (the lottopcso.com mirror, D-153) shows no readable value. */
 export interface LottoRow { game: string; draw_date: string; combination: string; jackpot_php: number | null; winners: number | null }
 interface Saved { savedAt: number; rows: LottoRow[] }
 const CACHE = 'today.lotto'
