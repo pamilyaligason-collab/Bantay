@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { over, parse, ratio, tokensOf, type Theme } from '../look/contrastMath'
 
-// .lt-ball: --amber-ink on --warn-bg, which is 22% --amber over --card (tokens.css), on a --card row.
+// .lotto-ball: --amber-ink on --warn-bg, which is 22% --amber over --card (tokens.css), on a --card row.
 describe.each<Theme>(['light', 'dark'])('Lotto ball chip (%s)', (theme) => {
   const t = tokensOf(theme)
   const chip = over([parse(t['--amber']!)[0], 0.22], parse(t['--card']!)[0])

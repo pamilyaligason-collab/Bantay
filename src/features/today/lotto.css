@@ -1,9 +1,9 @@
 /* S24 board S24Today: Lotto results card. Balls are round chips; the row wraps on a narrow phone instead of overflowing. */
-.lt { display: grid; gap: 0; min-width: 0; }
-.lt-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 56px; min-width: 0; padding: 10px 0; border-top: .5px solid var(--hair); }
-.lt-row:first-child { border-top: 0; }
-.lt-name { display: grid; gap: 2px; min-width: 0; font-size: 16px; line-height: 21px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
-.lt-sub { font-size: 13px; line-height: 18px; font-weight: 400; color: var(--muted); }
-.lt-balls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
-.lt-ball { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: var(--warn-bg); color: var(--amber-ink); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.lt-note { margin: 4px 0 0; padding: 10px; font-size: 13px; line-height: 18px; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
+.lotto { display: grid; gap: 0; min-width: 0; }
+.lotto-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; min-height: 56px; min-width: 0; padding: 10px 0; border-top: .5px solid var(--hair); }
+.lotto-row:first-child { border-top: 0; }
+.lotto-name { display: grid; gap: 2px; min-width: 0; font-size: 16px; line-height: 21px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.lotto-sub { font-size: 13px; line-height: 18px; font-weight: 400; color: var(--muted); }
+.lotto-balls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.lotto-ball { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: var(--warn-bg); color: var(--amber-ink); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lotto-note { margin: 4px 0 0; padding: 10px; font-size: 13px; line-height: 18px; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }

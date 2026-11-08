@@ -31,24 +31,24 @@ describe('Lotto card', () => {
     h.rows = ALL
     const { container } = render(<Lotto />)
     expect(screen.getByRole('heading', { name: 'Lotto results' })).toBeTruthy()
-    const rows = Array.from(container.querySelectorAll('.lt-row'))
+    const rows = Array.from(container.querySelectorAll('.lotto-row'))
     expect(rows.map((x) => x.getAttribute('aria-label'))).toEqual([
       'Grand Lotto 6/55, Sat 7 Nov, no winner, numbers 05 12 22 27 34 43',
       'Lotto 6/42, Sat 7 Nov, 2 winners, numbers 04 18 19 23 28 33',
       '3D Lotto 9PM, Sat 7 Nov, numbers 4 4 7'
     ])
-    expect(container.querySelectorAll('.lt-ball')).toHaveLength(6 + 6 + 3)
+    expect(container.querySelectorAll('.lotto-ball')).toHaveLength(6 + 6 + 3)
     expect(container.textContent).not.toContain('01 02 03')
-    expect(container.querySelector('.lt-note')!.textContent).toBe('Numbers as posted by PCSO. Check your ticket with PCSO before claiming.')
+    expect(container.querySelector('.lotto-note')!.textContent).toBe('Numbers as posted by PCSO. Check your ticket with PCSO before claiming.')
     expect(LOTTO_NOTE).toBe('Numbers as posted by PCSO. Check your ticket with PCSO before claiming.')
   })
   it('More games opens all six games in order 6/58, 6/55, 6/49, 6/45, 6/42, 3D, and Fewer games folds back', () => {
     h.rows = ALL
     const { container } = render(<Lotto />)
     fireEvent.click(screen.getByRole('button', { name: 'More games' }))
-    expect(Array.from(container.querySelectorAll('.lt-name')).map((x) => x.firstChild!.textContent)).toEqual(['Ultra Lotto 6/58', 'Grand Lotto 6/55', 'Super Lotto 6/49', 'Mega Lotto 6/45', 'Lotto 6/42', '3D Lotto 9PM'])
+    expect(Array.from(container.querySelectorAll('.lotto-name')).map((x) => x.firstChild!.textContent)).toEqual(['Ultra Lotto 6/58', 'Grand Lotto 6/55', 'Super Lotto 6/49', 'Mega Lotto 6/45', 'Lotto 6/42', '3D Lotto 9PM'])
     fireEvent.click(screen.getByRole('button', { name: 'Fewer games' }))
-    expect(container.querySelectorAll('.lt-row')).toHaveLength(3)
+    expect(container.querySelectorAll('.lotto-row')).toHaveLength(3)
   })
   it('no More games button when three or fewer games have rows', () => {
     h.rows = ALL.slice(0, 2)
@@ -62,7 +62,16 @@ describe('Lotto card', () => {
   })
   it('balls are round 44-safe chips: a wrapping row, no fixed width on the row', () => {
     const css = readFileSync('src/features/today/lotto.css', 'utf8')
-    expect(css).toMatch(/\.lt-ball \{[^}]*border-radius: 50%/)
-    expect(css).toMatch(/\.lt-row \{[^}]*flex-wrap: wrap/)
+    expect(css).toMatch(/\.lotto-ball \{[^}]*border-radius: 50%/)
+    expect(css).toMatch(/\.lotto-row \{[^}]*flex-wrap: wrap/)
+  })
+  it('its class names are global CSS: none is defined in any other stylesheet (.lt-row once restyled the page header)', () => {
+    const own = new Set(readFileSync('src/features/today/lotto.css', 'utf8').match(/\.lotto[\w-]*/g))
+    expect(own.size).toBeGreaterThan(4)
+    const others = import.meta.glob('../../**/*.css', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+    for (const [path, css] of Object.entries(others)) {
+      if (path.endsWith('/lotto.css')) continue
+      for (const c of own) expect(css.includes(`${c} `) || css.includes(`${c},`) || css.includes(`${c}{`) || css.includes(`${c}:`), `${c} also in ${path}`).toBe(false)
+    }
   })
 })

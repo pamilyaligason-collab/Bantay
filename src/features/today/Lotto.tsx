@@ -27,17 +27,17 @@ export default function Lotto() {
   const shown = all ? latest : latest.filter((r) => top.has(r))
   return (
     <Section title="Lotto results" link={latest.length > SHOWN ? { onClick: () => setAll((v) => !v), label: all ? 'Fewer games' : 'More games' } : undefined} testId="today-lotto">
-      <div className="card lt">
+      <div className="card lotto">
         {shown.map((r) => {
           const w = winnerLine(r)
           return (
-            <div key={r.game} className="lt-row" role="group" aria-label={`${r.game}, ${drawDay(r.draw_date)}${w ? `, ${w}` : ''}, numbers ${balls(r).join(' ')}`}>
-              <span className="lt-name">{r.game}<span className="lt-sub">{drawDay(r.draw_date)}{w ? ` · ${w}` : ''}</span></span>
-              <span className="lt-balls" aria-hidden="true">{balls(r).map((n, i) => <span key={i} className="lt-ball">{n}</span>)}</span>
+            <div key={r.game} className="lotto-row" role="group" aria-label={`${r.game}, ${drawDay(r.draw_date)}${w ? `, ${w}` : ''}, numbers ${balls(r).join(' ')}`}>
+              <span className="lotto-name">{r.game}<span className="lotto-sub">{drawDay(r.draw_date)}{w ? ` · ${w}` : ''}</span></span>
+              <span className="lotto-balls" aria-hidden="true">{balls(r).map((n, i) => <span key={i} className="lotto-ball">{n}</span>)}</span>
             </div>
           )
         })}
-        <p className="lt-note">{LOTTO_NOTE}</p>
+        <p className="lotto-note">{LOTTO_NOTE}</p>
       </div>
     </Section>
   )

@@ -59,7 +59,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const feed = page.getByTestId('today-news')
     await expect(feed.locator('.tn-row')).toHaveCount(5)
     await expect(card).toBeVisible()
-    await expect(card.locator('.lt-row')).toHaveCount(3) // newest three draws first
+    await expect(card.locator('.lotto-row')).toHaveCount(3) // newest three draws first
     await expect(card).toContainText('Numbers as posted by PCSO. Check your ticket with PCSO before claiming.')
     expect(await page.evaluate(() => { const a = document.querySelector('[data-testid="today-news"]'), b = document.querySelector('[data-testid="today-lotto"]'); return !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) }), 'Lotto sits right after News').toBe(true)
     // health first, then weather: the dengue row leads, the typhoon row is second
@@ -69,7 +69,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const box = await more.boundingBox()
     expect(box!.height, 'More games is a 44px target').toBeGreaterThanOrEqual(43.5)
     expect(await card.evaluate((el) => Array.from(el.querySelectorAll<HTMLElement>('*')).filter((n) => n.getBoundingClientRect().right > document.documentElement.clientWidth + 0.5).map((n) => String(n.className)))).toEqual([])
-    expect(await card.locator('.lt-ball').first().evaluate((b) => b.getBoundingClientRect().width)).toBeGreaterThanOrEqual(30)
+    expect(await card.locator('.lotto-ball').first().evaluate((b) => b.getBoundingClientRect().width)).toBeGreaterThanOrEqual(30)
     const dir = process.env.S24_SHOTS
     if (dir) {
       await feed.scrollIntoViewIfNeeded()
@@ -78,7 +78,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.screenshot({ path: `${dir}/today-lotto-${scheme}.png` })
     }
     await more.click()
-    await expect(card.locator('.lt-row')).toHaveCount(6)
+    await expect(card.locator('.lotto-row')).toHaveCount(6)
     if (dir) { await card.scrollIntoViewIfNeeded(); await page.screenshot({ path: `${dir}/today-lotto-all-${scheme}.png` }) }
   })
 }
