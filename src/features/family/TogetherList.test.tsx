@@ -69,13 +69,13 @@ describe('Papers card', () => {
     expect(rows.every((r) => r.textContent?.includes('Done'))).toBe(true)
     expect(rows[0]!.textContent).toContain('20 Oct 2026')
     expect(rows[0]!.textContent).not.toContain('2026-10-20')
-    expect(screen.getByTestId('papersrow').textContent).toBe('All papers (4) ›')
+    expect(screen.getByTestId('papersrow').textContent).toBe('All papers (4)')
   })
 
   it('before any paper has loaded (or with none) the link has no count', () => {
     render(<TogetherList />)
     expect(screen.queryAllByTestId('paper-row')).toHaveLength(0)
-    expect(screen.getByTestId('papersrow').textContent).toBe('All papers ›')
+    expect(screen.getByTestId('papersrow').textContent).toBe('All papers')
   })
 
   it('Upload hands the picked file to the scan flow', () => {
