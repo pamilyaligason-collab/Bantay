@@ -79,18 +79,18 @@ const idOf = (img: Element) => /vi\/([\w-]{11})\//.exec(img.getAttribute('src')!
 const pics = (el: Element) => Array.from(el.querySelectorAll('.dc-still img'))
 
 describe('Top story (prepping videos)', () => {
-  // 28 Oct 2026 is day 20754 since 1970; 20754 mod 22 prepping videos = 8, so the turn starts at the 9th video (counted by hand from ready.json)
+  // 28 Oct 2026 is day 20754 since 1970; 20754 mod 20 prepping videos = 14, so the turn starts at the 15th video (counted by hand from ready.json)
   it('one large card and a 2 x 2 grid of today\'s five prepping videos, All prepping link', () => {
     render(<Overview now={now} />)
     const sec = screen.getByTestId('dc-top-story')
     expect(within(sec).getByRole('link', { name: 'All prepping' }).getAttribute('href')).toBe('#discover/learn/prepping')
     const hero = screen.getByTestId('dc-hero')
-    expect(idOf(pics(hero)[0]!)).toBe('CvsJhNvDytU')
-    expect(hero.querySelector('.dc-hchip')!.textContent).toBe('Prepping · City Prepping')
+    expect(idOf(pics(hero)[0]!)).toBe('7WxUgGfiHb4')
+    expect(hero.querySelector('.dc-hchip')!.textContent).toBe('Prepping · Knowledge Channel')
     expect(hero.getAttribute('href')).toBe('#discover/watch')
     const grid = screen.getByTestId('dc-top-grid')
     expect(grid.querySelectorAll('a.dc-vgcard')).toHaveLength(4)
-    expect(pics(grid).map(idOf)).toEqual(['89pzRA4bScc', 'ETTgtj7yYK4', '5WPv0FsIvkY', '2JihPYiSOac'])
+    expect(pics(grid).map(idOf)).toEqual(['IEN3GJap2Kc', '3oRx8JDns2E', 'fmJlnEExTvg', '7Ogz8BQ_nX0'])
   })
   it('every picture is a still from i.ytimg.com with no referrer, sized and lazy, and nothing from YouTube loads before a tap', () => {
     const { container } = render(<Overview now={now} />)
@@ -113,9 +113,9 @@ describe('Top story (prepping videos)', () => {
     const a = screen.getByTestId('dc-hero')
     for (const k of ['ctrlKey', 'metaKey', 'shiftKey']) { fireEvent.click(a, { [k]: true }); expect(sessionStorage.getItem('dc.watch')).toBeNull() }
     fireEvent.click(a)
-    expect(sessionStorage.getItem('dc.watch')).toBe('CvsJhNvDytU')
+    expect(sessionStorage.getItem('dc.watch')).toBe('7WxUgGfiHb4')
     fireEvent.click(screen.getByTestId('dc-top-grid').querySelectorAll('a')[1]!)
-    expect(sessionStorage.getItem('dc.watch')).toBe('ETTgtj7yYK4')
+    expect(sessionStorage.getItem('dc.watch')).toBe('3oRx8JDns2E')
   })
 })
 

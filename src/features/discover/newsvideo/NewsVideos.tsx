@@ -33,7 +33,7 @@ export function NewsVideos({ now = Date.now() }: { now?: number }) {
   const [lead, ...rest] = list.rows
   const chosen = list.rows.find((v) => v.video_id === sel)
   return (
-    <Section title="Regional news" meta={list.rows.length ? updatedLine(list.fetchedAt, now) : undefined} testId="dc-regional">
+    <Section title="Regional news" meta={list.rows.length && list.fetchedAt !== null ? updatedLine(list.fetchedAt, now) : undefined} testId="dc-regional">
       <div className="nw">
         <div className="nw-chips nv-chips" role="group" aria-label="News channels">
           <button type="button" className="nw-chip" aria-pressed={!channel} onClick={() => { setChannel(undefined); setSel(null) }}>All</button>

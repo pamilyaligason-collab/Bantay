@@ -23,7 +23,8 @@ export const JOBS = [
   { job: 'alerts-digest', label: 'Daily safety digest', every: 'Daily 06:45', staleMin: 26 * 60 }, // written once a day: red after a missed day plus two hours
   { job: 'records-extract', label: 'Records reader', every: 'Every 10 min', staleMin: 30 },
   { job: 'world-news', label: 'World news feed', every: 'Every 6 hours', staleMin: 8 * 60 }, // red after a missed run plus two hours
-  { job: 'lotto-pcso', label: 'Lotto results feed', every: 'Every 6 hours', staleMin: 8 * 60 }
+  { job: 'lotto-pcso', label: 'Lotto results feed', every: 'Every 6 hours', staleMin: 8 * 60 },
+  { job: 'yt-feed', label: 'Regional news videos', every: 'Every 30 min', staleMin: 90 } // red after two missed runs plus half an hour
 ] as const
 export const JOB_STALE_MIN = 30
 

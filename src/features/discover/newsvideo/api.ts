@@ -4,8 +4,8 @@ import { supabase } from '../../auth/client'
 
 /** A news_videos row (migration 0055, D-159): a recent video from a Philippine news channel, filled by the yt-feed function every 30 minutes. */
 export interface NewsVideo { video_id: string; channel_id: string; channel: string; title: string; published_at: string }
-export interface NewsVideoList { rows: NewsVideo[]; fetchedAt: number }
-interface Saved { savedAt: number; fetchedAt: number; rows: NewsVideo[] }
+export interface NewsVideoList { rows: NewsVideo[]; fetchedAt: number | null } // null = the server's last-look time is not known: no Updated line
+interface Saved { savedAt: number; fetchedAt: number | null; rows: NewsVideo[] }
 export const NEWS_DAYS = 3 // the server keeps 3 days; so does the saved copy
 const CACHE = (channel?: string) => 'discover.newsvideo.' + (channel ?? 'all')
 
@@ -29,7 +29,7 @@ export async function loadNewsVideos(channel?: string, now: number = Date.now())
     const get = async (c?: string) => (await db.kv.get(CACHE(c)).catch(() => undefined))?.value as Saved | undefined
     // A channel never opened while online has no copy of its own: its videos are in the "all" copy.
     const s = (await get(channel)) ?? (channel ? await get() : undefined)
-    return s && Array.isArray(s.rows) && now - s.savedAt <= NEWS_DAYS * 86_400_000 ? { rows: s.rows.filter((r) => valid(r) && (!channel || r.channel_id === channel)), fetchedAt: s.fetchedAt } : null
+    return s && Array.isArray(s.rows) && now - s.savedAt <= NEWS_DAYS * 86_400_000 ? { rows: s.rows.filter((r) => valid(r) && (!channel || r.channel_id === channel)), fetchedAt: typeof s.fetchedAt === 'number' ? s.fetchedAt : null } : null
   }
   try {
     if (!supabase) throw new Error('not_connected')
@@ -39,8 +39,8 @@ export async function loadNewsVideos(channel?: string, now: number = Date.now())
     if (error) throw new Error('read')
     const list = (data ?? []) as (NewsVideo & { fetched_at?: string })[]
     const rows = list.filter(valid)
-    // The newest fetched_at is when the server last looked; an empty table has no such time, so it shows "now" only once it has rows.
-    const fetchedAt = list.reduce((m, r) => Math.max(m, Date.parse(r.fetched_at ?? '') || 0), 0) || now
+    // The newest fetched_at is when the server last looked; with none, the time is unknown (null), never "now".
+    const fetchedAt = list.reduce((m, r) => Math.max(m, Date.parse(r.fetched_at ?? '') || 0), 0) || null
     await db.kv.put({ key: CACHE(channel), value: { savedAt: now, fetchedAt, rows } satisfies Saved }).catch(() => undefined)
     return { rows, fetchedAt }
   } catch {

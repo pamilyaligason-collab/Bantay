@@ -8,9 +8,10 @@ const h = vi.hoisted(() => ({
   fail: false,
   connected: true,
   kv: new Map<string, { value: unknown }>(),
-  eqs: [] as string[]
+  eqs: [] as string[],
+  reads: 0
 }))
-vi.mock('../../../db', () => ({ db: { kv: { get: async (k: string) => h.kv.get(k), put: async (v: { key: string; value: unknown }) => { h.kv.set(v.key, v) } } } }))
+vi.mock('../../../db', () => ({ db: { kv: { get: async (k: string) => { h.reads++; return h.kv.get(k) }, put: async (v: { key: string; value: unknown }) => { h.kv.set(v.key, v) } } } }))
 vi.mock('../../auth/client', () => ({
   get supabase() {
     if (!h.connected) return null
@@ -41,7 +42,7 @@ const mk = (n: number, channel_id: string, channel: string, minsAgo: number) => 
 // Newest first, as the table answers: 40 min, 90 min, 5 h, 26 h, 3 d, 3 d.
 const SEVEN = [mk(1, GMA, 'GMA News', 40), mk(2, ABS, 'ABS-CBN News', 90), mk(3, GMA, 'GMA News', 300), mk(4, ABS, 'ABS-CBN News', 26 * 60), mk(5, GMA, 'GMA News', 3 * 1440 - 5), mk(6, ABS, 'ABS-CBN News', 3 * 1440 - 10)]
 
-beforeEach(() => { h.rows = []; h.fail = false; h.connected = true; h.kv.clear(); h.eqs = [] })
+beforeEach(() => { h.rows = []; h.fail = false; h.connected = true; h.kv.clear(); h.eqs = []; h.reads = 0 })
 afterEach(cleanup)
 
 describe('ageBadge and updatedLine', () => {
@@ -71,6 +72,14 @@ describe('loadNewsVideos', () => {
     expect(got!.rows.map((r) => r.title)).toEqual(['Story 1', 'Story 2'])
     expect(got!.fetchedAt).toBe(NOW - 12 * 60_000)
     expect((h.kv.get('discover.newsvideo.all')!.value as { savedAt: number }).savedAt).toBe(NOW)
+  })
+  it('no fetched_at on any row: fetchedAt is null (never now) and the heading shows no Updated line', async () => {
+    h.rows = SEVEN.slice(0, 2).map(({ fetched_at: _f, ...r }) => r)
+    const got = await loadNewsVideos(undefined, NOW)
+    expect(got!.fetchedAt).toBeNull()
+    render(<NewsVideos now={NOW} />)
+    await screen.findByTestId('nv-lead')
+    expect(screen.queryByText(/Updated/)).toBeNull()
   })
   it('a channel id narrows the read and has its own saved copy', async () => {
     h.rows = SEVEN
@@ -117,6 +126,7 @@ describe('Regional news section', () => {
   })
   it('a tap on a card plays that video through LiteVideo: nothing loads until the video\'s own tap', async () => {
     h.rows = SEVEN
+    h.reads = 0
     const { container } = render(<NewsVideos now={NOW} />)
     fireEvent.click(await screen.findByTestId('nv-lead'))
     const player = screen.getByTestId('nv-player')
@@ -156,8 +166,9 @@ describe('Regional news section', () => {
     expect((await screen.findByTestId('dc-regional')).textContent).toContain('Updated 1 hr ago')
     expect(screen.getByTestId('nv-lead').textContent).toContain('Story 1')
     cleanup(); h.kv.clear()
+    h.reads = 0
     const { container } = render(<NewsVideos now={NOW} />)
-    await new Promise((r) => setTimeout(r, 20))
+    await waitFor(() => expect(h.reads).toBeGreaterThan(0)) // the read has settled with nothing saved
     expect(container.innerHTML).toBe('')
   })
 })

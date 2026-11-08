@@ -83,7 +83,8 @@ export interface Port {
 }
 export type Result = { ok: boolean; rows: number; source: 'rss' | 'api' | 'none' }
 
-/** Reads every feed; the key (when there is one) is used only if no feed gave a readable answer. A failed read never trims the table. */
+/** ML-24 worst case: 4 feeds x 15 s fetch timeout (60 s) plus 4 API reads x 15 s (60 s) is about 120 s, plus the write, under the 150 s Supabase Free edge limit. No budget check is needed while CHANNELS stays at 4.
+ *  Reads every feed; the key (when there is one) is used only if no feed gave a readable answer. A failed read never trims the table. */
 export async function runFeeds(port: Port, fetchText: (url: string) => Promise<string>, now: number, apiKey?: string): Promise<Result> {
   let rows: NewsRow[] = []
   let source: Result['source'] = 'none'

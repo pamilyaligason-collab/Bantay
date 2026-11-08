@@ -10,16 +10,16 @@ afterEach(cleanup)
 describe('Watch', () => {
   it('shows 4 posters at a time in a grid (no player, no side-swipe row) and one row per topic plus Live TV; health topics are gone', () => {
     const { container } = render(<Watch />)
-    expect(DISCOVER_VIDEOS.filter(playable).length).toBe(57) // counted by hand in src/data/discover/ready.json: Be prepared 22, Farming and DIY 23, Listen 7, Recipe videos 5, none a placeholder
+    expect(DISCOVER_VIDEOS.filter(playable).length).toBe(55) // counted by hand in src/data/discover/ready.json: Be prepared 20, Farming and DIY 23, Listen 7, Recipe videos 5, none a placeholder
     expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
     expect(screen.getByRole('button', { name: 'Show 4 more' })).toBeTruthy()
     expect(container.querySelector('iframe')).toBeNull()
     expect(container.querySelector('.carousel, .dc-posters')).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('57')
+    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('55')
     const imgs = Array.from(container.querySelectorAll('img')).map((i) => i.getAttribute('src')!)
     expect(imgs.length).toBe(4)
     expect(imgs.every((u) => u.startsWith('https://i.ytimg.com/vi/'))).toBe(true)
-    expect(['Be prepared', 'Farming and DIY', 'Listen', 'Recipe videos'].map((t) => screen.getByTestId('playlist-' + t).textContent)).toEqual(['Be prepared22 videos', 'Farming and DIY23 videos', 'Listen7 videos', 'Recipe videos5 videos'])
+    expect(['Be prepared', 'Farming and DIY', 'Listen', 'Recipe videos'].map((t) => screen.getByTestId('playlist-' + t).textContent)).toEqual(['Be prepared20 videos', 'Farming and DIY23 videos', 'Listen7 videos', 'Recipe videos5 videos'])
     for (const t of ['Move', 'Safety', 'Mind', 'Diabetes', 'Food']) expect(screen.queryByTestId('playlist-' + t)).toBeNull()
     expect(screen.getByTestId('live-tv').textContent).toContain('Coming soon')
     expect(screen.getByText(/or opens in YouTube/)).toBeTruthy()
@@ -48,7 +48,7 @@ describe('Watch', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show 3 more' }))
     expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(7)
     fireEvent.click(within(screen.getByTestId('playlist-Listen')).getByRole('button'))
-    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('57')
+    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('55')
     expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
   })
   it('a picture that cannot load falls back to the title on a drawn tile', () => {

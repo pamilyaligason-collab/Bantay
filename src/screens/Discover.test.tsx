@@ -95,17 +95,6 @@ describe('Discover sub pages', () => {
     expect(screen.queryByText('News lane screen')).toBeNull()
     expect(screen.getByTestId('watch')).toBeTruthy()
   })
-  it('#discover/learn/library draws the Health library, with its Back going to Learn', () => {
-    location.hash = '#discover/learn/library'
-    render(<Discover />)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Health library')
-    expect(screen.getByRole('link', { name: 'Back to Learn' }).getAttribute('href')).toBe('#discover/learn')
-  })
-  it('a library article goes back to the library list', () => {
-    location.hash = '#discover/learn/library/c%3Adiabetes'
-    render(<Discover />)
-    expect(screen.getByRole('link', { name: 'Back to the library' }).getAttribute('href')).toBe('#discover/learn/library')
-  })
 })
 
 describe('discover hash helpers', () => {

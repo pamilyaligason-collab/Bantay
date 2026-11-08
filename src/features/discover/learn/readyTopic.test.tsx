@@ -8,7 +8,7 @@ afterEach(cleanup)
 
 describe('D-117 list', () => {
   it('every video is real, playable, unique, in a known topic, and apart from the health list', () => {
-    expect(READY_VIDEOS).toHaveLength(57) // 35 + 22 added in S25
+    expect(READY_VIDEOS).toHaveLength(55) // 35 + 22 added in S25, less 2 removed in fix round 1
     expect(READY_VIDEOS.every((v) => playable(v) && VIDEO_ID.test(v.id) && v.minutes === null)).toBe(true)
     expect(new Set(DISCOVER_VIDEOS.map((v) => v.id)).size).toBe(DISCOVER_VIDEOS.length)
     expect(VIDEOS.some((v) => READY_VIDEOS.some((r) => r.id === v.id))).toBe(false)

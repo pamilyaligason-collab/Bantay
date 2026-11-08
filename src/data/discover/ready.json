@@ -1,5 +1,5 @@
 {
-  "_note": "D-117 shelf: being prepared at home, and home repairs. Videos: only channels that identify as official (the two unofficial Philippine Red Cross re-uploads, Ep02 and Ep05, were dropped after review); ids checked against YouTube oEmbed (HTTP 200, title and channel as listed) and the watch page (embeddable, description read) on 2026-11-04; not watched through. minutes is null, as in videos.json. reads: url answered HTTP 200 to a scripted request and its page title was read on checked. Round 3 (2026-11-04) added crisis-or-war household guides from Sweden and the UK, three Philippine official videos (PHIVOLCS, PAGASA) and two improvement videos and reads; all checked the same way (YouTube channel pages read: PHIVOLCS and PAGASA and the Swedish agency each describe themselves as the agency). Kept apart from videos.json so Today and Health keep their own health-only video list. S24 (2026-11-08): topics farm-diy (replaces repairs; the old repairs videos moved under it), listen and recipes-video added with hand-picked channel videos (D-152, no live feed); every new id was checked against YouTube oEmbed on 2026-11-08 (HTTP 200, source equal to author_name; two sources are the full oEmbed names). minutes stays null. Opus health-wording check still to do. S25 (2026-11-08): second round, 22 videos from Philippine channels (GMA News, ABS-CBN News, Philippine Red Cross Official, Pinoy Prepper Central with PH-relevant titles only, Agribusiness How It Works, Agree sa Agri, Agri-nihan, Don Bustamante Rooftop Gardening, The Agrillenial, Raffy's Green Thumb, Mga Kwentong Pampatulog, Headspace); each id answered YouTube oEmbed with HTTP 200 and an author_name matching the source on 2026-11-08. No new recipe video was verified. Health videos moved to Health (videos.json) and no longer show on Discover.",
+  "_note": "D-117 shelf: being prepared at home, and home repairs. Videos: only channels that identify as official (the two unofficial Philippine Red Cross re-uploads, Ep02 and Ep05, were dropped after review); ids checked against YouTube oEmbed (HTTP 200, title and channel as listed) and the watch page (embeddable, description read) on 2026-11-04; not watched through. minutes is null, as in videos.json. reads: url answered HTTP 200 to a scripted request and its page title was read on checked. Round 3 (2026-11-04) added crisis-or-war household guides from Sweden and the UK, three Philippine official videos (PHIVOLCS, PAGASA) and two improvement videos and reads; all checked the same way (YouTube channel pages read: PHIVOLCS and PAGASA and the Swedish agency each describe themselves as the agency). Kept apart from videos.json so Today and Health keep their own health-only video list. S24 (2026-11-08): topics farm-diy (replaces repairs; the old repairs videos moved under it), listen and recipes-video added with hand-picked channel videos (D-152, no live feed); every new id was checked against YouTube oEmbed on 2026-11-08 (HTTP 200, source equal to author_name; two sources are the full oEmbed names). minutes stays null. Opus health-wording check still to do. S25 (2026-11-08): second round, 22 videos from Philippine channels (GMA News, ABS-CBN News, Philippine Red Cross Official, Pinoy Prepper Central with PH-relevant titles only, Agribusiness How It Works, Agree sa Agri, Agri-nihan, Don Bustamante Rooftop Gardening, The Agrillenial, Raffy's Green Thumb, Mga Kwentong Pampatulog, Headspace); each id answered YouTube oEmbed with HTTP 200 and an author_name matching the source on 2026-11-08. Fix round 1: the Yolanda anniversary video and the dated GMA drill bulletin were removed (PHIVOLCS already has the drill steps video here; its feed has no newer how-to to verify). No new recipe video was verified. Health videos moved to Health (videos.json) and no longer show on Discover.",
   "topics": [
     {
       "id": "prepping",
@@ -304,27 +304,11 @@
       "minutes": null
     },
     {
-      "id": "Eb2vT_3O848",
-      "placeholder": false,
-      "title": "Nationwide earthquake drill: what happens",
-      "topic": "Be prepared",
-      "source": "GMA News",
-      "minutes": null
-    },
-    {
       "id": "fmJlnEExTvg",
       "placeholder": false,
       "title": "Safety measures during a typhoon",
       "topic": "Be prepared",
       "source": "ABS-CBN News",
-      "minutes": null
-    },
-    {
-      "id": "Ye2Ae3jz_xo",
-      "placeholder": false,
-      "title": "13 years after Yolanda: we remember, rebuild, prepare",
-      "topic": "Be prepared",
-      "source": "Philippine Red Cross",
       "minutes": null
     },
     {
