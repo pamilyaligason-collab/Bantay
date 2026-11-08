@@ -36,14 +36,17 @@ describe('Family routes', () => {
     expect(parseFamily('#messages')).toEqual({ seg: 'home', member: null }) // only #family/messages names Messages
     expect(parseFamily('#family/people/p2')).toEqual({ seg: 'home', member: 'p2' })
     expect(parseFamily('#plan')).toEqual({ seg: 'plan', member: null })
+    expect(parseFamily('#family/calendar')).toEqual({ seg: 'calendar', member: null })
+    expect(parseFamily('#calendar')).toEqual({ seg: 'home', member: null }) // only #family/calendar names the Calendar
   })
 
   it('the root has no Home | Messages | Plan segments: Messages and Plan are rows, Back returns', async () => {
     location.hash = '#family'
     const { unmount } = render(<Family />)
     expect(screen.queryByRole('group', { name: 'Family view' })).toBeNull()
-    expect((await screen.findByTestId('msgs')).querySelector('a')!.getAttribute('href')).toBe('#family/messages')
-    expect(screen.getByTestId('planrow').querySelector('a')!.getAttribute('href')).toBe('#family/plan')
+    expect((await screen.findByTestId('msgs')).getAttribute('href')).toBe('#family/messages')
+    expect(screen.getByTestId('planrow').getAttribute('href')).toBe('#family/plan')
+    expect(screen.getByTestId('calrow').getAttribute('href')).toBe('#family/calendar')
     unmount()
     location.hash = '#family/plan'
     render(<Family />)

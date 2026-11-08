@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const acting = vi.hoisted(() => ({ on: false }))
@@ -70,12 +70,44 @@ describe('Family root', () => {
     expect(screen.queryByRole('button', { name: /I'm OK/ })).toBeNull()
   })
 
-  it('Together lists Plan, Messages, Papers and Memories, each a link to its own page', async () => {
+  it('Together is a 2x2 grid of Plan, Calendar, Messages and Memories, each a link to its own page', async () => {
     location.hash = '#family'
     render(<Family />)
     const list = await screen.findByTestId('together-list')
     const hrefs = [...list.querySelectorAll('a')].map((a) => a.getAttribute('href'))
-    expect(hrefs).toEqual(['#family/plan', '#family/messages', '#family/papers', '#family/memories'])
+    expect(hrefs).toEqual(['#family/plan', '#family/calendar', '#family/messages', '#family/memories'])
+  })
+
+  it('the Papers card comes first, with Upload and Scan buttons and a link to all papers', async () => {
+    location.hash = '#family'
+    render(<Family />)
+    const card = await screen.findByTestId('papers-card')
+    expect(card.textContent).toContain('Labs, photos and documents')
+    expect(screen.getByRole('button', { name: 'Upload' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Scan' })).toBeTruthy()
+    expect(screen.getByTestId('papersrow').getAttribute('href')).toBe('#family/papers')
+    expect(screen.queryByTestId('papers-review')).toBeNull() // nothing waiting: no pill
+    expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('Scan opens the scan flow', async () => {
+    location.hash = '#family'
+    render(<Family />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Scan' }))
+    expect(location.hash).toBe('#scan')
+    expect(history.state?.bantayScan).toBe(1)
+  })
+
+  it('#family/calendar shows only the Calendar under a Back to Family header; #family/plan shows only the Plan', () => {
+    location.hash = '#family/calendar'
+    const first = render(<Family />)
+    expect(screen.getByRole('link', { name: 'Back to Family' }).getAttribute('href')).toBe('#family')
+    expect(screen.queryByText('Add to the plan')).toBeNull()
+    first.unmount()
+    location.hash = '#family/plan'
+    render(<Family />)
+    expect(screen.getByRole('heading', { name: 'Plan' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Month' })).toBeNull()
   })
 
   it('#family/memories is a pushed page with a Back to Family link; #family/feed is off by default and returns to Family', async () => {

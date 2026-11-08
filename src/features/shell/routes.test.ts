@@ -31,6 +31,7 @@ describe('parseHash', () => {
     expect(parseHash('#family/plan')).toEqual({ tab: 'family', view: 'plan' })
     expect(parseHash('#plan')).toEqual({ tab: 'family', view: 'plan' })
     expect(parseHash('#family/messages')).toEqual({ tab: 'family', view: 'messages' })
+    expect(parseHash('#family/calendar')).toEqual({ tab: 'family', view: 'calendar' })
   })
   it('maps every Settings group to the me view without a tab', () => {
     for (const g of ['alerts', 'display', 'family', 'phone', 'signin', 'about']) expect(parseHash('#me/' + g)).toEqual({ tab: null, view: 'me' })
@@ -53,5 +54,5 @@ describe('sharing routes (D-109)', () => {
 
 describe('hasOwnHeader', () => {
   it('is true for sub-pages that draw Back + title', () => expect(['#weather', '#weather?from=action', '#health/metric/bp', '#health/refill', '#safety/map', '#gobag', '#medid', '#docs', '#family/people/p1', '#family/papers', '#me/alerts'].every(hasOwnHeader)).toBe(true))
-  it('is false for tab roots', () => expect(['', '#today', '#health', '#family', '#family/plan', '#family/people', '#family/messages', '#safety', '#me'].some(hasOwnHeader)).toBe(false))
+  it('is false for tab roots', () => expect(['', '#today', '#health', '#family', '#family/plan', '#family/calendar', '#family/people', '#family/messages', '#safety', '#me'].some(hasOwnHeader)).toBe(false))
 })
