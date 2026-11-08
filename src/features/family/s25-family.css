@@ -24,3 +24,5 @@
 .bt .fm-note { flex: none; }
 .mem-tile { width: auto; }
 .mem-img { width: 100%; height: auto; aspect-ratio: 1; }
+/* Jack peeks over the right 48 px; the metric tabs stop short of that strip so the last one is never under him (ML-44) */
+.ac .segd { margin-right: 34px; }

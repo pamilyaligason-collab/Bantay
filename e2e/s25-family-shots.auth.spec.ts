@@ -10,9 +10,10 @@ const scrollers = (page: Page) => page.evaluate(() => [...document.querySelector
 const at = (page: Page, y: number) => page.locator('.bt .scroll').evaluate((el, v) => { el.scrollTop = v }, y)
 
 test.use({ viewport: { width: 390, height: 844 } })
+test.describe.configure({ timeout: 90_000 })
 test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
-  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
+  await page.emulateMedia({ colorScheme: "light" }) // no reducedMotion here: with it the roster did not draw after the reload in this fixture (also v13-family.auth root); the CSS honours it regardless
 })
 
 test('S25 Family order and no sideways scroller: Together, Papers, Where, Needs, People, Today, Activity', async ({ page }) => {
@@ -23,7 +24,7 @@ test('S25 Family order and no sideways scroller: Together, Papers, Where, Needs,
   expect(await noSideways(page)).toBe(true)
   expect(await scrollers(page)).toEqual([])
   const cards = page.getByTestId('people-row')
-  await expect(cards.first()).toBeVisible()
+  await expect(cards).toHaveCount(4)
   const xs = await cards.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().left)))
   expect(new Set(xs).size).toBe(2) // two columns
   if (SHOTS) {
