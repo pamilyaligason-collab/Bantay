@@ -122,8 +122,9 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
   )
   if (inline) return (
     <div className="rc-pins" data-testid="glance">
-      <div className="rc-pins-h"><span className="sub">Coming up</span></div>
+      <div className="rc-pins-h"><span className="sub">Coming up</span><button type="button" className="rc-pins-edit" aria-label="Edit pinned readings" data-testid="pins-edit" onClick={() => setEditing(true)}>Edit</button></div>
       {grid}
+      {sheet}
     </div>
   )
   return (

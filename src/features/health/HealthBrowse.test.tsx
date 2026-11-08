@@ -17,7 +17,7 @@ beforeEach(async () => { await Promise.all([db.kv.clear(), ldb.medications.clear
 afterEach(cleanup)
 
 describe('Browse photos (S24)', () => {
-  it('each card has its stored photo under a gradient, with a credit line and an outside link per photo', () => {
+  it('each photo card has its stored photo as a faint texture under a cream wash, and the credits sit behind one Photo credits link', () => {
     show()
     const files: Record<string, string> = { labs: 'labs', meds: 'meds', visits: 'clinic', move: 'walk', body: 'body' }
     for (const [k, f] of Object.entries(files)) {
@@ -26,6 +26,9 @@ describe('Browse photos (S24)', () => {
       expect(card.querySelector('.hb-shade')).toBeTruthy()
       expect(card.getAttribute('data-photo')).toBe('on')
     }
+    expect(screen.queryByTestId('browse-credits')).toBeNull() // closed until asked
+    expect(screen.getAllByRole('button', { name: 'Photo credits' })).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Photo credits' }))
     const links = Array.from(screen.getByTestId('browse-credits').querySelectorAll('a'))
     expect(links).toHaveLength(10) // per photo: the Commons file page and the licence deed
     for (const a of links) { expect(a.getAttribute('href')).toMatch(/^https:\/\/(commons\.wikimedia\.org\/wiki\/File:|creativecommons\.org\/)/); expect(a.getAttribute('rel')).toContain('noopener') }
@@ -45,15 +48,19 @@ describe('Browse photos (S24)', () => {
 })
 
 describe('Browse', () => {
-  it('five cards in order with their doors; Body wiki is the wide one with no preview', () => {
+  it('six cards in order with their doors; Health library has no photo, Body wiki keeps its own, neither has a preview', () => {
     show()
-    const ids = ['labs', 'meds', 'visits', 'move', 'body']
-    expect(ids.map((k) => screen.getByTestId(`browse-${k}`).getAttribute('href'))).toEqual(['#health/labs', '#health/meds', '#health/visits', '#health/move', '#health/body'])
+    const ids = ['labs', 'meds', 'visits', 'move', 'library', 'body']
+    expect(ids.map((k) => screen.getByTestId(`browse-${k}`).getAttribute('href'))).toEqual(['#health/labs', '#health/meds', '#health/visits', '#health/move', '#health/library', '#health/body'])
     const cards = Array.from(document.querySelectorAll('.hb'))
     expect(cards.map((c) => c.getAttribute('data-testid'))).toEqual(ids.map((k) => `browse-${k}`)) // Readings has its own card above, not a door here
-    expect(screen.getByTestId('browse-body').hasAttribute('data-wide')).toBe(true)
-    expect(screen.getByTestId('browse-body').querySelector('svg')).toBeNull()
-    expect(cards.map((c) => (c as HTMLElement).style.getPropertyValue('--i'))).toEqual(['0', '1', '2', '3', '4']) // staggered rise-in
+    for (const k of ['library', 'body']) {
+      expect(screen.getByTestId(`browse-${k}`).querySelector('svg')).toBeNull()
+    }
+    expect(screen.getByTestId('browse-library').querySelector('img')).toBeNull()
+    expect(screen.getByTestId('browse-library').getAttribute('data-photo')).toBe('off')
+    expect(screen.getByTestId('browse-body').getAttribute('data-photo')).toBe('on')
+    expect(cards.map((c) => (c as HTMLElement).style.getPropertyValue('--i'))).toEqual(['0', '1', '2', '3', '4', '5']) // staggered rise-in
   })
   it('live values and previews: labs bars, dose pills, next visit, move ring', async () => {
     const readings: Reading[] = [{ personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: day(2), labLow: 0, labHigh: 130 }]

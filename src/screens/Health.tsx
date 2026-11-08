@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import ExploreScreen from '../features/anatomy/ExploreScreen'
 import ReadingsPage from '../features/health/ReadingsPage'
 import { WhoLine } from '../features/health/WhoLine'
@@ -27,6 +27,7 @@ import { ForYou } from '../features/health/ForYou'
 import { TodayRow } from '../features/health/TodayRow'
 import { ReadingsCard } from '../features/health/ReadingsCard'
 import { HealthBrowse } from '../features/health/HealthBrowse'
+import { HealthVideos } from '../features/health/HealthVideos'
 import { useHealthPerson } from '../features/health/useHealthPerson'
 import { LargeTitle, Section, Skeleton } from '../features/look'
 import { HeadActions } from '../features/shell/HeadActions'
@@ -34,6 +35,10 @@ import '../features/health/health.css'
 import { properName } from '../features/health/medName'
 import NudgeHub from '../features/nudge/NudgeHub'
 
+const Library = lazy(() => import('../features/health/library/Library')) // S25: the offline encyclopedia (lane A1), its own chunk
+const Article = lazy(() => import('../features/health/library/Article'))
+const LIBRARY = /^#health\/library(?:\/(.+))?$/
+const safeDecode = (x: string) => { try { return decodeURIComponent(x) } catch { return x } }
 const METRIC = /^#health\/metric\/([\w-]+)$/
 const MEMBER = /^#health\/member\/([\w-]+)$/
 const MED = /^#health\/med\/([\w-]+)$/ // session 13: medicine detail (lane M); #health/labs is lane L's labs screen
@@ -48,6 +53,8 @@ export default function Health() {
   const code = METRIC.exec(hash)?.[1]
   const medId = MED.exec(hash)?.[1]
   const memberId = MEMBER.exec(hash)?.[1]
+  const lib = LIBRARY.exec(hash)
+  if (lib) return <Suspense fallback={null}>{lib[1] === undefined ? <Library /> : <Article rawKey={safeDecode(lib[1])} />}</Suspense>
   if (hash === '#health/labs') return <LabsScreen />
   if (memberId) return <MemberHealth id={memberId} />
   if (medId) return <MedDetail medicationId={medId} />
@@ -94,6 +101,7 @@ function Overview() {
       {ready && personId && <ReadingsCard personId={personId} readings={readings} thresholds={thresholds} onAdd={canLog ? () => setAdding('bp') : undefined} canLog={canLog} />}
       {ready && personId && <HealthBrowse personId={personId} readings={readings} thresholds={thresholds} />}
       {ready && personId && <ForYou personId={personId} readings={readings} attention={attention} canLog={canLog} onAdd={setAdding} />}
+      {ready && <HealthVideos />}
       {ready && personId && <FamilyHealthCard ids={people.map((p) => p.id)} />}
       {adding && personId && (() => {
         const spec = entrySpec(adding === 'bp' ? 'bp_systolic' : adding)

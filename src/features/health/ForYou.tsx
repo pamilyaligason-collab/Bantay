@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Icon } from '../shell/Icon'
-import { Section } from '../look'
+import { MoreGrid, Section } from '../look'
 import { videoOfTheDay } from '../today/videos'
 import type { Attention } from './attention'
 import { NudgeRow } from './GlanceGrid'
@@ -57,7 +57,7 @@ function Clip({ video, reason, testId }: { video: Video; reason: string; testId:
   )
 }
 
-/** For you, top to bottom: today's videos (stills, two across), "Because of you" tied to the lead result, then the small log row. No data means no log row and no article. */
+/** For you, top to bottom: today's videos (stills, two across, four then Show more), "Because of you" tied to the lead result, then the small log row. No data means no log row and no article. */
 export function ForYou({ personId, readings, attention, canLog, onAdd }: { personId: string; readings: Reading[]; attention: Attention | null; canLog: boolean; onAdd: (code: 'bp' | 'fasting_glucose') => void }) {
   const clips = useMemo(() => forYouClips(VIDEOS.filter(playable), clipReasons(readings, attention)), [readings, attention])
   const label = attention ? metricLabel(attention.reading.test) : null
@@ -66,7 +66,7 @@ export function ForYou({ personId, readings, attention, canLog, onAdd }: { perso
   return (
     <Section title="For you" testId="for-you" link={{ href: '#discover/watch', label: 'More' }}>
       <div className="fy-stack">
-        {clips.length > 0 && <div className="fy-vids" role="list" aria-label="Videos for you">{clips.map((c, i) => <div key={c.video.id} role="listitem" className="fy-item"><Clip video={c.video} reason={c.reason} testId={i ? `foryou-video-${i + 1}` : 'foryou-video'} /></div>)}</div>}
+        {clips.length > 0 && <MoreGrid label="Videos for you" testId="foryou-videos">{clips.map((c, i) => <Clip key={c.video.id} video={c.video} reason={c.reason} testId={i ? `foryou-video-${i + 1}` : 'foryou-video'} />)}</MoreGrid>}
         {(label || visit) && (
           <div className="fy-reads">
             {label && (

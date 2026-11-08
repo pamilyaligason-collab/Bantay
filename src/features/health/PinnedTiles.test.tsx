@@ -232,12 +232,17 @@ describe('S24 inline row inside the Readings card: always two tiles', () => {
     obs.disconnect()
     expect(seen.some((s) => s.includes('glance-steps'))).toBe(false)
   })
-  it('pins that are not due leave the inline row alone, and there is no Edit pins button', async () => {
+  it('pins that are not due leave the inline row alone, and Edit still opens the picker', async () => {
     await db.kv.put({ key: 'health.pins', value: ['fasting_glucose', 'weight'] })
     await book()
     inline(bp(120, 80, 1))
     await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-meds']))
-    expect(screen.queryByRole('button', { name: 'Edit pins' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit pinned readings' })) // D-157: the Edit door is back on the inline row
+    expect(screen.getByRole('dialog', { name: 'Pinned' })).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: 'Weight' }).getAttribute('aria-checked')).toBe('true') // the saved pins, ticked
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Weight' }))
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Weight' }).getAttribute('aria-checked')).toBe('false'))
+    await waitFor(async () => expect((await db.kv.get('health.pins'))?.value).toEqual(['fasting_glucose']))
   })
   it('doseSummary: next pending dose time and the taken count, hand-computed', () => {
     const d = (at: number, state: 'taken' | 'skipped' | 'pending') => ({ at, state }) as never
