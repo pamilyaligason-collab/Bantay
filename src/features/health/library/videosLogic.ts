@@ -2,9 +2,11 @@ import data from '../../../data/videos.json'
 
 /** Health videos chip (S25): null means the clip belongs to Move or Watch only. */
 export type VideoSub = 'heart-bp' | 'diabetes' | 'infections' | 'firstaid' | 'mind-sleep' | 'food' | 'kids'
-/** The fixed playlist (src/data/videos.json). No search, no feed: only these. A placeholder entry never loads a player. minutes is null when not recorded. ph marks a Philippine source. */
-export interface Video { id: string; placeholder: boolean; title: string; topic: string; source: string; minutes: number | null; sub: VideoSub | null; ph?: boolean }
+/** The fixed playlist (src/data/videos.json). No search, no feed: only these. A placeholder entry never loads a player. minutes is null when not recorded. ph marks a Philippine source; healthOnly keeps it out of Discover. */
+export interface Video { id: string; placeholder: boolean; title: string; topic: string; source: string; minutes: number | null; sub: VideoSub | null; ph?: boolean; healthOnly?: boolean }
 export const VIDEOS = data.videos as Video[]
+/** The clips Discover may show: S25 health clips (healthOnly) live on Health > Health videos only. */
+export const DISCOVER_SET = VIDEOS.filter((v) => !v.healthOnly)
 export const TOPICS = ['All', ...new Set(VIDEOS.map((v) => v.topic))]
 export const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/
 export const SUBS: { sub: VideoSub; label: string }[] = [

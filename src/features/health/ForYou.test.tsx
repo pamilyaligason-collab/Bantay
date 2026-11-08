@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { vdb } from './visitsStore'
 import { clipReasons, ForYou, forYouClips, MAX_CLIPS } from './ForYou'
@@ -126,7 +126,11 @@ describe('For you hands the video to Watch', () => {
     expect(sessionStorage.getItem('dc.watch')).toBeNull()
     fireEvent.click(card)
     expect(sessionStorage.getItem('dc.watch')).toBe(id)
-    const more = within(screen.getByTestId('for-you')).getByRole('link', { name: 'More' })
-    expect(more.getAttribute('href')).toBe('#discover/watch')
+    const more = within(screen.getByTestId('for-you')).getByRole('button', { name: 'More' })
+    const target = document.createElement('section'); target.id = 'health-videos'
+    const scroll = vi.fn(); target.scrollIntoView = scroll; document.body.appendChild(target)
+    fireEvent.click(more)
+    expect(scroll).toHaveBeenCalledTimes(1) // More goes to the Health videos section, not to Discover
+    target.remove()
   })
 })

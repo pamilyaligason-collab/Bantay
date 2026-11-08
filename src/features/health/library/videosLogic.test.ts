@@ -17,7 +17,7 @@ describe('videos playlist', () => {
     expect(VIDEOS.every(playable)).toBe(true)
     expect(videosAvailable()).toBe(true)
     expect(VIDEOS.every((v) => Number.isInteger(v.minutes) && v.minutes! > 0)).toBe(true)
-    expect(forTopic('Safety').length).toBe(26)
+    expect(forTopic('Safety').length).toBe(13) // 12 of the first 27 plus the CPR clip; the other 17 S25 clips are topic Health
   })
   it('topics filter the list', () => {
     expect(TOPICS[0]).toBe('All')

@@ -14,7 +14,7 @@ import { useNewsZone } from './news/Screen'
 import Saved from './Saved'
 import { DiscoverTabs, panelId, tabId, type View } from './Tabs'
 import { WATCH_PICK } from './watch/Screen'
-import { playable, VIDEOS, type Video } from '../health/library/videosLogic'
+import { DISCOVER_SET, playable, type Video } from '../health/library/videosLogic'
 import { READY_TOPICS, countLine, readyShelf as shelf } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
@@ -184,7 +184,7 @@ function Today({ now }: { now: Date }) {
     <>
       <Learn />
       <TopStory now={now} />
-      <VideoShelf title="Health videos" link={{ href: '#discover/watch', label: 'All' }} testId="dc-health" videos={[...VIDEOS].reverse().filter(playable)} tint="purple" />
+      <VideoShelf title="Health videos" link={{ href: '#discover/watch', label: 'All' }} testId="dc-health" videos={[...DISCOVER_SET].reverse().filter(playable)} tint="purple" />
       <VideoShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} tint="green" />
       <Listen />
       <Recipes now={now} />

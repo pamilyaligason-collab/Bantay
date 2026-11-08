@@ -1,7 +1,8 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { HealthVideos } from './HealthVideos'
-import { forSub, SUBS } from './library/videosLogic'
+import css from './health.css?raw'
+import { DISCOVER_SET, forSub, SUBS, VIDEOS } from './library/videosLogic'
 
 afterEach(cleanup)
 const cards = () => Array.from(screen.getByTestId('hv-grid').querySelectorAll('[data-testid^="hv-"]'))
@@ -53,9 +54,20 @@ describe('Health videos (S25)', () => {
     fireEvent.click(cards()[1]!.querySelector('button.hv-vbtn')!)
     expect(screen.getByTestId(first.getAttribute('data-testid')!).hasAttribute('data-open')).toBe(false) // the first folds back to its still
   })
-  it('chips are 44 px tall targets that wrap, and every chip has a video', () => {
+  it('every chip has a video; the stylesheet gives chips a 44 px height and lets the row wrap with no side scroll', () => {
     render(<HealthVideos />)
     expect(SUBS.every((s) => forSub(s.sub).length > 0)).toBe(true)
-    expect(screen.getByRole('group', { name: 'Video topic' }).className).toBe('hv-chips')
+    expect(screen.getByRole('group', { name: 'Video topic' }).className).toBe('hv-chips') // jsdom has no layout, so the rules are read from the CSS text
+    const rule = (sel: string) => css.split('\n').find((l) => l.startsWith(sel + ' {'))!
+    expect(rule('.hv-chips')).toContain('flex-wrap: wrap')
+    expect(rule('.hv-chips')).not.toMatch(/overflow-x/)
+    expect(rule('.hv-chip')).toContain('min-height: 44px')
+  })
+  it('the section has the id the For you "More" link scrolls to, and no S25 health-only clip is in the Discover set', () => {
+    render(<HealthVideos />)
+    expect(document.getElementById('health-videos')).not.toBeNull()
+    expect(VIDEOS.filter((v) => v.healthOnly)).toHaveLength(18)
+    expect(DISCOVER_SET).toHaveLength(27)
+    expect(DISCOVER_SET.some((v) => v.healthOnly)).toBe(false)
   })
 })

@@ -41,7 +41,7 @@ export function HealthVideos() {
   const list = forSub(sub)
   const chips = SUBS.filter((s) => forSub(s.sub).length > 0)
   return (
-    <Section title="Health videos" testId="health-videos">
+    <Section title="Health videos" testId="health-videos" id="health-videos">
       <div className="hv-chips" role="group" aria-label="Video topic">
         {chips.map((c) => <button key={c.sub} type="button" className="hv-chip" aria-pressed={sub === c.sub} onClick={() => { setSub(sub === c.sub ? null : c.sub); setOpenId(null) }}>{c.label}</button>)}
       </div>
