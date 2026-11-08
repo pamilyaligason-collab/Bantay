@@ -75,7 +75,7 @@ export function TogetherList() {
   const toReview = selfId ? queue.byPerson[selfId] ?? 0 : 0 // the viewer's own queue, the same scope as the rows below
   return (
     <>
-      <Section title="Papers" link={familyFeedOn() ? { href: '#family/feed', label: 'Updates' } : undefined} testId="papers-section">
+      <Section title="Papers" testId="papers-section">
         <div className="fm-papers" data-testid="papers-card">
           <div className="fm-papers-top">
             <div><b className="fm-papers-h">Labs, photos and documents</b><span className="fm-tile-s">Your papers in one place, ready for the next visit</span></div>
@@ -92,7 +92,7 @@ export function TogetherList() {
           <a className="fm-all" href="#family/papers" data-testid="papersrow">All papers{docs.length > 0 ? ` (${docs.length})` : ''}<Icon name="chev" size={16} /></a>
         </div>
       </Section>
-      <Section title="Together" testId="together">
+      <Section title="Together" link={familyFeedOn() ? { href: '#family/feed', label: 'Updates' } : undefined} testId="together">
         <div className="fm-tiles" data-testid="together-list">
           <Tile testId="planrow" href="#family/plan" icon="calendar" tint="amber" title="Plan" sub={planOpen > 0 ? `${planOpen} open · ${planSub(todayRows)}` : planSub(todayRows)} />
           <Tile testId="calrow" href="#family/calendar" icon="calendar" tint="blue" title="Calendar" sub={calSub} />

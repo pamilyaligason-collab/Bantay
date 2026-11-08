@@ -27,9 +27,11 @@ describe('Browse photos (S24)', () => {
       expect(card.getAttribute('data-photo')).toBe('on')
     }
     const links = Array.from(screen.getByTestId('browse-credits').querySelectorAll('a'))
-    expect(links).toHaveLength(5)
-    for (const a of links) { expect(a.getAttribute('href')).toMatch(/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/); expect(a.getAttribute('rel')).toContain('noopener') }
-    expect(links.map((a) => a.textContent)).toEqual(expect.arrayContaining([expect.stringContaining('CC0'), expect.stringContaining('CC BY-SA 4.0')]))
+    expect(links).toHaveLength(10) // per photo: the Commons file page and the licence deed
+    for (const a of links) { expect(a.getAttribute('href')).toMatch(/^https:\/\/(commons\.wikimedia\.org\/wiki\/File:|creativecommons\.org\/)/); expect(a.getAttribute('rel')).toContain('noopener') }
+    expect(links.filter((a) => a.getAttribute('href')!.includes('commons.wikimedia.org'))).toHaveLength(5)
+    expect(links.map((a) => a.textContent)).toEqual(expect.arrayContaining(['CC0', 'CC BY-SA 4.0']))
+    expect(screen.getByTestId('browse-credits').textContent).toContain('cropped')
   })
   it('a photo that cannot load leaves a plain tint: no image, no gradient, dark text', () => {
     show()

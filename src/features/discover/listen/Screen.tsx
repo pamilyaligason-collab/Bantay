@@ -17,7 +17,7 @@ export default function Listen() {
         <div key={v.id} className="card dc-bigrow">
           <b className="dc-bigrow-t">{v.title}</b>
           <LiteVideo id={v.id} title={v.title} />
-          <span className="dc-bigrow-s">Guided · {v.source} · large controls</span>
+          <span className="dc-bigrow-s">{v.source} · large controls</span>
         </div>
       ))}
     </div>

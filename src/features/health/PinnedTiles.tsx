@@ -98,7 +98,7 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
     setRaw(cleanPins([...pins, c]))
   }
   // S24 (inline, in the Readings card): always two tiles, never a gap. Next visit + Medicines; BP (Due pill and nudge) takes the Medicines place when due; no booked visit gives Medicines + Move (steps). The pins list only drives the full Pinned section.
-  const inlinePair = (): PinCode[] => { const bpDueNow = dueOf('bp_systolic'); return visit ? ['visits', bpDueNow ? 'bp_systolic' : 'meds'] : [bpDueNow ? 'bp_systolic' : 'meds', 'steps'] }
+  const inlinePair = (): PinCode[] => { const bpDueNow = dueOf('bp_systolic'); return visit?.text.startsWith('Next visit: ') ? ['visits', bpDueNow ? 'bp_systolic' : 'meds'] : [bpDueNow ? 'bp_systolic' : 'meds', 'steps'] }
   const shown = inline ? inlinePair() : pins
   const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded && (!inline || vs.ready) ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
   const empty = pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>

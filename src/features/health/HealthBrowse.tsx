@@ -35,6 +35,7 @@ export function dosePills(doses: DoseState[]): { text: string; done: boolean }[]
 }
 
 /** Browse photos (public/img/browse, credits in CREDITS.md): Wikimedia Commons, resized, stored in the app (precached by the web service worker, bundled in the native app) so they work offline. */
+const DEED: Record<string, string> = { 'CC0': 'https://creativecommons.org/publicdomain/zero/1.0/', 'CC BY-SA 4.0': 'https://creativecommons.org/licenses/by-sa/4.0/', 'CC BY 4.0': 'https://creativecommons.org/licenses/by/4.0/', 'CC BY 2.5': 'https://creativecommons.org/licenses/by/2.5/' }
 const PHOTOS: Record<string, { file: string; credit: string; licence: string; href: string }> = {
   labs: { file: 'labs', credit: 'Frankincense Diala', licence: 'CC0', href: 'https://commons.wikimedia.org/wiki/File:Laboratory_Test_Tubes;_from_a_medical_laboratory_in_Abuja,_Nigeria.jpg' },
   meds: { file: 'meds', credit: 'Stevepb', licence: 'CC0', href: 'https://commons.wikimedia.org/wiki/File:Pill_Organizer_With_Vitamins_And_Medicines.jpg' },
@@ -92,7 +93,7 @@ export function HealthBrowse({ personId, readings, thresholds }: { personId: str
       </div>
       <p className="hb-credits" data-testid="browse-credits">
         <span>Photos:</span>
-        {Object.values(PHOTOS).map((p) => <a key={p.file} href={p.href} target="_blank" rel="noopener noreferrer">{p.credit}, {p.licence}<span className="hb-sr"> on Wikimedia Commons (opens outside)</span></a>)}
+        {Object.values(PHOTOS).map((p) => <span key={p.file}><a href={p.href} target="_blank" rel="noopener noreferrer">{p.credit}<span className="hb-sr"> on Wikimedia Commons (opens outside)</span></a>, <a href={DEED[p.licence]} target="_blank" rel="noopener noreferrer">{p.licence}</a>, cropped</span>)}
       </p>
     </Section>
   )

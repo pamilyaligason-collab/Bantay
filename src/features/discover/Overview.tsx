@@ -149,7 +149,7 @@ function Listen() {
             <div className="card dc-guided" data-testid="dc-guided">
               <LiteVideo id={g.id} title={g.title} />
               <b className="dc-guided-t">{g.title}</b>
-              <span className="dc-guided-s">Guided · {g.source} · large controls</span>
+              <span className="dc-guided-s">{g.source} · large controls</span>
             </div>
             {rest.length > 0 && <Carousel label="More to listen to" testId="dc-listen-row">{rest.map((v) => <VidCard key={v.id} v={v} tint="purple" className="dc-vrow" />)}</Carousel>}
           </div>
