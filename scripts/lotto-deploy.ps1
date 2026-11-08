@@ -1,7 +1,7 @@
 # Family Bantay - lotto results setup (S24, D-152/D-153). The owner runs this once. Windows PowerShell 5.1.
 # Run from the repo folder on main:  powershell -ExecutionPolicy Bypass -File scripts\lotto-deploy.ps1
 # Stops at the first failure. The cron secret is generated here and never printed or written to the repo.
-# Steps: migration 0054, LOTTO_CRON_SECRET, deploy lotto-pcso, Vault copy, one test call, schedule (ops/sql/lotto_cron.sql).
+# Applied live 2026-11-08 (11 draws, 4 jobs); kept to redo the setup on a fresh project. Steps: migration 0054, LOTTO_CRON_SECRET, deploy lotto-pcso, Vault copy, one test call, schedule (ops/sql/lotto_cron.sql).
 $ErrorActionPreference = 'Stop'
 if (-not $PSScriptRoot) { throw 'run as: powershell -ExecutionPolicy Bypass -File scripts\lotto-deploy.ps1' }
 $Ref = 'wuakimpssycbtnmoexuc'
@@ -15,17 +15,16 @@ function Clear-Clip { Set-Clipboard -Value ' '; try { [Windows.ApplicationModel.
 Step 1 'Checks: on main, clean, same as GitHub'
 git fetch -q origin; Check 1
 if ((git rev-parse --abbrev-ref HEAD) -ne 'main') { throw 'step 1 failed: not on main' }
-if (git status --porcelain) { throw 'step 1 failed: working tree not clean' }
+if (git status --porcelain --untracked-files=no) { throw 'step 1 failed: uncommitted changes' }
 if ((git rev-parse HEAD) -ne (git rev-parse origin/main)) { throw 'step 1 failed: run git pull first' }
 if (-not (Test-Path supabase\migrations\0054_lotto.sql)) { throw 'step 1 failed: 0054 missing' }
 
-Step 2 'Supabase CLI: link the project (asks for the database password if not linked)'
-npx -y $Sb link --project-ref $Ref; Check 2
+Step 2 'Supabase CLI: link the project if it is not linked yet'
+if (-not (Test-Path 'supabase\.temp\project-ref')) { npx -y $Sb link --project-ref $Ref; Check 2 }
 
-Step 3 'Apply migration 0054 (dry run first)'
-npx -y $Sb db push --dry-run; Check 3
-Pause-For 'The dry run should list ONLY 0054_lotto.sql. If it lists anything else, press Ctrl+C now.'
-npx -y $Sb db push; Check 3
+Step 3 'Apply migration 0054 and record it (this project applies migrations with db query -f, never db push)'
+$ErrorActionPreference = 'Continue'; & npx -y $Sb db query --linked -f supabase\migrations\0054_lotto.sql 2>&1 | ForEach-Object { "  $_" }; $ErrorActionPreference = 'Stop'; Check 3
+$ErrorActionPreference = 'Continue'; & npx -y $Sb db query --linked "insert into supabase_migrations.schema_migrations (version, name) values ('0054','lotto') on conflict do nothing;" 2>&1 | ForEach-Object { "  $_" }; $ErrorActionPreference = 'Stop'; Check 3
 
 Step 4 'Function secret LOTTO_CRON_SECRET, then deploy lotto-pcso'
 $bytes = New-Object byte[] 36
@@ -57,11 +56,8 @@ Write-Host 'Supabase > SQL Editor > New query. Paste (Ctrl+V) and Run. Expect fo
 Pause-For 'ops/sql/lotto_cron.sql is on your clipboard. Paste it, Run it.'
 Clear-Clip
 
-Step 8 'Record 0054 as applied (SQL editor)'
-Set-Clipboard -Value "select version from supabase_migrations.schema_migrations where version like '0054%';"
-Write-Host 'Paste and Run. Expect one row 0054. If it is empty, tell Claude (the push did not record it).'
-Pause-For 'The check line is on your clipboard. Paste it, Run it.'
-Clear-Clip
+Step 8 'Verify'
+$ErrorActionPreference = 'Continue'; & npx -y $Sb db query --linked "select (select count(*) from supabase_migrations.schema_migrations where version='0054') as recorded, (select count(*) from public.lotto_results) as draws, (select count(*) from cron.job where jobname like 'lotto-pcso%') as jobs;" 2>&1 | ForEach-Object { "  $_" }; $ErrorActionPreference = 'Stop'
 $Secret = $null; $bytes = $null
 Pause-For 'Press Win+V and confirm the clipboard history is empty.'
-Write-Host "`nDone. Tell Claude 'lotto deployed' so it moves 0054 out of writtenNotApplied and checks the Today card live." -ForegroundColor Green
+Write-Host "`nDone. Expect recorded 1, draws above 0, jobs 4." -ForegroundColor Green
