@@ -45,9 +45,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(needs.first()).toContainText('Ate Joy: missed a medicine')
       await expect(page.getByTestId('needs')).not.toContainText('Nasal')
       await expect(needs.nth(1)).toContainText("Papa Ben's phone may miss alarms")
-      await expect(page.getByTestId('people-row')).toHaveCount(3)
-      await page.getByTestId('people').getByRole('button', { name: /See all/ }).click()
-      await expect(page.getByTestId('people-row')).toHaveCount(4)
+      await expect(page.getByTestId('people-row')).toHaveCount(4) // S25: a 2-column grid of four cards, no See all
       await expect(page.getByTestId('together-list').getByRole('link')).toHaveCount(4)
       await expect(page.getByTestId('planrow')).toBeVisible()
       expect(await noSideways(page)).toBe(true)

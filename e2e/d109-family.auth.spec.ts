@@ -98,7 +98,6 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test(`a read-only link (Tita) shows the check-in alone, no flag word (${scheme})`, async ({ page }) => {
       await open(page, scheme, 844, ['ti'])
-      await page.getByRole('button', { name: /See all/ }).click()
       const rows = page.getByTestId('people-row')
       await expect(rows).toHaveCount(4)
       const tita = rows.filter({ hasText: 'Tita' })
@@ -110,14 +109,14 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     // D-128: Jack covers no small control and no section link; only whole-card links may sit partly under him (named below, more than half tappable). Open Papa on a Needs row and See all are small controls: no allowance.
-    const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"] .rw-main' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main, [data-testid="together-list"] a.fm-tile' }]
+    const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"]' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main, [data-testid="together-list"] a.fm-tile' }]
     const STATES: [string, Data, number][] = [['full data', {}, 1], ['no readings, one need row', { readings: false }, 1], ['no readings, two need rows', { readings: false, extraNeed: true }, 2], ['no activity, no readings, two need rows', { activity: false, readings: false, extraNeed: true }, 2]]
     for (const [name, data, needs] of STATES) {
       test(`four people, ${name}: no small control is under Jack, 390 x 844 and 450 x 949 (${scheme})`, async ({ page }) => {
         await open(page, scheme, 844, ['ti'], data)
         for (const [width, height] of [[390, 844], [450, 949]] as const) {
           await page.setViewportSize({ width, height })
-          const more = page.getByRole('button', { name: 'See all (4)' })
+          const more = page.getByTestId('people-add') // the Add card ends People (S25: no See all)
           await expect(more).toBeVisible()
           await expect(page.getByTestId('need-row')).toHaveCount(needs)
           await expect(page.locator('.sh-jackfab')).toBeVisible() // so the check below is not vacuous

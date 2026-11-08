@@ -18,8 +18,9 @@ import PlanPage from '../features/family/PlanPage'
 import Report from '../features/family/Report'
 import { useCarerIds } from '../features/family/CarerCards'
 import { StormRollCall } from '../features/family/StormRollCall'
-import { SEEN, TogetherList } from '../features/family/TogetherList'
+import { PapersSection, SEEN, TogetherList } from '../features/family/TogetherList'
 import { TodayCarousel } from '../features/family/TodayCarousel'
+import '../features/family/s25-family.css'
 import { useFamilyScope, useLinkedPeople } from '../features/family/useFamilyScope'
 import { useFocuses } from '../features/family/useFocuses'
 import { PersonSwitcher, type SwitcherGroup } from '../features/health/PersonSwitcher'
@@ -57,7 +58,7 @@ function groupsOf(options: { id: string; isMe: boolean }[], writable: string[], 
   return out
 }
 
-/** The Family root (v13, D-109): large title with the "Who to show" pill and Add, then Today, Activity, Needs you now, People, Together. It opens on Me and shows one person at a time; only a writer carer's "missed a medicine" reaches the page for anyone else. Everything is read from this phone; nothing is invented. */
+/** The Family root (v13, D-109): large title with the "Who to show" pill and Add, then (S25 board) Together, Papers, Where everyone is, Needs you now, People, and last the shown person's Today and Activity. It opens on Me and shows one person at a time; only a writer carer's "missed a medicine" reaches the page for anyone else. Everything is read from this phone; nothing is invented. */
 function Root() {
   const { shown, options, select, isOwner } = useFamilyScope()
   const writable = useCarerIds()
@@ -67,7 +68,7 @@ function Root() {
   const fx = useFocuses(watch)
   const onShow = useMemo(() => ({ ...fx, items: fx.items.filter((i) => i.person.id === shown.id) }), [fx, shown.id])
   const needs = useMemo(() => ({ ...fx, items: fx.items.filter((i) => i.person.isMe || writable.includes(i.person.id)) }), [fx, writable]) // a view-only person on show must not raise "missed a medicine"
-  const pick = (id: string) => { select(id); document.querySelector('.bt .scroll')?.scrollTo?.({ top: 0 }) }
+  const pick = (id: string) => { select(id); const today = document.querySelector('[data-testid="facesrow"]'); if (today?.scrollIntoView) today.scrollIntoView({ block: 'start' }); else document.querySelector('.bt .scroll')?.scrollTo?.({ top: 0 }) } // S25: Today (the shown person) now sits under People, so show it
   const me = options.find((p) => p.isMe)
   const groups = useMemo(() => groupsOf(options, writable, isOwner), [options, writable, isOwner])
   const places = usePlaces() // null with the places flag off, offline, or before 0052 is applied
@@ -77,13 +78,14 @@ function Root() {
       <LargeTitle kicker=" " title="Family" actions={<HeadActions>{pill}<a className="btn-round" href="#me/family" aria-label="Add a family member"><Icon name="plus" size={20} /></a></HeadActions>} />
       <IncomingSos placement="family" />
       <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
-      <TodayCarousel people={shown.id ? [shown] : []} fx={onShow} />
-      <ActivityCard people={shown.id ? [shown] : []} />
-      <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} shownId={shown.id} onSelect={pick} />
+      <TogetherList />
+      <PapersSection />
       <PlaceNotice />
       <WhereCard places={places} />
+      <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} shownId={shown.id} onSelect={pick} />
       <PeopleList people={linked} places={places} />
-      <TogetherList />
+      <TodayCarousel people={shown.id ? [shown] : []} fx={onShow} />
+      <ActivityCard people={shown.id ? [shown] : []} />
     </>
   )
 }

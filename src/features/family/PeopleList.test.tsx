@@ -28,19 +28,26 @@ describe('PeopleList flag word (D-109)', () => {
     render(<PeopleList people={people} />)
     expect(row(/Papa/).textContent).toContain('3 to check')
   })
-  it('three or fewer people: no See all, no place-sharing sentence (F3)', () => {
+  it('four or fewer people: all shown as cards, no Show more, an Add card, no place-sharing sentence', () => {
     render(<PeopleList people={people} />)
-    expect(screen.queryByRole('button', { name: /See all/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Show/ })).toBeNull()
     expect(screen.getAllByTestId('people-row')).toHaveLength(3)
+    expect(screen.getByTestId('people-add').getAttribute('href')).toBe('#me/family')
     expect(document.body.textContent).not.toMatch(/place sharing/i)
   })
-  it('five people: three rows, anyone flagged or not checked in first, See all (5) shows the rest', () => {
+  it('People is a 2-column grid, not a sideways scroller', () => {
+    render(<PeopleList people={people} />)
+    const grid = within(screen.getByTestId('people-list')).getByRole('group', { name: 'People' })
+    expect(grid.className).toBe('more-grid')
+    expect(grid.querySelector('.fm2-faces-row, .mem-strip')).toBeNull()
+  })
+  it('five people: four cards, anyone flagged or not checked in first, Show 1 more adds the rest', () => {
     render(<PeopleList people={[...people, person('x1', 'Ana Cruz'), person('x2', 'Ben Cruz')]} />)
     const names = () => screen.getAllByTestId('people-row').map((r) => r.querySelector('.rw-title')!.textContent)
-    expect(names()).toEqual(['You', 'Ma', 'Ana']) // Papa has a check-in and no flag for a read-only link, so he waits behind the unchecked two
-    fireEvent.click(screen.getByRole('button', { name: 'See all (5)' }))
+    expect(names()).toEqual(['You', 'Ma', 'Ana', 'Ben']) // Papa has a check-in and no flag for a read-only link, so he waits behind the unchecked two
+    fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }))
     expect(names()).toEqual(['You', 'Ma', 'Ana', 'Ben', 'Papa'])
-    expect(screen.getByRole('button', { name: 'Fewer' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Show less' })).toBeTruthy()
   })
   it('a healthy "All up to date" person is not a flag: the flagged person, last in the input, is in the first three', () => {
     h.writable = ['ana', 'ben', 'zed']
@@ -48,9 +55,9 @@ describe('PeopleList flag word (D-109)', () => {
     h.flags = { me: 'All up to date', ana: 'All up to date', ben: 'All up to date', zed: '2 to check' }
     render(<PeopleList people={[person('me', 'Rey Villar', true), person('ana', 'Ana Cruz'), person('ben', 'Ben Cruz'), person('cy', 'Cy Cruz'), person('zed', 'Zed Cruz')]} />)
     const names = () => screen.getAllByTestId('people-row').map((r) => r.querySelector('.rw-title')!.textContent)
-    expect(names()).toEqual(['Zed', 'You', 'Ana']) // flagged first, then the checked-in rest in input order
+    expect(names()).toEqual(['Zed', 'You', 'Ana', 'Ben']) // flagged first, then the checked-in rest in input order
     expect(row(/Zed/).textContent).toContain('2 to check')
-    fireEvent.click(screen.getByRole('button', { name: 'See all (5)' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }))
     expect(names()).toEqual(['Zed', 'You', 'Ana', 'Ben', 'Cy'])
   })
 })

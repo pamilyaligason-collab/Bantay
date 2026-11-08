@@ -78,7 +78,7 @@ describe('Family root', () => {
     expect(hrefs).toEqual(['#family/plan', '#family/calendar', '#family/messages', '#family/memories'])
   })
 
-  it('the Papers card comes first, with Upload and Scan buttons and a link to all papers', async () => {
+  it('the Papers card follows Together, with Upload and Scan buttons and a link to all papers', async () => {
     location.hash = '#family'
     render(<Family />)
     const card = await screen.findByTestId('papers-card')
@@ -87,7 +87,18 @@ describe('Family root', () => {
     expect(screen.getByRole('button', { name: 'Scan' })).toBeTruthy()
     expect(screen.getByTestId('papersrow').getAttribute('href')).toBe('#family/papers')
     expect(screen.queryByTestId('papers-review')).toBeNull() // nothing waiting: no pill
-    expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy() // S25: Together first, then Papers
+  })
+
+  it('S25 order: Together, Papers, Where, Needs, People, then the shown Today and Activity; no sideways scroller', async () => {
+    location.hash = '#family'
+    const { container } = render(<Family />)
+    await screen.findByTestId('papers-card')
+    const ids = ['together', 'papers-section', 'where', 'needs', 'people', 'facesrow', 'activity']
+    const at = ids.map((id) => container.querySelector(`[data-testid="${id}"]`)).map((el, i) => ({ id: ids[i], el })).filter((x) => x.el)
+    expect(at.map((x) => x.id).slice(0, 2)).toEqual(['together', 'papers-section'])
+    for (let i = 1; i < at.length; i++) expect(at[i - 1].el!.compareDocumentPosition(at[i].el!) & Node.DOCUMENT_POSITION_FOLLOWING, `${at[i].id} after ${at[i - 1].id}`).toBeTruthy()
+    expect(container.querySelector('.fm2-faces-row, .mem-strip, .fm-notes, .dc-posters')).toBeNull()
   })
 
   it('Scan opens the scan flow', async () => {
