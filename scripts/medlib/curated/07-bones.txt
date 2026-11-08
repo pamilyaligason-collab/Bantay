@@ -115,7 +115,7 @@ s: A broken bone causes pain, swelling and sometimes a bent shape.
 s: Keep the area still and get help.
 s: Open breaks and breaks near the spine or head are emergencies.
 g: Bone sticking out of the skin, or heavy bleeding
-g: Neck, back or head injury: do not move the person: call 911
+g: Neck, back or head injury: do not move the person. Call 911
 g: Numb, cold or blue fingers or toes below the injury
 g: Cannot move or put weight on the limb
 what: A fracture is a crack or break in a bone. It usually follows a fall, accident or in weak bones, a small knock. A doctor will take an X-ray. Setting and a cast or surgery are needed so the bone heals straight.

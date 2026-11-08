@@ -11,7 +11,7 @@ g: Fast or hard breathing, blue lips, or cannot drink
 g: Fever for 2 days or more, or a child who looks very ill
 what: A fever is a body temperature of 38 C or more. It often comes with colds, flu, ear infections, dengue and other infections. Most fevers in children settle in a few days. Look at how the child acts. A child who plays and drinks is usually less worrying than one who is limp and will not drink.
 signs: Hot skin, flushed face, chills ; Tired or cranky ; Not wanting to eat ; Sweating when the fever breaks
-home: Give plenty of fluids, breast milk or oral rehydration salts ; Light clothes and a cool room, no cold baths ; Paracetamol by the weight on the pack if the child is uncomfortable ; Never give aspirin to a child ; Check often and see a doctor if unsure ; Do not rub with alcohol or give cold baths
+home: Give plenty of fluids, breast milk or oral rehydration salts ; Light clothes and a cool room, no cold baths ; Paracetamol by the weight on the pack if the child is uncomfortable ; Never give aspirin to a child ; Check often and see a doctor if unsure ; Do not rub with alcohol
 prev: Wash hands often ; Keep vaccines up to date ; Keep sick children home ; Clean up standing water against dengue
 
 = dehydration | Dehydration | children | ph
@@ -149,7 +149,7 @@ g: Swelling of the face and hands, or sudden weight gain
 g: Fits: call 911 now
 g: A baby that moves much less
 g: Trouble breathing
-g: These signs can also start in the 6 weeks after birth
+g: Any of these signs in the 6 weeks after birth
 what: In pre-eclampsia blood pressure rises and the kidneys leak protein. It usually starts after week 20. It can lead to fits (eclampsia) or to early birth. Treatment may include medicine and, at times, early delivery to keep both safe.
 signs: Blood pressure 140/90 or higher ; Protein in the urine ; Swelling of the face and hands ; Bad headache or vision changes
 home: Go to every check-up ; Rest on your left side ; Follow your doctor's plan and medicine ; Know when to go to hospital

@@ -9,7 +9,7 @@ g: Very sleepy or confused, breathing fast, or fruity-smelling breath
 g: Vomiting that does not stop, or cannot keep fluids down
 g: Sugar very high with extreme thirst and passing a lot of urine
 g: A foot sore with fever or black skin
-g: Shaking, sweating, confusion or passing out (low sugar): give sugar if awake, call 911 if not
+g: Shaking, sweating, confusion or passing out (low sugar): give sugar if awake and able to swallow, call 911 if not
 what: In type 2 diabetes the body does not make enough insulin or does not use it well. Sugar then stays high in the blood. It is often linked to weight, family history and age. It can be controlled and sometimes put into remission, but it needs long-term care.
 signs: Very thirsty ; Passing urine a lot, especially at night ; Tired, blurred vision ; Slow-healing sores ; Tingling in the feet; many people have no signs
 home: Take medicines or insulin as prescribed ; Eat regular meals with less sugar and white rice, more vegetables ; Walk after meals if your doctor allows ; Check your feet daily ; Keep check-ups, eye and kidney tests

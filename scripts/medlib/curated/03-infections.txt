@@ -12,7 +12,7 @@ g: Cannot drink, or very little urine
 g: Go to the hospital now. Do not wait for the next day.
 what: Dengue is a virus spread by the bite of the Aedes mosquito, which bites in the daytime. Most people recover with rest and fluids. A small number get severe dengue, which can cause bleeding and shock. The risk is highest a few days after the fever starts, often just as the fever drops.
 signs: Sudden high fever for 2 to 7 days ; Bad headache and pain behind the eyes ; Muscle and joint pain ; Rash and mild bleeding of the nose or gums ; Feeling very tired
-home: Rest and drink lots of fluids such as water, oral rehydration salts and soup ; Use paracetamol for fever and follow the pack ; Use paracetamol only. Do not take aspirin, ibuprofen or mefenamic acid: they raise the risk of bleeding ; See a doctor for a blood test, then daily checks until the fever is gone for 2 days
+home: Rest and drink lots of fluids such as water, oral rehydration salts and soup ; Use paracetamol only, following the pack. Do not take aspirin, ibuprofen or mefenamic acid: they raise the risk of bleeding ; See a doctor for a blood test, then daily checks until the fever is gone for 2 days
 prev: Remove standing water weekly: tires, cans, pots, gutters ; Cover water drums and change vase water ; Use mosquito repellent and long sleeves in the daytime ; Use nets or screens for babies and bed-ridden people
 pic: dengue.webp | Wee Hong | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Aedes_aegypti_on_leaf.jpg
 v: V1TPAmsn1us | WHO Science in 5: Dengue Fever | World Health Organization (WHO)
@@ -34,8 +34,8 @@ what: Leptospirosis is caused by bacteria found in the urine of rats and other a
 signs: Fever and chills, often 2 days to 2 weeks after contact ; Headache ; Muscle pain, especially the calves ; Red eyes ; Vomiting or diarrhoea
 home: Do not wait to see if it passes: see a doctor within a day if you had floodwater contact and a fever ; Wash your feet and legs with soap and clean water after wading ; Ask about a preventive antibiotic from the health centre after a flood ; Rest and drink fluids
 prev: Avoid wading in floodwater ; Wear boots and cover cuts ; Keep garbage covered and control rats ; Wash and dry your legs after contact
-v: hisdjEPue-A | Floods: leptospirosis and typhoid fever (in Filipino) | Doc Willie Ong
-v: uPBHwXyGxEU | Lumusong sa Baha, Babala sa Leptospirosis, Typhoid Fever | Doc Willie Ong
+v: hisdjEPue-A | Floods and leptospirosis (in Filipino) | Doc Willie Ong
+v: uPBHwXyGxEU | Wading in floods: leptospirosis and typhoid fever warning (in Filipino) | Doc Willie Ong
 
 = typhoid | Typhoid fever | infections | ph rainy
 mp: Salmonella Infections

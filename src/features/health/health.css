@@ -221,7 +221,7 @@
 
 /* v13 for you */
 .fy-stack { display: grid; gap: 12px; }
-.card.fy-video { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; color: var(--ink); text-decoration: none; overflow: hidden; }
+.card.fy-video { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; color: var(--ink); text-decoration: none; overflow: hidden; border: 0; width: 100%; text-align: left; cursor: pointer; } /* a button since S25: reset the browser border and centring */
 .fy-video > :not(.fy-poster) { padding: 0 12px; }
 .more-grid > .card.fy-video { height: 100%; } /* S25 (D-156): the video cards sit in a MoreGrid, four then Show more */
 .fy-reads { display: grid; gap: 10px; }

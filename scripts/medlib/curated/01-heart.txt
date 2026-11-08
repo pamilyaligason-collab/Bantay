@@ -49,7 +49,7 @@ g: Sudden loss of balance or vision, or a very bad headache. Call 911 now and no
 g: Go now even if the signs go away after a few minutes.
 what: A stroke happens when a blood vessel in the brain is blocked or bursts. Brain cells start to die within minutes. Quick treatment can save brain and life. High blood pressure is the biggest cause.
 signs: Face drooping on one side ; Arm or leg weakness on one side ; Slurred speech or confusion ; Sudden trouble seeing or walking ; Sudden very bad headache
-home: Do not give food, drink or medicine by mouth ; Lay the person down with the head a little raised ; Note the time the signs began and tell the hospital ; After a stroke, follow your rehab plan and take medicines as told ; Do not prick the fingers or ears, or give any medicine
+home: Do not give food, drink or medicine by mouth ; Lay the person down with the head a little raised ; Note the time the signs began and tell the hospital ; After a stroke, follow your rehab plan and take medicines as told ; Do not prick the fingers or ears
 prev: Keep blood pressure under control ; Do not smoke ; Stay active ; Eat less salt and less fatty food ; Take heart medicines as prescribed
 pic: stroke.webp | Blausen Medical Communications, Inc. | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0836_Stroke.png
 v: adNWwnudyTc | Stroke: 8 Warning Signs | Doc Willie Ong
@@ -139,7 +139,7 @@ s: Anyone can do it. You cannot make it worse.
 g: A person who suddenly collapses, will not wake and is not breathing normally: call 911 now
 what: When the heart stops, blood stops reaching the brain. Hands-only CPR means pushing hard and fast on the centre of the chest, about twice a second. Do this until help or an AED arrives, or the person wakes.
 signs: Collapse without warning ; Will not wake when you shout and shake the shoulders ; Not breathing, or only gasping
-home: Call 911 or ask someone to call ; Send someone to find an AED (a shock machine) if there is one ; Place the heel of one hand on the centre of the chest, the other hand on top ; Push down hard, about 5 cm for an adult, and let the chest come back up ; Start pushing hard and fast on the centre of the chest ; Start pushing hard and fast on the centre of the chest ; Keep going without stopping until help takes over
+home: Call 911 or ask someone to call ; Send someone to find an AED (a shock machine) if there is one ; Place the heel of one hand on the centre of the chest, the other hand on top ; Push down hard, about 5 cm for an adult, and let the chest come back up ; Push fast, about twice a second ; Keep going without stopping until help takes over
 prev: Learn CPR from the Red Cross ; Treat heart disease early ; Know where the nearest AED is in your building
 v: M4ACYp75mjU | Hands-only CPR | American Heart Association
 v: ffzm2RGb0vU | Be prepared for emergencies with hands-only CPR | American Red Cross

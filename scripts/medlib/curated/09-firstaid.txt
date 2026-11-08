@@ -182,13 +182,14 @@ wiki: Electrical_injury
 s: Turn off the power before you touch the person.
 s: Call 911, even if they look fine.
 s: Electric shock can upset the heartbeat hours later.
+g: A fallen power line: stay at least 10 metres away, do not touch the person or the wire, call 911 and the power company
 g: Anyone who was shocked and is unconscious, not breathing, or has burns: call 911
 g: A shock from a high voltage line or lightning
 g: Chest pain, irregular heartbeat or trouble breathing
 g: A shock to a pregnant woman or a child
 what: Electric current can burn the skin and also harm the heart. The skin burn is often small but the damage inside can be bigger. Never touch a person who is still in contact with the current. For a plug or house wiring: turn off the main switch, or push the person away with dry wood. For a fallen power line: stay at least 10 metres away, never touch the person or the wire, and call 911 and the power company.
 signs: Burns where the current went in and out ; Muscle pain ; Fast or uneven heartbeat ; Confusion ; Fainting
-home: Turn off the main switch or unplug ; If you cannot, push the person away with a dry, non-metal object such as wood ; Call 911 ; Check breathing and start CPR if needed ; Cool burns with running water ; Always get a medical check ; For a fallen power line: stay at least 10 metres away and call 911 and the power company
+home: For a fallen power line: stay at least 10 metres away and call 911 and the power company ; For a plug or house wiring: turn off the main switch or unplug ; If you cannot, push the person away with a dry, non-metal object such as wood ; Call 911 ; Check breathing and start CPR if needed ; Cool burns with running water ; Always get a medical check
 prev: Keep wires, sockets and appliances in good repair ; Keep water away from electrics ; Cover sockets near children ; Stay indoors in a lightning storm and away from tall trees
 
 = eyeinjury | Eye injury | firstaid | ph
