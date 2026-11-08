@@ -75,7 +75,8 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
   const storm = useStorm()
   const calm = canLog && !warn.onScreen && !storm
   const dueOf = (code: PinCode) => calm && (code === 'bp_systolic' ? bpDue(readings, now) : code === 'fasting_glucose' || code === 'heart_rate' || code === 'weight' ? metricDue(readings, code, now) : false)
-  const mover = useNudgeMover('health', loaded ? pickMover(NUDGE_ORDER.filter((c) => (inline ? c === 'bp_systolic' : pins.includes(c))).map((c) => ({ key: c, due: dueOf(c) })), false) : null) // fixed priority, not the order the pins were saved in
+  const dueMetric = NUDGE_ORDER.find((c) => pins.includes(c) && dueOf(c)) // inline: the one pinned metric that gets the second place
+  const mover = useNudgeMover('health', loaded ? pickMover(NUDGE_ORDER.filter((c) => (inline ? c === dueMetric : pins.includes(c))).map((c) => ({ key: c, due: dueOf(c) })), false) : null) // fixed priority, not the order the pins were saved in
   const tile = (code: PinCode) => {
     if (code === 'bp_systolic') return <PreviewTile key={code} testId="glance-progress" tint="blue" kicker="Blood pressure" value={bp ?? '--/--'} valueSize="md" sub={bp ? 'This week' : 'None this week'} action={bp ? 'Open' : 'Log now'} href="#health/metric/bp_systolic" due={dueOf(code)} move={mover === code} icon="gauge" />
     if (code === 'meds') return <PreviewTile key={code} testId="glance-meds" tint="green" kicker="Medicines" value={none ? 'None added' : dose?.value ?? ' '} valueSize="md" sub={none ? 'Add yours to get reminders' : dose?.sub} action={none ? 'Add or scan' : 'Open'} href="#health/meds" />
@@ -97,8 +98,8 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
     if (pins.length >= MAX_PINS) { setFull(true); return }
     setRaw(cleanPins([...pins, c]))
   }
-  // S24 (inline, in the Readings card): always two tiles, never a gap. Next visit + Medicines; BP (Due pill and nudge) takes the Medicines place when due; no booked visit gives Medicines + Move (steps). The pins list only drives the full Pinned section.
-  const inlinePair = (): PinCode[] => { const bpDueNow = dueOf('bp_systolic'); return visit?.text.startsWith('Next visit: ') ? ['visits', bpDueNow ? 'bp_systolic' : 'meds'] : [bpDueNow ? 'bp_systolic' : 'meds', 'steps'] }
+  // S24 (inline, in the Readings card): always two tiles, never a gap. Next visit + (most due pinned metric, else Medicines); no booked visit gives Medicines + (due metric, else Steps). The pins list picks which metrics may nudge.
+  const inlinePair = (): PinCode[] => visit?.text.startsWith('Next visit: ') ? ['visits', dueMetric ?? 'meds'] : ['meds', dueMetric ?? 'steps']
   const shown = inline ? inlinePair() : pins
   const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded && (!inline || vs.ready) ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
   const empty = pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>

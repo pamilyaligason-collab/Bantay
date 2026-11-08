@@ -154,21 +154,12 @@ for (const [scheme, bg, ink] of [['light', 'rgb(251, 231, 228)', 'rgb(180, 35, 2
 // ---- Pinned ----
 const BP_AND_SUGAR: Row[] = [{ test: 'bp_systolic', value: 124, unit: 'mmHg', ago: 0.05 }, { test: 'bp_diastolic', value: 79, unit: 'mmHg', ago: 0.05 }, { test: 'fasting_glucose', value: 104, unit: 'mg/dL', ago: 2 }]
 
-// D-135: the inline Pinned row omits Steps and Medicines (the Today row and Browse show them), so the default shows two tiles; Edit pins puts four metric tiles in (Pulse and Fasting sugar for Steps and Medicines), which keeps the two-row grid under test.
-async function fourTiles(page: Page) {
-  await page.getByRole('button', { name: 'Edit pins' }).click()
-  for (const name of ['Medicines', 'Steps', 'Blood pressure', 'Pulse', 'Fasting sugar', 'Weight']) await page.getByRole('checkbox', { name }).click() // D-142: a BP pin is not drawn in the Readings card (its sub-tile shows BP) unless due, so the four tiles are Next visit, Pulse, Fasting sugar and Weight
-  await page.getByRole('button', { name: 'Close' }).click()
-  await expect(page.getByRole('dialog', { name: 'Pinned' })).toHaveCount(0) // the sheet's exit animation must end first
-  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(4)
-}
-
 for (const width of [195, 360, 390, 450]) {
   test(`Pinned grid at ${width} px: no sideways scroll, equal tile heights per row`, async ({ page }) => {
     await open(page, width, BP_AND_SUGAR)
-    await fourTiles(page)
+    await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(2) // S24: the inline row is always two tiles (no Edit)
     const tiles = await page.locator('[data-testid="pinned"] .pt').evaluateAll((els) => els.map((e) => { const b = e.getBoundingClientRect(); return { x: Math.round(b.x), y: Math.round(b.y), h: Math.round(b.height), r: Math.round(b.right) } }))
-    expect(tiles.length).toBe(4)
+    expect(tiles.length).toBe(2)
     for (const t of tiles) expect(t.r).toBeLessThanOrEqual(width)
     for (const row of new Set(tiles.map((t) => t.y))) expect(new Set(tiles.filter((t) => t.y === row).map((t) => t.h)).size).toBe(1)
     if (width === 195) expect(new Set(tiles.map((t) => t.x)).size).toBe(1)

@@ -38,12 +38,12 @@ describe('Readings card', () => {
     expect(screen.getByTestId('rc-state').textContent).toBe('High. Above range')
     expect(screen.getByTestId('rc-state').className).toContain('above')
   })
-  it('S24: the Coming up row inside the card is always two tiles (no visit, no BP: Medicines and Move; BP due takes the Medicines place)', async () => {
+  it('S24: the Coming up row inside the card is always two tiles (no visit: Medicines and the due BP, else Medicines and Move)', async () => {
     show([])
     const pins = screen.getByTestId('glance')
     expect(within(pins).getByText('Coming up')).toBeTruthy()
     expect(await within(pins).findByTestId('glance-progress')).toBeTruthy() // BP due: its Due pill and nudge
-    expect(within(pins).getByTestId('glance-steps')).toBeTruthy()
+    expect(within(pins).getByTestId('glance-meds')).toBeTruthy()
     expect(within(pins).getByTestId('pinned').children).toHaveLength(2)
   })
   it('no pulse: blood pressure leads and Pulse becomes the sub-tile; no Add button when this person cannot log', () => {
@@ -61,7 +61,7 @@ describe('Readings card', () => {
     show([rd('bp_systolic', 118, 'mmHg', 20), rd('bp_diastolic', 76, 'mmHg', 20)])
     const tile = await within(screen.getByTestId('rc-main')).findByTestId('glance-progress')
     expect(tile.querySelector('.nd-due')?.textContent).toBe('Due')
-    expect(within(screen.getByTestId('rc-main')).getByTestId('glance-steps')).toBeTruthy() // no booked visit: the second tile is Move
+    expect(within(screen.getByTestId('rc-main')).getByTestId('glance-meds')).toBeTruthy() // no booked visit: Medicines first, the due BP second
   })
 })
 
