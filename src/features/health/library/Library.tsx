@@ -12,7 +12,7 @@ import { loadLabGlossary, useLabGlossary } from '../labsLogic'
 import Article from './Article'
 import { BodyList, Row, useMedlib } from './encyclopediaList'
 import { BODIES, bodyHref, commonInPh, inSeason, searchTopics, topicHref, type Body } from './encyclopedia'
-import { FullLibraryCard, searchFullLibrary } from './fullLibraryStub' // the orchestrator swaps this import to './fullLibrary' (lane A2) at merge
+import { FullLibraryCard, searchFullLibrary } from './FullLibraryCard'
 import '../health.css'
 import '../m7a.css'
 import './encyclopedia.css'

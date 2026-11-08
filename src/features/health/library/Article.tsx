@@ -6,7 +6,8 @@ import { useLabGlossary } from '../labsLogic'
 import { LabExplain } from './LabExplain'
 import { LocalArticle } from './encyclopediaArticle'
 import { BodyList } from './encyclopediaList'
-import { FullArticle, readArticle, type FullArticleData } from './fullLibraryStub' // the orchestrator swaps this import to './fullLibrary' (lane A2) at merge
+import { readArticle, type FullArticleData } from './fullLibrary'
+import { FullArticle } from './FullLibraryCard'
 import '../health.css'
 import '../m7a.css'
 
@@ -30,6 +31,7 @@ export default function Article({ rawKey }: { rawKey: string }) {
 function FullArticleView({ k }: { k: string }) {
   const [a, setA] = useState<FullArticleData | null | undefined>(undefined)
   useEffect(() => { let live = true; setA(undefined); readArticle(k).then((r) => live && setA(r)).catch(() => live && setA(null)); return () => { live = false } }, [k])
+  if (a) return <FullArticle articleKey={k} /> // lane A2's view: title, text, mdwiki credit
   return (
     <>
       <SubHeader title="Health library" backHref="#health/library" backLabel="Back to Library" />
@@ -40,7 +42,6 @@ function FullArticleView({ k }: { k: string }) {
           <p className="ar-body">This article is in the full library, which is not on this phone yet. Download it from the Health library page when you are on Wi-Fi.</p>
         </article>
       )}
-      {a && <FullArticle article={a} />}
     </>
   )
 }

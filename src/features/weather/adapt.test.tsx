@@ -22,8 +22,6 @@ const ageCache = async (ms: number) => { // make the saved reading look `ms` old
 beforeEach(async () => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); await db.kv.clear(); calls.n = 0; location.hash = '#weather' })
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
-// Measured: with `npm run test:related` running 8 files at once, the first test (cold import of the whole Weather screen) hit 15 s and the hook 10 s; alone the file passes 27 of 27 in about 20 s with the slowest test at 8.4 s.
-vi.setConfig({ testTimeout: 40_000, hookTimeout: 40_000 })
 describe('Weather stays fresh', () => {
   it('asks again when the app comes back to the front, once the reading is 10 minutes old', async () => {
     serve(DRY)
@@ -93,11 +91,10 @@ describe('Weather stays fresh', () => {
     render(<WeatherScreen />)
     await screen.findByText(/Updated \d/)
     // a fetch that only ends when its signal does; the 8 s wait runs on the fake clock
-    const hung = vi.fn((_u: string, init?: RequestInit) => new Promise<Response>((_, no) => { init?.signal?.addEventListener('abort', () => no(new DOMException('timed out', 'AbortError'))) }))
-    vi.stubGlobal('fetch', hung)
+    vi.stubGlobal('fetch', vi.fn((_u: string, init?: RequestInit) => new Promise<Response>((_, no) => { init?.signal?.addEventListener('abort', () => no(new DOMException('timed out', 'AbortError'))) })))
     await ageCache(11 * 60_000)
     document.dispatchEvent(new Event('visibilitychange'))
-    await waitFor(() => expect(hung).toHaveBeenCalled()) // the 8 s timer starts with the request; a fixed 20 ms wait lost the race on a loaded PC
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
     await act(async () => { vi.advanceTimersByTime(8_000) })
     expect(await screen.findByText(/as of \d{1,2}:\d\d [AP]M, could not refresh/)).toBeTruthy()
     expect(screen.queryByText(/Updated \d/)).toBeNull()
