@@ -133,6 +133,7 @@ what: Pregnancy lasts about 40 weeks. Check-ups look at blood pressure, weight, 
 signs: Missed period, nausea, tiredness ; Tender breasts ; Passing urine often ; The baby starts to move around 5 months
 home: Take folic acid and iron if advised ; Eat more fruit, vegetables, fish and eggs ; Rest and drink water ; Take tetanus shots ; Avoid alcohol, smoking and herbal remedies unless a doctor says so
 prev: Go to every check-up ; Plan where to give birth ; Know the warning signs ; Treat anemia early
+pic: pregnancy.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0747_Pregnancy.png
 
 = preeclampsia | Pre-eclampsia (high blood pressure in pregnancy) | children
 mp: High Blood Pressure in Pregnancy

@@ -13,6 +13,7 @@ signs: Hands clutching the throat ; Cannot speak, cough or breathe ; High-pitche
 home: Stand behind the person, lean them forward and give 5 back blows with the heel of your hand ; Then 5 belly thrusts: fist above the navel, pull in and up ; Alternate until the object is out or help comes ; For pregnant or very large people do chest thrusts ; Everyone who was choking needs a check by a doctor after
 prev: Cut food small for children and the old ; Sit down to eat, no talking or laughing with food in the mouth ; Keep small objects and coins from babies ; Do not give nuts or hard sweets to small children
 v: 2dn13zneEjo | Mayo Clinic Minute: the Heimlich maneuver | Mayo Clinic
+pic: choking.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Heimlich_Adult_&_Child.png
 
 = burns | Burns and scalds | firstaid | ph
 mp: Burns
@@ -30,6 +31,7 @@ signs: Red, painful skin ; Blisters ; White or black skin with little pain in a 
 home: Run cool (not ice cold) tap water over the burn for 20 minutes ; Take off rings, watches and loose clothes near it, but not anything stuck to the skin ; Cover loosely with a clean non-stick cloth or cling film ; Paracetamol for pain ; Do not use ice, butter, oil, toothpaste or egg
 prev: Keep hot pots and kettles out of children's reach ; Turn pot handles inward ; Keep matches, lighters and candles away from children ; Test bath water by hand before use
 v: B10sth4zjuI | First aid for a burn | Mayo Clinic
+pic: burns.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Burns.png
 
 = cuts | Cuts, scrapes and wounds | firstaid | ph
 mp: Wounds and Injuries

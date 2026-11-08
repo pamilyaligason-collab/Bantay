@@ -12,9 +12,9 @@ what: Blood pressure is the push of blood against the walls of your blood vessel
 signs: Often none at all ; Headache, dizziness or a pounding in the chest can happen, but not always ; A check at the health centre or at home is the only sure way
 home: Take your medicine every day, even when you feel well ; Eat less salt, patis, toyo and instant noodles ; Walk most days if your doctor says it is safe ; Do not smoke, and limit alcohol
 prev: Check your pressure at least once a year, more often if you are over 40 ; Keep a healthy weight ; Eat more vegetables and fruit ; Move your body every day
-pic: hypertension.webp | Patrick J. Lynch, medical illustrator | CC BY 2.5 | https://commons.wikimedia.org/wiki/File:Heart_anterior_exterior_view.jpg
 v: dgistW5hR4s | Tamang Pag-Check ng Blood Pressure | Gabay sa Kalusugan - Dr. Gary Sy
 v: X8Q2W50NsKU | 14 tips to control high blood pressure (in Filipino) | Doc Willie Ong
+pic: hypertension.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0486_HighBloodPressure_01.png
 
 = heartattack | Heart attack | heart | ph
 mp: Heart Attack
@@ -32,6 +32,7 @@ signs: Pressure, squeezing or heavy feeling in the chest ; Pain that moves to th
 home: While you wait for help, sit down and stay calm ; Loosen tight clothes ; If a doctor has told you to take aspirin for this, follow that advice ; Never wait to see if it passes
 prev: Keep blood pressure, sugar and cholesterol in check ; Do not smoke ; Eat less salty and fatty food ; Stay active and keep a healthy weight
 v: PXhBoH5aD_s | 8 Warning Signs ng Heart Attack Bago Ito Mangyari | Doc Willie Ong
+pic: heartattack.webp | Blausen Medical Communications, Inc | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0463_HeartAttack.png
 
 = stroke | Stroke | heart | ph
 mp: Stroke
@@ -142,6 +143,7 @@ home: Call 911 or ask someone to call ; Place the heel of one hand on the centre
 prev: Learn CPR from the Red Cross ; Treat heart disease early ; Know where the nearest AED is in your building
 v: M4ACYp75mjU | Hands-only CPR | American Heart Association
 v: ffzm2RGb0vU | Be prepared for emergencies with hands-only CPR | American Red Cross
+pic: cpr.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:CPR_on_an_Adult.png
 
 = lowbp | Low blood pressure and dizziness | heart
 mp: Low Blood Pressure

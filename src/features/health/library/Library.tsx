@@ -10,7 +10,8 @@ import { useMedications } from '../useMedications'
 import { articleHref, SOURCE_LINE } from './medline'
 import { loadLabGlossary, useLabGlossary } from '../labsLogic'
 import Article from './Article'
-import { BODIES, bodyHref, bodyLabel, commonInPh, inSeason, loadMedlib, searchTopics, topicHref, type Body, type MedLib } from './encyclopedia'
+import { BodyList, Row, useMedlib } from './encyclopediaList'
+import { BODIES, bodyHref, commonInPh, inSeason, searchTopics, topicHref, type Body } from './encyclopedia'
 import { FullLibraryCard, searchFullLibrary } from './fullLibraryStub' // the orchestrator swaps this import to './fullLibrary' (lane A2) at merge
 import '../health.css'
 import '../m7a.css'
@@ -26,13 +27,6 @@ function useHash() {
   return h
 }
 
-/** The encyclopedia once it has loaded (own chunk). `error` is set when the chunk cannot load (a first visit with no internet and no cache). */
-function useMedlib(): { lib: MedLib | null; error: boolean } {
-  const [s, setS] = useState<{ lib: MedLib | null; error: boolean }>({ lib: null, error: false })
-  useEffect(() => { let live = true; loadMedlib().then((lib) => live && setS({ lib, error: false })).catch(() => live && setS({ lib: null, error: true })); return () => { live = false } }, [])
-  return s
-}
-
 /** #health/library, #health/library/b:<body> (a body filter) and #health/library/<key> (an article). Also answers the old #discover/learn/library addresses. */
 export default function Library() {
   const m = HASH.exec(useHash())
@@ -40,34 +34,6 @@ export default function Library() {
   if (key === null) return <LibraryHome />
   if (key.startsWith('b:')) return <BodyList body={key.slice(2)} />
   return <Article rawKey={key} />
-}
-
-function Row({ href, name, sub, tag }: { href: string; name: string; sub?: string; tag?: string }) {
-  return (
-    <li>
-      <a className="row hl-row" href={href}>
-        <span className="grow"><b>{name}</b>{sub && <span className="sub">{sub}</span>}</span>
-        {tag && <span className="lx-tag">{tag}</span>}
-        <span className="hl-go" aria-hidden="true">&rsaquo;</span>
-      </a>
-    </li>
-  )
-}
-
-function BodyList({ body }: { body: string }) {
-  const { lib, error } = useMedlib()
-  const list = lib?.topics.filter((t) => t.body === body) ?? []
-  return (
-    <>
-      <SubHeader title={bodyLabel(body)} backHref="#health/library" backLabel="Back to Library" />
-      {!lib && !error && <p className="sub" role="status">Loading...</p>}
-      {error && <p className="sub" role="status">The library could not load. Try again when you are online.</p>}
-      {lib && list.length === 0 && <p className="sub" data-testid="body-empty">No topics here.</p>}
-      <ul className="grp lb-list" aria-label={`${bodyLabel(body)} topics`} data-testid="body-list">
-        {list.map((t) => <Row key={t.id} href={topicHref(t.id)} name={t.title} sub={t.short[0]} tag={inSeason(t) ? 'Season now' : undefined} />)}
-      </ul>
-    </>
-  )
 }
 
 function LibraryHome() {
@@ -104,7 +70,8 @@ function LibraryHome() {
     searchFullLibrary(t).then((r) => live && setMore(r.slice(0, 8))).catch(() => live && setMore([]))
     return () => { live = false }
   }, [q])
-  const go = async () => { const t = q.trim(); const lab = t ? (await loadLabGlossary().catch(() => null))?.labEntry(t) : null; if (lab) location.hash = articleHref('t', lab.code); else if (t) location.hash = articleHref('s', t) }
+  const online = async () => { const t = q.trim(); const lab = t ? (await loadLabGlossary().catch(() => null))?.labEntry(t) : null; if (lab) location.hash = articleHref('t', lab.code); else if (t) location.hash = articleHref('s', t) } // MedlinePlus: needs internet
+  const go = () => { if (found[0]) location.hash = topicHref(found[0].id); else void online() } // Enter opens the best offline hit; the online look-up is only for a word we do not have
   const ph = useMemo(() => commonInPh(topics), [topics])
   const searching = q.trim().length > 0
 
@@ -113,7 +80,7 @@ function LibraryHome() {
       <SubHeader title="Health library" backHref="#health" backLabel="Back to Health" />
       <WhoLine />
       <p className="sub lx-intro" data-testid="lib-intro">{lib ? `${lib.topics.length} topics in plain words. Works without internet.` : 'Plain words. Works without internet.'}</p>
-      <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); void go() }}>
+      <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); go() }}>
         <label htmlFor="lb-q" className="hv-sr">Search topics, in English or Tagalog</label>
         <input id="lb-q" type="search" placeholder="Search: ubo, sipon, altapresyon" autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />
       </form>
@@ -125,7 +92,7 @@ function LibraryHome() {
             {found.map((t) => <Row key={t.id} href={topicHref(t.id)} name={t.title} sub={t.short[0]} />)}
             {more.map((r) => <Row key={r.key} href={`#health/library/${encodeURIComponent(`f:${r.key}`)}`} name={r.title} sub={r.snippet} tag="Full library" />)}
           </ul>
-          <button type="button" className="btn2 lx-ask" onClick={() => void go()}>Look it up on MedlinePlus (needs internet)</button>
+          <button type="button" className="btn2 lx-ask" onClick={() => void online()}>Not here? Search MedlinePlus online (needs internet)</button>
         </section>
       ) : (
         <>

@@ -29,6 +29,7 @@ what: COPD is a long-term lung illness that includes chronic bronchitis and emph
 signs: Cough that lasts for months, often with phlegm ; Short of breath with walking or stairs ; Wheezing ; Tight chest ; Many chest infections
 home: Stop smoking and stay away from smoke and cooking smoke ; Use inhalers as prescribed ; Get flu and pneumonia shots ; Ask about breathing exercises and rehab
 prev: Do not start smoking, or quit ; Use a chimney or open a window when cooking with wood ; Wear a mask in dust ; Treat chest infections early
+pic: copd.webp | Blausen Medical Communications, Inc | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0343_Emphysema.png
 
 = pneumonia | Pneumonia | lungs | ph
 mp: Pneumonia
@@ -46,6 +47,7 @@ signs: Cough with phlegm ; Fever and chills ; Fast breathing and short of breath
 home: See a doctor, do not treat it alone ; Take the full course of any medicine prescribed ; Rest and drink plenty of fluids ; Do not smoke
 prev: Get the flu and pneumonia vaccines ; Wash hands often ; Do not smoke ; Keep children's vaccines up to date
 v: D6VJurxcQgY | Pneumonia: Simple Health Remedies | Doc Willie Ong
+pic: pneumonia.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Blausen_0994_Pneumonia.png
 
 = tb | Tuberculosis (TB) | lungs | ph
 mp: Tuberculosis
@@ -109,6 +111,7 @@ what: Influenza is a virus that infects the nose, throat and lungs. It spreads b
 signs: Sudden fever and chills ; Body aches and headache ; Dry cough ; Sore throat, runny nose ; Tiredness
 home: Rest and drink plenty of water ; Paracetamol may ease fever and aches (follow the pack, no aspirin for children) ; Stay home so others do not catch it ; Wear a mask around other people
 prev: Get a flu shot every year ; Wash hands often ; Cover your cough ; Stay home when sick
+pic: flu.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Influenza_Virus.png
 
 = cold | Common cold | lungs | ph rainy
 mp: Common Cold
@@ -154,6 +157,7 @@ what: The sinuses are small air spaces in the face. When they swell and fill wit
 signs: Blocked or runny nose ; Pain or pressure in the cheeks, forehead or around the eyes ; Headache ; Cough, bad breath ; Feeling tired
 home: Rest and drink water ; Breathe steam from a warm bowl, with care not to burn yourself ; Use salt-water nasal rinse that is clean ; See a doctor if it lasts more than 10 days
 prev: Treat colds and allergies early ; Do not smoke ; Wash hands
+pic: sinusitis.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0800_Sinusitis.png
 
 = allergicrhinitis | Hay fever (allergic rhinitis) | lungs
 mp: Hay Fever

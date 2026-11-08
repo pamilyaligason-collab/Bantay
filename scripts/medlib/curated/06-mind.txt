@@ -59,6 +59,7 @@ signs: Forgetting recent events and repeating questions ; Getting lost in famili
 home: Keep a calm routine ; Use notes, labels and a calendar ; Keep the home safe: night lights, no clutter, locked stove ; Keep active and social ; Caregivers need rest and support too
 prev: Control blood pressure, sugar and cholesterol ; Stay active, mentally and physically ; Do not smoke ; Treat hearing loss ; Stay connected with others
 v: NbaU_DqwULw | Caring for someone with Alzheimer's or dementia (in Filipino) | Doc Willie Ong
+pic: dementia.webp | BruceBlaus | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0017_AlzheimersDisease.png
 
 = insomnia | Trouble sleeping | mind | ph
 mp: Insomnia
@@ -226,6 +227,7 @@ what: Parkinson's disease is caused by loss of brain cells that make dopamine, a
 signs: Hand tremor at rest ; Stiff muscles ; Slow movement and small handwriting ; Shuffling steps ; Stooped posture
 home: Take medicines on time ; Do daily walking and stretches ; Clear loose rugs and cords, add handrails ; Eat fibre and drink water ; Keep follow-up
 prev: Stay active ; Fall-proof the home ; It is not known how to prevent it
+pic: parkinson.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0704_ParkinsonsDisease.png
 
 = dizziness | Dizziness and vertigo | mind | ph
 mp: Dizziness and Vertigo

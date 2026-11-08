@@ -27,6 +27,7 @@ what: Rheumatoid arthritis is an autoimmune illness. The immune system attacks t
 signs: Swollen, warm joints on both sides ; Morning stiffness for more than an hour ; Tiredness ; Low fever ; Small hand and foot joints first
 home: Take your medicines exactly as told ; Gentle movement and rest in balance ; Warm showers for stiffness ; Do not smoke ; Keep follow-up blood tests
 prev: Do not smoke ; Treat early ; Keep a healthy weight
+pic: rheumatoid.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Rheumatoid_Arthritis_(Swan_Neck_Deformity).png
 
 = gout | Gout | bones | ph
 mp: Gout
@@ -58,6 +59,7 @@ what: In osteoporosis the bones lose density and become weak. A small fall can t
 signs: Usually none until a fracture ; Loss of height ; Stooped back ; Back pain from a spine fracture
 home: Eat food rich in calcium: dilis, tofu, milk, malunggay, leafy greens ; Sit in morning sun for a short time for vitamin D ; Walk or do light weight exercise ; Make the home fall-safe ; Take medicine as prescribed
 prev: Calcium and vitamin D ; Weight-bearing exercise ; Do not smoke ; Limit alcohol ; Bone scan after 65, or earlier if at risk
+pic: osteoporosis.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0686_Osteoporosis_01.png
 
 = backpain | Back pain | bones | ph
 mp: Back Pain

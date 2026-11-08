@@ -44,6 +44,7 @@ what: Kidney stones form when minerals in the urine clump together. Small stones
 signs: Sharp pain in the side or back, can move to the groin ; Blood in the urine ; Burning or urgent urination ; Nausea or vomiting
 home: Drink plenty of water, enough to pass pale urine ; Take pain relief as the doctor advises ; Strain your urine if told, and keep the stone for testing ; Follow-up with the doctor
 prev: Drink 2 to 3 litres of water daily ; Eat less salt ; Eat more fruit and vegetables ; Limit animal protein
+pic: kidneystone.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0595_KidneyStones.png
 
 = uti | Urine infection (UTI) | kidneys | ph
 mp: Urinary Tract Infections
@@ -60,6 +61,7 @@ what: A urinary tract infection is caused by bacteria, usually in the bladder. I
 signs: Burning when passing urine ; Passing small amounts often ; Cloudy or bad-smelling urine ; Lower tummy pain ; Fever or back pain if the kidneys are involved
 home: Drink plenty of water ; See a doctor for a urine test and antibiotics ; Finish all the antibiotics ; Do not hold urine for long
 prev: Drink enough water ; Pass urine after sex ; Wipe front to back ; Do not hold in urine ; Keep the genital area clean and dry
+pic: uti.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Bladder_Infection.png
 
 = incontinence | Bladder leaks | kidneys
 mp: Urinary Incontinence
@@ -120,6 +122,7 @@ what: Years of damage turn healthy liver into scar tissue. The liver cannot clea
 signs: Tiredness and weakness ; Yellow skin and eyes ; Swollen tummy and legs ; Easy bruising ; Itchy skin
 home: Do not drink alcohol ; Take medicines as told and ask before any herbal remedies ; Eat less salt ; Keep check-ups
 prev: Hepatitis B vaccine ; Limit alcohol ; Treat hepatitis C ; Keep a healthy weight
+pic: cirrhosis.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Liver_Cirrhosis.png
 
 = gallstones | Gallstones | kidneys
 mp: Gallstones
@@ -135,6 +138,7 @@ what: The gallbladder stores bile that helps digest fat. Stones can form and blo
 signs: Sudden pain in the upper right tummy or middle ; Pain going to the right shoulder ; Nausea, vomiting ; Pain after fatty meals
 home: Eat small, low-fat meals ; Avoid fried and fatty food ; See a doctor for an ultrasound ; Keep a healthy weight without crash diets
 prev: Keep a healthy weight ; Eat more fibre ; Avoid very fast weight loss
+pic: gallstones.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Gallstones.png
 
 = gerd | Heartburn and reflux | kidneys | ph
 mp: GERD
@@ -211,6 +215,7 @@ what: The appendix is a small tube on the right of the lower belly. If it become
 signs: Pain near the belly button that moves to the lower right ; Loss of appetite ; Nausea or vomiting ; Fever ; Pain when moving or coughing
 home: Go to a hospital now ; Do not eat or drink ; Do not take laxatives
 prev: It cannot be prevented ; Get care early for belly pain that is getting worse
+pic: appendicitis.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0043_Appendix_Child.png
 
 = ibs | Irritable bowel (IBS) | kidneys
 mp: Irritable Bowel Syndrome

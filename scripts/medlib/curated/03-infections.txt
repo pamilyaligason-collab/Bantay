@@ -67,7 +67,7 @@ what: Diarrhoea is often caused by a stomach infection from food or water. It us
 signs: Loose, watery stools ; Tummy cramps ; Feeling sick or vomiting ; Fever ; Thirst
 home: Give ORS after each loose stool, a little at a time ; Keep eating or breastfeeding ; Zinc tablets for children as advised by a doctor ; Do not give anti-diarrhoea medicine to young children ; Wash hands well
 prev: Wash hands with soap ; Drink safe water ; Cook food well and keep it covered ; Breastfeed babies ; Give rotavirus vaccine to babies
-v: 3PmVJQUCm4E | How to wash your hands with soap and water | World Health Organization
+v: 3PmVJQUCm4E | How to wash your hands with soap and water | World Health Organization (WHO)
 
 = cholera | Cholera | infections | ph rainy
 mp: Cholera

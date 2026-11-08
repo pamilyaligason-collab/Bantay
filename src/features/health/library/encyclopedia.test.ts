@@ -32,7 +32,7 @@ describe('topics.json shape', () => {
   })
   it('every picture is a file of at most 60 KB with a CC0, CC BY or CC BY-SA licence', () => {
     const pics = topics.filter((t) => t.picture)
-    expect(pics.length).toBeGreaterThanOrEqual(5)
+    expect(pics.length).toBeGreaterThanOrEqual(20)
     for (const t of pics) {
       expect(statSync(`public/img/medlib/${t.picture!.file}`).size, t.id).toBeLessThanOrEqual(60_000)
       expect(t.picture!.licence, t.id).toMatch(/^(CC0|CC BY(-SA)? \d\.\d)$/)
@@ -55,6 +55,16 @@ describe('search', () => {
     expect(ids(searchTopics(topics, '  DENGUE '))[0]).toBe('dengue')
     expect(searchTopics(topics, 'zzzxqq')).toEqual([])
     expect(searchTopics(topics, '   ')).toEqual([])
+  })
+  it('matches at the start of a word only, and gives these exact lists (best match first)', () => {
+    const want: Record<string, string[]> = {
+      ubo: ['cough', 'bronchitis', 'copd', 'tb', 'pertussis', 'cold', 'flu'],
+      flu: ['flu'], uti: ['uti'], tb: ['tb'], dengue: ['dengue'], altapresyon: ['hypertension'],
+      ihi: ['incontinence', 'prostate', 'uti'],
+      sipon: ['cold', 'allergicrhinitis', 'sinusitis'],
+    }
+    for (const [q, list] of Object.entries(want)) expect(ids(searchTopics(topics, q)), q).toEqual(list)
+    expect(searchTopics(topics, 'engue')).toEqual([]) // the middle of "dengue" is not a start
   })
   it('needs every typed word to match', () => {
     const r = searchTopics(topics, 'kagat ahas')

@@ -104,7 +104,7 @@ describe('Discover sub pages', () => {
   it('a library article goes back to the library list', () => {
     location.hash = '#discover/learn/library/c%3Adiabetes'
     render(<Discover />)
-    expect(screen.getByRole('link', { name: 'Back to the library' }).getAttribute('href')).toBe('#health/library')
+    expect(screen.getByRole('link', { name: 'Back to Library' }).getAttribute('href')).toBe('#health/library')
   })
 })
 

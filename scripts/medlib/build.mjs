@@ -3,7 +3,8 @@
 //
 //   node scripts/medlib/build.mjs                 download the newest XML, write topics.json
 //   node scripts/medlib/build.mjs --xml <file>    use an XML you already have
-//   node scripts/medlib/build.mjs --check-videos  also check every video id against YouTube oEmbed (network)
+//   node scripts/medlib/build.mjs --check-videos  also check every video id against YouTube oEmbed (network), then write
+//   node scripts/medlib/build.mjs --check-only    only check the videos (oEmbed id, author name vs source label, required channels); writes nothing
 //
 // The texts (short, goNow, sections) are written by hand in plain words; the XML only supplies the official
 // MedlinePlus page and Tagalog handout links and proves each topic still exists. Nothing is copied from the XML summaries.
@@ -90,15 +91,46 @@ function parseCurated() {
 const problems = []
 const bad = (t, msg) => problems.push(`${t.where} ${t.id}: ${msg}`)
 
+// The two Filipino doctor channels must be exactly these channels (the id or the handle in oEmbed author_url).
+const REQUIRED = [
+  { label: /Doc Willie Ong/i, id: 'UCR6n79EOdY406JlZD8FEgyg', handle: '@DocWillieOng' },
+  { label: /Gary Sy/i, id: 'UCe67GKTyvTQmpCb6Qn_fLKQ', handle: '@GabaysaKalusuganDrGarySy' },
+]
+const squash = (x) => x.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+/** Pure: the problems with one oEmbed answer for one curated video (author name must match the source label; required channels must match by author_url). */
+// oEmbed gives the handle in author_url, not the UC id; the id is listed so a reader can match it to research/s25-channels-final.md.
+export function videoProblems(v, j) {
+  const out = []
+  const a = squash(j.author_name ?? '')
+  const s = squash(v.source)
+  if (!a || !(a.includes(s) || s.includes(a))) out.push(`video ${v.id}: oEmbed author "${j.author_name}" does not match source label "${v.source}"`)
+  for (const r of REQUIRED) {
+    if (!r.label.test(v.source)) continue
+    const url = (j.author_url ?? '').toLowerCase()
+    if (!url.includes(r.id.toLowerCase()) && !url.includes(r.handle.toLowerCase()) && !url.includes(r.handle.toLowerCase().replace(/-/g, ''))) out.push(`video ${v.id}: author_url ${j.author_url} is not the required channel ${r.id} (${r.handle})`)
+  }
+  return out
+}
+
 async function checkVideos(topics) {
   const seen = new Map()
   for (const t of topics) for (const v of t.videos) if (!seen.has(v.id)) seen.set(v.id, v)
   for (const v of seen.values()) {
     const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${v.id}`)}&format=json`)
     const j = res.ok ? await res.json() : null
-    console.log(`${res.status} ${v.id} ${j?.author_name ?? ''}`)
-    if (!res.ok) problems.push(`video ${v.id}: oEmbed ${res.status}`)
+    console.log(`${res.status} ${v.id} ${j?.author_name ?? ''} ${j?.author_url ?? ''}`)
+    if (!j) problems.push(`video ${v.id}: oEmbed ${res.status}`)
+    else problems.push(...videoProblems(v, j))
+    await new Promise((r) => setTimeout(r, 250))
   }
+}
+
+// --check-only: check the curated videos against YouTube and stop; topics.json is not read, built or rewritten.
+if (argv.includes('--check-only')) {
+  await checkVideos(parseCurated())
+  if (problems.length) { console.error(problems.join(', ')); process.exit(1) }
+  console.log('videos ok')
+  process.exit(0)
 }
 
 const { text, date } = await getXml()

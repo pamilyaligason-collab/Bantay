@@ -32,7 +32,7 @@ export function loadMedlib(): Promise<MedLib> {
 
 const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 
-/** Titles and also-called words (Tagalog too). Every typed word must be found; a title that starts with the text ranks first. No match gives []. */
+/** Titles and also-called words (Tagalog too). Every typed word must start a word of a title or an also-called word (never the middle of a word: "uti" is not "routine"); a title that starts with the text ranks first. No match gives []. */
 export function searchTopics(topics: MedTopic[], q: string): MedTopic[] {
   const text = norm(q)
   if (!text) return []
@@ -41,12 +41,12 @@ export function searchTopics(topics: MedTopic[], q: string): MedTopic[] {
   for (const t of topics) {
     const title = norm(t.title)
     const aka = t.aka.map(norm)
-    const hay = [title, ...aka].join(' | ')
-    if (!words.every((w) => hay.includes(w))) continue
+    const hay = ` ${[title, ...aka].join(' ')}`
+    if (!words.every((w) => hay.includes(` ${w}`))) continue
     let s = 1
     if (title === text || aka.includes(text)) s = 6
     else if (title.startsWith(text) || aka.some((a) => a.startsWith(text))) s = 4
-    else if (title.includes(text) || aka.some((a) => a.includes(text))) s = 3
+    else if (` ${title}`.includes(` ${text}`) || aka.some((a) => ` ${a}`.includes(` ${text}`))) s = 3
     scored.push([s, t])
   }
   return scored.sort((a, b) => b[0] - a[0] || a[1].title.localeCompare(b[1].title)).map((x) => x[1])
