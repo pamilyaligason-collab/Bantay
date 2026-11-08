@@ -1,0 +1,288 @@
+= childfever | Fever in a child | children | ph
+mp: Fever
+aka: fever, lagnat, nilalagnat, mainit ang bata, febrile
+wiki: Fever
+s: Fever is the body fighting an infection. It is a sign, not an illness by itself.
+s: How sick the child looks matters more than the number.
+s: Fluids and rest help. Watch for the warning signs.
+g: A baby under 3 months with a fever of 38 C or more
+g: Stiff neck, fits, a rash that does not fade when pressed, or very hard to wake
+g: Fast or hard breathing, blue lips, or cannot drink
+g: Fever for more than 3 days, or a child who looks very ill
+what: A fever is a body temperature of 38 C or more. It often comes with colds, flu, ear infections, dengue and other infections. Most fevers in children settle in a few days. Look at how the child acts. A child who plays and drinks is usually less worrying than one who is limp and will not drink.
+signs: Hot skin, flushed face, chills ; Tired or cranky ; Not wanting to eat ; Sweating when the fever breaks
+home: Give plenty of fluids, breast milk or oral rehydration salts ; Light clothes and a cool room, no cold baths ; Paracetamol by the weight on the pack if the child is uncomfortable ; Never give aspirin to a child ; Check often and see a doctor if unsure
+prev: Wash hands often ; Keep vaccines up to date ; Keep sick children home ; Clean up standing water against dengue
+
+= dehydration | Dehydration | children | ph
+mp: Dehydration
+aka: dehydration, nauubusan ng tubig, tuyo, nanunuyo ang labi, ORS, hilo sa init
+wiki: Dehydration
+s: Dehydration means the body has lost more water than it has taken in.
+s: It is common with diarrhoea, vomiting, fever and hot weather.
+s: Babies, small children and older people get dry fastest.
+g: Very sleepy, confused or hard to wake
+g: Cannot drink, or keeps vomiting everything
+g: No urine for 8 hours (baby: no wet diaper for 6 hours), sunken eyes, cold hands
+g: Fast heartbeat with fainting
+what: When we lose water through sweat, vomit or loose stools and do not drink enough, the body runs dry. Mild dehydration can be treated at home with fluids. Severe dehydration is an emergency, especially in babies and older people.
+signs: Thirst and dry mouth ; Dark yellow urine, or very little ; Dizziness ; Tired and cranky ; Baby: sunken soft spot, no tears when crying
+home: Sip small amounts often ; Use oral rehydration salts (ORS) made up as the pack says ; Keep feeding breast milk to babies ; Rest in a cool place ; Wait ten minutes after a vomit, then start sips again
+prev: Drink water through the day, more in hot weather ; Start ORS at the first loose stool ; Do not wait to feel thirsty if you are old or working in the heat
+
+= newborn | Newborn baby care | children | ph
+mp: Infant and Newborn Care
+aka: newborn, bagong panganak, sanggol, baby, bagong silang, cord care
+wiki: Infant
+s: A newborn needs warmth, milk, clean hands and close skin-to-skin time.
+s: Newborns can get sick fast, so know the warning signs.
+s: The first check-up and vaccines are in the first week.
+g: Fever of 38 C or more, or a body that feels cold
+g: Hard or fast breathing, or blue lips
+g: Will not feed, very sleepy, or yellow skin on the first day
+g: A cord stump that is red, smelly or oozing pus, or fits
+what: The first month is the time of greatest need. A healthy newborn feeds every two to three hours, sleeps a lot, and wets several diapers a day. Put the baby on your chest soon after birth. Breast milk alone is best for the first six months.
+signs: Eats eight or more times a day ; Wet diapers six or more times a day after day 5 ; Alert for short periods ; Gains weight after the first week
+home: Wash your hands before holding the baby ; Keep the cord dry and clean, do not put anything on it ; Skin-to-skin contact to keep warm ; Put the baby to sleep on the back, on a firm bed, with nothing loose ; Newborn screening at 24 to 48 hours
+prev: Go to prenatal check-ups ; Give birth with a trained health worker ; Breastfeed ; Vaccines on time ; Keep smokers away from the baby
+
+= breastfeeding | Breastfeeding | children | ph
+mp: Breastfeeding
+aka: breastfeeding, pagpapasuso, gatas ng ina, nagpapasuso, latch
+wiki: Breastfeeding
+s: Breast milk alone is the best food for a baby for the first 6 months.
+s: Start in the first hour after birth. Feed often, day and night.
+s: Most mothers can make enough milk with support.
+g: A baby with no wet diaper for 6 hours, or very sleepy and will not feed
+g: Red, hot, painful breast with fever and chills
+g: A baby who is yellow, floppy or breathing fast
+what: Breast milk has what a baby needs and protects against infections like diarrhoea and pneumonia. After six months, add soft foods and keep breastfeeding up to two years or more. Pain, sore nipples and low milk are common and often get better with help.
+signs: A deep latch with the mouth wide ; Swallowing sounds while feeding ; The baby is calm after feeding ; Six or more wet diapers a day
+home: Feed on demand, at least eight times a day ; Skin-to-skin contact helps milk flow ; Fix the latch if the nipple hurts ; Drink water, eat well and rest ; Ask a nurse or lactation counsellor for help
+prev: Start early ; Get breastfeeding help from the health centre ; Treat sore breasts early ; Ask a doctor before using formula
+
+= vaccines | Vaccines for children | children | ph
+mp: Vaccines
+aka: bakuna, immunization, bakuna ng bata, vaccine, injection, turok
+wiki: Vaccination
+s: Vaccines teach the body to fight a germ before it can make the child sick.
+s: Free vaccines are given at the barangay health centre.
+s: Late vaccines can still be given. Ask the nurse.
+g: Trouble breathing, swelling of the face or hives soon after a vaccine
+g: High fever that does not go down, fits, or a child who cannot be woken
+what: Vaccines protect against diseases like measles, polio, TB, hepatitis B, diphtheria, whooping cough and tetanus. The Philippine program gives them free in the first year, with boosters later. A sore arm or mild fever for a day or two is common and goes away.
+signs: Normal after a shot: a sore spot, mild fever, fussiness for a day or two
+home: Bring the baby's vaccine card to every visit ; Give paracetamol for fever if the nurse says so ; Keep the shot place clean and dry ; A mild cold is not a reason to skip a visit
+prev: Follow the schedule from birth ; Adults need tetanus and flu shots too ; Pregnant women need tetanus shots ; Keep the card safe
+
+= malnutrition | Malnutrition and stunting | children | ph
+mp: Malnutrition
+aka: malnutrition, kulang sa nutrisyon, payat, bansot, stunting, underweight
+wiki: Malnutrition
+s: A child who does not get enough good food may be thin, short or often sick.
+s: The first 1,000 days of life matter most.
+s: Healthy food, clean water and check-ups help children grow.
+g: A child with swollen feet, very thin, very sleepy or too weak to eat
+g: Cannot drink, or vomiting and diarrhoea with weakness
+what: Malnutrition can mean too little food, or food that lacks protein, iron and vitamins. Children may be underweight, too short for their age, or have thin arms. The body then fights infection poorly. It is more common where food is short, but repeated illness can cause it too.
+signs: Weight or height below the growth chart ; Thin arms and legs ; Tired, often sick ; Slow to learn or play
+home: Feed eggs, fish, beans, vegetables, fruit and rice ; Feed small amounts often ; Keep breastfeeding as long as possible ; Visit the barangay for weighing and vitamin A ; Ask the health worker about special feeding for severe cases
+prev: Breast milk alone for six months ; Add family foods after six months ; Give clean water ; Treat worms and diarrhoea
+
+= childnutrition | Healthy eating for children | children | ph
+mp: Child Nutrition
+aka: child nutrition, pagkain ng bata, picky eater, ayaw kumain, nutrisyon
+wiki: Child_development
+s: Children need a mix of foods: rice, protein, vegetables, fruit and milk or water.
+s: Small portions, often. Never force-feed.
+s: Cut sugary drinks and instant snacks.
+g: A child who cannot swallow, chokes often or has swelling of the lips after eating
+g: Weight loss with tiredness, or cannot keep food down
+what: Good food helps a child grow, learn and fight germs. Fruit and vegetables, fish, eggs, beans and a little meat give protein, vitamins and iron. Sweet drinks and chips fill the stomach but give little. Many young children are picky, and that is normal.
+signs: Growing steadily on the growth chart ; Active and curious ; Regular stools
+home: Offer new foods many times ; Eat together as a family ; Water or milk in place of soda ; Snacks of fruit, boiled egg or kamote ; Small portions
+prev: Limit sweet drinks and instant noodles ; Wash fruit and vegetables ; Keep up regular weighing
+
+= earinfection | Ear infection | children | ph
+mp: Ear Infections
+aka: ear infection, sakit sa tainga, otitis, tutuli, pamamaga ng tainga
+wiki: Ear_infection
+s: Ear infections are common in small children after a cold.
+s: Pain in the ear, pulling at the ear and fever are the usual signs.
+s: Many get better by themselves in a few days.
+g: Stiff neck, a swelling or redness behind the ear, or severe headache
+g: Fever of 39 C or more, or a baby under 6 months with any fever
+g: Pus or blood draining from the ear, or the child seems very sleepy
+what: Germs get into the space behind the eardrum, often after a cold. Fluid builds up and presses on the drum. Children get them more than adults because their ear tubes are short. Some need antibiotics, so a doctor should look.
+signs: Ear pain, pulling or rubbing the ear ; Fever ; Trouble sleeping ; Cranky, less hearing ; Fluid from the ear
+home: Paracetamol for pain by the weight on the pack ; A warm cloth on the ear ; Do not put anything in the ear, no oil or cotton buds ; Keep the ear dry ; See a doctor if it does not settle in 2 to 3 days
+prev: Breastfeed ; Keep vaccines up to date ; Avoid smoke around children ; Wash hands to prevent colds
+
+= pregnancy | Pregnancy and prenatal care | children | ph
+mp: Prenatal Care
+aka: pregnancy, buntis, prenatal, pagbubuntis, check-up ng buntis
+wiki: Prenatal_care
+s: Regular check-ups keep both mother and baby safe.
+s: Go at least 4 times, and more if the doctor says.
+s: Eat well, take folic acid and iron if advised, and avoid alcohol and smoking.
+g: Bleeding from the vagina
+g: Strong tummy pain, or the baby moves much less
+g: Water breaks early, or labour before 37 weeks
+g: Bad headache, blurred vision, swelling of the face or hands
+what: Pregnancy lasts about 40 weeks. Check-ups look at blood pressure, weight, sugar and the baby's growth. Free care is available at the barangay health centre and rural health unit. A trained health worker should attend the birth.
+signs: Missed period, nausea, tiredness ; Tender breasts ; Passing urine often ; The baby starts to move around 5 months
+home: Take folic acid and iron if advised ; Eat more fruit, vegetables, fish and eggs ; Rest and drink water ; Take tetanus shots ; Avoid alcohol, smoking and herbal remedies unless a doctor says so
+prev: Go to every check-up ; Plan where to give birth ; Know the warning signs ; Treat anemia early
+pic: pregnancy.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0747_Pregnancy.png
+
+= preeclampsia | Pre-eclampsia (high blood pressure in pregnancy) | children
+mp: High Blood Pressure in Pregnancy
+aka: pre-eclampsia, eklampsia, high blood in pregnancy, mataas ang BP ng buntis, pamamaga sa buntis
+wiki: Pre-eclampsia
+s: Pre-eclampsia is high blood pressure that starts in the second half of pregnancy.
+s: It can harm the mother and the baby if not treated.
+s: It is found at check-ups. That is another reason to go.
+g: Severe headache, blurred vision or flashing lights
+g: Pain under the ribs on the right side
+g: Swelling of the face and hands, or sudden weight gain
+g: Fits, or a baby that moves much less
+what: In pre-eclampsia blood pressure rises and the kidneys leak protein. It usually starts after week 20. It can lead to fits (eclampsia) or to early birth. Treatment may include medicine and, at times, early delivery to keep both safe.
+signs: Blood pressure 140/90 or higher ; Protein in the urine ; Swelling of the face and hands ; Bad headache or vision changes
+home: Go to every check-up ; Rest on your left side ; Follow your doctor's plan and medicine ; Know when to go to hospital
+prev: Early and regular prenatal care ; Tell your doctor if you had it before, or have high blood pressure or diabetes ; Ask if low-dose aspirin is right for you
+
+= febrileseizure | Fits with fever in a child | children | ph
+mp: Seizures
+aka: febrile seizure, kombulsyon, nanginginig sa lagnat, kombulsyon ng bata, pasma
+wiki: Febrile_seizure
+s: Some young children have a fit when the fever rises quickly.
+s: It looks scary but is usually harmless and lasts under 5 minutes.
+s: Stay calm. Keep the child safe, and always get a check.
+g: A fit that lasts more than 5 minutes: call 911 or go to hospital now
+g: Trouble breathing, blue lips, or the child does not wake up after
+g: A stiff neck, vomiting, or a rash
+g: A first fit, so see a doctor the same day
+what: A febrile seizure is a fit with fever in a child aged about 6 months to 5 years. The body shakes for a minute or two, and the child may go stiff and unresponsive. It does not cause brain damage in most cases, but a doctor should find the cause of the fever.
+signs: Shaking of arms and legs ; Eyes rolling up ; Unresponsive for a minute or two ; Sleepy after
+home: Lay the child on their side on a soft surface ; Clear things away, do not hold them down ; Do not put anything in the mouth ; Note the time the fit starts ; Do not give anything by mouth until the child is fully awake
+prev: Treat infections early ; Keep vaccines up to date ; Paracetamol makes a child comfortable but does not stop a fit
+
+= newbornjaundice | Yellow baby (newborn jaundice) | children | ph
+mp: Jaundice
+aka: jaundice, paninilaw, dilaw ang sanggol, paninilaw ng bata, yellow baby
+wiki: Neonatal_jaundice
+s: Many newborns look yellow in the first week. Most are fine.
+s: Yellow in the first 24 hours, or deep yellow, needs a doctor.
+s: Frequent feeds help clear it.
+g: Yellow skin in the first 24 hours of life
+g: Yellow that spreads to the legs or lasts more than 2 weeks
+g: A baby who is very sleepy, will not feed, or has a high-pitched cry
+g: Pale stools or dark urine
+what: The liver is not yet working fully at birth, so a yellow substance (bilirubin) builds up. Most cases are mild. If the level goes too high it can harm the brain, so a doctor may use light treatment (phototherapy).
+signs: Yellow skin and eyes ; Sleepy and feeds poorly ; Dark urine, pale stools
+home: Feed often, at least 8 times a day ; Do not rely on sunbathing the baby, see a health worker ; Go for a check by day 3 to 5 ; Ask the doctor about light therapy
+prev: Give birth with a trained health worker ; Check blood types in pregnancy ; Go for early baby check-ups
+
+= colic | Baby crying and colic | children
+mp: Common Infant and Newborn Problems
+aka: colic, iyak ng iyak, kabag, hilab ng tiyan ng sanggol, hindi tumitigil sa pag-iyak
+wiki: Infantile_colic
+s: Some healthy babies cry for hours in the first months. It is called colic.
+s: It usually peaks at 6 weeks and stops by 4 months.
+s: Check for fever, hunger and a wet diaper first.
+g: Fever of 38 C or more in a baby under 3 months
+g: Vomiting green fluid, blood in stools, or a hard swollen tummy
+g: A baby who is limp, hard to wake, or cries weakly
+what: Colic means crying for more than three hours a day, three days a week, in an otherwise healthy baby. Nobody knows the cause. It is not caused by anything you did. Rule out hunger, pain, a hair wrapped around a toe, or a hot room.
+signs: Crying at the same time each day, often evening ; Clenched fists, arched back ; Feeds and grows well between crying
+home: Hold and rock the baby ; Gentle tummy massage ; A warm bath ; Burp after feeds ; If you feel at your limit, lay the baby safely in the crib and take a short break. Never shake a baby
+prev: Burp the baby during feeds ; Ask for help from family ; Keep calm
+
+= diaperrash | Diaper rash | children | ph
+mp: Common Infant and Newborn Problems
+aka: diaper rash, pantal ng sanggol, pamumula ng puwet, init ng puwet, rashes
+wiki: Diaper_rash
+s: Red sore skin under the diaper is common and easy to treat.
+s: Keep the skin clean and dry.
+s: Air time without a diaper helps most.
+g: Fever with the rash
+g: Blisters, open sores, or pus
+g: A rash that does not get better in 3 days
+what: Wet or dirty diapers rub the skin and make it red and sore. Sometimes a yeast infection grows, with bright red patches and small red spots around the edge.
+signs: Red, shiny skin in the diaper area ; Sore when touched ; Small bumps or patches
+home: Change diapers often ; Clean gently with water and let dry ; A zinc oxide cream at each change ; Let the baby go diaper-free for a while ; Do not use powder
+prev: Change soon after a wet or dirty diaper ; Wash hands ; Look for a better fit
+
+= teething | Teething and baby teeth | children | ph
+mp: Child Dental Health
+aka: teething, pagngingipin, tumutubo ang ngipin, baby teeth, gatas na ngipin
+wiki: Teething
+s: Babies get their first teeth between 4 and 7 months.
+s: It makes them drool and chew, but it does not cause high fever.
+s: Start cleaning teeth with the first tooth.
+g: Fever of 38.5 C or more, or a baby who is very unwell
+g: Diarrhoea or rash with teething
+what: Teething can make gums sore and swollen. It may cause drooling, chewing and cranky nights. A fever of 38 C or more, vomiting or diarrhoea is not from teething, so look for other causes.
+signs: Drooling ; Chewing on things ; Swollen gums ; Cranky
+home: Rub the gums with a clean finger ; A cool, clean teething ring ; Wipe the mouth ; Brush the teeth with a rice-grain amount of fluoride toothpaste twice a day
+prev: No sugary drinks in a bottle at night ; First dental visit by age 1 ; Brush twice a day
+
+= dental | Teeth and gum care | children | ph
+mp: Dental Health
+aka: dental, ngipin, sakit ng ngipin, toothache, sirang ngipin, cavities, gilagid
+wiki: Tooth_decay
+s: Brushing twice a day and fewer sweets keep teeth healthy.
+s: A toothache needs a dentist, not just pain pills.
+s: Children and older people need extra care.
+g: Swelling of the face or under the jaw with a toothache
+g: Fever with a swollen face, or trouble swallowing or breathing
+g: A knocked-out tooth: see a dentist within an hour
+what: Cavities form when germs in the mouth turn sugar to acid and it eats the tooth. Gum disease comes from plaque left at the gum line. Both are common and mostly preventable. Poor mouth health can also affect the heart and diabetes.
+signs: Tooth pain that wakes you ; Pain with hot or cold ; Bleeding or red gums ; Bad breath that stays ; A hole or black spot
+home: Brush for two minutes, twice a day, with fluoride toothpaste ; Clean between the teeth once a day ; Rinse with warm salt water for pain ; Cut sweet drinks and snacks ; See a dentist at least once a year
+prev: Brush and floss ; Few sweets ; Check-ups every 6 months to a year ; Do not smoke
+
+= eczema | Eczema and itchy skin | children | ph
+mp: Eczema
+aka: eczema, makating balat, atopic dermatitis, pangangati, tuyong balat
+wiki: Atopic_dermatitis
+s: Eczema makes skin dry, red and itchy. It comes and goes.
+s: It is not catching. It often begins in babies.
+s: Moisturise every day and avoid triggers.
+g: Skin that is weeping, crusted or has pus, with fever
+g: Blisters or sores spreading quickly
+g: Eczema with a swollen face or trouble breathing after a new food or medicine
+what: Eczema is a long-term skin problem where the skin barrier is weak. It runs in families with asthma and hay fever. Hot weather, sweat, soap, wool and stress can set it off. Scratching makes it worse.
+signs: Dry, red, itchy patches ; Rough skin in elbow and knee folds ; Cracks or oozing when scratched ; Poor sleep from itching
+home: Put on a thick moisturiser right after a short lukewarm bath ; Use mild soap or none ; Cotton clothes ; Trim fingernails short ; Ask the doctor about a mild steroid cream during flares
+prev: Moisturise daily ; Avoid known triggers ; Keep cool ; Treat infected skin early
+
+= menopause | Menopause | children
+mp: Menopause
+aka: menopause, hot flashes, pagtigil ng regla, ina-init, pagkatapos ng menstruation
+wiki: Menopause
+s: Menopause is when periods stop for good, usually around age 50.
+s: Hot flashes and poor sleep are common but pass with time.
+s: Bones and the heart need extra care after.
+g: Heavy bleeding, or bleeding after periods have stopped for a year
+g: Chest pain or trouble breathing
+g: Feeling very down or having thoughts of harming yourself
+what: When the ovaries make less hormone, periods stop. Menopause is confirmed after 12 months with no period. Symptoms can last several years. It is a normal change, not an illness.
+signs: Hot flashes and night sweats ; Trouble sleeping ; Mood changes ; Dry vagina ; Lighter or irregular periods before they stop
+home: Dress in layers and keep cool ; Regular exercise ; Enough calcium and vitamin D ; Do not smoke ; Talk to a doctor about treatment options
+prev: Healthy diet and weight ; Walk daily ; Check bone health after 50 ; Regular check-ups
+
+= birthcontrol | Family planning | children | ph
+mp: Birth Control
+aka: family planning, pills, contraception, pagpaplano ng pamilya, kontraseptibo, IUD
+wiki: Birth_control
+s: Family planning lets you space your children and protect your health.
+s: Many methods are free at the health centre.
+s: Condoms also protect against infections.
+g: Severe tummy pain, or a missed period with pain after an IUD or implant
+g: Sudden leg swelling and pain, chest pain or trouble breathing while on the pill
+g: Heavy bleeding that soaks a pad every hour
+what: Methods include condoms, pills, injections, implants, IUDs, and calendar methods. A health worker can help you pick one that suits your health and wishes. The emergency pill works best soon after sex.
+signs: Common in the first months: spotting or irregular periods
+home: Talk to a nurse or doctor about your options ; Take pills at the same time each day ; Use condoms to also prevent infections ; Keep follow-up visits
+prev: Plan pregnancies ; Get tested for infections ; Go to the health centre for free methods

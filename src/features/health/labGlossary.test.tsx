@@ -67,7 +67,7 @@ describe('ALT lab page and library', () => {
     expect(screen.getByRole('heading', { name: 'What a high or low result can mean' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Things that can affect it' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Ask at next visit' }).getAttribute('href')).toBe('#health/visits')
-    expect(screen.getByTestId('lab-library').getAttribute('href')).toBe('#discover/learn/library/t%3Aalt')
+    expect(screen.getByTestId('lab-library').getAttribute('href')).toBe('#health/library/t%3Aalt')
     expect(document.body.textContent).not.toContain('A test from your lab results')
   })
   it('the library article for t:alt shows the same text without a network request', async () => {

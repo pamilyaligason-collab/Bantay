@@ -11,7 +11,7 @@ import { DRUG_NUDGE_NOTE, medicinesActingHere, SYSTEM_INFO, yourNumbers } from '
 import content from './content.json'
 import { FOCUS, HITS, OWN_BODY, SPRITE, VIEW } from './shapes'
 import { systemCounts, systemOf, systemStatus, type SystemCount } from './status'
-import { Carousel, GroupedList, LargeTitle, Row, Section } from '../look'
+import { MoreGrid, GroupedList, LargeTitle, Row, Section } from '../look'
 import { Call911, useAbroad } from '../safety/Call911'
 import { Icon } from '../shell/Icon'
 import careJson from './systemCare.json'
@@ -123,7 +123,7 @@ export default function ExploreScreen() {
         </div>
       </div>
       <Section title="Body systems" meta={String(SYSTEMS.length)}>
-        <Carousel label="Body systems" testId="body-systems">
+        <MoreGrid label="Body systems" testId="body-systems">
           {SYSTEMS.map((s) => {
             const c = counts[s.id] ?? NONE
             const n = c.flagged || c.total
@@ -134,7 +134,7 @@ export default function ExploreScreen() {
               </button>
             )
           })}
-        </Carousel>
+        </MoreGrid>
       </Section>
       {info && (
         <section className="card an-info" aria-label={`About ${label}`} data-testid="system-info" data-sys={sysId}>
@@ -181,8 +181,11 @@ export default function ExploreScreen() {
         </GroupedList>
       </Section>
       <footer className="an-foot">
-        <p className="an-note">{content.credits}</p>
-        <p className="an-note">{content.art}</p>
+        <details className="an-credits">
+          <summary>Picture credits</summary>
+          <p className="an-note">{content.credits}</p>
+          <p className="an-note">{content.art}</p>
+        </details>
         <p className="an-note">{content.disclaimer}</p>
       </footer>
       {open && <PartSheet part={open} onClose={() => setOpen(null)} />}

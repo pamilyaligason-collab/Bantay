@@ -76,6 +76,9 @@ describe('anatomy art', () => {
   })
 })
 
+// S25: the system chips sit in a MoreGrid (4 shown, then Show more); tests that need every chip open it first
+const showAll = () => { for (let i = 0; i < 3; i++) screen.queryAllByRole('button', { name: /^Show \d+ more$/ }).forEach((b) => fireEvent.click(b)) }
+
 describe('Explore your body', () => {
   it('opens a sheet when a part on the body is tapped, and closes it', () => {
     render(<ExploreScreen />)
@@ -95,6 +98,7 @@ describe('Explore your body', () => {
   it('lists the parts of the chosen system and opens one from the list', () => {
     render(<ExploreScreen />)
     expect(screen.getAllByRole('button', { name: 'Skull' }).length).toBeGreaterThan(0)
+    showAll()
     fireEvent.click(screen.getByRole('button', { name: 'Kidneys and bladder' }))
     expect(screen.queryByRole('button', { name: 'Skull' })).toBeNull()
     fireEvent.click(screen.getAllByRole('button', { name: 'Bladder' }).pop()!)

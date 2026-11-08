@@ -1,0 +1,220 @@
+= hypertension | High blood pressure | heart | ph
+mp: High Blood Pressure
+aka: hypertension, altapresyon, mataas na presyon, mataas ang dugo, BP
+wiki: Hypertension
+s: The force of blood on your blood vessel walls stays too high.
+s: Most people feel nothing, so only a check can tell.
+s: Over the years it can harm the heart, brain and kidneys.
+g: Sudden weakness or numbness of the face, arm or leg, or trouble speaking
+g: Crushing chest pain or pain that spreads to the arm or jaw
+g: A very bad headache with confusion, or trouble seeing
+what: Blood pressure is the push of blood against the walls of your blood vessels. When the top number stays at 140 or higher, or the bottom number at 90 or higher, it is called high blood pressure. Your doctor will say what number is right for you.
+signs: Often none at all ; Headache, dizziness or a pounding in the chest can happen, but not always ; A check at the health centre or at home is the only sure way
+home: Take your medicine every day, even when you feel well ; Eat less salt, patis, toyo and instant noodles ; Walk most days if your doctor says it is safe ; Do not smoke, and limit alcohol
+prev: Check your pressure at least once a year, more often if you are over 40 ; Keep a healthy weight ; Eat more vegetables and fruit ; Move your body every day
+v: dgistW5hR4s | Tamang Pag-Check ng Blood Pressure | Gabay sa Kalusugan - Dr. Gary Sy
+v: X8Q2W50NsKU | 14 tips to control high blood pressure (in Filipino) | Doc Willie Ong
+pic: hypertension.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0486_HighBloodPressure_01.png
+
+= heartattack | Heart attack | heart | ph
+mp: Heart Attack
+aka: myocardial infarction, atake sa puso, inatake, sakit sa puso
+wiki: Myocardial_infarction
+s: A heart attack happens when blood cannot reach part of the heart.
+s: It is an emergency, and every minute counts.
+s: Fast treatment can save the heart and save a life.
+g: Chest pain or pressure that lasts more than a few minutes
+g: Pain in the arm, back, neck or jaw, with sweating or feeling sick
+g: Trouble breathing, or feeling faint with chest discomfort
+g: Call 911 or go to the nearest hospital now. Do not drive yourself.
+what: A heart attack happens when a blocked blood vessel stops blood from reaching part of the heart. The heart muscle starts to be damaged. Women, older people and people with diabetes may have fewer clear signs.
+signs: Pressure, squeezing or heavy feeling in the chest ; Pain that moves to the arm, back, neck or jaw ; Cold sweat, feeling sick, short of breath ; In women and older people: unusual tiredness or tummy discomfort
+home: While you wait for help, sit down and stay calm ; Loosen tight clothes ; If a doctor has told you to take aspirin for this, follow that advice ; Never wait to see if it passes
+prev: Keep blood pressure, sugar and cholesterol in check ; Do not smoke ; Eat less salty and fatty food ; Stay active and keep a healthy weight
+v: PXhBoH5aD_s | 8 Warning Signs ng Heart Attack Bago Ito Mangyari | Doc Willie Ong
+pic: heartattack.webp | Blausen Medical Communications, Inc | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0463_HeartAttack.png
+
+= stroke | Stroke | heart | ph
+mp: Stroke
+aka: brain attack, na-stroke, pagkaparalisa, hilab ng ulo
+wiki: Stroke
+s: A stroke is a sudden loss of blood flow to part of the brain.
+s: Learn BE FAST: Balance, Eyes, Face, Arm, Speech, Time.
+s: Getting to a hospital in the first hours can save a life.
+g: One side of the face droops when the person smiles
+g: One arm is weak or numb, or cannot be lifted
+g: Speech is slurred or strange, or the person cannot understand you
+g: Sudden loss of balance or vision, or a very bad headache. Call 911 now and note the time it began.
+what: A stroke happens when a blood vessel in the brain is blocked or bursts. Brain cells start to die within minutes. Quick treatment can save brain and life. High blood pressure is the biggest cause.
+signs: Face drooping on one side ; Arm or leg weakness on one side ; Slurred speech or confusion ; Sudden trouble seeing or walking ; Sudden very bad headache
+home: Do not give food, drink or medicine by mouth ; Lay the person down with the head a little raised ; Note the time the signs began and tell the hospital ; After a stroke, follow your rehab plan and take medicines as told
+prev: Keep blood pressure under control ; Do not smoke ; Stay active ; Eat less salt and less fatty food ; Take heart medicines as prescribed
+pic: stroke.webp | Blausen Medical Communications, Inc. | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0836_Stroke.png
+v: adNWwnudyTc | Stroke: 8 Warning Signs | Doc Willie Ong
+v: C8EO3SM0Y_w | BE FAST: signs of a stroke | American Heart Association
+
+= angina | Angina (chest pain from the heart) | heart
+mp: Angina
+aka: angina pectoris, pananakit ng dibdib, sikip ng dibdib
+wiki: Angina
+s: Angina is chest pain when the heart does not get enough blood.
+s: It often comes with effort and eases with rest.
+s: It is a warning sign. See a doctor soon.
+g: Chest pain that lasts more than 15 minutes, or does not ease with rest
+g: Pain with sweating, feeling faint, or trouble breathing
+g: Pain that is new, worse, or comes at rest
+what: Angina is a pressure or squeezing pain in the chest. It happens when the heart muscle does not get enough blood, often because vessels are narrowed. It is not a heart attack, but it can be a warning of one.
+signs: Pressure or tightness in the chest ; Pain that spreads to the shoulder, arm, neck or jaw ; Short of breath or tired with effort ; Pain that eases after rest
+home: Stop and rest when pain comes ; Take the medicine your doctor gave you for it ; Avoid heavy meals and strong effort in the heat ; Keep your follow-up visits
+prev: Do not smoke ; Control blood pressure, sugar and cholesterol ; Keep active in a way your doctor allows ; Keep a healthy weight
+
+= heartfailure | Heart failure | heart
+mp: Heart Failure
+aka: weak heart, mahinang puso, pagpalya ng puso, namamaga ang paa
+wiki: Heart_failure
+s: The heart is weak and cannot pump blood as well as it should.
+s: It does not mean the heart has stopped.
+s: Medicines, less salt and daily checks keep people well.
+g: Sudden bad shortness of breath, or you cannot lie flat
+g: Chest pain, fainting, or a very fast heartbeat
+g: Coughing up pink, foamy spit
+what: In heart failure the heart muscle is too weak or stiff to pump enough blood for the body. Fluid can then build up in the lungs, legs and tummy. It is a long-term illness that can be managed well.
+signs: Short of breath, especially lying down ; Swollen feet, ankles or tummy ; Tiredness and weakness ; Quick weight gain over a few days ; Cough at night
+home: Take medicines every day ; Weigh yourself each morning and tell your doctor about a quick gain ; Eat less salt ; Ask your doctor how much to drink ; Keep your follow-up visits
+prev: Keep blood pressure and sugar under control ; Do not smoke ; Treat heart disease early ; Limit alcohol
+
+= cholesterol | High cholesterol | heart | ph
+mp: Cholesterol
+aka: cholesterol, mataas na kolesterol, taba sa dugo, dyslipidemia
+wiki: Hypercholesterolemia
+s: Too much cholesterol in the blood can block blood vessels over time.
+s: You cannot feel it. A blood test shows it.
+s: Food, activity and sometimes medicine bring it down.
+g: Chest pain or pressure, or signs of a stroke, are an emergency. Call 911.
+what: Cholesterol is a fatty substance in your blood. Some is needed, but too much LDL ("bad") cholesterol can build up in your blood vessels. This raises the chance of heart attack and stroke. Family history can also play a part.
+signs: Usually none ; Found by a blood test called a lipid profile
+home: Eat less fried food, fatty meat, chicharon and coconut cream foods ; Eat more fish, vegetables, oats and beans ; Take your medicine as told ; Walk or move 30 minutes on most days
+prev: Get tested from age 40, or earlier if heart disease runs in your family ; Keep a healthy weight ; Do not smoke ; Limit sweet drinks and alcohol
+v: SMcIfrki97k | Cholesterol numbers | Mayo Clinic
+
+= afib | Irregular heartbeat | heart
+mp: Arrhythmia
+aka: arrhythmia, atrial fibrillation, AFib, palpitations, pagtibok ng puso, mabilis na tibok ng puso
+wiki: Atrial_fibrillation
+s: The heart beats too fast, too slow, or in an uneven way.
+s: Many cases are harmless, but some raise the risk of stroke.
+s: A doctor can check it with a heart tracing (ECG).
+g: Fainting, or chest pain with a fast heartbeat
+g: A fast heartbeat with trouble breathing
+g: Signs of a stroke: face droop, weak arm, slurred speech
+what: An irregular heartbeat is called an arrhythmia. Atrial fibrillation is a common type where the top of the heart quivers. It can cause blood clots, so it raises stroke risk. Some people need medicines to thin the blood.
+signs: A fluttering or racing heart ; Dizziness or feeling faint ; Short of breath ; Tiredness ; Some people feel nothing
+home: Take heart and blood-thinning medicines exactly as told ; Cut down coffee, energy drinks, alcohol and cigarettes ; Tell your doctor about all your medicines ; Keep your check-ups
+prev: Control blood pressure ; Keep a healthy weight ; Limit alcohol ; Ask about sleep apnea if you snore loudly
+
+= cad | Heart disease (blocked heart vessels) | heart | ph
+mp: Coronary Artery Disease
+aka: coronary artery disease, CAD, ischemic heart disease, bara sa puso, sakit sa puso
+wiki: Coronary_artery_disease
+s: Fatty build-up narrows the vessels that feed the heart.
+s: It is the most common heart disease.
+s: It can lead to chest pain or a heart attack.
+g: Chest pain that does not ease with rest within a few minutes
+g: Pain with sweating, nausea or trouble breathing
+g: Call 911 or go to the hospital now
+what: Fatty deposits called plaque slowly narrow the blood vessels of the heart. Less blood reaches the heart muscle. Over many years this can cause chest pain, a heart attack or heart failure.
+signs: Chest pain or pressure with effort ; Short of breath ; Unusual tiredness ; Some people have no signs until a heart attack
+home: Take aspirin, statin and blood pressure medicines only as your doctor says ; Eat less salt and fat ; Stay active in a way your doctor allows ; Keep your appointments
+prev: Do not smoke ; Control blood pressure, sugar and cholesterol ; Keep a healthy weight ; Move every day
+
+= cpr | Cardiac arrest and CPR | heart
+mp: CPR
+aka: CPR, cardiopulmonary resuscitation, heart stopped, hindi humihinga, nawalan ng malay
+wiki: Cardiopulmonary_resuscitation
+s: In cardiac arrest the heart stops and the person collapses.
+s: Hands-only CPR can keep blood moving until help arrives.
+s: Anyone can do it. You cannot make it worse.
+g: A person who suddenly collapses, will not wake and is not breathing normally: call 911 now
+g: Start pushing hard and fast on the centre of the chest
+g: Send someone to find an AED (a shock machine) if there is one
+what: When the heart stops, blood stops reaching the brain. Hands-only CPR means pushing hard and fast on the centre of the chest, about twice a second. Do this until help or an AED arrives, or the person wakes.
+signs: Collapse without warning ; Will not wake when you shout and shake the shoulders ; Not breathing, or only gasping
+home: Call 911 or ask someone to call ; Place the heel of one hand on the centre of the chest, the other hand on top ; Push down hard, about 5 cm for an adult, and let the chest come back up ; Keep going without stopping until help takes over
+prev: Learn CPR from the Red Cross ; Treat heart disease early ; Know where the nearest AED is in your building
+v: M4ACYp75mjU | Hands-only CPR | American Heart Association
+v: ffzm2RGb0vU | Be prepared for emergencies with hands-only CPR | American Red Cross
+pic: cpr.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:CPR_on_an_Adult.png
+
+= lowbp | Low blood pressure and dizziness | heart
+mp: Low Blood Pressure
+aka: hypotension, mababang presyon, hilo, nahihilo, pagkahilo, himatay
+wiki: Hypotension
+s: Low blood pressure can make you dizzy or faint.
+s: It is only a problem when it causes signs.
+s: Standing up slowly and drinking enough water often help.
+g: Fainting with chest pain, or a very fast heartbeat
+g: Confusion, cold clammy skin, or very fast breathing
+g: Fainting after a head injury, or black or bloody stools
+what: Blood pressure that is lower than normal is called low blood pressure. For some people it is normal. It becomes a problem when you feel dizzy or faint. Causes include dehydration, some medicines, bleeding and heart problems.
+signs: Dizziness when you stand up ; Blurred vision ; Feeling faint or weak ; Cold, pale skin
+home: Sit or lie down at once when dizzy ; Drink water or oral rehydration salts ; Stand up slowly from bed ; Tell your doctor which medicines you take
+prev: Drink enough fluids, especially in the heat ; Do not stand still for a long time in hot places ; Review blood pressure medicines with your doctor
+
+= dvt | Blood clot in the leg | heart
+mp: Deep Vein Thrombosis
+aka: DVT, deep vein thrombosis, namuong dugo, namamaga ang binti, pamamaga ng binti
+wiki: Deep_vein_thrombosis
+s: A blood clot can form in a deep vein, often in the leg.
+s: The clot can travel to the lungs and be life-threatening.
+s: Long sitting, bed rest and surgery raise the risk.
+g: Sudden short breath or chest pain, especially with a swollen leg
+g: Coughing up blood
+g: A very swollen, red, painful leg that is warm to touch
+what: A deep vein thrombosis (DVT) is a blood clot in a deep vein, usually in the leg. If a piece breaks off and reaches the lungs, it can block blood flow. This is called a pulmonary embolism and needs emergency care.
+signs: One leg swollen, painful or warm ; Skin red or dark ; Pain in the calf, like a cramp ; Sudden breathlessness is an emergency
+home: Take blood-thinning medicine exactly as prescribed ; Tell your doctor before any surgery or new medicine ; Walk as your doctor allows
+prev: Move and stretch your legs on long trips ; Walk soon after surgery or illness if allowed ; Drink enough water ; Do not smoke
+
+= pad | Poor blood flow in the legs | heart
+mp: Peripheral Arterial Disease
+aka: peripheral artery disease, PAD, masakit ang binti sa paglakad, cramps sa binti
+wiki: Peripheral_artery_disease
+s: Narrow blood vessels can starve the legs of blood.
+s: Leg pain when walking that eases with rest is a clue.
+s: It often goes with diabetes and smoking.
+g: A leg that suddenly turns cold, pale or blue and very painful
+g: A sore on the foot that will not heal, or black skin
+g: Fever with a red, swollen foot
+what: In peripheral arterial disease, fatty build-up narrows the vessels that carry blood to the legs. Muscles do not get enough blood when you walk. Wounds on the feet heal slowly, which is serious in people with diabetes.
+signs: Cramping leg or calf pain when walking ; Cold feet or toes ; Sores that heal slowly ; Shiny skin or less hair on the legs
+home: Check your feet every day ; Wear soft shoes and clean socks ; Walk a little, rest, then walk again as your doctor advises ; Take medicines as told
+prev: Stop smoking ; Control sugar, blood pressure and cholesterol ; Keep active ; Take care of your feet
+
+= rhd | Rheumatic heart disease | heart | ph
+mp: Streptococcal Infections
+aka: rheumatic fever, rheumatic heart, sore throat that harms the heart
+wiki: Rheumatic_heart_disease
+s: A sore throat from strep germs, left untreated, can harm the heart valves.
+s: It mostly affects children and young people.
+s: Treating a sore throat early prevents it.
+g: Chest pain, short breath or swollen ankles in someone who had rheumatic fever
+g: A child with fever, painful swollen joints and a new rash after a sore throat
+what: Rheumatic fever can follow a strep throat that was not fully treated. The body's reaction can scar the heart valves. This is rheumatic heart disease. It can cause heart failure later in life. It is still common where strep throat goes untreated.
+signs: Fever and sore throat that comes back ; Painful, swollen joints ; Short of breath or tiredness ; A rash on the chest or back
+home: Finish all antibiotics a doctor prescribes for a sore throat ; Keep regular check-ups if you have a heart valve problem ; Ask your doctor about monthly penicillin if advised
+prev: See a doctor for a sore throat with fever ; Finish the full course of antibiotics ; Wash hands often
+
+= aneurysm | Aneurysm | heart
+mp: Aneurysms
+aka: aneurysm, bulging blood vessel, namamaga na ugat, pumutok na ugat
+wiki: Aneurysm
+s: An aneurysm is a weak bulge in a blood vessel wall.
+s: Most are silent until they burst.
+s: A burst is an emergency.
+g: Sudden, severe tearing pain in the chest, back or tummy
+g: Sudden worst headache of your life, or stiff neck with vomiting
+g: Fainting or a rapid heartbeat with severe pain
+what: An aneurysm is a bulge in the wall of a blood vessel. It can form in the brain or in the large vessel of the chest or tummy. If it bursts, bleeding can be life-threatening. High blood pressure and smoking raise the risk.
+signs: Often none ; Pulsing feeling in the tummy ; Sudden severe headache or back pain when it leaks or bursts
+home: Keep blood pressure under control ; Take medicines as told ; Keep follow-up scans
+prev: Do not smoke ; Control blood pressure ; Eat less salt ; Tell your doctor if close family had an aneurysm

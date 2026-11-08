@@ -20,7 +20,7 @@ describe('For you', () => {
     expect(within(c).getByTestId('foryou-video').getAttribute('href')).toBe('#discover/watch')
     const art = within(c).getByTestId('foryou-because')
     expect(art.textContent).toContain('Because of your LDL cholesterol')
-    expect(art.getAttribute('href')).toBe('#discover/learn/library/' + encodeURIComponent('s:LDL cholesterol'))
+    expect(art.getAttribute('href')).toBe('#health/library/' + encodeURIComponent('s:LDL cholesterol'))
   })
   it('empty person: no nudge, no article, video stays', () => {
     show([])
