@@ -33,10 +33,10 @@ test('D1: hero poster is the scroller width minus 32, at least 190 tall, play di
   expect(Math.min(m.dw, m.dh), 'play disc').toBeGreaterThanOrEqual(56)
 })
 
-// D2: the more-videos row (two main videos and one DIY) has a 15 px title in one colour, three lines at most.
+// D2: every video card (Top story grid, Health, Farming and DIY, Listen, recipe videos) has a 15 px title in one colour, three lines at most.
 test('D2: video card titles are 15 px, one colour, three lines at most', async ({ page }) => {
   const t = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.dc-vc-t')).map((e) => ({ fs: getComputedStyle(e).fontSize, c: getComputedStyle(e).color, lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)) })))
-  expect(t.length).toBe(3) // the two more main videos and the DIY video (the Be prepared cards became the Learn card, D-135)
+  expect(t.length).toBeGreaterThanOrEqual(10) // S24: 4 grid + 4 health (daily set) + farm + listen + recipe videos
   t.forEach((x) => { expect(x.fs).toBe('15px'); expect(x.lines).toBeLessThanOrEqual(3) })
   expect(new Set(t.map((x) => x.c)).size, 'one title colour').toBe(1)
 })
@@ -51,19 +51,19 @@ test('D3: the view tabs are 44 px, the guided video poster is large, the read-al
   await page.addInitScript(() => { Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: { speak() {}, cancel() {} } }); (window as unknown as Record<string, unknown>).SpeechSynthesisUtterance = function () {} }) // headless Chromium may have no voice
   await page.goto('/#discover/listen')
   await expect(page.getByTestId('listen')).toBeVisible()
-  const b = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('button[aria-label^="Play "]')).filter((e) => !e.closest('[data-testid="listen-guided"]')).map((e) => { const r = e.getBoundingClientRect(); return [r.width, r.height] }))
+  const b = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('button[aria-label^="Play "]')).filter((e) => !e.closest('[data-testid="listen-guided"], [data-testid="listen-shelf"]')).map((e) => { const r = e.getBoundingClientRect(); return [r.width, r.height] }))
   expect(b.length).toBe(20)
   b.forEach(([w, h]) => { expect(w).toBeGreaterThanOrEqual(44); expect(h).toBeGreaterThanOrEqual(44) })
 })
 
-// D4: the season card is amber.
-test('D4: the season card is amber and the Jack box is clear at rest', async ({ page }) => {
-  const bg = await page.evaluate(() => { const tint = getComputedStyle(document.documentElement).getPropertyValue('--tint-amber').trim(); const probe = document.createElement('i'); probe.style.background = tint; document.body.append(probe); const want = getComputedStyle(probe).backgroundColor; probe.remove(); return { got: getComputedStyle(document.querySelector('[data-testid="season-row"]')!).backgroundColor, want } })
+// D4: the first Learn card (Health topics) is purple, drawn in the tint token.
+test('D4: the Health topics Learn card is purple and the Jack box is clear at rest', async ({ page }) => {
+  const bg = await page.evaluate(() => { const tint = getComputedStyle(document.documentElement).getPropertyValue('--tint-purple').trim(); const probe = document.createElement('i'); probe.style.background = tint; document.body.append(probe); const want = getComputedStyle(probe).backgroundColor; probe.remove(); return { got: getComputedStyle(document.querySelector('[data-testid="dc-learn-topics"]')!).backgroundColor, want } })
   expect(bg.got).toBe(bg.want)
   await assertJackHitRestAndEnd(page, DISCOVER_ALLOW, 'discover D4')
 })
 
-// S22 (D-135): Top story and the season row now come before the Watch hero, so it starts on the first screen rather than within 320 px of the top.
+// S24 (D-152): Learn and then Top story come before the hero, so the hero poster begins below the Learn grid, within a screen and a half.
 test('one hero, starting on the first screen', async ({ page }) => {
   const r = await page.evaluate(() => {
     const sc = document.querySelector('.bt .scroll') as HTMLElement
@@ -71,11 +71,11 @@ test('one hero, starting on the first screen', async ({ page }) => {
     return { n: heroes.length, top: heroes[0]!.getBoundingClientRect().top - sc.getBoundingClientRect().top, view: sc.clientHeight }
   })
   expect(r.n, 'exactly one [data-hero]').toBe(1)
-  expect(r.top, 'the hero poster begins well inside the first screen').toBeLessThanOrEqual(r.view - 200)
+  expect(r.top, 'the hero poster begins within a screen and a half').toBeLessThanOrEqual(r.view * 1.5)
 })
 
-test('order: Top story, season, video, more videos, Learn, Listen, Recipes, Play, fact', async ({ page }) => {
-  await assertOrder(page, ['dc-top-story', 'season-row', 'dc-hero', 'dc-videos', 'dc-learn', 'dc-listen', 'dc-recipes', 'dc-play', 'dc-fact'])
+test('order: Learn, Top story, hero, Health videos, Farming and DIY, Listen, Recipes, Play, fact', async ({ page }) => {
+  await assertOrder(page, ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health', 'dc-farm', 'dc-listen', 'dc-recipes', 'dc-play', 'dc-fact'])
 })
 
 test('the hero opens Watch and nothing reaches YouTube before a second tap', async ({ page }) => {
@@ -83,7 +83,7 @@ test('the hero opens Watch and nothing reaches YouTube before a second tap', asy
   page.on('request', (r) => { if (/youtube/.test(r.url())) yt.push(r.url()) })
   await page.reload() // beforeEach already loaded the root; reload so the listener sees that load too
   await expect(page.getByTestId('dc-fact')).toBeVisible()
-  const hero = page.getByTestId('dc-hero').getByRole('link')
+  const hero = page.getByTestId('dc-hero') // the testid is on the card link itself
   await expect(hero).toHaveAttribute('href', '#discover/watch')
   await hero.click()
   await expect(page).toHaveURL(/#discover\/watch$/)
@@ -106,7 +106,7 @@ test('links: All topics, Memory and the fact card land on their screens', async 
 })
 
 test('flag off: no Medicines row', async ({ page }) => {
-  await expect(page.getByTestId('dc-learn').getByText('Recipes', { exact: true })).toBeVisible()
+  await expect(page.getByTestId('dc-learn').getByText('Low-salt recipes', { exact: true })).toBeVisible()
   await expect(page.getByText('Medicines')).toHaveCount(0)
 })
 
@@ -159,7 +159,7 @@ test('shots (V13_SHOTS)', async ({ page }) => {
   await page.reload()
   await expect(page.getByTestId('dc-fact')).toBeVisible()
   await shotsLightDark(page, 'discover')
-  await page.getByTestId('dc-hero').getByRole('link').click() // the tapped video is what Watch shows
+  await page.getByTestId('dc-hero').click() // the tapped video is what Watch shows
   await expect(page.getByTestId('watch-player')).toBeVisible()
   await shotsLightDark(page, 'watch')
   for (const [route, name, id] of [['#discover/listen', 'listen', 'listen'], ['#discover/play', 'play', 'play-hub'], ['#discover/play/memory', 'memory', 'memory'], ['#discover/play/wordsearch', 'wordsearch', 'wordsearch'], ['#discover/play/facts', 'facts', 'facts']] as const) {

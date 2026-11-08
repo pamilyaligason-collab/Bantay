@@ -11,6 +11,21 @@ afterEach(() => { cleanup(); for (const k of Object.keys(kv)) delete kv[k] })
 import { CALM_JACK_EVENT } from './CalmJack'
 import CalmScreen from './CalmScreen'
 
+describe('S24 order', () => {
+  it('After a scare sits directly after the breathing card (before the Exercises list), before the mood check, media and the crisis card (which is unchanged)', () => {
+    render(<CalmScreen />)
+    const root = screen.getByTestId('calm')
+    const kids = Array.from(root.children)
+    const at = (el: Element) => kids.findIndex((k) => k === el || k.contains(el))
+    const hero = at(screen.getByTestId('calm-hero'))
+    expect(at(screen.getByTestId('calm-scare-card'))).toBe(hero + 1) // just under the breathing card, as the board
+    expect(at(screen.getByTestId('calm-exercises'))).toBe(hero + 2) // the Exercises list follows it
+    expect(at(screen.getByTestId('calm-scare-card'))).toBeLessThan(at(screen.getByTestId('calm-media')))
+    expect(at(screen.getByTestId('calm-crisis'))).toBe(kids.length - 1) // last
+    expect(at(screen.getByTestId('calm-crisis'))).toBeGreaterThan(at(screen.getByTestId('calm-media')))
+  })
+})
+
 describe('hero', () => {
   it('renders the hero first with the orb and Start', () => {
     render(<CalmScreen />)

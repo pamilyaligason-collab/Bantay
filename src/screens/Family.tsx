@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { ActivityCard } from '../features/family/ActivityCard'
 import FamilyFeed from '../features/family/FamilyFeed'
-import Calendar from '../features/family/Calendar'
+import CalendarPage from '../features/family/CalendarPage'
 import FamilyMessages from '../features/family/FamilyMessages'
 import { familyFeedOn, familyPlacesOn } from '../features/family/flags'
 import { IncomingSos } from '../features/family/IncomingSos'
@@ -14,7 +14,7 @@ import { PeopleList } from '../features/family/PeopleList'
 import PlaceNotice from '../features/family/PlaceNotice'
 import { PlaceScreen, WhereCard } from '../features/family/PlaceSection'
 import { usePlaces } from '../features/family/placeApi'
-import Plan from '../features/family/Plan'
+import PlanPage from '../features/family/PlanPage'
 import Report from '../features/family/Report'
 import { useCarerIds } from '../features/family/CarerCards'
 import { StormRollCall } from '../features/family/StormRollCall'
@@ -33,7 +33,7 @@ import '../features/family/family.css'
 
 export { messagesPreview } from '../features/family/messagesPreview'
 
-export type FamilySeg = 'home' | 'messages' | 'plan' | 'papers' | 'memories' | 'feed' | 'map'
+export type FamilySeg = 'home' | 'messages' | 'plan' | 'calendar' | 'papers' | 'memories' | 'feed' | 'map'
 
 /** Which part of Family the hash names. #family and #family/people are Home, #family/messages the one shared chat, #family/plan and #plan the Plan, #family/papers the Papers screen
  *  (#records and #health/papers redirect there, routes.ts); #family/people/<id> is one member's page. The hash is the source of truth so deep links and Back work. */
@@ -41,7 +41,7 @@ export function parseFamily(h: string): { seg: FamilySeg; member: string | null 
   const [head, a, b] = h.replace(/^#/, '').split('/')
   if (head === 'family' && a === 'people' && b) return { seg: 'home', member: decodeURIComponent(b) }
   const k = head === 'family' ? a : head
-  return { seg: k === 'plan' ? 'plan' : head === 'family' && k === 'messages' ? 'messages' : head === 'family' && k === 'papers' ? 'papers' : head === 'family' && k === 'memories' ? 'memories' : head === 'family' && k === 'feed' ? 'feed' : head === 'family' && k === 'map' ? 'map' : 'home', member: null }
+  return { seg: k === 'plan' ? 'plan' : head === 'family' && k === 'calendar' ? 'calendar' : head === 'family' && k === 'messages' ? 'messages' : head === 'family' && k === 'papers' ? 'papers' : head === 'family' && k === 'memories' ? 'memories' : head === 'family' && k === 'feed' ? 'feed' : head === 'family' && k === 'map' ? 'map' : 'home', member: null }
 }
 
 /** #family/people/<id>/report is that member's health report. */
@@ -106,6 +106,7 @@ export default function Family() {
   if (seg === 'map') return familyPlacesOn() ? (<><SubHeader title="Where everyone is" backHref="#family" backLabel="Back to Family" /><PlaceScreen /></>) : null
   if (seg === 'memories') return (<><LargeTitle back={{ href: '#family', label: 'Family' }} title="Memories" /><Memories /></>)
   if (seg === 'messages') return (<><SubHeader title="Messages" backHref="#family" backLabel="Back to Family" /><FamilyMessages /></>)
-  if (seg === 'plan') return (<><SubHeader title="Plan" backHref="#family" backLabel="Back to Family" /><Calendar /><Plan /></>)
+  if (seg === 'plan') return <PlanPage />
+  if (seg === 'calendar') return <CalendarPage />
   return <Root />
 }

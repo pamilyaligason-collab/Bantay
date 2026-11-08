@@ -24,33 +24,33 @@ async function discover(page: Page, w: number, h: number, day: string) {
   await page.setViewportSize({ width: w, height: h })
   await page.goto('/#discover')
   await expect(page.getByTestId('dc-learn')).toBeVisible()
-  await page.waitForFunction(() => Array.from(document.querySelectorAll('.dc-still img')).every((i) => (i as HTMLImageElement).complete))
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.dc-still img')).every((i) => (i as HTMLImageElement).complete || (r => r.top > innerHeight * 2 || r.left > innerWidth)(i.getBoundingClientRect()))) // lazy stills below the fold or in a carousel off to the side never start loading
 }
 
 for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoon months, no season
   for (const w of WIDTHS) {
     for (const h of HEIGHTS) {
-      test(`discover ${day} ${w}x${h}: no band under the season card, Watch and Learn in order, links clear of Jack`, async ({ page }) => {
+      test(`discover ${day} ${w}x${h}: Learn first then Top story, links clear of Jack`, async ({ page }) => {
         await discover(page, w, h, day)
         const m = await page.evaluate(() => {
           ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
           const b = (q: string) => document.querySelector(q)!.getBoundingClientRect()
-          const prev = document.querySelector('[data-testid="season-row"]') ?? document.querySelector('[data-testid="dc-top-story"]')!
-          const watch = b('[data-testid="dc-watch"]')
+          const learnB = b('[data-testid="dc-learn"]')
+          const story = b('[data-testid="dc-top-story"]')
           const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics') as HTMLAnchorElement
           const lr = link.getBoundingClientRect()
           const fab = b('.sh-jackfab')
           return {
-            gap: watch.top - prev.getBoundingClientRect().bottom,
-            href: link.getAttribute('href'), cards: document.querySelectorAll('[data-testid="dc-videos"] .dc-vc').length, order: watch.top < b('[data-testid="dc-learn"]').top,
+            gap: story.top - learnB.bottom,
+            href: link.getAttribute('href'), cards: document.querySelectorAll('[data-testid="dc-top-grid"] .dc-vc').length, order: learnB.top < story.top,
             overlap: lr.left < fab.right && lr.right > fab.left && lr.top < fab.bottom && lr.bottom > fab.top, linkH: lr.height, title: document.querySelector('[data-testid="dc-learn"] h2')!.textContent
           }
         })
         expect(m.title).toBe('Learn')
         expect(m.href).toBe('#discover/learn')
-        expect(m.cards).toBe(3) // two more main videos and one DIY video
+        expect(m.cards).toBe(4) // the 2 x 2 grid under the Top story hero
         expect(m.order).toBe(true)
-        expect(m.gap, 'gap between the season card (or Top story) and the Watch section').toBeLessThan(40)
+        expect(m.gap, 'gap between the Learn section and Top story').toBeLessThan(40)
         expect(m.overlap, 'All topics link under Jack at rest').toBe(false)
         expect(m.linkH).toBeGreaterThanOrEqual(43.5)
         await assertJackHit(page, DISCOVER_ALLOW, `discover ${day} ${w}x${h}`)
@@ -69,7 +69,7 @@ test('discover: every section link stays left of Jack at rest, and a video card 
     return Array.from(document.querySelectorAll('section.sec[data-testid^="dc-"] > .sec-h a')).filter((a) => a.getBoundingClientRect().right > fab.left - 4).map((a) => a.textContent)
   })
   expect(bad, "section links in Jack's column").toEqual([])
-  await page.getByTestId('dc-videos').locator('.dc-vc').first().click()
+  await page.getByTestId('dc-health').locator('.dc-vc').first().click()
   await expect(page).toHaveURL(/#discover\/watch/)
 })
 

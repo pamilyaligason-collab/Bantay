@@ -86,7 +86,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await openFamily(page)
       expect((await page.getByTestId('people').boundingBox())!.height).toBeLessThanOrEqual(296) // measured 286 at 390 x 844 (title, 3 rows, the 48 px foot row); a fourth row adds about 66, so the fold still fails here if it stops folding. Was 260 before the foot row.
       await expect(page.getByRole('button', { name: /I'm OK/ })).toHaveCount(0)
-      await expect(page.getByTestId('papersrow')).toContainText('Nothing waiting') // the fixture queue is empty; the counts are unit tested (queueWords)
+      await expect(page.getByTestId('papers-card')).toContainText('Labs, photos and documents'); await expect(page.getByTestId('papers-review')).toHaveCount(0) // the fixture queue is empty; the counts are unit tested (TogetherList)
       if (SHOTS) { await page.locator('.bt .scroll').evaluate((el) => { el.scrollTop = 0 }); await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/family-${scheme}.png` }) }
       await page.goto('/#family/plan')
       await expect(page.locator('h1').first()).toBeVisible()
@@ -110,7 +110,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('Memories is a pushed page; the feed is off by default and on with the flag', async ({ page }) => {
       await openFamily(page)
-      await page.getByTestId('memoriesrow').getByRole('link').click()
+      await page.getByTestId('memoriesrow').click()
       await expect(page).toHaveURL(/#family\/memories$/)
       await expect(page.getByRole('link', { name: 'Back to Family' })).toBeVisible()
       await page.goto('/#family/feed')

@@ -6,7 +6,7 @@ declare const process: { env: Record<string, string | undefined> } // no @types/
 
 // v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, Listen and watch (on by default), crisis card from hotlines.json.
 // The crisis card's place on the page at scroll 0: the board's one row plus the note, measured at each width (see the layout test).
-const CRISIS_TOP_MAX = { 390: 1765, 450: 1725 } as const // D-135: the Exercises section (three cards with their own spheres, about 280 px) now sits above the mood row; measured 1760 at 390 and 1718 at 450 (was 1480 and 1448)
+const CRISIS_TOP_MAX = { 390: 1875, 450: 1835 } as const // S24: After a scare (about 106 px) now sits under the breathing card, so the crisis card is that much lower; measured 1868 at 390 and 1826 at 450 (was 1760 and 1718)
 const ROW_MAX = 232 // px: the board's tallest card (196) plus the Play button the radio cards add (44 + 10 gap), less the board's extra line (22): 228, and the card border
 
 // Specs do not depend on a live stream, so the stream address is stubbed with a local fixture: state logic only. 60 s of 8 kHz 8-bit silence, a WAV made here.

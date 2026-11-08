@@ -196,15 +196,10 @@ test('H6: no chips on the sub-screens, the page says whose it is', async ({ page
   }
 })
 
-test('H7: Pinned has Edit; the sheet changes the tiles', async ({ page }) => {
+test('H7: the inline Pinned row is always two tiles (S24: Next visit + Medicines, BP when due), with no Edit', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
-  await page.getByRole('button', { name: 'Edit' }).click()
-  await expect(page.getByRole('dialog', { name: 'Pinned' })).toBeVisible()
-  await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(1) // inline Pinned omits Steps and Medicines (the Today row and Browse show them) and the BP pin (the Readings card shows BP) unless it is due
-  await page.getByRole('checkbox', { name: 'Medicines' }).click() // frees a slot, changes nothing inline
-  await page.getByRole('checkbox', { name: 'Pulse' }).click()
-  await page.getByRole('button', { name: 'Close' }).click()
   await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(2)
+  await expect(page.getByTestId('glance').getByRole('button', { name: 'Edit' })).toHaveCount(0)
 })
 
 test('H9: Browse is five cards (four tall in two columns, Body wiki wide), each with a second line', async ({ page }) => {
@@ -222,14 +217,13 @@ test('H9: Browse is five cards (four tall in two columns, Body wiki wide), each 
   }
 })
 
-test('H10: For you is two videos side by side, because of you, then the log row; the video cards are tall', async ({ page }) => {
+test('H10: For you is a swipe row of videos (S24), the because read, then the log row; the video cards are tall', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await assertOrder(page, ['foryou-video', 'foryou-because', 'foryou-log'])
   const v = await box(page, '[data-testid=foryou-video]')
   const v2 = await box(page, '[data-testid=foryou-video-2]')
-  const scroller = await box(page, '.bt .scroll')
-  expect(Math.abs(v.y - v2.y), 'one row').toBeLessThanOrEqual(2) // D-135 board: two video cards in a row
-  expect(Math.abs(v.width + v2.width + 10 - (scroller.width - 32)), 'two cards fill the width').toBeLessThanOrEqual(6)
+  expect(Math.abs(v.y - v2.y), 'one row').toBeLessThanOrEqual(2)
+  expect(await page.locator('[data-testid^=foryou-video]').count()).toBeGreaterThanOrEqual(4)
   expect(v.height).toBeGreaterThanOrEqual(180)
 })
 
@@ -321,9 +315,7 @@ test('Jack stays clear of controls on the Health root and its sub-screens', asyn
 // Default pins, then Edit puts other tiles in the corner, then a booked visit with a long doctor's name makes the tiles taller.
 const pinChanges: { name: string; corner: string; flip: string[]; visit?: boolean }[] = [
   { name: 'default', corner: 'glance-visit', flip: [] },
-  { name: 'Pulse in the corner', corner: 'glance-heart_rate', flip: ['Next visit', 'Pulse'] },
-  { name: 'Weight in the corner', corner: 'glance-weight', flip: ['Medicines', 'Weight'] },
-  { name: 'three pins', corner: 'glance-visit', flip: ['Blood pressure'] },
+  // S24: the inline row has no Edit any more, so the Pulse / Weight / three-pins corner variants are gone
   { name: 'booked visit', corner: 'glance-visit', flip: [], visit: true }
 ]
 for (const set of pinChanges) {

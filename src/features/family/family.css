@@ -248,3 +248,29 @@
 .fm2-none { min-height: 56px; align-items: center; }
 .fm2-d .fm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .fm2-d { position: relative; }
+
+/* Papers actions (S24 lane E): two real buttons, 48 px tall. */
+.fm-pa { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.fm-pa button { min-height: 48px; border-radius: 999px; font: inherit; font-weight: 700; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; }
+.fm-pa-up { background: var(--green); color: var(--on-green); border: 0; }
+.fm-pa-scan { background: var(--card); color: var(--green); border: 1.5px solid var(--green); }
+
+/* Papers-first card and the 2x2 Together grid. Tokens only. */
+.fm-papers { background: var(--card); border: 2px solid var(--green); border-radius: 22px; padding: 16px; box-shadow: var(--shadow); }
+.fm-papers-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.fm-papers-h { display: block; font-size: 19px; font-weight: 700; }
+.fm-tile-s { display: block; font-size: 13px; line-height: 18px; color: var(--muted); font-weight: 400; overflow-wrap: anywhere; }
+.fm-pill { display: inline-flex; align-items: center; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 9px; background: var(--tint-amber); color: var(--tint-amber-ink); white-space: nowrap; }
+.fm-pill-done { background: var(--tint-green); color: var(--tint-green-ink); }
+.fm-doc { display: flex; gap: 10px; align-items: center; min-height: 52px; padding: 8px 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
+.fm-doc-t { flex: 1; min-width: 0; }
+.fm-doc-t b { display: block; font-size: 15px; font-weight: 600; }
+.fm-all { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; color: var(--green); text-decoration: none; }
+.fm-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fm-tile { border-radius: 22px; padding: 16px; min-height: 150px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; text-decoration: none; color: var(--ink); }
+.fm-tile b { display: block; font-size: 17px; font-weight: 700; }
+.fm-tile-n { color: var(--tint-green-ink); font-weight: 700; }
+.fm-tile[data-tint="amber"] { background: var(--tint-amber); }
+.fm-tile[data-tint="blue"] { background: var(--tint-blue); }
+.fm-tile[data-tint="green"] { background: var(--tint-green); }
+.fm-tile[data-tint="purple"] { background: var(--tint-purple); }

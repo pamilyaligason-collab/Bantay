@@ -5,7 +5,7 @@ import { LiteVideo } from '../../media/LiteVideo'
 import { playable, type Video } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
 
-const TOPIC_ICON: Record<string, IconName> = { Move: 'move', Safety: 'shield', Mind: 'brain', Diabetes: 'drop', Food: 'meal', 'Be prepared': 'bag', 'Repairs and improvements': 'home' }
+const TOPIC_ICON: Record<string, IconName> = { Move: 'move', Safety: 'shield', Mind: 'brain', Diabetes: 'drop', Food: 'meal', 'Be prepared': 'bag', 'Farming and DIY': 'home' }
 
 /** The Discover overview stores the tapped video's id here; Watch opens it once and clears it. */
 export const WATCH_PICK = 'dc.watch'

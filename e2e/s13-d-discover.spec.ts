@@ -70,11 +70,12 @@ test('Alam mo ba? (trivia on 28 Oct) asks the hand-computed question, and back l
   await expect(page.getByTestId('play-hub')).toBeVisible()
 })
 
-test('the season is one row on the overview that opens the season page', async ({ page }) => {
+test('the season row left Discover Today in S24 (D-152); the season page itself still opens', async ({ page }) => {
   await page.clock.setFixedTime(UNDAS)
   await page.goto('/#discover')
-  await expect(page.getByTestId('season-row')).toContainText('Undas')
-  await page.getByTestId('season-row').getByRole('link').click()
+  await expect(page.getByTestId('dc-learn')).toBeVisible()
+  await expect(page.getByTestId('season-row')).toHaveCount(0)
+  await page.goto('/#discover/season')
   await expect(page.getByTestId('season')).toContainText('Undas')
   await expect(page.getByTestId('season')).toContainText('Source:')
   await page.goto('/#discover/watch')
@@ -83,7 +84,8 @@ test('the season is one row on the overview that opens the season page', async (
 
 test('Listen: one at a time, and leaving the sub stops the voice', async ({ page }) => {
   await page.goto('/#discover/listen')
-  await expect(page.getByTestId('listen-guided').getByRole('button', { name: /^Play / })).toHaveCount(1) // the large guided video sits above the read-aloud rows
+  await expect(page.getByTestId('listen-shelf').getByRole('button', { name: /^Play / })).toHaveCount(4) // the 4 listen-shelf videos come first
+  await expect(page.getByTestId('listen-guided').getByRole('button', { name: /^Play / })).toHaveCount(1) // the Calm guided video sits below them, above the read-aloud rows
   const rows = page.getByTestId('listen').locator('.dc-item') // read-aloud rows only: the guided row's own Play button is not one of them
   const plays = rows.getByRole('button', { name: /^Play / })
   await expect(plays).toHaveCount(20)
@@ -100,7 +102,7 @@ test('Listen: one at a time, and leaving the sub stops the voice', async ({ page
 test('Watch: posters scroll inside their row, a poster picks a video, nothing is embedded before the tap', async ({ page }) => {
   await page.goto('/#discover/watch')
   await expect(page.getByTestId('watch')).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(33) // counted by hand: 19 in src/data/videos.json plus 14 in src/data/discover/ready.json (src/features/discover/watch/watch.test.tsx)
+  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(62) // counted by hand: 27 in src/data/videos.json plus 35 in src/data/discover/ready.json (src/features/discover/watch/watch.test.tsx)
   await expect(page.locator('iframe')).toHaveCount(0)
   await expect(page.getByTestId('live-tv')).toContainText('Coming soon')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
@@ -115,13 +117,13 @@ for (const scheme of ['light', 'dark'] as const) {
     test('discover root, undas', async ({ page }) => {
       await page.clock.setFixedTime(UNDAS)
       await page.goto('/#discover')
-      await expect(page.getByTestId('season-row')).toContainText('Undas')
+      await expect(page.getByTestId('dc-learn')).toBeVisible()
       await shot(page, 'discover-undas', scheme)
     })
     test('discover root, hot season', async ({ page }) => {
       await page.clock.setFixedTime(HEAT)
       await page.goto('/#discover')
-      await expect(page.getByTestId('season-row')).toContainText('Hot season')
+      await expect(page.getByTestId('dc-learn')).toBeVisible()
       await shot(page, 'discover-heat', scheme)
     })
     test('learn shelves', async ({ page }) => {
@@ -133,7 +135,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('listen, one playing', async ({ page }) => {
       await page.clock.setFixedTime(UNDAS)
       await page.goto('/#discover/listen')
-      await page.getByRole('button', { name: /^Play / }).nth(1).click()
+      await page.locator('.dc-item').getByRole('button', { name: /^Play / }).first().click() // the first read-aloud row (the video posters above it are not)
       await expect(page.getByRole('button', { name: /^Stop / })).toHaveCount(1)
       await shot(page, 'listen', scheme)
     })

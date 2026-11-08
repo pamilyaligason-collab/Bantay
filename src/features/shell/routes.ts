@@ -40,5 +40,5 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
 export const hasOwnHeader = (h: string) => {
   const k = canonicalHash(h).replace(/^#/, '')
   if (k === 'safety/world') return false // World is the other half of the Safety root switch
-  return k === 'privacy' || k === 'sharing' || k === 'medid' || k === 'gobag' || k === 'docs' || k === 'weather' || k === 'calm' || k.startsWith('weather?') || (k.includes('/') && !/^family\/(plan|people|messages)$/.test(k))
+  return k === 'privacy' || k === 'sharing' || k === 'medid' || k === 'gobag' || k === 'docs' || k === 'weather' || k === 'calm' || k.startsWith('weather?') || (k.includes('/') && !/^family\/(plan|calendar|people|messages)$/.test(k))
 }

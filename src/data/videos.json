@@ -1,12 +1,12 @@
 {
-  "_note": "Official videos, ids checked against YouTube oEmbed (2026-10-21; Move entries 2026-10-22; Heart, Sleep and handwashing entries and every length 2026-11-06, author checked against the source named). minutes is rounded from the length YouTube reports for the video. An entry with placeholder: true never loads a player.",
+  "_note": "Official videos, ids checked against YouTube oEmbed (2026-10-21; Move entries 2026-10-22; Heart, Sleep and handwashing entries and every length 2026-11-06, author checked against the source named). minutes is rounded from the length YouTube reports for the video. An entry with placeholder: true never loads a player. 2026-11-08 (S24): eight hand-picked health videos appended (Doc Willie Ong, Mayo Clinic, DOH), checked against oEmbed the same way, lengths from the watch page rounded to whole minutes; the DOH source is now the full oEmbed name.",
   "videos": [
     { "id": "M4ACYp75mjU", "placeholder": false, "title": "Hands-only CPR", "topic": "Safety", "source": "American Heart Association", "minutes": 1 },
     { "id": "C8EO3SM0Y_w", "placeholder": false, "title": "BE FAST: signs of a stroke", "topic": "Safety", "source": "American Heart Association", "minutes": 1 },
     { "id": "0xubzGiAjEU", "placeholder": false, "title": "Heat exhaustion and heatstroke", "topic": "Safety", "source": "Mayo Clinic", "minutes": 1 },
     { "id": "gDBzUF4E1IU", "placeholder": false, "title": "Diabetic emergency: what to do", "topic": "Diabetes", "source": "British Red Cross", "minutes": 1 },
     { "id": "b-uX6N4RZjg", "placeholder": false, "title": "Five a day: eating more fruit and vegetables", "topic": "Food", "source": "NHS", "minutes": 3 },
-    { "id": "AQimPkd7g5I", "placeholder": false, "title": "Lusog-Isip: looking after your mental health", "topic": "Mind", "source": "DOH Philippines", "minutes": 1 },
+    { "id": "AQimPkd7g5I", "placeholder": false, "title": "Lusog-Isip: looking after your mental health", "topic": "Mind", "source": "Department of Health (Philippines)", "minutes": 1 },
     { "id": "G1lwVhnnkoU", "placeholder": false, "title": "10-minute workout for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": 10 },
     { "id": "Ev6yE55kYGw", "placeholder": false, "title": "15-minute workout for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": 15 },
     { "id": "KcdkySvCRCc", "placeholder": false, "title": "6 flexibility exercises for older adults", "topic": "Move", "source": "National Institute on Aging", "minutes": 18 },
@@ -19,6 +19,14 @@
     { "id": "ubG8PlfFjXw", "placeholder": false, "title": "Lifestyle changes for managing high blood pressure", "topic": "Safety", "source": "American Heart Association", "minutes": 1 },
     { "id": "SMcIfrki97k", "placeholder": false, "title": "Cholesterol numbers", "topic": "Food", "source": "Mayo Clinic", "minutes": 2 },
     { "id": "Ih_4BHoZv0U", "placeholder": false, "title": "Mayo Clinic Minute: the role of cholesterol in heart health", "topic": "Food", "source": "Mayo Clinic", "minutes": 1 },
-    { "id": "3PmVJQUCm4E", "placeholder": false, "title": "How to wash your hands with soap and water", "topic": "Safety", "source": "World Health Organization", "minutes": 1 }
+    { "id": "3PmVJQUCm4E", "placeholder": false, "title": "How to wash your hands with soap and water", "topic": "Safety", "source": "World Health Organization", "minutes": 1 },
+    { "id": "X8Q2W50NsKU", "placeholder": false, "title": "14 tips to control high blood pressure (in Filipino)", "topic": "Safety", "source": "Doc Willie Ong", "minutes": 14 },
+    { "id": "5R1ORrDOrn4", "placeholder": false, "title": "10 tips to control diabetes (in Filipino)", "topic": "Diabetes", "source": "Doc Willie Ong", "minutes": 1 },
+    { "id": "NbaU_DqwULw", "placeholder": false, "title": "Caring for someone with Alzheimer's or dementia (in Filipino)", "topic": "Mind", "source": "Doc Willie Ong", "minutes": 11 },
+    { "id": "NUxdxoIdlA8", "placeholder": false, "title": "How to get a more accurate blood pressure reading", "topic": "Safety", "source": "Mayo Clinic", "minutes": 1 },
+    { "id": "nxIJeHWlhF4", "placeholder": false, "title": "How to measure your blood sugar", "topic": "Diabetes", "source": "Mayo Clinic", "minutes": 4 },
+    { "id": "B10sth4zjuI", "placeholder": false, "title": "First aid for a burn", "topic": "Safety", "source": "Mayo Clinic", "minutes": 2 },
+    { "id": "2dn13zneEjo", "placeholder": false, "title": "Mayo Clinic Minute: the Heimlich maneuver", "topic": "Safety", "source": "Mayo Clinic", "minutes": 1 },
+    { "id": "HhHTnDOtxe8", "placeholder": false, "title": "Controlling diabetes and high blood pressure to prevent complications (in Filipino)", "topic": "Diabetes", "source": "Department of Health (Philippines)", "minutes": 1 }
   ]
 }

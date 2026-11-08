@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { skipOnboarding, stubWindy } from './helpers'
 import { seed } from './fixtures/s16/today'
 import { openMeteoFixture } from '../src/features/weather/fixture'
-import { assertHero, assertJackClear, assertJackHit, type JackAllow, FIXED_CLOCKS, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, outsideWarning, setScheme, settled, shotsLightDark } from './v13'
+import { assertHero, assertJackClear, assertJackHit, FAMILY_ALLOW, type JackAllow, FIXED_CLOCKS, assertNarrow, assertNoSideways, assertTargets, assertTextContrast, outsideWarning, setScheme, settled, shotsLightDark } from './v13'
 
 // v13 Phase 0 foundation: the shell and the four tab roots Phase 0 touched, light and dark at 390x844, then the 195 px narrow check.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
@@ -64,10 +64,12 @@ const ROOTS = ['today', 'health', 'discover', 'family', 'safety'] as const
 
 // S3 / S11: no control under Jack at scroll 0. Roots and sub-screens that still fail name the lane that fixes them; the fixme goes when that lane lands.
 // D-122: with no Activity data the card hugs its line, so a People row (`.rw-main`) may sit under Jack at scroll 0 depending on the viewport height (rows are under him at 450x950, 925, 900 and 844, clear at about 997). Every other control must still clear him.
-const FAMILY_ROWS = outsideWarning('.rw-main') // never a row inside a warning or SOS card
+// S24: Family's Together list is a 2x2 grid of whole-card tiles (a.fm-tile, board S24Family); they and the rows keep the named FAMILY_ALLOW whole-card allowance, hit-tested (more than half stays tappable)
 // D-135 Discover (Today view): the whole-card links (hero card, video cards, Learn cards, recipe card) may lose part of their box to Jack, hit-tested by assertJackHit (more than half stays tappable, measured 4 to 10 %); every small control still has no allowance.
 const DISCOVER_CARDS: JackAllow[] = [{ name: 'Hero card', sel: 'a.dc-herocard' }, { name: 'Video card', sel: 'a.dc-vc' }, { name: 'Learn card', sel: 'a.dc-lc' }, { name: 'Recipe card', sel: 'a.dc-rcard-t' }]
-const jackRest = (page: import('@playwright/test').Page, route: string) => route === '#discover' ? assertJackHit(page, DISCOVER_CARDS, 'discover at rest') : assertJackClear(page, { at: 'rest', allow: route === '#family' ? FAMILY_ROWS : undefined })
+// S24: Listen stacks the listen shelf and the Calm guided video above the read-aloud rows; a whole-poster play button may lose part of its box to Jack (more than half stays tappable)
+const LISTEN_POSTERS: JackAllow[] = [{ name: 'Video poster', sel: '.dc-bigrow button.lv-play' }]
+const jackRest = (page: import('@playwright/test').Page, route: string) => route === '#discover' ? assertJackHit(page, DISCOVER_CARDS, 'discover at rest') : route === '#discover/listen' ? assertJackHit(page, LISTEN_POSTERS, 'listen at rest') : route === '#family' ? assertJackHit(page, FAMILY_ALLOW, 'family at rest') : assertJackClear(page, { at: 'rest' })
 const JACK_REST_KNOWN: Record<string, string> = {
 }
 for (const route of [...ROOTS.map((r) => `#${r}`), '#discover/listen', '#discover/play', '#discover/news', '#medid', '#safety/sources']) {

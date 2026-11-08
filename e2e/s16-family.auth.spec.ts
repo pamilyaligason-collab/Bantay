@@ -3,7 +3,7 @@ import { skipOnboarding } from './helpers'
 import { full } from './fixtures/s16/family'
 import { assertTargets, assertTextContrast, assertNoWrappedButtons, setScheme } from './v13'
 
-// v13 lane F moved the root checks to e2e/v13-family.auth.spec.ts. Kept here: the week calendar (now inside Plan), the Papers redirect, no wrapped buttons.
+// v13 lane F moved the root checks to e2e/v13-family.auth.spec.ts. Kept here: the week calendar (now on #family/calendar, D-152), the Papers redirect, no wrapped buttons.
 for (const scheme of ['light', 'dark'] as const) {
   test.describe(scheme, () => {
     test.use({ viewport: { width: 390, height: 844 }, colorScheme: scheme })
@@ -13,9 +13,9 @@ for (const scheme of ['light', 'dark'] as const) {
     })
     const go = async (page: Page) => { await full(page); await setScheme(page, scheme) }
 
-    test('Plan holds the week calendar; Week and Month switch; targets and contrast', async ({ page }) => {
+    test('Calendar page holds the week calendar; Week and Month switch; targets and contrast', async ({ page }) => {
       await go(page)
-      await page.goto('/#family/plan')
+      await page.goto('/#family/calendar')
       const cal = page.getByTestId('calendar')
       await expect(cal.getByRole('group', { name: 'Days of this week' })).toBeVisible() // week is the default
       await expect(cal.getByText('School program')).toBeVisible()

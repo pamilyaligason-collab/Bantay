@@ -6,12 +6,13 @@ import type { IconName } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import { useStorm } from '../today/useStorm'
 import { useWarnings } from '../today/WarningCard'
-import { useDoseLine } from './GlanceGrid'
+import { useTodayDoses } from './GlanceGrid'
+import type { DoseState } from './meds'
 import { toCanonicalReading, type Reading } from './ranges'
 import { latestSteps } from './stepsDay'
 import { useActivity } from './useActivity'
 import { useQuestions } from './useQuestions'
-import { useVisits } from './useVisits'
+import { useVisitsState } from './useVisits'
 import { nextVisitLine } from './visitsLogic'
 import './health.css'
 
@@ -21,6 +22,15 @@ export function bpThisWeek(readings: Reading[], now = new Date()): string | null
   if (!top) return null
   const dia = readings.find((r) => r.test === 'bp_diastolic' && Math.abs(Date.parse(r.takenAt) - Date.parse(top.takenAt)) <= 60_000)
   return dia ? `${top.value}/${dia.value}` : String(top.value)
+}
+
+export const clock = (at: number) => `${Math.floor(at / 60) % 12 || 12}${at % 60 ? `:${String(at % 60).padStart(2, '0')}` : ''} ${at < 720 ? 'AM' : 'PM'}`
+/** The Medicines tile's words: the first dose not yet taken or skipped (an overdue one counts) and how many of today's are done. Nothing due today reads "Nothing due" with the sub-line "Today". */
+export function doseSummary(doses: DoseState[]): { value: string; sub: string } {
+  if (!doses.length) return { value: 'Nothing due', sub: 'Today' }
+  const next = doses.find((d) => d.state === 'pending')
+  const taken = doses.filter((d) => d.state === 'taken').length
+  return { value: next ? clock(next.at) : 'All done', sub: `${next ? 'Next dose · ' : ''}${taken} of ${doses.length} taken` }
 }
 
 /** Saved questions for the next visit (the Visits screen's own list). */
@@ -38,7 +48,6 @@ const METRIC: Partial<Record<PinCode, { kicker: string; unit: string; tint: Tint
   fasting_glucose: { kicker: 'Fasting sugar', unit: 'mg/dL', tint: 'amber', icon: 'drop' }, heart_rate: { kicker: 'Pulse', unit: 'bpm', tint: 'red', icon: 'heart' }, weight: { kicker: 'Weight', unit: 'kg', tint: 'teal', icon: 'scale' }
 }
 export const MAX_PINS = 4
-const TODAY_COVERS: PinCode[] = ['steps', 'meds'] // shown by the Today row and Browse; a pin that can nudge (BP, pulse, sugar, weight) always stays, so its Due pill and mover show
 /** The stored list in its stored order, known codes only, no repeats; more than MAX_PINS in kv (an older save) shows the first four and is left as it is until the next change. */
 /** Which pinned metric moves first when several are due. */
 const NUDGE_ORDER: PinCode[] = ['bp_systolic', 'fasting_glucose', 'heart_rate', 'weight']
@@ -46,9 +55,10 @@ const cleanPins = (v: unknown): PinCode[] => (Array.isArray(v) ? [...new Set(v.f
 
 /** Pinned: live tiles chosen with Edit (kv health.pins, default BP, Medicines, Steps, Next visit). Real data only; an empty tile says so and offers its first step. */
 export function PinnedTiles({ personId, readings, canLog = true, inline = false }: { personId: string; readings: Reading[]; canLog?: boolean; inline?: boolean }) {
-  const doses = useDoseLine(personId)
+  const today = useTodayDoses(personId)
   const acts = useActivity(personId)
-  const visit = nextVisitLine(useVisits(personId))
+  const vs = useVisitsState(personId)
+  const visit = nextVisitLine(vs.list)
   const asks = useQuestionCount(personId)
   const [raw, setRaw, loaded] = useKv<unknown>(PIN_KEY, DEFAULT_PINS)
   const [editing, setEditing] = useState(false)
@@ -57,17 +67,19 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
   const pins = cleanPins(raw)
   const bp = useMemo(() => bpThisWeek(readings), [readings])
   const steps = useMemo(() => latestSteps(acts), [acts])
-  const none = doses === 'No medicines yet'
+  const none = !!today && !today.doses.length && !today.hasMeds
+  const dose = today ? doseSummary(today.doses) : null
   // D-125: a Due pill (and the one mover) only where this person can log and no warning or storm shows (as My day); steps, medicines and visits never nudge
   const now = new Date()
   const warn = useWarnings()
   const storm = useStorm()
   const calm = canLog && !warn.onScreen && !storm
   const dueOf = (code: PinCode) => calm && (code === 'bp_systolic' ? bpDue(readings, now) : code === 'fasting_glucose' || code === 'heart_rate' || code === 'weight' ? metricDue(readings, code, now) : false)
-  const mover = useNudgeMover('health', loaded ? pickMover(NUDGE_ORDER.filter((c) => pins.includes(c)).map((c) => ({ key: c, due: dueOf(c) })), false) : null) // fixed priority, not the order the pins were saved in
+  const dueMetric = NUDGE_ORDER.find((c) => pins.includes(c) && dueOf(c)) // inline: the one pinned metric that gets the second place
+  const mover = useNudgeMover('health', loaded ? pickMover(NUDGE_ORDER.filter((c) => (inline ? c === dueMetric : pins.includes(c))).map((c) => ({ key: c, due: dueOf(c) })), false) : null) // fixed priority, not the order the pins were saved in
   const tile = (code: PinCode) => {
     if (code === 'bp_systolic') return <PreviewTile key={code} testId="glance-progress" tint="blue" kicker="Blood pressure" value={bp ?? '--/--'} valueSize="md" sub={bp ? 'This week' : 'None this week'} action={bp ? 'Open' : 'Log now'} href="#health/metric/bp_systolic" due={dueOf(code)} move={mover === code} icon="gauge" />
-    if (code === 'meds') return <PreviewTile key={code} testId="glance-meds" tint="green" kicker="Medicines" value={none ? 'None added' : doses ?? ' '} valueSize="md" sub={none ? 'Add yours to get reminders' : undefined} action={none ? 'Add or scan' : 'Open'} href="#health/meds" />
+    if (code === 'meds') return <PreviewTile key={code} testId="glance-meds" tint="green" kicker="Medicines" value={none ? 'None added' : dose?.value ?? ' '} valueSize="md" sub={none ? 'Add yours to get reminders' : dose?.sub} action={none ? 'Add or scan' : 'Open'} href="#health/meds" />
     if (code === 'steps') {
       return steps
         ? <PreviewTile key={code} testId="glance-steps" tint="teal" kicker="Steps" value={steps.total.toLocaleString('en-US')} sub={steps.today ? 'Today' : `on ${steps.day}`} action="Open" href="#health/metric/steps" />
@@ -86,8 +98,10 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
     if (pins.length >= MAX_PINS) { setFull(true); return }
     setRaw(cleanPins([...pins, c]))
   }
-  const shown = inline ? pins.filter((c) => !TODAY_COVERS.includes(c) && (c !== 'bp_systolic' || dueOf(c))) : pins // the Readings card already shows blood pressure (headline or sub-tile): its pin returns only when BP is due, for the Due pill and nudge // inline (in the Readings card): everything but steps and medicines, which the Today row and Browse already show
-  const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
+  // S24 (inline, in the Readings card): always two tiles, never a gap. Next visit + (most due pinned metric, else Medicines); no booked visit gives Medicines + (due metric, else Steps). The pins list picks which metrics may nudge.
+  const inlinePair = (): PinCode[] => visit?.text.startsWith('Next visit: ') ? ['visits', dueMetric ?? 'meds'] : ['meds', dueMetric ?? 'steps']
+  const shown = inline ? inlinePair() : pins
+  const grid = <div className="pt-grid pn-grid" role="list" aria-label="Pinned" data-testid="pinned">{loaded && (!inline || vs.ready) ? shown.map((c) => <div key={c} role="listitem" className="pn-cell">{tile(c)}</div>) : null}</div>
   const empty = pins.length === 0 && <p className="sub">Nothing pinned. Tap Edit to choose.</p>
   const sheet = (
     <>
@@ -108,10 +122,8 @@ export function PinnedTiles({ personId, readings, canLog = true, inline = false 
   )
   if (inline) return (
     <div className="rc-pins" data-testid="glance">
-      <div className="rc-pins-h"><span className="sub">Pinned</span><button type="button" className="rc-pins-edit" onClick={() => setEditing(true)}>Edit pins</button></div>
-      {shown.length > 0 && grid}
-      {empty}
-      {sheet}
+      <div className="rc-pins-h"><span className="sub">Coming up</span></div>
+      {grid}
     </div>
   )
   return (

@@ -228,15 +228,15 @@ test.describe('Health, Pinned', () => {
     await seed(page, 'bantay-health', { people: [{ id: 'me', name: 'Rey' }], readings: [...bp, { personId: 'me', takenAt: ago(20), test: 'weight', value: 71, unit: 'kg' }] })
     await seed(page, 'bantay', { kv: [{ key: 'health.pins', value: ['bp_systolic', 'weight', 'steps', 'meds'] }] })
     await page.reload() // a new app open
-    await expect(page.getByTestId('glance-weight')).toBeVisible()
+    await expect(page.getByTestId(o.bp ? 'glance-weight' : 'glance-progress')).toBeVisible() // S24: the inline row has one place for the most due pinned metric, BP first
     await setScheme(page, o.scheme ?? 'light')
     await settled(page)
   }
 
-  test('blood pressure moves first, the weight pill stays still, once per open', async ({ page }) => {
+  test('blood pressure moves first and takes the one place, once per open', async ({ page }) => {
     await open(page, 390)
     await expect(page.getByTestId('glance-progress').locator('.nd-due')).toHaveText('Due')
-    await expect(page.getByTestId('glance-weight').locator('.nd-due')).toHaveText('Due') // an earlier weight, none this week
+    await expect(page.getByTestId('glance-weight')).toHaveCount(0) // weight is due too, but the one place goes to BP (S24: two tiles always)
     await expect(page.getByTestId('tk-steps').locator('.nd-due')).toHaveCount(0)
     await expect(movers(page)).toHaveCount(1)
     await expect(movers(page)).toHaveAttribute('data-testid', 'glance-progress')

@@ -12,12 +12,12 @@ describe('videos playlist', () => {
     expect(playable({ ...real, placeholder: true })).toBe(false)
     expect(playable({ ...real, id: 'short' })).toBe(false)
   })
-  it('the nineteen official videos (twelve first, seven blood pressure, cholesterol and handwashing added 2026-11-06) are in and playable, every length a positive whole number', () => {
-    expect(VIDEOS).toHaveLength(19)
+  it('the 27 official videos (twelve first, seven blood pressure, cholesterol and handwashing added 2026-11-06, eight Filipino and Mayo Clinic videos added 2026-11-08) are in and playable, every length a positive whole number', () => {
+    expect(VIDEOS).toHaveLength(27)
     expect(VIDEOS.every(playable)).toBe(true)
     expect(videosAvailable()).toBe(true)
     expect(VIDEOS.every((v) => Number.isInteger(v.minutes) && v.minutes! > 0)).toBe(true)
-    expect(forTopic('Safety').length).toBe(8)
+    expect(forTopic('Safety').length).toBe(12)
   })
   it('topics filter the list', () => {
     expect(TOPICS[0]).toBe('All')

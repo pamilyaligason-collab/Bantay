@@ -62,7 +62,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('Plan: add an event, a task and a note offline, they survive a reload, and the page is accessible', async ({ page, context }) => {
-      await page.getByTestId('planrow').getByRole('link').click()
+      await page.getByTestId('planrow').click()
       await expect(page).toHaveURL(/#family\/plan$/)
       await context.setOffline(true)
       await expect(page.getByText(/^Add a reminder for /).first()).toBeVisible() // the calendar and the plan list both say it

@@ -12,6 +12,7 @@ import { LargeTitle, Skeleton, wireMotion } from '../features/look'
 import MyDay from '../features/today/MyDay'
 import CalmCard from '../features/today/CalmCard'
 import TodayNews from '../features/today/TodayNews'
+import Lotto from '../features/today/Lotto'
 import BatteryCard from '../features/today/BatteryCard'
 import YourNumbers from '../features/today/YourNumbers'
 import { dateKicker, greeting } from '../features/today/greeting'
@@ -22,7 +23,7 @@ import { useActing } from '../features/viewas/viewAs'
 import PlaceNotice from '../features/family/PlaceNotice'
 import '../features/today/today.css'
 
-/** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), My day (How are you? opens the mood faces, Log something else opens More, breathing, the plan, a missed medicine of someone else), Calm, Your numbers, News (3 newest headlines, hidden when none are fresh; below Your numbers, S22 batch 5), then More (alerts setup, banners, notices).
+/** Today: warning band (only when one is active), weather (greeting, bell and M live in the top bar), the newest family alert, Next up + medicines to check (none when nothing is next: the weather card expands instead), My day (How are you? opens the mood faces, Log something else opens More, breathing, the plan, a missed medicine of someone else), Calm, Your numbers, News (up to 5 headlines, health and weather first, hidden when none are fresh) and Lotto results (latest PCSO draws, hidden when none; both below Your numbers), then More (alerts setup, banners, notices).
  *  The video lives in Health; all news is Discover > News (D-142).
  *  The greeting and date live in the top bar, so the page heading is for screen readers only. */
 export default function Today() {
@@ -76,7 +77,7 @@ export default function Today() {
       <BatteryCard />
       <CalmCard />
       <YourNumbers />
-      <TodayNews />
+      <TodayNews /><Lotto />
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
       <NoticeStack />
       {toast && <div className="toast" role="status">{toast}</div>}

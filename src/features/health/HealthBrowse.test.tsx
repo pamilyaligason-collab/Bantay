@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
 import { ldb } from '../log/store'
@@ -15,6 +15,34 @@ const show = (readings: Reading[] = []) => render(<HealthBrowse personId="p1" re
 
 beforeEach(async () => { await Promise.all([db.kv.clear(), ldb.medications.clear(), ldb.meds.clear(), ldb.activity.clear(), vdb.appointments.clear(), vdb.followUps.clear()]) })
 afterEach(cleanup)
+
+describe('Browse photos (S24)', () => {
+  it('each card has its stored photo under a gradient, with a credit line and an outside link per photo', () => {
+    show()
+    const files: Record<string, string> = { labs: 'labs', meds: 'meds', visits: 'clinic', move: 'walk', body: 'body' }
+    for (const [k, f] of Object.entries(files)) {
+      const card = screen.getByTestId(`browse-${k}`)
+      expect(card.querySelector('img.hb-img')!.getAttribute('src')).toBe(`/img/browse/${f}.webp`)
+      expect(card.querySelector('.hb-shade')).toBeTruthy()
+      expect(card.getAttribute('data-photo')).toBe('on')
+    }
+    const links = Array.from(screen.getByTestId('browse-credits').querySelectorAll('a'))
+    expect(links).toHaveLength(10) // per photo: the Commons file page and the licence deed
+    for (const a of links) { expect(a.getAttribute('href')).toMatch(/^https:\/\/(commons\.wikimedia\.org\/wiki\/File:|creativecommons\.org\/)/); expect(a.getAttribute('rel')).toContain('noopener') }
+    expect(links.filter((a) => a.getAttribute('href')!.includes('commons.wikimedia.org'))).toHaveLength(5)
+    expect(links.map((a) => a.textContent)).toEqual(expect.arrayContaining(['CC0', 'CC BY-SA 4.0']))
+    expect(screen.getByTestId('browse-credits').textContent).toContain('cropped')
+  })
+  it('a photo that cannot load leaves a plain tint: no image, no gradient, dark text', () => {
+    show()
+    const card = screen.getByTestId('browse-labs')
+    fireEvent.error(card.querySelector('img.hb-img')!)
+    expect(card.querySelector('img')).toBeNull()
+    expect(card.querySelector('.hb-shade')).toBeNull()
+    expect(card.getAttribute('data-photo')).toBe('off')
+    expect(card.textContent).toContain('Labs') // the card still works
+  })
+})
 
 describe('Browse', () => {
   it('five cards in order with their doors; Body wiki is the wide one with no preview', () => {
