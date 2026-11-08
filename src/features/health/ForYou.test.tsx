@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { vdb } from './visitsStore'
 import { clipReasons, ForYou, forYouClips, MAX_CLIPS } from './ForYou'
@@ -31,10 +31,18 @@ describe('For you', () => {
 })
 
 describe('For you order', () => {
-  it('video, because of you, then the log row', () => {
+  it('video, because of you, then the log row; four videos show, Show 2 more adds the last two (D-156)', () => {
     show(r)
-    const ids = Array.from(screen.getByTestId('for-you').querySelectorAll('[data-testid^="foryou-"]')).map((e) => e.getAttribute('data-testid'))
-    expect(ids).toEqual(['foryou-video', 'foryou-video-2', 'foryou-video-3', 'foryou-video-4', 'foryou-video-5', 'foryou-video-6', 'foryou-because', 'foryou-log'])
+    const ids = () => Array.from(screen.getByTestId('for-you').querySelectorAll('[data-testid^="foryou-"]')).map((e) => e.getAttribute('data-testid')).filter((x) => x !== 'foryou-videos')
+    expect(ids()).toEqual(['foryou-video', 'foryou-video-2', 'foryou-video-3', 'foryou-video-4', 'foryou-because', 'foryou-log'])
+    fireEvent.click(screen.getByRole('button', { name: 'Show 2 more' }))
+    expect(ids()).toEqual(['foryou-video', 'foryou-video-2', 'foryou-video-3', 'foryou-video-4', 'foryou-video-5', 'foryou-video-6', 'foryou-because', 'foryou-log'])
+    expect(screen.getByRole('button', { name: 'Show less' })).toBeTruthy()
+  })
+  it('no swipe row: the videos are a 2-column grid, not a scrolling strip', () => {
+    show(r)
+    expect(screen.getByTestId('for-you').querySelector('.fy-vids')).toBeNull()
+    expect(within(screen.getByTestId('foryou-videos')).getByRole('group', { name: 'Videos for you' }).classList.contains('more-grid')).toBe(true)
   })
 })
 
@@ -88,11 +96,10 @@ describe('For you videos show their still, length and reason', () => {
 })
 
 describe('For you reads (S24)', () => {
-  it('the video row is a list of 4 to 6 cards, each with a reason', () => {
+  it('the video grid shows 4 cards, each with a reason', () => {
     show(r)
-    const cards = within(screen.getByRole('list', { name: 'Videos for you' })).getAllByRole('listitem')
-    expect(cards.length).toBeGreaterThanOrEqual(4)
-    expect(cards.length).toBeLessThanOrEqual(6)
+    const cards = Array.from(within(screen.getByRole('group', { name: 'Videos for you' })).getAllByRole('link'))
+    expect(cards).toHaveLength(4)
     for (const c of cards) expect(c.querySelector('.pt-k')!.textContent).toBeTruthy()
   })
   it('visit questions read link appears only with a booked next visit and goes to #health/visits', async () => {
@@ -119,7 +126,11 @@ describe('For you hands the video to Watch', () => {
     expect(sessionStorage.getItem('dc.watch')).toBeNull()
     fireEvent.click(card)
     expect(sessionStorage.getItem('dc.watch')).toBe(id)
-    const more = within(screen.getByTestId('for-you')).getByRole('link', { name: 'More' })
-    expect(more.getAttribute('href')).toBe('#discover/watch')
+    const more = within(screen.getByTestId('for-you')).getByRole('button', { name: 'More' })
+    const target = document.createElement('section'); target.id = 'health-videos'
+    const scroll = vi.fn(); target.scrollIntoView = scroll; document.body.appendChild(target)
+    fireEvent.click(more)
+    expect(scroll).toHaveBeenCalledTimes(1) // More goes to the Health videos section, not to Discover
+    target.remove()
   })
 })

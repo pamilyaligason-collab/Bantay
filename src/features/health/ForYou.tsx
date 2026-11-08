@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Icon } from '../shell/Icon'
-import { Section } from '../look'
+import { MoreGrid, Section } from '../look'
 import { videoOfTheDay } from '../today/videos'
 import type { Attention } from './attention'
 import { NudgeRow } from './GlanceGrid'
 import { WATCH_PICK } from '../discover/watch/Screen'
 import { articleHref } from './library/medline'
-import { playable, VIDEOS, type Video } from './library/videosLogic'
+import { prefersReducedMotion } from '../look/useReducedMotion'
+import { DISCOVER_SET, playable, type Video } from './library/videosLogic'
 import { metricLabel } from './model'
 import { useVisits } from './useVisits'
 import { nextVisitLine } from './visitsLogic'
@@ -57,16 +58,19 @@ function Clip({ video, reason, testId }: { video: Video; reason: string; testId:
   )
 }
 
-/** For you, top to bottom: today's videos (stills, two across), "Because of you" tied to the lead result, then the small log row. No data means no log row and no article. */
+/** "More" scrolls to the Health videos section lower on this screen (id health-videos). */
+const toVideos = () => document.getElementById('health-videos')?.scrollIntoView?.({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' })
+
+/** For you, top to bottom: today's videos (stills, two across, four then Show more), "Because of you" tied to the lead result, then the small log row. No data means no log row and no article. */
 export function ForYou({ personId, readings, attention, canLog, onAdd }: { personId: string; readings: Reading[]; attention: Attention | null; canLog: boolean; onAdd: (code: 'bp' | 'fasting_glucose') => void }) {
-  const clips = useMemo(() => forYouClips(VIDEOS.filter(playable), clipReasons(readings, attention)), [readings, attention])
+  const clips = useMemo(() => forYouClips(DISCOVER_SET.filter(playable), clipReasons(readings, attention)), [readings, attention])
   const label = attention ? metricLabel(attention.reading.test) : null
   const next = nextVisitLine(useVisits(personId))
   const visit = next?.text.startsWith('Next visit: ') ? next : null // a follow-up due is not a booked visit
   return (
-    <Section title="For you" testId="for-you" link={{ href: '#discover/watch', label: 'More' }}>
+    <Section title="For you" testId="for-you" link={{ onClick: toVideos, label: 'More' }}>
       <div className="fy-stack">
-        {clips.length > 0 && <div className="fy-vids" role="list" aria-label="Videos for you">{clips.map((c, i) => <div key={c.video.id} role="listitem" className="fy-item"><Clip video={c.video} reason={c.reason} testId={i ? `foryou-video-${i + 1}` : 'foryou-video'} /></div>)}</div>}
+        {clips.length > 0 && <MoreGrid label="Videos for you" testId="foryou-videos">{clips.map((c, i) => <Clip key={c.video.id} video={c.video} reason={c.reason} testId={i ? `foryou-video-${i + 1}` : 'foryou-video'} />)}</MoreGrid>}
         {(label || visit) && (
           <div className="fy-reads">
             {label && (
