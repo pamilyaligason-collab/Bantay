@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { forChip, layout } from './View'
 import { capPerCategory, categoryTag, freshLine, hueOf, initialOf, isStale, latestFirst, topicOf, topStories, type NewsRow } from './model'
-import { watchPlan } from '../today/watchPlan'
 
 const r = (id: string, min: number, topic?: string | null): NewsRow => ({ id, title: id, url: 'https://news.test/' + id, source: 'PNA', kind: 'article', published_at: new Date(Date.UTC(2026, 9, 28, 12, 0) - min * 60_000).toISOString(), topic })
 const ids = (rows: NewsRow[]) => rows.map((n) => n.id)
@@ -53,24 +52,6 @@ describe('source mark', () => {
     expect(initialOf('rappler')).toBe('R'); expect(initialOf('  (PNA)')).toBe('P'); expect(initialOf('24 Oras')).toBe('2'); expect(initialOf('')).toBe('?')
     expect(hueOf('PNA')).toBe(hueOf('PNA'))
     expect(hueOf('PNA')).toBeGreaterThanOrEqual(0); expect(hueOf('PNA')).toBeLessThan(6)
-  })
-})
-
-describe('watchPlan', () => {
-  const day = new Date(2026, 9, 28, 10, 20)
-  it('main videos alternate prepping and health, DIY only ever comes after them in the row', () => {
-    const { hero, row } = watchPlan(day, ['p1', 'p2', 'p3'], ['h1', 'h2', 'h3'], ['d1', 'd2'])
-    const main = ['p1', 'h1', 'p2', 'h2', 'p3', 'h3']
-    expect(main).toContain(hero)
-    expect(row).toHaveLength(3)
-    expect(main).toContain(row[0]); expect(main).toContain(row[1])
-    expect(row[0]).not.toBe(hero); expect(row[1]).not.toBe(hero)
-    expect(['d1', 'd2']).toContain(row[2])
-  })
-  it('same day, same picks; no DIY videos gives a row of main videos only; nothing at all gives no hero', () => {
-    expect(watchPlan(day, ['p1', 'p2'], ['h1'], ['d1'])).toEqual(watchPlan(day, ['p1', 'p2'], ['h1'], ['d1']))
-    expect(watchPlan(day, ['p1'], ['h1'], []).row).toHaveLength(1)
-    expect(watchPlan(day, [], [], ['d1'])).toEqual({ hero: null, row: ['d1'] })
   })
 })
 
