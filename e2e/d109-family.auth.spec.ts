@@ -110,7 +110,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     // D-128: Jack covers no small control and no section link; only whole-card links may sit partly under him (named below, more than half tappable). Open Papa on a Needs row and See all are small controls: no allowance.
-    const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"] .rw-main' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main' }]
+    const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"] .rw-main' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main, [data-testid="together-list"] a.fm-tile' }]
     const STATES: [string, Data, number][] = [['full data', {}, 1], ['no readings, one need row', { readings: false }, 1], ['no readings, two need rows', { readings: false, extraNeed: true }, 2], ['no activity, no readings, two need rows', { activity: false, readings: false, extraNeed: true }, 2]]
     for (const [name, data, needs] of STATES) {
       test(`four people, ${name}: no small control is under Jack, 390 x 844 and 450 x 949 (${scheme})`, async ({ page }) => {
