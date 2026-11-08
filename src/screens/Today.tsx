@@ -12,6 +12,7 @@ import { LargeTitle, Skeleton, wireMotion } from '../features/look'
 import MyDay from '../features/today/MyDay'
 import CalmCard from '../features/today/CalmCard'
 import TodayNews from '../features/today/TodayNews'
+import Lotto from '../features/today/Lotto'
 import BatteryCard from '../features/today/BatteryCard'
 import YourNumbers from '../features/today/YourNumbers'
 import { dateKicker, greeting } from '../features/today/greeting'
@@ -76,7 +77,7 @@ export default function Today() {
       <BatteryCard />
       <CalmCard />
       <YourNumbers />
-      <TodayNews />
+      <TodayNews /><Lotto />
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
       <NoticeStack />
       {toast && <div className="toast" role="status">{toast}</div>}

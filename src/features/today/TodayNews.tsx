@@ -2,14 +2,20 @@ import { useEffect, useState } from 'react'
 import { Section } from '../look'
 import { ago, loadFeed, useNewsZone } from '../discover/news/Screen'
 import { NewsPic, Tag } from '../discover/news/Cards'
-import { capPerCategory, isStale, latestFirst, STALE_NOTE, type NewsRow } from '../discover/news/model'
+import { capPerCategory, categoryTag, isStale, latestFirst, STALE_NOTE, type NewsRow } from '../discover/news/model'
 import type { RefreshDetail } from '../look/refresh'
 import './todayNews.css'
 
 const WEEK = 7 * 86_400_000
-/** The 3 newest rows from the last 7 days (a row with no readable time counts as old), at most 2 of any one category so a storm week does not fill the strip. */
+const SHOWN = 5
+const isHealth = (n: NewsRow) => categoryTag(n) === 'HEALTH'
+const isWeather = (n: NewsRow) => categoryTag(n) === 'TYPHOON' || /(weather|pagasa|low pressure)/i.test(n.title)
+/** Up to 5 rows from the last 7 days (a row with no readable time counts as old): health first, then weather and typhoon, then the rest, each group newest first; at most 2 of any one category so a storm week does not fill the strip. */
 export function freshHeadlines(rows: NewsRow[], now: number): NewsRow[] {
-  return capPerCategory(latestFirst(rows).filter((n) => { const t = Date.parse(n.published_at); return Number.isFinite(t) && now - t <= WEEK }), 2).slice(0, 3)
+  const recent = latestFirst(rows).filter((n) => { const t = Date.parse(n.published_at); return Number.isFinite(t) && now - t <= WEEK })
+  const health = recent.filter(isHealth), weather = recent.filter((n) => !isHealth(n) && isWeather(n))
+  const rest = recent.filter((n) => !isHealth(n) && !isWeather(n))
+  return capPerCategory([...health, ...weather, ...rest], 2).slice(0, SHOWN)
 }
 
 /** D-142: top headlines on Today from the feed Discover uses (loadFeed, same cache). Hidden when nothing is fresh. All news opens Discover > News. */
