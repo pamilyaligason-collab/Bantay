@@ -5,9 +5,10 @@ import { assertHero, assertJackClear, assertNarrow, assertNoSideways, assertNoWr
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
 // v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, Listen and watch (on by default), crisis card from hotlines.json.
-// The crisis card's place on the page at scroll 0: the board's one row plus the note, measured at each width (see the layout test).
-const CRISIS_TOP_MAX = { 390: 1875, 450: 1835 } as const // S24: After a scare (about 106 px) now sits under the breathing card, so the crisis card is that much lower; measured 1868 at 390 and 1826 at 450 (was 1760 and 1718)
-const ROW_MAX = 232 // px: the board's tallest card (196) plus the Play button the radio cards add (44 + 10 gap), less the board's extra line (22): 228, and the card border
+// The crisis card's place on the page at scroll 0: the 2-column grid of 4 cards, its Show more button and the note, measured at each width (see the layout test).
+// S25 fix round measured (Chromium, 390 and 450 wide): grid + button 586 px at both, gap 87 / 66, crisis card top 2223.6 / 2181.6 (was 1868 / 1826 with the one swipe row: 4 tall cards in 2 rows, 355 px lower by design).
+const CRISIS_TOP_MAX = { 390: 2232, 450: 2190 } as const
+const ROW_MAX = 592 // px: the grid (two rows of the tallest radio card) plus the 48 px Show more button and its 10 px gap; measured 586
 
 // Specs do not depend on a live stream, so the stream address is stubbed with a local fixture: state logic only. 60 s of 8 kHz 8-bit silence, a WAV made here.
 function silentWav(): Buffer {
@@ -133,29 +134,30 @@ test('one row: radio cards, the podcast link and the video posters; no stream or
   const a = page.locator('[data-testid="calm-media"] a[href="https://www.tarabrach.com/podcast/"]')
   await expect(a).toHaveAttribute('target', '_blank')
   await expect(a).toHaveAttribute('rel', /noopener/)
+  await page.getByRole('button', { name: 'Show 4 more' }).click() // the videos sit behind Show more
   await expect(page.getByRole('button', { name: /Play Steps for Stress/ })).toBeVisible()
   await expect(page.locator('[data-testid="calm-media"] iframe')).toHaveCount(0)
   await expect(page.getByTestId('calm-audio')).toHaveCount(1)
   await expect(page.getByTestId('calm-audio')).not.toHaveAttribute('src', /./)
-  await expect(page.locator('[data-testid="calm-media"] .carousel')).toHaveCount(1)
+  await expect(page.locator('[data-testid="calm-media"] .more-grid')).toHaveCount(1)
 })
 
 for (const [w, h] of [[390, 844], [450, 949]] as const) {
-  test(`${w}: board layout: 240 px link cards, 84 px head, one row, and the crisis card no further than that row plus the note`, async ({ page }) => {
+  test(`${w}: board layout: a 2-column grid of 4 cards, 84 px head`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h })
     await page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTo(0, 0))
     const m = await page.evaluate(() => {
       const box = (s: string) => document.querySelector(s)!.getBoundingClientRect()
-      const cards = [...document.querySelectorAll('[data-testid="calm-row"] > *')].map((c) => c.getBoundingClientRect())
+      const cards = [...document.querySelectorAll('[data-testid="calm-row"] .more-grid > *')].map((c) => c.getBoundingClientRect())
       return { scroll: document.querySelector('.bt .scroll')!.scrollTop, widths: cards.map((c) => Math.round(c.width)), tops: new Set(cards.map((c) => Math.round(c.top))).size, head: box('[data-testid="calm-radio-rpmellow"] .cm-media-ic').height, rowH: box('[data-testid="calm-row"]').height, gap: box('[data-testid="calm-crisis"]').top - box('[data-testid="calm-row"]').bottom, noteH: box('[data-testid="calm-row"] + p').height, crisisTop: box('[data-testid="calm-crisis"]').top }
     })
     console.log(`crisis at scroll 0, ${w} px: ${JSON.stringify(m)}`)
     expect(m.scroll).toBe(0)
-    expect(m.widths).toEqual(Array(8).fill(240))
-    expect(m.tops).toBe(1)
+    expect(m.widths).toHaveLength(4); expect(new Set(m.widths).size).toBe(1) // S25: a 2-column grid of 4, then Show more
+    expect(m.tops).toBe(2)
     expect(m.head).toBe(84)
     expect(m.rowH).toBeLessThanOrEqual(ROW_MAX)
-    expect(m.gap).toBeLessThanOrEqual(m.noteH + 32) // only the note and two page gaps between the row and the crisis card
+    expect(m.gap).toBeLessThanOrEqual(m.noteH + 32) // only the note and two page gaps between the grid and the crisis card
     expect(m.crisisTop).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
   })
 }
@@ -308,6 +310,7 @@ test('nothing from YouTube or a station loads before a tap; only the video poste
   const hosts: string[] = []
   page.on('request', (r) => hosts.push(new URL(r.url()).hostname))
   await page.reload()
+  await page.getByRole('button', { name: 'Show 4 more' }).first().click()
   await expect(page.getByTestId('calm-row').getByRole('button', { name: /^Play (?!Radio)/ })).toHaveCount(4)
   await page.getByTestId('calm-media').scrollIntoViewIfNeeded()
   await page.waitForLoadState('networkidle')

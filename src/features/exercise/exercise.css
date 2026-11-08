@@ -55,7 +55,7 @@
 .s14j-row { display: flex; align-items: center; gap: 10px; }
 
 /* H15 carousel and doctor row */
-.mv-ccard { flex: none; width: 240px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; }
+.mv-ccard { width: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; text-align: left; }
 .mv-card[aria-disabled="true"]:not(.mv-ccard) { opacity: .6; }
 /* Locked card: every word keeps full contrast (Start measured 2.8:1 at opacity .6). It reads locked by the lock glyph, the "after the doctor OK" words, a muted picture panel and no press effect. */
 .mv-ccard[aria-disabled="true"] .mv-pic { opacity: .55; }
@@ -72,7 +72,7 @@
 [data-testid="salt-row"] .rw-title, [data-testid="water-row"] .rw-title { white-space: normal; overflow: visible; text-overflow: clip; line-height: 22px; }
 
 /* Board MoveFood: picture panel on top of each move card, then title, amount, chips, Stop if, Start. */
-.mv-ccard { padding: 0; overflow: hidden; gap: 0; width: 250px; min-height: 0; }
+.mv-ccard { padding: 0; overflow: hidden; gap: 0; width: auto; min-height: 0; }
 .mv-pic { display: flex; align-items: center; justify-content: center; align-self: stretch; height: 96px; background: var(--tint-green); color: var(--tint-teal-ink); }
 .mv-pic[data-group="balance"] { background: var(--tint-blue); }
 .mv-pic[data-group="strength"] { background: var(--tint-amber); }

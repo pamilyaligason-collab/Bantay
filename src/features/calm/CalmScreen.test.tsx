@@ -94,10 +94,11 @@ describe('Listen and watch and crisis', () => {
   it('one row: two radio cards, the podcast link and four checked videos, no flag needed, and loads nothing before a tap', () => {
     render(<CalmScreen />)
     const media = screen.getByTestId('calm-media')
+    fireEvent.click(within(media).getByRole('button', { name: 'Show 4 more' })) // S25: a grid of 4, then Show more
     const row = screen.getByTestId('calm-row')
-    expect(row.classList.contains('carousel')).toBe(true)
-    expect(media.querySelectorAll('.carousel')).toHaveLength(1)
-    expect(row.children).toHaveLength(8)
+    expect(row.querySelector('.more-grid')).not.toBeNull()
+    expect(media.querySelectorAll('.carousel')).toHaveLength(0)
+    expect(row.querySelectorAll('.more-grid > *')).toHaveLength(8)
     expect(within(row).getAllByRole('button', { name: /^Play Radio/ }).map((b) => b.getAttribute('aria-label'))).toEqual(['Play Radio Paradise Mellow', 'Play Radio Swiss Classic'])
     expect(within(row).getByRole('link', { name: /SomaFM/ }).getAttribute('href')).toBe('https://somafm.com/') // refuses the app's host, so a plain link
     const links = within(row).getAllByRole('link', { name: /Tara Brach/ })
@@ -122,6 +123,7 @@ describe('Listen and watch and crisis', () => {
   })
   it('a tap loads the privacy-mode player for that video only', () => {
     render(<CalmScreen />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' })) // S25
     fireEvent.click(screen.getByRole('button', { name: /Play Heavy Rain/ }))
     const frames = screen.getByTestId('calm-media').querySelectorAll('iframe')
     expect(frames).toHaveLength(1)

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { putKv } from '../safety/store'
 import { LiteVideo } from '../media/LiteVideo'
-import { Carousel, Row } from '../look'
+import { MoreGrid, Row } from '../look'
 import { Icon, type IconName } from '../shell/Icon'
 import { FAIL_TEXT } from '../today/actions'
 import { logMove } from './actions'
@@ -130,7 +130,7 @@ export default function MovePanel({ notify, lockLog, hideRing }: { notify?: (msg
           {!other && rec.restricted && !d.doctorOk && <button type="button" className="mv-sec" disabled={busy} onClick={() => ack(DOCTOR_OK_KEY)}>My doctor said OK</button>}
           {!other && <>
           <h3 className="mv-h">Today's plan</h3>
-          <Carousel label="Today's moves" testId="move-carousel">
+          <MoreGrid label="Today's moves" testId="move-carousel">
             {carousel.map((m) => (
               <button key={m.id} type="button" className="mv-card mv-ccard" aria-disabled={locked || undefined} title={locked ? GATE_TEXT : undefined} onClick={() => !locked && pick(m)}>
                 <span className="mv-pic" data-group={m.group} aria-hidden="true"><Icon name={GROUP_ICON[m.group]} size={44} /></span>
@@ -142,7 +142,7 @@ export default function MovePanel({ notify, lockLog, hideRing }: { notify?: (msg
                 </span>
               </button>
             ))}
-          </Carousel>
+          </MoreGrid>
           </>}
           {call911}
           {!other && locked && <p className="sub" data-testid="move-locked">Starting a move needs the doctor OK below.</p>}
