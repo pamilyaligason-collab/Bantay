@@ -198,14 +198,29 @@ describe('S24 inline row inside the Readings card: always two tiles', () => {
     await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-progress']))
     expect(screen.getByTestId('glance-progress').querySelector('.nd-due')?.textContent).toBe('Due')
   })
-  it('no next visit: Medicines + Move; with BP due, BP + Move; never one or three', async () => {
+  it('no next visit: Medicines + Move; with BP due, Medicines + BP; never one or three', async () => {
     inline(bp(120, 80, 1))
     await settled()
     expect(ids()).toEqual(['glance-meds', 'glance-steps'])
     cleanup()
     inline()
     await settled()
-    expect(ids()).toEqual(['glance-progress', 'glance-steps'])
+    expect(ids()).toEqual(['glance-meds', 'glance-progress'])
+  })
+  it('D-125: the second place goes to the most due pinned metric (BP first, then weight); an unpinned or current metric never takes it', async () => {
+    const wt: Reading = { personId: 'p1', test: 'weight', value: 71, unit: 'kg', takenAt: day(20) }
+    await db.kv.put({ key: 'health.pins', value: ['bp_systolic', 'weight', 'steps', 'meds'] })
+    await book()
+    inline([...bp(120, 80, 1), wt])
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-weight']))
+    expect(screen.getByTestId('glance-weight').querySelector('.nd-due')?.textContent).toBe('Due')
+    cleanup()
+    inline([wt]) // BP due too: BP is first in the fixed order
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-progress']))
+    cleanup()
+    await db.kv.put({ key: 'health.pins', value: ['bp_systolic', 'steps', 'meds'] }) // weight not pinned
+    inline([...bp(120, 80, 1), wt])
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-meds']))
   })
   it('a booked visit never flashes the no-visit pair: the row is empty until the visits answer, then Next visit + Medicines', async () => {
     await book()
@@ -217,7 +232,7 @@ describe('S24 inline row inside the Readings card: always two tiles', () => {
     obs.disconnect()
     expect(seen.some((s) => s.includes('glance-steps'))).toBe(false)
   })
-  it('the pins list does not change the inline row, and there is no Edit pins button', async () => {
+  it('pins that are not due leave the inline row alone, and there is no Edit pins button', async () => {
     await db.kv.put({ key: 'health.pins', value: ['fasting_glucose', 'weight'] })
     await book()
     inline(bp(120, 80, 1))
