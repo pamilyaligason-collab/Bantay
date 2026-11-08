@@ -23,6 +23,15 @@ describe('tab shell', () => {
     expect(screen.getByRole('button', { name: 'Health' }).getAttribute('aria-current')).toBe('false')
   })
 
+  it('the root carries data-tab for the open tab, weather maps to today, Settings to none', async () => {
+    for (const [hash, want] of [['', 'today'], ['#health', 'health'], ['#discover', 'discover'], ['#family', 'family'], ['#safety', 'safety'], ['#weather', 'today'], ['#me', 'none']] as const) {
+      location.hash = hash
+      const { unmount } = render(<App />)
+      await waitFor(() => expect(document.querySelector('.bt')!.getAttribute('data-tab')).toBe(want))
+      unmount()
+    }
+  })
+
   it('click writes the hash and switches screen', async () => {
     render(<App />)
     fireEvent.click(screen.getByRole('button', { name: 'Health' }))

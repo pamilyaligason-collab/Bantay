@@ -123,6 +123,7 @@ describe('Listen and watch and crisis', () => {
   })
   it('a tap loads the privacy-mode player for that video only', () => {
     render(<CalmScreen />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' })) // S25
     fireEvent.click(screen.getByRole('button', { name: /Play Heavy Rain/ }))
     const frames = screen.getByTestId('calm-media').querySelectorAll('iframe')
     expect(frames).toHaveLength(1)

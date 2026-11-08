@@ -177,6 +177,7 @@ describe('radio', () => {
   })
   it('playing a video stops the radio', () => {
     render(<MediaLinks />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' })) // S25: videos sit behind Show more
     tap('rpmellow'); fireEvent.playing(audio())
     fireEvent.click(screen.getByRole('button', { name: /Play Heavy Rain/ }))
     expect(card('rpmellow').dataset.state).toBe('idle')
@@ -184,6 +185,7 @@ describe('radio', () => {
   })
   it('starting the radio stops a playing video (the poster comes back, no frame)', () => {
     render(<MediaLinks />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
     const frames = () => screen.getByTestId('calm-media').querySelectorAll('iframe')
     fireEvent.click(screen.getByRole('button', { name: /Play Heavy Rain/ }))
     expect(frames()).toHaveLength(1)
@@ -194,6 +196,7 @@ describe('radio', () => {
   })
   it('starting a second video stops the first; the starter keeps playing', () => {
     render(<MediaLinks />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
     const frames = () => Array.from(screen.getByTestId('calm-media').querySelectorAll('iframe'))
     const play2 = screen.getAllByRole('button', { name: /^Play / }).filter((b) => b.classList.contains('lv-play'))
     expect(play2.length).toBeGreaterThan(1)
