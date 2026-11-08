@@ -103,7 +103,7 @@ function VideoShelf({ title, link, testId, videos, tint }: { title: string; link
   const list = src ? videos.filter((v) => v.source === src) : videos
   if (!videos.length) return null
   return (
-    <Section title={title} link={{ href: link.href, label: `${link.label} ${videos.length} ›` }} testId={testId}>
+    <Section title={title} link={{ href: link.href, label: `${link.label} ${videos.length}` }} testId={testId}>
       <div className="nw">
         <div className="nw-chips dc-wrapchips" role="group" aria-label={`${title} channels`}>
           {sources.map((s) => <button key={s} type="button" className="nw-chip" aria-pressed={src === s} onClick={() => setSrc(src === s ? null : s)}>{s}</button>)}
@@ -143,7 +143,7 @@ function Learn() {
 function Listen() {
   const [g, ...rest] = shelf('listen')
   return (
-    <Section title="Listen" link={{ href: '#discover/listen', label: `All ${shelf('listen').length} ›` }} testId="dc-listen">
+    <Section title="Listen" link={{ href: '#discover/listen', label: `All ${shelf('listen').length}` }} testId="dc-listen">
       {g
         ? (
           <div className="nw">
@@ -165,7 +165,7 @@ function Recipes({ now }: { now: Date }) {
   const list = [...RECIPES].sort((a, b) => Number(!!b.image) - Number(!!a.image)).slice(0, 4)
   const videos = turn(shelf('recipes-video'), now, 2)
   return (
-    <Section title="Recipes" link={{ href: '#discover/learn/recipes', label: `All ${RECIPES.length} ›` }} testId="dc-recipes">
+    <Section title="Recipes" link={{ href: '#discover/learn/recipes', label: `All ${RECIPES.length}` }} testId="dc-recipes">
       <div className="dc-rgrid">
         {list.map((r) => (
           <div key={r.id} className="card dc-rcard" data-testid="dc-recipe">

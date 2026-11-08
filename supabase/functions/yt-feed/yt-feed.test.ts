@@ -73,3 +73,14 @@ describe('runFeeds', () => {
     expect(q.purge).not.toHaveBeenCalled()
   })
 })
+
+describe('index.ts wiring (source guard; the function itself passed deno check)', () => {
+  const src = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
+  it('checks the secret header before any work, upserts on video_id, and never chains .catch on a builder', () => {
+    expect(src.indexOf("req.headers.get('x-yt-secret')")).toBeGreaterThan(-1)
+    expect(src.indexOf("req.headers.get('x-yt-secret')")).toBeLessThan(src.indexOf('createClient('))
+    expect(src).toContain("onConflict: 'video_id'")
+    expect(src).toContain('YT_FEED_CRON_SECRET')
+    expect(src).not.toMatch(/\.(catch|finally)\(/)
+  })
+})

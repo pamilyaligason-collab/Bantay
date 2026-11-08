@@ -22,7 +22,7 @@ function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
   )
 }
 
-/** Discover > Watch: a checked list of official videos. A poster row (scrolls inside itself), the chosen video in a player that loads only after a second tap (LiteVideo, no-cookie address,
+/** Discover > Watch: a checked list of official videos. A grid of 4 posters with Show more (D-156), the chosen video in a player that loads only after a second tap (LiteVideo, no-cookie address,
  *  with an "Open in YouTube" link), then one row per topic and Live TV (coming). */
 export default function Watch() {
   const all = DISCOVER_VIDEOS.filter(playable)

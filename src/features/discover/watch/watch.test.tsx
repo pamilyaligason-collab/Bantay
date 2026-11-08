@@ -8,43 +8,54 @@ import Watch, { WATCH_PICK } from './Screen'
 afterEach(cleanup)
 
 describe('Watch', () => {
-  it('draws every playable video as a poster (no player) and one row per topic plus Live TV', () => {
+  it('shows 4 posters at a time in a grid (no player, no side-swipe row) and one row per topic plus Live TV; health topics are gone', () => {
     const { container } = render(<Watch />)
-    expect(DISCOVER_VIDEOS.filter(playable).length).toBe(62) // counted by hand: 27 in src/data/videos.json (19 plus 8 added in S24) plus 35 in src/data/discover/ready.json (14 plus 21 added in S24), none a placeholder
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(62)
+    expect(DISCOVER_VIDEOS.filter(playable).length).toBe(57) // counted by hand in src/data/discover/ready.json: Be prepared 22, Farming and DIY 23, Listen 7, Recipe videos 5, none a placeholder
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
+    expect(screen.getByRole('button', { name: 'Show 4 more' })).toBeTruthy()
     expect(container.querySelector('iframe')).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('62')
+    expect(container.querySelector('.carousel, .dc-posters')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('57')
     const imgs = Array.from(container.querySelectorAll('img')).map((i) => i.getAttribute('src')!)
-    expect(imgs.length).toBe(62)
+    expect(imgs.length).toBe(4)
     expect(imgs.every((u) => u.startsWith('https://i.ytimg.com/vi/'))).toBe(true)
-    // topics counted by hand: Move 5, Safety 12, Mind 3, Diabetes 4, Food 3, Be prepared 17, Farming and DIY 9, Listen 4, Recipe videos 5
-    expect(['Move', 'Safety', 'Mind', 'Diabetes', 'Food', 'Be prepared', 'Farming and DIY', 'Listen', 'Recipe videos'].map((t) => screen.getByTestId('playlist-' + t).textContent)).toEqual(['Move5 videos', 'Safety12 videos', 'Mind3 videos', 'Diabetes4 videos', 'Food3 videos', 'Be prepared17 videos', 'Farming and DIY9 videos', 'Listen4 videos', 'Recipe videos5 videos'])
+    expect(['Be prepared', 'Farming and DIY', 'Listen', 'Recipe videos'].map((t) => screen.getByTestId('playlist-' + t).textContent)).toEqual(['Be prepared22 videos', 'Farming and DIY23 videos', 'Listen7 videos', 'Recipe videos5 videos'])
+    for (const t of ['Move', 'Safety', 'Mind', 'Diabetes', 'Food']) expect(screen.queryByTestId('playlist-' + t)).toBeNull()
     expect(screen.getByTestId('live-tv').textContent).toContain('Coming soon')
     expect(screen.getByText(/or opens in YouTube/)).toBeTruthy()
+    expect(screen.getByTestId('watch-health-link').getAttribute('href')).toBe('#health')
+  })
+  it('Show more adds four posters at a time', () => {
+    render(<Watch />)
+    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(8)
   })
   it('a poster picks the video; the player loads nothing until its own tap, and keeps an Open in YouTube link', () => {
     const { container } = render(<Watch />)
-    fireEvent.click(screen.getByRole('button', { name: /^Choose Hands-only CPR/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Choose Disaster Wais: the go bag/ }))
     const p = screen.getByTestId('watch-player')
     expect(container.querySelector('iframe')).toBeNull()
-    expect(within(p).getByRole('button', { name: 'Play Hands-only CPR, 1 min' })).toBeTruthy()
-    expect(within(p).getByRole('link', { name: /Open in YouTube/ }).getAttribute('href')).toBe('https://www.youtube.com/watch?v=M4ACYp75mjU')
-    fireEvent.click(within(p).getByRole('button', { name: 'Play Hands-only CPR, 1 min' }))
-    expect(container.querySelector('iframe')!.getAttribute('src')).toContain('youtube-nocookie.com/embed/M4ACYp75mjU')
+    expect(within(p).getByRole('button', { name: 'Play Disaster Wais: the go bag' })).toBeTruthy()
+    expect(within(p).getByRole('link', { name: /Open in YouTube/ }).getAttribute('href')).toBe('https://www.youtube.com/watch?v=oTyYzHntBxQ')
+    fireEvent.click(within(p).getByRole('button', { name: 'Play Disaster Wais: the go bag' }))
+    expect(container.querySelector('iframe')!.getAttribute('src')).toContain('youtube-nocookie.com/embed/oTyYzHntBxQ')
   })
-  it('a topic row narrows the poster row and a second tap shows all again', () => {
+  it('a topic row narrows the grid and a second tap shows all again', () => {
     render(<Watch />)
-    fireEvent.click(within(screen.getByTestId('playlist-Safety')).getByRole('button'))
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(12)
-    expect(screen.getByRole('heading', { name: 'Safety' })).toBeTruthy()
-    fireEvent.click(within(screen.getByTestId('playlist-Safety')).getByRole('button'))
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(62)
+    fireEvent.click(within(screen.getByTestId('playlist-Listen')).getByRole('button'))
+    expect(screen.getByRole('heading', { name: 'Listen' }).nextElementSibling!.textContent).toBe('7')
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
+    fireEvent.click(screen.getByRole('button', { name: 'Show 3 more' }))
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(7)
+    fireEvent.click(within(screen.getByTestId('playlist-Listen')).getByRole('button'))
+    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('57')
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
   })
   it('a picture that cannot load falls back to the title on a drawn tile', () => {
     const { container } = render(<Watch />)
     fireEvent.error(container.querySelector('img')!)
     expect(container.querySelector('.dc-poster[data-thumb="off"]')).toBeTruthy()
-    expect(container.querySelectorAll('img').length).toBe(61)
+    expect(container.querySelectorAll('img').length).toBe(3)
   })
 })
 
@@ -53,7 +64,7 @@ describe('Watch opened from the overview', () => {
     const v = DISCOVER_VIDEOS.filter(playable)[3]!
     sessionStorage.setItem(WATCH_PICK, v.id)
     const { container } = render(<Watch />)
-    expect(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play ' + v.title + ', ' + v.minutes + ' min' })).toBeTruthy()
+    expect(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play ' + v.title })).toBeTruthy()
     expect(container.querySelector('iframe')).toBeNull()
     expect(sessionStorage.getItem(WATCH_PICK)).toBeNull()
   })

@@ -8,7 +8,7 @@ afterEach(cleanup)
 
 describe('D-117 list', () => {
   it('every video is real, playable, unique, in a known topic, and apart from the health list', () => {
-    expect(READY_VIDEOS).toHaveLength(35)
+    expect(READY_VIDEOS).toHaveLength(57) // 35 + 22 added in S25
     expect(READY_VIDEOS.every((v) => playable(v) && VIDEO_ID.test(v.id) && v.minutes === null)).toBe(true)
     expect(new Set(DISCOVER_VIDEOS.map((v) => v.id)).size).toBe(DISCOVER_VIDEOS.length)
     expect(VIDEOS.some((v) => READY_VIDEOS.some((r) => r.id === v.id))).toBe(false)
@@ -32,7 +32,7 @@ describe('Learn topic page', () => {
   it('lists the topic videos as click-to-load players and its reads as outside links', () => {
     const { container } = render(<ReadyTopic id="farm-diy" />)
     expect(screen.getByTestId('ready-farm-diy')).toBeTruthy()
-    expect(container.querySelectorAll('.ry-video').length).toBe(9)
+    expect(container.querySelectorAll('.ry-video').length).toBe(23) // 9 + 14 added in S25, counted by hand
     expect(container.querySelector('iframe')).toBeNull()
     const links = Array.from(container.querySelectorAll('a.lr-tile'))
     expect(links.map((a) => a.getAttribute('href'))).toEqual(READY_READS.filter((r) => r.topic === 'farm-diy').map((r) => r.url))

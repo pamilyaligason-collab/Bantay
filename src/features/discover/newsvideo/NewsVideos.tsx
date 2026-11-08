@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { EmptyState, MoreGrid, Section } from '../../look'
 import { LiteVideo } from '../../media/LiteVideo'
 import { Icon } from '../../shell/Icon'
@@ -25,12 +25,15 @@ function NewsCard({ v, now, lead, on, pick }: { v: NewsVideo; now: number; lead?
 export function NewsVideos({ now = Date.now() }: { now?: number }) {
   const [channel, setChannel] = useState<string | undefined>(undefined)
   const [sel, setSel] = useState<string | null>(null)
-  const list = useNewsVideos(channel)
+  const got = useNewsVideos(channel)
+  const last = useRef<typeof got>(null)
+  if (got) last.current = got
+  const list = got ?? (last.current && { ...last.current, rows: last.current.rows.filter((r) => !channel || r.channel_id === channel) }) // while a channel loads, the chips and the rows we have stay (no blink)
   if (!list) return null
   const [lead, ...rest] = list.rows
   const chosen = list.rows.find((v) => v.video_id === sel)
   return (
-    <Section title="Regional news" meta={updatedLine(list.fetchedAt, now)} testId="dc-regional">
+    <Section title="Regional news" meta={list.rows.length ? updatedLine(list.fetchedAt, now) : undefined} testId="dc-regional">
       <div className="nw">
         <div className="nw-chips nv-chips" role="group" aria-label="News channels">
           <button type="button" className="nw-chip" aria-pressed={!channel} onClick={() => { setChannel(undefined); setSel(null) }}>All</button>
@@ -46,7 +49,7 @@ export function NewsVideos({ now = Date.now() }: { now?: number }) {
           ? (
             <>
               <NewsCard v={lead} now={now} lead on={lead.video_id === sel} pick={() => setSel(lead.video_id)} />
-              {rest.length > 0 && <MoreGrid label="More regional news" testId="nv-grid">{rest.map((v) => <NewsCard key={v.video_id} v={v} now={now} on={v.video_id === sel} pick={() => setSel(v.video_id)} />)}</MoreGrid>}
+              {rest.length > 0 && <MoreGrid key={channel ?? 'all'} label="More regional news" testId="nv-grid">{rest.map((v) => <NewsCard key={v.video_id} v={v} now={now} on={v.video_id === sel} pick={() => setSel(v.video_id)} />)}</MoreGrid>}
             </>
           )
           : <EmptyState icon="play" title="No news videos yet" body="New ones show up here every half hour." />}

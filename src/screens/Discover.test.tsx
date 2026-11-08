@@ -17,7 +17,7 @@ describe('Discover overview (#discover)', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover')
     expect(screen.getByTestId('dc-head')).toBeTruthy()
     expect(container.querySelectorAll('[data-hero]').length).toBe(1)
-    const ids = ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health']
+    const ids = ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health-link']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
     expect(screen.queryByTestId('season-row')).toBeNull()

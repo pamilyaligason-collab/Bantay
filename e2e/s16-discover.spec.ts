@@ -56,7 +56,7 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(r[3]![2]).toBeGreaterThan(r[0]![2]! * 1.9) // Your benefits spans the row
       await shot(page, 'learn', scheme)
       await page.getByTestId('learn-library').click()
-      await expect(page).toHaveURL(/#discover\/learn\/library$/)
+      await expect(page).toHaveURL(/#health\/library$/) // S25: the library moved into Health
       await expect(page.getByRole('heading', { level: 1, name: 'Health library' })).toBeVisible()
       await page.getByRole('link', { name: 'Back to Learn' }).click()
       await expect(page.getByTestId('learn-home')).toBeVisible()

@@ -84,7 +84,7 @@ describe('Learn screen and the learn.medcards flag', () => {
     location.hash = '#discover/learn'
     render(<Screen />)
     const hrefs = Object.fromEntries(['recipes', 'library', 'together', 'benefits'].map((k) => [k, screen.getByTestId('learn-' + k).getAttribute('href')]))
-    expect(hrefs).toEqual({ recipes: '#discover/learn/recipes', library: '#discover/learn/library', together: '#discover/learn/together', benefits: '#discover/learn/benefits' })
+    expect(hrefs).toEqual({ recipes: '#discover/learn/recipes', library: '#health/library', together: '#discover/learn/together', benefits: '#discover/learn/benefits' })
     expect(screen.queryByTestId('learn-meds')).toBeNull()
     expect(screen.getByTestId('learn-recipes').textContent).toContain('20 low-salt recipes') // counted by hand in src/data/learn/recipes.json
     expect(screen.getByTestId('learn-benefits').textContent).toContain('PhilHealth Konsulta')

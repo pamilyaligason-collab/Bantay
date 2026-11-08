@@ -1,6 +1,6 @@
 /* S25 Discover: Regional news videos (D-159). Prefixed nv-. */
 .nv-chips { flex-wrap: wrap; overflow: visible; } /* wrapping buttons, not a swipe row (D-156) */
-.card.nv-card { display: flex; flex-direction: column; width: 100%; padding: 0; overflow: hidden; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
+.card.nv-card { display: flex; border: 0; flex-direction: column; width: 100%; padding: 0; overflow: hidden; text-align: left; font: inherit; color: var(--ink); cursor: pointer; }
 .card.nv-card[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--tab-accent, var(--green2)), var(--shadow); }
 .nv-card:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 .nv-pic { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 16 / 9; background: #3a3f4b; overflow: hidden; } /* dark until the still loads */

@@ -26,8 +26,10 @@ const valid = (r: unknown): r is NewsVideo => {
 /** Reads the newest rows (signed-in read), saves them, and falls back to the saved copy while it is under 3 days old. null = nothing known (not connected, table not there yet, offline with nothing saved). */
 export async function loadNewsVideos(channel?: string, now: number = Date.now()): Promise<NewsVideoList | null> {
   const saved = async (): Promise<NewsVideoList | null> => {
-    const s = (await db.kv.get(CACHE(channel)).catch(() => undefined))?.value as Saved | undefined
-    return s && Array.isArray(s.rows) && now - s.savedAt <= NEWS_DAYS * 86_400_000 ? { rows: s.rows.filter(valid), fetchedAt: s.fetchedAt } : null
+    const get = async (c?: string) => (await db.kv.get(CACHE(c)).catch(() => undefined))?.value as Saved | undefined
+    // A channel never opened while online has no copy of its own: its videos are in the "all" copy.
+    const s = (await get(channel)) ?? (channel ? await get() : undefined)
+    return s && Array.isArray(s.rows) && now - s.savedAt <= NEWS_DAYS * 86_400_000 ? { rows: s.rows.filter((r) => valid(r) && (!channel || r.channel_id === channel)), fetchedAt: s.fetchedAt } : null
   }
   try {
     if (!supabase) throw new Error('not_connected')
