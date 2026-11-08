@@ -58,13 +58,15 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.getByTestId('learn-library').click()
       await expect(page).toHaveURL(/#health\/library$/) // S25: the library moved into Health
       await expect(page.getByRole('heading', { level: 1, name: 'Health library' })).toBeVisible()
-      await page.getByRole('link', { name: 'Back to Learn' }).click()
+      await page.getByRole('link', { name: 'Back to Health' }).click()
+      await expect(page).toHaveURL(/#health$/)
+      await page.goto('/#discover/learn')
       await expect(page.getByTestId('learn-home')).toBeVisible()
       await page.getByTestId('learn-together').click()
       await expect(page.getByRole('heading', { level: 1, name: 'Learn together' })).toBeVisible()
     })
 
-    test('watch: poster row scrolls inside itself, page does not scroll sideways', async ({ page }) => {
+    test('watch: the poster grid fits, page does not scroll sideways', async ({ page }) => {
       await page.goto('/#discover/watch')
       await setScheme(page, scheme)
       await expect(page.getByTestId('watch')).toBeVisible()
@@ -72,22 +74,21 @@ for (const scheme of ['light', 'dark'] as const) {
       await assertTargets(page); await assertTextContrast(page)
       await assertJackClear(page, { at: 'end' }) // seven topic rows plus Live TV (D-117) run past one screen, so a row always crosses the Jack band at rest; the end of the page must clear it
       await assertNoWrappedButtons(page)
-      const row = page.getByRole('list', { name: 'Checked videos' })
-      expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true)
+      await expect(page.getByRole('group', { name: 'Checked videos' })).toBeVisible() // a MoreGrid now, not a scrolling row
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
       const p = (await page.getByRole('button', { name: /^Choose / }).first().boundingBox())!
-      expect([Math.round(p.width), Math.round(p.height)]).toEqual([160, 90])
+      expect(p.width).toBeGreaterThanOrEqual(160); expect(p.height).toBeGreaterThanOrEqual(90) // grid posters, 16:9
     })
   })
 }
 
-test('old hashes land on Discover', async ({ page }) => {
-  await page.goto('/#health/library')
-  await expect(page).toHaveURL(/#discover\/learn\/library$/)
+test('old hashes land in Health', async ({ page }) => {
+  await page.goto('/#discover/learn/library')
+  await expect(page).toHaveURL(/#health\/library$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Health library' })).toBeVisible()
   await page.goto('/#health/videos')
-  await expect(page).toHaveURL(/#discover\/watch$/)
-  await expect(page.getByTestId('watch')).toBeVisible()
+  await expect(page).toHaveURL(/#health$/)
+  await expect(page.getByTestId('health-videos')).toBeAttached()
 })
 
 test('at 360 px no button wraps and nothing scrolls sideways', async ({ page }) => {

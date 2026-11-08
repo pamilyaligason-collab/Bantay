@@ -127,10 +127,10 @@ describe('the offline library, with no network', () => {
     await within(list).findByRole('link', { name: /Choking/ }, SLOW)
   })
 
-  it('an f: article says "Full library not downloaded" when the full library is not on the phone', async () => {
+  it('an f: article says it is not on this phone when the full library is not on the phone', async () => {
     location.hash = '#health/library/f%3Aanything'
     render(<Library />)
-    expect(await screen.findByText('Full library not downloaded', {}, SLOW)).toBeTruthy()
+    expect(await screen.findByText("Not in this phone's library", {}, SLOW)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Back to Library' }).getAttribute('href')).toBe('#health/library')
   })
 })

@@ -50,6 +50,8 @@ describe('Health videos (S25)', () => {
     fireEvent.click(first.querySelector('button.hv-vbtn')!)
     const open = screen.getByTestId(first.getAttribute('data-testid')!)
     expect(open.hasAttribute('data-open')).toBe(true)
+    expect(open.querySelector('.hv-open')).toBeNull() // hv-open is the full-row link style; the player wrapper must not carry it
+    expect(open.querySelector('.hv-opened')).not.toBeNull()
     expect(open.querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{11}\?/)
     fireEvent.click(cards()[1]!.querySelector('button.hv-vbtn')!)
     expect(screen.getByTestId(first.getAttribute('data-testid')!).hasAttribute('data-open')).toBe(false) // the first folds back to its still

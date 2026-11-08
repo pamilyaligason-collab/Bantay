@@ -30,10 +30,12 @@ for (const h of SUB) {
   })
 }
 
-// S16: #health/videos moved to #discover/watch, a Discover sub-tab root: it draws its own Back to Discover.
-test('#health/videos lands on Discover > Watch with a Back control', async ({ page }) => {
+// S25: #health/videos is the Health videos section on #health again; Discover > Watch (a sub-tab root) draws its own Back to Discover.
+test('#health/videos lands on Health, and Discover > Watch has a Back control', async ({ page }) => {
   await page.goto('/#health/videos')
-  await expect(page).toHaveURL(/#discover\/watch$/)
+  await expect(page).toHaveURL(/#health$/)
+  await expect(page.getByTestId('health-videos')).toBeAttached()
+  await page.goto('/#discover/watch')
   await expect(page.getByTestId('watch')).toBeVisible()
   await expect(page.getByRole('link', { name: 'Back to Discover' })).toBeVisible()
 })

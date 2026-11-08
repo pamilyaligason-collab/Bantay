@@ -4,7 +4,7 @@ import { MoreGrid, Section } from '../look'
 import { videoOfTheDay } from '../today/videos'
 import type { Attention } from './attention'
 import { NudgeRow } from './GlanceGrid'
-import { WATCH_PICK } from '../discover/watch/Screen'
+import { VideoCard } from './HealthVideos'
 import { articleHref } from './library/medline'
 import { prefersReducedMotion } from '../look/useReducedMotion'
 import { DISCOVER_SET, playable, type Video } from './library/videosLogic'
@@ -41,11 +41,13 @@ export function forYouClips(list: Video[], reasons: ClipReason[], now = new Date
   return out
 }
 
-/** One video card: its YouTube still (i.ytimg.com, no cookies, no referrer), its length when known and the reason it is here. If the still cannot load, a plain tile with the play mark stands in (as LiteVideo does). */
+/** One video card: its YouTube still (i.ytimg.com, no cookies, no referrer), its length when known and the reason it is here. If the still cannot load, a plain tile with the play mark stands in. A tap opens it in place: the Health videos card and player (LiteVideo) take over the row. */
 function Clip({ video, reason, testId }: { video: Video; reason: string; testId: string }) {
   const [bad, setBad] = useState(false)
+  const [open, setOpen] = useState(false)
+  if (open) return <VideoCard video={video} open onOpen={() => setOpen(true)} testId={testId} />
   return (
-    <a className="card fy-video press" href="#discover/watch" data-testid={testId} onClick={(e) => { if (e.ctrlKey || e.metaKey || e.shiftKey) return; try { sessionStorage.setItem(WATCH_PICK, video.id) } catch { /* private mode */ } }}>
+    <button type="button" className="card fy-video press" data-testid={testId} onClick={() => setOpen(true)}>
       <span className="fy-poster" data-still={bad ? 'off' : 'on'}>
         {!bad && <img className="fy-img" src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setBad(true)} />}
         <span className="fy-play" aria-hidden="true"><Icon name="play" size={24} /></span>
@@ -54,7 +56,7 @@ function Clip({ video, reason, testId }: { video: Video; reason: string; testId:
       <span className="pt-k">{reason}</span>
       <b>{video.title}</b>
       <span className="sub">{video.source}</span>
-    </a>
+    </button>
   )
 }
 

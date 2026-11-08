@@ -17,7 +17,11 @@ describe('For you', () => {
     show(r)
     const c = screen.getByTestId('for-you')
     expect(within(c).getByTestId('nudge').querySelector('a.nr-t')!.getAttribute('href')).toBe('#health/nudge')
-    expect(within(c).getByTestId('foryou-video').getAttribute('href')).toBe('#discover/watch')
+    const tile = within(c).getByTestId('foryou-video')
+    expect(tile.tagName).toBe('BUTTON')
+    expect(document.querySelector('iframe')).toBeNull()
+    fireEvent.click(tile)
+    expect(within(c).getByTestId('foryou-video').querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\//) // plays in place, no dead link
     const art = within(c).getByTestId('foryou-because')
     expect(art.textContent).toContain('Because of your LDL cholesterol')
     expect(art.getAttribute('href')).toBe('#health/library/' + encodeURIComponent('s:LDL cholesterol'))
@@ -98,7 +102,7 @@ describe('For you videos show their still, length and reason', () => {
 describe('For you reads (S24)', () => {
   it('the video grid shows 4 cards, each with a reason', () => {
     show(r)
-    const cards = Array.from(within(screen.getByRole('group', { name: 'Videos for you' })).getAllByRole('link'))
+    const cards = Array.from(within(screen.getByRole('group', { name: 'Videos for you' })).getAllByRole('button'))
     expect(cards).toHaveLength(4)
     for (const c of cards) expect(c.querySelector('.pt-k')!.textContent).toBeTruthy()
   })
@@ -116,16 +120,14 @@ describe('For you reads (S24)', () => {
   })
 })
 
-describe('For you hands the video to Watch', () => {
-  it('tapping a card stores its id under dc.watch; a modified click does not; More links to Watch at 44 px', () => {
-    sessionStorage.clear()
+describe('For you cards play in place', () => {
+  it('a modified click still plays here; More scrolls to the Health videos section at 44 px', () => {
     show(r)
     const card = screen.getByTestId('foryou-video-2')
-    const id = /\/vi\/([^/]+)\//.exec(card.querySelector('img.fy-img')!.getAttribute('src')!)![1]
-    fireEvent.click(card, { ctrlKey: true })
-    expect(sessionStorage.getItem('dc.watch')).toBeNull()
+    expect(card.tagName).toBe('BUTTON')
     fireEvent.click(card)
-    expect(sessionStorage.getItem('dc.watch')).toBe(id)
+    expect(screen.getByTestId('foryou-video-2').querySelector('iframe')).not.toBeNull()
+    expect(screen.getByTestId('foryou-video-2').querySelector('.hv-open')).toBeNull()
     const more = within(screen.getByTestId('for-you')).getByRole('button', { name: 'More' })
     const target = document.createElement('section'); target.id = 'health-videos'
     const scroll = vi.fn(); target.scrollIntoView = scroll; document.body.appendChild(target)

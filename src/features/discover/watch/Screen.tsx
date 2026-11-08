@@ -55,7 +55,7 @@ export default function Watch() {
         <Row icon="play" title="Live TV" sub="News and weather. Coming soon" testId="live-tv" />
       </div>
       <a className="card dc-hlink" href="#health" data-testid="watch-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
-      <p className="sub dc-quiet">Checked videos only. Each one plays here after you tap it, or opens in YouTube.</p>
+      <p className="sub dc-quiet">Videos from named channels. Each one plays here after you tap it, or opens in YouTube.</p>
     </div>
   )
 }

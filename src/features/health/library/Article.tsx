@@ -38,8 +38,8 @@ function FullArticleView({ k }: { k: string }) {
       {a === undefined && <article className="card ar-art" data-testid="article"><p className="sub" role="status">Loading...</p></article>}
       {a === null && (
         <article className="card ar-art" data-testid="article-nofull">
-          <h2 className="ar-h">Full library not downloaded</h2>
-          <p className="ar-body">This article is in the full library, which is not on this phone yet. Download it from the Health library page when you are on Wi-Fi.</p>
+          <h2 className="ar-h">Not in this phone's library</h2>
+          <p className="ar-body">This article is in the full medical library, which is not on this phone.</p>
         </article>
       )}
     </>
