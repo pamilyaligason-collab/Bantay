@@ -39,8 +39,12 @@ describe('Lotto card', () => {
     ])
     expect(container.querySelectorAll('.lotto-ball')).toHaveLength(6 + 6 + 3)
     expect(container.textContent).not.toContain('01 02 03')
-    expect(container.querySelector('.lotto-note')!.textContent).toBe('Numbers as posted by PCSO. Check your ticket with PCSO before claiming.')
-    expect(LOTTO_NOTE).toBe('Numbers as posted by PCSO. Check your ticket with PCSO before claiming.')
+    const note = container.querySelector('.lotto-note')!
+    expect(note.textContent).toBe('Source: lottopcso.com (unofficial). Check your ticket with PCSO.')
+    expect(note.textContent).toBe(LOTTO_NOTE)
+    const link = note.querySelector('a')!
+    expect(link.getAttribute('href')).toBe('https://www.pcso.gov.ph/')
+    expect(link.getAttribute('rel')).toContain('noopener')
   })
   it('More games opens all six games in order 6/58, 6/55, 6/49, 6/45, 6/42, 3D, and Fewer games folds back', () => {
     h.rows = ALL
