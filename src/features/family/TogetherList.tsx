@@ -40,7 +40,7 @@ export function recentPapers(docs: DocBundle[]): DocBundle[] {
 const paperDate = (iso: string | null) => {
   if (!iso) return 'Saved'
   const day = iso.length === 10 ? iso : dayKey(new Date(iso)) // a plain paper date stays as written; a confirmed-at instant becomes the phone's day
-  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : 'Saved'
+  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Saved'
 }
 
 function Tile(p: { href: string; icon: IconName; tint: 'amber' | 'blue' | 'green' | 'purple'; title: string; sub: string; testId: string; badge?: number }) {

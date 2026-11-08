@@ -99,7 +99,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     test('sheet: mid-drag follows the pointer, a long drag closes it', async ({ page }) => {
-      await page.getByTestId('planrow').getByRole('link').click()
+      await page.getByTestId('planrow').click()
       await expect(page.getByText(/^Add a reminder for /).first()).toBeVisible()
       await shot(page, 'plan-empty', scheme)
       await page.getByRole('button', { name: 'Add', exact: true }).first().click()

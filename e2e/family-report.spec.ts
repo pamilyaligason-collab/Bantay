@@ -101,7 +101,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`memories is off by default, then says what is missing instead of failing (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    await page.getByTestId('memoriesrow').getByRole('link').click() // v13: Memories is a pushed page
+    await page.getByTestId('memoriesrow').click() // v13: Memories is a pushed page
     await expect(page).toHaveURL(/#family\/memories$/)
     const m = page.getByTestId('memories')
     await m.scrollIntoViewIfNeeded()

@@ -294,6 +294,7 @@
 .hb-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .1) 20%, rgba(0, 0, 0, .74) 100%); }
 .card.hb[data-photo="on"] .hb-s { color: #fff; opacity: 1; } /* beats the global muted .hb-s: white over the .74 black gradient */
 .hb-pv .hb-pill { background: var(--tint-fill); } /* the chip behind is var(--card), so the pill needs its own fill to stay visible */
+.hb-pv .hb-pill[data-done] { background: var(--tint-ink); color: var(--tint-fill); } /* Taken keeps its solid pill over the rule above */
 .hb-pv { align-self: flex-start; display: inline-flex; max-width: 100%; padding: 6px 10px; border-radius: 12px; background: var(--card); color: var(--tint-ink); }
 .hb-pv:empty { display: none; }
 @keyframes hb-zoom { from { transform: scale(1.02); } to { transform: scale(1.12) translate(-2%, -2%); } }
