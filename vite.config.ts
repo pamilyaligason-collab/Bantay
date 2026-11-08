@@ -30,7 +30,7 @@ export default defineConfig(({ command, mode }) => {
       injectRegister: 'auto',
       includeAssets: ['icon.svg', 'anatomy/body.svg'],
       // Jack 128, 256 and 384 sizes (JackArt serves 384 for the 96 and 112 slots) so the offline band's Jack shows with no network; the 1024s stay online-only.
-      injectManifest: { globPatterns: ['**/*.{js,css,html}', 'assets/jack-*-{128,256,384}-*.webp', 'img/browse/*.webp'] },
+      injectManifest: { globPatterns: ['**/*.{js,css,html}', 'assets/jack-*-{128,256,384}-*.webp', 'img/browse/*.webp', 'img/medlib/*.webp'] },
       manifest: {
         name: 'Family Bantay',
         short_name: 'Bantay',

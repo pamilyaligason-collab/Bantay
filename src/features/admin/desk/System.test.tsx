@@ -66,8 +66,8 @@ describe('System health page', () => {
   it('shows jobs: green when recent; red when stopped or failed', async () => {
     render(<System id={null} />)
     const card = await screen.findByRole('region', { name: 'Scheduled jobs' })
-    await waitFor(() => expect(within(card).getAllByRole('listitem')).toHaveLength(6))
-    expect(within(card).getAllByText(/OK:/)).toHaveLength(6) // sr-only state word
+    await waitFor(() => expect(within(card).getAllByRole('listitem')).toHaveLength(7))
+    expect(within(card).getAllByText(/OK:/)).toHaveLength(7) // sr-only state word
     h.tables.job_runs = { data: [{ job: 'x', ran_at: iso(45), ok: true }] }
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
     await waitFor(() => expect(within(card).getAllByText(/Problem:/)).toHaveLength(2)) // 45 min: the alerts feed (60 min rule) is still fine

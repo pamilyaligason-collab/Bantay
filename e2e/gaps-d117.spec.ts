@@ -30,7 +30,7 @@ test('the Learn section opens Discover Today, before Top story, Health videos, F
     const y = (id: string) => document.querySelector<HTMLElement>(`[data-testid="${id}"]`)!.getBoundingClientRect().top
     const card = (id: string) => { const a = document.querySelector<HTMLAnchorElement>(`[data-testid="${id}"]`)!; const t = a.querySelector<HTMLElement>('.dc-lc-t')!; return { href: a.getAttribute('href'), h: a.getBoundingClientRect().height, lines: Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight)) } }
     const title = document.querySelector<HTMLElement>('[data-testid="dc-learn"] h2')!
-    return { learn: y('dc-learn'), story: y('dc-top-story'), health: y('dc-health'), farm: y('dc-farm'), listen: y('dc-listen'), prep: card('dc-learn-prepping'), repairs: card('dc-learn-farm'), titleLines: Math.round(title.getBoundingClientRect().height / parseFloat(getComputedStyle(title).lineHeight)) }
+    return { learn: y('dc-learn'), story: y('dc-top-story'), health: y('dc-health-link'), farm: y('dc-farm'), listen: y('dc-listen'), prep: card('dc-learn-prepping'), repairs: card('dc-learn-farm'), titleLines: Math.round(title.getBoundingClientRect().height / parseFloat(getComputedStyle(title).lineHeight)) }
   })
   expect([m.learn, m.story, m.health, m.farm, m.listen].every((t, i, a) => i === 0 || t > a[i - 1]!), 'section order').toBe(true)
   expect(m.prep.href).toBe('#discover/learn/prepping')
@@ -108,7 +108,7 @@ for (const [name, day] of SEASONS) {
       await expect(page.getByTestId('dc-learn')).toBeVisible()
       const r = await page.evaluate(() => {
         const box = (id: string) => { const e = document.querySelector(`[data-testid="${id}"]`); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom } }
-        return { learn: box('dc-learn'), story: box('dc-top-story'), hero: box('dc-hero'), health: box('dc-health'), farm: box('dc-farm') }
+        return { learn: box('dc-learn'), story: box('dc-top-story'), hero: box('dc-hero'), health: box('dc-health-link'), farm: box('dc-farm') }
       })
       const chain = [r.learn, r.story, r.health, r.farm].filter((x): x is { top: number; bottom: number } => !!x)
       expect(chain.length).toBe(4)

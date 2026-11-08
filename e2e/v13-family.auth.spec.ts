@@ -24,7 +24,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
     })
 
-    test('root (D-109): opens on Me; title, pill, add, one Today card, Activity, Needs, People, Together', async ({ page }) => {
+    test('root (D-109): opens on Me; title, pill, add, Together, Needs, People, one Today card, Activity', async ({ page }) => {
       await openFamily(page)
       await expect(page.locator('h1')).toHaveText('Family')
       await expect(page.locator('.lt-kicker')).not.toContainText('PEOPLE') // no head count: it counted people you may not see
@@ -45,9 +45,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(needs.first()).toContainText('Ate Joy: missed a medicine')
       await expect(page.getByTestId('needs')).not.toContainText('Nasal')
       await expect(needs.nth(1)).toContainText("Papa Ben's phone may miss alarms")
-      await expect(page.getByTestId('people-row')).toHaveCount(3)
-      await page.getByTestId('people').getByRole('button', { name: /See all/ }).click()
-      await expect(page.getByTestId('people-row')).toHaveCount(4)
+      await expect(page.getByTestId('people-row')).toHaveCount(4) // S25: a 2-column grid of four cards, no See all
       await expect(page.getByTestId('together-list').getByRole('link')).toHaveCount(4)
       await expect(page.getByTestId('planrow')).toBeVisible()
       expect(await noSideways(page)).toBe(true)

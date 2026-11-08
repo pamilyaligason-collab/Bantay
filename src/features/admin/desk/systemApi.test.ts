@@ -34,9 +34,10 @@ describe('alerts feed (red when the newest alerts-ingest run is over 60 minutes 
   it('uses 60 minutes for the feed and 30 for the other jobs', () => {
     expect(ALERTS_FEED_STALE_MIN).toBe(60)
     expect(feed.staleMin).toBe(60)
-    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news' && j.job !== 'lotto-pcso').map((j) => j.staleMin)).toEqual([30, 30])
+    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news' && j.job !== 'lotto-pcso' && j.job !== 'yt-feed').map((j) => j.staleMin)).toEqual([30, 30])
     expect(JOBS.find((j) => j.job === 'world-news')!.staleMin).toBe(480)
     expect(JOBS.find((j) => j.job === 'lotto-pcso')!.staleMin).toBe(480)
+    expect(JOBS.find((j) => j.job === 'yt-feed')!.staleMin).toBe(90)
     expect(JOBS.find((j) => j.job === 'alerts-digest')!.staleMin).toBe(1560)
   })
   it('59 and 60 minutes are fine, 61 is red', () => {
@@ -172,7 +173,7 @@ describe('migrations.json', () => {
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
     expect(files.length).toBeGreaterThan(20)
     // Written but not yet applied, so absent from migrations.json (which lists applied versions only). Each entry leaves this list when applied.
-    const writtenNotApplied: string[] = [] // a written migration waits here until the owner applies it (0054 lotto_results applied 2026-11-08)
+    const writtenNotApplied: string[] = ['0055'] // a written migration waits here until the owner applies it (0054 lotto_results applied 2026-11-08; 0055 news_videos is S25)
     expect(writtenNotApplied.filter((v) => KNOWN_MIGRATIONS.includes(v))).toEqual([]) // an applied version must leave the allowlist
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v) && !writtenNotApplied.includes(v))).toEqual([])
   })

@@ -1,0 +1,43 @@
+= anemia | Anemia (low blood) | heart | ph
+mp: Anemia
+aka: anemia, anemya, mababang dugo, kulang sa dugo, maputla, low hemoglobin
+wiki: Anemia
+s: Anemia means your blood does not carry enough oxygen around the body.
+s: You may feel tired, weak, dizzy or look pale.
+s: Common causes are too little iron, blood loss or long-term illness. A blood test finds out which.
+g: Chest pain, a racing heart or fainting
+g: Very short of breath when resting
+g: Black or bloody stools, or vomiting blood
+what: Red blood cells carry oxygen. In anemia you have too few of them, or too little of the part that carries oxygen. The most common cause is not enough iron. Heavy periods, bleeding in the gut, pregnancy and some long-term illnesses can also cause it.
+signs: Feeling tired and weak ; Pale skin, lips or inside of the eyelids ; Dizziness or headache ; Cold hands and feet ; Short of breath on small effort
+home: See a doctor for a blood test before taking iron on your own ; Take iron tablets exactly as your doctor says ; Eat iron-rich food such as liver, lean meat, fish, eggs, malunggay and dark leafy greens ; Vitamin C food such as calamansi or guava helps the body use iron ; Tea and coffee with meals can block iron
+prev: Eat a mix of foods with iron ; Pregnant women should have prenatal check-ups ; Treat worms and heavy bleeding early ; Ask a doctor about heavy periods
+
+= violence | Violence at home | mind | ph
+mp: Intimate Partner Violence
+aka: domestic violence, VAWC, pananakit, sinasaktan sa bahay, abuse
+wiki: Domestic_violence
+s: Being hurt, scared or controlled by someone at home is never your fault.
+s: Help is free and private in the Philippines.
+s: You can ask for help even if you are not ready to leave.
+g: You or someone else is in danger right now: call 911
+g: A serious injury, or a threat to kill
+g: A child is being hurt
+what: Domestic violence is when a partner or family member hurts, threatens, shames or controls another person. It can be hitting, but also words, money control or forcing sex. It happens to women, men, children and older people. In the Philippines the law protects women and children, and barangay and police desks can help.
+signs: Injuries that do not match the story ; Being afraid of a partner or family member ; Not allowed to see friends or hold money ; Children who are scared, quiet or hurt
+home: Tell a person you trust ; Keep a bag with ID, money and medicines where you can grab it ; Know the nearest barangay VAW desk or police women's desk ; Call 911 in danger ; Ask a doctor or health worker for a check, they can keep notes
+prev: Talk about problems early ; Ask for help from a counsellor or the barangay ; Teach children that no one may hurt them
+
+= elderabuse | Abuse of older people | mind
+mp: Elder Abuse
+aka: elder abuse, pang-aabuso sa matanda, inaabuso, pinababayaan, neglect
+wiki: Elder_abuse
+s: Older people can be hurt, scared, robbed of money or left without care.
+s: It is often done by someone they know.
+s: Telling someone you trust is the first step.
+g: Someone is in danger right now: call 911
+g: A serious injury, or an older person who is not eating, drinking or getting medicine
+what: Elder abuse is harm to an older adult by someone who should care for them. It can be hitting, shouting, shaming, taking money or property, or leaving them without food, medicine or help. Older people who depend on others, or who are forgetful, are at higher risk.
+signs: Bruises or injuries with no clear reason ; Fear of one person ; Sudden changes in money, bank or property ; Dirty clothes, weight loss or missed medicine ; Staying alone for long hours
+home: Visit often and talk privately with the older person ; Share the work of caring so no one is worn out ; Report to the barangay, the police or the DSWD ; See a doctor, who can check and record injuries
+prev: Support carers with rest and help ; Keep papers and bank cards safe ; Stay in touch with neighbours and family

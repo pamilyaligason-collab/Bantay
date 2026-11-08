@@ -7,6 +7,8 @@ vi.mock('../auth/client', () => ({ supabase: null }))
 vi.mock('../auth/session', () => ({ getAccessToken: async () => null, getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.mock('../records/trend', () => ({ trendChart: () => ({ destroy() {}, setSize() {} }) })) // uPlot needs a canvas
 vi.stubGlobal('ResizeObserver', class { observe() {} disconnect() {} })
+vi.mock('../../features/health/library/Library', () => ({ default: () => <p data-testid="lib-home">Library home</p> })) // lane A1 owns the real one; the route is what is tested here
+vi.mock('../../features/health/library/Article', () => ({ default: ({ rawKey }: { rawKey: string }) => <p data-testid="lib-article">{rawKey}</p> }))
 
 import Health from '../../screens/Health'
 import { ldb } from '../log/store'
@@ -43,11 +45,11 @@ describe('Health overview (v13)', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Health' })).toBeTruthy()
   })
 
-  it('order: Today, Needs attention, Readings, Browse, For you, Family health', async () => {
+  it('order: Today, Needs attention, Readings, Browse, For you, Health videos, Family health', async () => {
     await hdb.people.put({ id: 'p2', name: 'Ma Sample' })
     render(<Health />)
     await screen.findByTestId('family-health')
-    const els = ['today-kpis', 'bodyhero', 'readings-card', 'browse', 'for-you', 'family-health'].map((id) => screen.getByTestId(id))
+    const els = ['today-kpis', 'bodyhero', 'readings-card', 'browse', 'for-you', 'health-videos', 'family-health'].map((id) => screen.getByTestId(id))
     els.slice(1).forEach((el, i) => expect(els[i]!.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
   })
 
@@ -121,6 +123,23 @@ describe('Health overview (v13)', () => {
     await screen.findByTestId('bodyhero')
     await waitFor(() => expect(screen.getByRole('button', { name: /^Me/ })).toBeTruthy())
     expect(location.hash).toBe('#health')
+  })
+})
+
+describe('Health > library routes (S25)', () => {
+  it('#health/library draws the library home, #health/library/<key> draws that article with the key decoded', async () => {
+    location.hash = '#health/library'
+    const { unmount } = render(<Health />)
+    expect(await screen.findByTestId('lib-home')).toBeTruthy()
+    unmount()
+    location.hash = '#health/library/' + encodeURIComponent('s:LDL cholesterol')
+    render(<Health />)
+    expect((await screen.findByTestId('lib-article')).textContent).toBe('s:LDL cholesterol')
+  })
+  it('the Browse tile Health library goes to #health/library', async () => {
+    location.hash = '#health'
+    render(<Health />)
+    expect((await screen.findByTestId('browse-library')).getAttribute('href')).toBe('#health/library')
   })
 })
 

@@ -120,7 +120,7 @@ export default function App() {
 
   const Tabbed = SCREENS[tab].Screen
   return (
-    <div className="bt">
+    <div className="bt" data-tab={isTabView ? tab : 'none'}>
       <Sky state="clear" />
       <OfflineBar />
       {/* S16-L0 */}

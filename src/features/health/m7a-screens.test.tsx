@@ -13,7 +13,6 @@ vi.mock('./summaryImage', () => ({ renderSummaryImage: async () => new Blob(['x'
 import Health from '../../screens/Health'
 import Article from './library/Article'
 import Library from './library/Library'
-import Videos from './library/Videos'
 import { fdb } from '../family/store'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
@@ -99,7 +98,7 @@ describe('Health library (moved to Discover, S16; the components are tested wher
     go('#discover/learn/library')
     render(<Library />)
     const link = await screen.findByRole('link', { name: /^Metformin/ })
-    expect(link.getAttribute('href')).toBe('#discover/learn/library/m%3Ametformin')
+    expect(link.getAttribute('href')).toBe('#health/library/m%3Ametformin')
     expect(screen.getByText(/From MedlinePlus \(U\.S\. National Library of Medicine\), summarised; not medical advice/)).toBeTruthy()
     cleanup()
     const f = vi.fn().mockRejectedValue(new Error('offline'))
@@ -122,27 +121,15 @@ describe('Health library (moved to Discover, S16; the components are tested wher
 })
 
 describe('Video of the day', () => {
-  it('is a link card in For you that opens the Videos page', async () => {
+  it('is a card in For you that plays in place on a tap', async () => {
     await hdb.readings.add({ personId: 'p1', test: 'weight', value: 61, unit: 'kg', takenAt: day(1) })
     go('#health')
     render(<Health />)
     const tile = await screen.findByTestId('foryou-video')
-    expect(tile.tagName).toBe('A')
-    expect(tile.getAttribute('href')).toBe('#discover/watch')
-    expect(document.querySelector('iframe')).toBeNull() // nothing loads until the Videos page
-  })
-})
-
-describe('Videos', () => {
-  it('shows the fixed list; nothing loads until a tap, then the no-cookie player', async () => {
-    go('#discover/watch')
-    render(<Videos />)
-    expect(await screen.findByRole('button', { name: /^Play Hands-only CPR/ })).toBeTruthy()
-    expect(document.querySelector('iframe')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /^Play Hands-only CPR/ }))
-    expect(document.querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/M4ACYp75mjU/)
-    fireEvent.click(screen.getByRole('button', { name: 'Diabetes' }))
-    expect(screen.queryByText(/American Heart Association/)).toBeNull()
+    expect(tile.tagName).toBe('BUTTON')
+    expect(document.querySelector('iframe')).toBeNull() // nothing loads until a tap
+    fireEvent.click(tile)
+    expect(document.querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\//)
   })
 })
 
@@ -160,7 +147,7 @@ describe('Explore your body', () => {
     // Medicines load after the readings; wait for them too (a slower machine showed the panel without them yet).
     await waitFor(() => expect(within(screen.getByTestId('acting-here')).getByText('Amlodipine 5 mg: relaxes vessels')).toBeTruthy())
     expect(panel.textContent).toMatch(/not medical advice/)
-    expect(within(panel).getByRole('link', { name: /Learn more: High blood pressure/ }).getAttribute('href')).toBe('#discover/learn/library/c%3AHigh%20blood%20pressure')
+    expect(within(panel).getByRole('link', { name: /Learn more: High blood pressure/ }).getAttribute('href')).toBe('#health/library/c%3AHigh%20blood%20pressure')
   })
 })
 

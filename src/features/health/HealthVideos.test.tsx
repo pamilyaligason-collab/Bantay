@@ -1,0 +1,75 @@
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
+import { HealthVideos } from './HealthVideos'
+import css from './health.css?raw'
+import { DISCOVER_SET, forSub, SUBS, VIDEOS } from './library/videosLogic'
+
+afterEach(cleanup)
+const cards = () => Array.from(screen.getByTestId('hv-grid').querySelectorAll('[data-testid^="hv-"]'))
+
+describe('Health videos (S25)', () => {
+  it('seven chips, none selected; four cards show with Philippine sources first, and Show more adds four at a time', () => {
+    render(<HealthVideos />)
+    const chips = within(screen.getByRole('group', { name: 'Video topic' })).getAllByRole('button')
+    expect(chips.map((c) => c.textContent)).toEqual(['Heart and BP', 'Diabetes', 'Infections', 'First aid', 'Mind and sleep', 'Food', 'Kids'])
+    expect(chips.every((c) => c.getAttribute('aria-pressed') === 'false')).toBe(true)
+    expect(cards()).toHaveLength(4)
+    expect(cards().every((c) => c.querySelector('.hv-ph'))).toBe(true) // 40 clips, Philippine ones lead
+    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
+    expect(cards()).toHaveLength(8)
+  })
+  it('a chip filters (aria-pressed), the stills use mqdefault from i.ytimg.com, and tapping it again shows all', () => {
+    render(<HealthVideos />)
+    const chip = screen.getByRole('button', { name: 'Kids' })
+    fireEvent.click(chip)
+    expect(chip.getAttribute('aria-pressed')).toBe('true')
+    expect(cards()).toHaveLength(2) // counted by hand: two Kids videos
+    expect(screen.queryByRole('button', { name: /Show .* more/ })).toBeNull()
+    const img = cards()[0]!.querySelector('img.hv-img')!
+    expect(img.getAttribute('src')).toMatch(/^https:\/\/i\.ytimg\.com\/vi\/[A-Za-z0-9_-]{11}\/mqdefault\.jpg$/)
+    expect(img.getAttribute('referrerpolicy')).toBe('no-referrer')
+    fireEvent.click(chip)
+    expect(chip.getAttribute('aria-pressed')).toBe('false')
+    expect(cards()).toHaveLength(4)
+  })
+  it('each card shows title, source, minutes and a PH flag only for a Philippine source', () => {
+    render(<HealthVideos />)
+    fireEvent.click(screen.getByRole('button', { name: 'Heart and BP' }))
+    for (const c of cards()) {
+      const id = c.getAttribute('data-testid')!.slice(3)
+      const v = forSub('heart-bp').find((x) => x.id === id)!
+      expect(c.textContent).toContain(v.title)
+      expect(c.textContent).toContain(v.source)
+      expect(c.querySelector('.hv-len')!.textContent).toBe(`${v.minutes} min`)
+      expect(!!c.querySelector('.hv-ph')).toBe(!!v.ph)
+    }
+  })
+  it('a tap opens the card across the grid and plays it in LiteVideo (no-cookie embed), one at a time', () => {
+    render(<HealthVideos />)
+    const first = cards()[0]!
+    fireEvent.click(first.querySelector('button.hv-vbtn')!)
+    const open = screen.getByTestId(first.getAttribute('data-testid')!)
+    expect(open.hasAttribute('data-open')).toBe(true)
+    expect(open.querySelector('.hv-open')).toBeNull() // hv-open is the full-row link style; the player wrapper must not carry it
+    expect(open.querySelector('.hv-opened')).not.toBeNull()
+    expect(open.querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{11}\?/)
+    fireEvent.click(cards()[1]!.querySelector('button.hv-vbtn')!)
+    expect(screen.getByTestId(first.getAttribute('data-testid')!).hasAttribute('data-open')).toBe(false) // the first folds back to its still
+  })
+  it('every chip has a video; the stylesheet gives chips a 44 px height and lets the row wrap with no side scroll', () => {
+    render(<HealthVideos />)
+    expect(SUBS.every((s) => forSub(s.sub).length > 0)).toBe(true)
+    expect(screen.getByRole('group', { name: 'Video topic' }).className).toBe('hv-chips') // jsdom has no layout, so the rules are read from the CSS text
+    const rule = (sel: string) => css.split('\n').find((l) => l.startsWith(sel + ' {'))!
+    expect(rule('.hv-chips')).toContain('flex-wrap: wrap')
+    expect(rule('.hv-chips')).not.toMatch(/overflow-x/)
+    expect(rule('.hv-chip')).toContain('min-height: 44px')
+  })
+  it('the section has the id the For you "More" link scrolls to, and no S25 health-only clip is in the Discover set', () => {
+    render(<HealthVideos />)
+    expect(document.getElementById('health-videos')).not.toBeNull()
+    expect(VIDEOS.filter((v) => v.healthOnly)).toHaveLength(16)
+    expect(DISCOVER_SET).toHaveLength(27)
+    expect(DISCOVER_SET.some((v) => v.healthOnly)).toBe(false)
+  })
+})

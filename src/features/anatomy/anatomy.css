@@ -103,3 +103,7 @@
 .an-stage { position: relative; }
 .an-callout { position: absolute; top: 8px; left: 8px; z-index: 2; min-height: 44px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--warn-bg); color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; }
 .an-foot { margin-top: 12px; padding-bottom: 24px; }
+
+/* S25: the system chips sit in a MoreGrid (no side swipe); credits fold behind one link at the page foot */
+.more-grid > .an-chip { justify-content: center; white-space: normal; text-align: center; width: auto; }
+.an-credits > summary { min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 14px; color: var(--ink2); cursor: pointer; }

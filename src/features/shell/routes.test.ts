@@ -8,13 +8,14 @@ describe('parseHash', () => {
     expect(canonicalHash('#family/plan')).toBe('#family/plan')
     for (const old of ['#records', '#family/records', '#health/papers', '#family/papers']) expect(parseHash(old)).toEqual({ tab: 'family', view: 'papers' })
   })
-  it('moves the Library and Videos to Discover and keeps the article key as written', () => {
-    expect(canonicalHash('#health/library')).toBe('#discover/learn/library')
-    expect(canonicalHash('#health/library/c%3AHigh%20blood%20pressure')).toBe('#discover/learn/library/c%3AHigh%20blood%20pressure')
-    expect(canonicalHash('#health/videos')).toBe('#discover/watch')
-    expect(parseHash('#health/library')).toEqual({ tab: 'discover', view: 'learn' })
-    expect(parseHash('#health/library/m%3Ametformin')).toEqual({ tab: 'discover', view: 'learn' })
-    expect(parseHash('#health/videos')).toEqual({ tab: 'discover', view: 'watch' })
+  it('S25: the Library lives in Health again; old Discover library links and #health/videos come back to Health', () => {
+    expect(canonicalHash('#health/library')).toBe('#health/library')
+    expect(canonicalHash('#discover/learn/library')).toBe('#health/library')
+    expect(canonicalHash('#discover/learn/library/c%3AHigh%20blood%20pressure')).toBe('#health/library/c%3AHigh%20blood%20pressure')
+    expect(canonicalHash('#health/videos')).toBe('#health')
+    expect(parseHash('#health/library')).toEqual({ tab: 'health', view: null })
+    expect(parseHash('#discover/learn/library/m%3Ametformin')).toEqual({ tab: 'health', view: null })
+    expect(parseHash('#health/videos')).toEqual({ tab: 'health', view: null })
   })
   it('sends #family/people and #people to the Family home, a member page stays', () => {
     expect(canonicalHash('#family/people')).toBe('#family')
@@ -25,7 +26,7 @@ describe('parseHash', () => {
     expect(parseHash('#family/people/abc')).toEqual({ tab: 'family', view: 'people' })
   })
   it('leaves every other hash alone', () => {
-    for (const h of ['#health/labs', '#health/meds', '#health/library2', '#discover/learn/library', '#family/papers', '#me/alerts', '']) expect(canonicalHash(h)).toBe(h)
+    for (const h of ['#health/labs', '#health/meds', '#health/library2', '#discover/learn', '#family/papers', '#me/alerts', '']) expect(canonicalHash(h)).toBe(h)
   })
   it('maps #family/plan and #family/messages to the family tab', () => {
     expect(parseHash('#family/plan')).toEqual({ tab: 'family', view: 'plan' })

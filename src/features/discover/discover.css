@@ -68,13 +68,10 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 :root[data-theme="dark"] .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); } }
 
-/* Watch: poster row scrolls inside itself, then the player and one row per topic. */
+/* Watch: poster cards in a 4-card grid (D-156), then the player and one row per topic. */
 .dc-sh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
 .dc-sh h2 { margin: 0; }
-.dc-posters { list-style: none; margin: 0 -16px; padding: 0 16px 4px; display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x proximity; scroll-padding-left: 16px; overscroll-behavior-x: contain; scrollbar-width: none; }
-.dc-posters::-webkit-scrollbar { display: none; }
-.dc-posters > li { flex: none; scroll-snap-align: start; }
-.dc-poster { position: relative; display: block; width: 160px; height: 90px; padding: 0; border: 0; border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, var(--hue-terra), var(--card2)); color: var(--ink); font: inherit; text-align: left; box-shadow: var(--shadow); }
+.dc-poster { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; min-height: 90px; padding: 0; border: 0; border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, var(--hue-terra), var(--card2)); color: var(--ink); font: inherit; text-align: left; box-shadow: var(--shadow); }
 .dc-poster[data-thumb="on"] { background: #555555; } /* until the still loads: the white caption stays readable, same stand-in as LiteVideo */
 .dc-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .dc-poster[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--hue-terra-ic), var(--shadow); }
@@ -138,8 +135,6 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-hero-s { margin-top: 0; }
 /* D-124: no reserved heights. A section link would sit under Jack (right column) at rest, so on Discover the link follows its title on the left instead of the far right. */
 .bt section.sec[data-testid^="dc-"] > .sec-h { justify-content: flex-start; gap: 16px; }
-/* Be prepared: a row of small video cards (the .dc-vc card, narrower) */
-.card.dc-prep { flex: none; width: max(140px, calc(50% - 6px)); scroll-snap-align: start; } /* Pick is display: contents, so the card is the carousel item itself. Two cards fill the row (the carousel gap is 12 px), so the third starts at the screen edge, right of Jack (D-128: a card under him keeps most of its face tappable); on a very narrow screen they stay 140 px and scroll */
 
 /* board: the play triangles are solid (Icon has no filled twin for play on purpose, so the shape is filled here) */
 .dc-hero-play .sh-ic, .dc-vc-play .sh-ic, .rw > button.dc-play:not([aria-pressed="true"]) .sh-ic { fill: currentColor; }
@@ -169,3 +164,8 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 /* short screens: the poster is under 136 px, so the centred 56 px disc would share rows with the Watch chip; park it at the right edge */
 @media (max-height: 819px) { .dc-top .dc-hero-play { margin-left: auto; margin-right: 14px; } }
 :root[data-narrow] .dc-top .dc-hero-play { display: none; } /* 195 px: the chip wraps to 3 lines and fills the poster; the disc is decoration (aria-hidden) on a card that is one link */
+
+/* S25 fix 1: Show more / Show less keep a symmetric 64 px each side so the floating Jack button (right edge, 56 px) never covers any part of it */
+.dc-panel .more-grid-btn { display: block; width: calc(100% - 128px); margin-inline: auto; }
+/* S25 fix 1: the channel chips wrap inside the same clear 64 px, so a chip never sits under Jack */
+.dc-panel .dc-wrapchips, .dc-panel .nv-chips { padding-right: 64px; }

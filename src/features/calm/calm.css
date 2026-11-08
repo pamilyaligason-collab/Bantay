@@ -12,6 +12,7 @@
 .cm-root .btn { color: var(--on-green); }
 .cm-root .segd > [aria-pressed="true"] { background: var(--calm-mint); color: var(--calm-on-mint); box-shadow: none; }
 .cm-root .card { border: .5px solid rgba(160,190,255,.22); }
+.cm-root .more-grid-btn { border-color: var(--calm-mint); color: var(--calm-mint); } /* S25: not the tab accent, which is dark amber and ~2.4:1 on the navy */
 .cm { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
 .cm-hero { background: none; color: var(--ink); min-width: 0; text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
 /* the orb is a dotted sphere (S22-C); the word and count sit on a solid ground disc, and are hidden before Start */
@@ -53,7 +54,7 @@
 .cm-call .cm-net { color: #2B3A5E; }
 .cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
 /* the board's row: 240 px cards with an 84 px icon head; never wider than a narrow screen */
-.cm-media { position: relative; flex: none; width: min(240px, calc(100vw - 48px)); display: flex; flex-direction: column; color: var(--ink); text-decoration: none; scroll-snap-align: start; box-sizing: border-box; padding: 0 0 14px; overflow: hidden; }
+.cm-media { position: relative; width: auto; display: flex; flex-direction: column; color: var(--ink); text-decoration: none; box-sizing: border-box; padding: 0 0 14px; overflow: hidden; }
 .cm-media b { font-size: 17px; line-height: 22px; font-weight: 600; margin-top: 2px; }
 .cm-media .cm-sub { font-size: 13px; line-height: 18px; margin-top: 4px; }
 .cm-media > :not(.cm-media-ic) { margin-inline: 14px; }
@@ -73,7 +74,7 @@
 .cm-media-ic:has(.cm-eq) > svg { display: none; }
 @media (prefers-reduced-motion: reduce) { .cm-eq { display: none; } .cm-media-ic:has(.cm-eq) > svg { display: block; } }
 .cm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.cm-video { position: relative; padding: 0; overflow: hidden; flex: none; width: min(240px, calc(100vw - 48px)); box-sizing: border-box; scroll-snap-align: start; }
+.cm-video { position: relative; padding: 0; overflow: hidden; width: auto; box-sizing: border-box; }
 .cm-video .lv-poster, .cm-video .lv-frame { border-radius: 0; }
 .cm-video .lv-yt { padding-inline: 14px; }
 /* a 240 px poster is 135 px tall: the 64 px play disc and a two-line caption overlap, so a smaller disc sits above a solid caption band that also covers words burned into a poster */

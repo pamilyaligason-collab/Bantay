@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Section } from '../look'
+import { Section, Sheet } from '../look'
 import { Ring } from '../look/Ring'
 import { weekProgress } from '../exercise/weekly'
 import { labsLine, useTodayDoses } from './GlanceGrid'
@@ -36,7 +36,7 @@ export function dosePills(doses: DoseState[]): { text: string; done: boolean }[]
 
 /** Browse photos (public/img/browse, credits in CREDITS.md): Wikimedia Commons, resized, stored in the app (precached by the web service worker, bundled in the native app) so they work offline. */
 const DEED: Record<string, string> = { 'CC0': 'https://creativecommons.org/publicdomain/zero/1.0/', 'CC BY-SA 4.0': 'https://creativecommons.org/licenses/by-sa/4.0/', 'CC BY 4.0': 'https://creativecommons.org/licenses/by/4.0/', 'CC BY 2.5': 'https://creativecommons.org/licenses/by/2.5/' }
-const PHOTOS: Record<string, { file: string; credit: string; licence: string; href: string }> = {
+const PHOTOS: Record<string, { file: string; credit: string; licence: string; href: string } | undefined> = {
   labs: { file: 'labs', credit: 'Frankincense Diala', licence: 'CC0', href: 'https://commons.wikimedia.org/wiki/File:Laboratory_Test_Tubes;_from_a_medical_laboratory_in_Abuja,_Nigeria.jpg' },
   meds: { file: 'meds', credit: 'Stevepb', licence: 'CC0', href: 'https://commons.wikimedia.org/wiki/File:Pill_Organizer_With_Vitamins_And_Medicines.jpg' },
   visits: { file: 'clinic', credit: 'Con.archi', licence: 'CC BY-SA 4.0', href: 'https://commons.wikimedia.org/wiki/File:Corridor_and_entrance_to_Psychology_clinic_and_Consulting_rooms.jpg' },
@@ -44,7 +44,7 @@ const PHOTOS: Record<string, { file: string; credit: string; licence: string; hr
   body: { file: 'body', credit: 'Patrick J. Lynch', licence: 'CC BY 2.5', href: 'https://commons.wikimedia.org/wiki/File:Heart_anterior_exterior_view.jpg' }
 }
 
-/** The card's picture under a dark bottom gradient; slow zoom (off under reduced motion, in CSS). It reports a failed load so the card keeps a plain tint and dark text. */
+/** S25: the card's picture is a soft texture (faint, nearly grey) under a warm cream wash, so the dark words stay easy to read; slow zoom (off under reduced motion, in CSS). It reports a failed load so the card keeps a plain tint. */
 function Photo({ file, onBad }: { file: string; onBad: () => void }) {
   return (
     <>
@@ -63,7 +63,7 @@ function Bars({ c }: { c: { ask: number; usual: number; noRange: number } }) {
   )
 }
 
-/** Browse: five animated cards in two columns (Labs, Medicines, Visits, Move and food, Body wiki wide), each with a small preview of its live value. Papers live in Family (D-100). Readings has its own card above. */
+/** Browse: six cards in two columns (Labs, Medicines, Visits, Move and food, Health library, Body wiki), each with a small preview of its live value where it has one. Papers live in Family (D-100). Readings has its own card above. Photo credits sit behind one link at the foot. */
 export function HealthBrowse({ personId, readings, thresholds }: { personId: string; readings: Reading[]; thresholds: Thresholds }) {
   const today = useTodayDoses(personId)
   const visit = nextVisitLine(useVisits(personId))
@@ -75,9 +75,10 @@ export function HealthBrowse({ personId, readings, thresholds }: { personId: str
   const pills = today ? dosePills(today.doses) : []
   const wk = weekProgress(acts)
   const [bad, setBad] = useState<Record<string, boolean>>({})
+  const [credits, setCredits] = useState(false)
   const card = (key: string, i: number, tint: string, title: string, sub: string | undefined, href: string, preview: React.ReactNode, wide = false) => (
-    <a key={key} className="card hb press" href={href} data-tint={tint} data-wide={wide ? '' : undefined} data-photo={bad[key] ? 'off' : 'on'} data-testid={`browse-${key}`} style={{ '--i': i } as React.CSSProperties}>
-      {!bad[key] && <Photo file={PHOTOS[key]!.file} onBad={() => setBad((b) => ({ ...b, [key]: true }))} />}
+    <a key={key} className="card hb press" href={href} data-tint={tint} data-wide={wide ? '' : undefined} data-photo={bad[key] || !PHOTOS[key] ? 'off' : 'on'} data-testid={`browse-${key}`} style={{ '--i': i } as React.CSSProperties}>
+      {!bad[key] && PHOTOS[key] && <Photo file={PHOTOS[key]!.file} onBad={() => setBad((b) => ({ ...b, [key]: true }))} />}
       {preview && <span className="hb-pv">{preview}</span>}
       <span className="hb-t"><b>{title}</b>{sub && <span className="hb-s">{sub}</span>}</span>
     </a>
@@ -89,12 +90,18 @@ export function HealthBrowse({ personId, readings, thresholds }: { personId: str
         {card('meds', 1, 'green', 'Medicines', medSub, '#health/meds', pills.length ? <span className="hb-pills">{pills.map((p, i) => <span key={i} className="hb-pill" data-done={p.done ? '' : undefined}>{p.text}</span>)}</span> : <span className="hb-none">--</span>)}
         {card('visits', 2, 'blue', 'Visits', (visit?.sub && visit.sub !== 'No visit booked yet' ? visit.sub : undefined) ?? (asks ? `${asks} ${asks === 1 ? 'question' : 'questions'} ready to ask` : visit ? undefined : 'Tap to add one'), '#health/visits', <span className="hb-date" data-empty={visit ? undefined : ''}>{visit ? visit.text.replace(/^(Next visit|Follow-up due): /, '') : 'Not booked'}</span>)}
         {card('move', 3, 'amber', 'Move and food', moveLine(acts), '#health/move', <Ring value={wk.pct / 100} size={40} hue="amber" stroke={5} />)}
-        {card('body', 4, 'purple', 'Body wiki', 'How each part works', '#health/body', null, true)}
+        {card('library', 4, 'green', 'Health library', 'Plain words about your health', '#health/library', null)}
+        {card('body', 5, 'purple', 'Body wiki', 'How each part works', '#health/body', null)}
       </div>
-      <p className="hb-credits" data-testid="browse-credits">
-        <span>Photos:</span>
-        {Object.values(PHOTOS).map((p) => <span key={p.file}><a href={p.href} target="_blank" rel="noopener noreferrer">{p.credit}<span className="hb-sr"> on Wikimedia Commons (opens outside)</span></a>, <a href={DEED[p.licence]} target="_blank" rel="noopener noreferrer">{p.licence}</a>, cropped</span>)}
-      </p>
+      <button type="button" className="hb-credit-link" data-testid="browse-credits-open" onClick={() => setCredits(true)}>Photo credits</button>
+      {credits && (
+        <Sheet title="Photo credits" onClose={() => setCredits(false)}>
+          <p className="hb-credits" data-testid="browse-credits">
+            <span>Photos:</span>
+            {Object.values(PHOTOS).filter((p): p is NonNullable<typeof p> => !!p).map((p) => <span key={p.file}><a href={p.href} target="_blank" rel="noopener noreferrer">{p.credit}<span className="hb-sr"> on Wikimedia Commons (opens outside)</span></a>, <a href={DEED[p.licence]} target="_blank" rel="noopener noreferrer">{p.licence}</a>, cropped</span>)}
+          </p>
+        </Sheet>
+      )}
     </Section>
   )
 }

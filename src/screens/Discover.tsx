@@ -2,22 +2,16 @@ import type { CSSProperties } from 'react'
 import { DISCOVER_SUBS, isDiscoverSubRoot, subOf, subScreen, type DiscoverSub } from '../features/discover'
 import Overview from '../features/discover/Overview'
 import { SeasonCard } from '../features/discover/today/Cards'
-import Library from '../features/health/library/Library'
-import Article from '../features/health/library/Article'
 import { SubHeader } from '../features/shell/SubHeader'
 import { useKv } from '../features/shell/useKv'
 import { MEDCARDS_FLAG } from '../features/discover/learn/Screen'
 import '../features/shell/shell.css'
 import '../features/discover/discover.css'
 
-const safeDecode = (x: string) => { try { return decodeURIComponent(x) } catch { return x } }
-
 /** Discover tab. `#discover` is the overview (video hero and two more videos, season row, Learn, Listen, Play, the fact of the day, News); `#discover/<sub>` is that sub's screen under a pill row (Learn, Watch, Listen, Play, News).
  *  A sub that no lane has registered yet shows a short "Coming in this update" card. The hash is the source of truth, so Back and deep links work. */
 export default function Discover() {
   const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
-  const lib = /^#discover\/learn\/library(?:\/(.+))?$/.exec(location.hash)
-  if (lib) return lib[1] === undefined ? <Library /> : <Article rawKey={safeDecode(lib[1])} />
   if (/^#?discover\/?$/.test(location.hash)) return <Overview />
   if (location.hash === '#discover/season') {
     return (

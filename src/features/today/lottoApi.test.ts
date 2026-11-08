@@ -16,16 +16,21 @@ const NOW = Date.parse('2026-11-08T02:00:00Z')
 afterEach(() => { h.result = { data: [], error: null }; h.saved = undefined; h.put.mockClear(); h.connected = true })
 
 describe('latestPerGame', () => {
-  it('keeps the newest draw of each game in the order 6/58, 6/55, 6/49, 6/45, 6/42, 3D 9PM; other games and 3D at other hours are left out', () => {
+  it('keeps the newest draw of each game in the order 6/58, 6/55, 6/49, 6/45, 6/42, 3D (newest draw); other games are left out', () => {
     const out = latestPerGame([
       row('Lotto 6/42', '2026-11-05'), row('Lotto 6/42', '2026-11-07'), row('3D Lotto 2PM', '2026-11-07'), row('3D Lotto 9PM', '2026-11-06'),
       row('Ultra Lotto 6/58', '2026-11-03'), row('6Digit', '2026-11-07'), row('Mega Lotto 6/45', '2026-11-04')
     ])
-    expect(out.map((x) => `${x.game}|${x.draw_date}`)).toEqual(['Ultra Lotto 6/58|2026-11-03', 'Mega Lotto 6/45|2026-11-04', 'Lotto 6/42|2026-11-07', '3D Lotto 9PM|2026-11-06'])
+    expect(out.map((x) => `${x.game}|${x.draw_date}`)).toEqual(['Ultra Lotto 6/58|2026-11-03', 'Mega Lotto 6/45|2026-11-04', 'Lotto 6/42|2026-11-07', '3D Lotto 2PM|2026-11-07'])
   })
   it('takes the names lotto-pcso stores from the lottopcso.com page (D-153)', () => {
     const out = latestPerGame([row('6/58 Ultra Lotto', '2026-11-06'), row('6/42 Lotto', '2026-11-07'), row('3D 2PM', '2026-11-08'), row('3D 9PM', '2026-11-07'), row('4D', '2026-11-06'), row('2D 9PM', '2026-11-07')])
-    expect(out.map((x) => x.game)).toEqual(['6/58 Ultra Lotto', '6/42 Lotto', '3D 9PM'])
+    expect(out.map((x) => x.game)).toEqual(['6/58 Ultra Lotto', '6/42 Lotto', '3D 2PM'])
+  })
+  it('3D: before the 9 PM draw posts the latest posted draw shows (yesterday 9PM when nothing newer), and on the same day the later draw wins', () => {
+    expect(latestPerGame([row('3D 9PM', '2026-11-07'), row('3D 5PM', '2026-11-07'), row('3D 2PM', '2026-11-07')]).map((x) => x.game)).toEqual(['3D 9PM'])
+    expect(latestPerGame([row('3D 2PM', '2026-11-08'), row('3D 9PM', '2026-11-07')]).map((x) => x.game)).toEqual(['3D 2PM'])
+    expect(latestPerGame([row('3D 9PM', '2026-11-07')]).map((x) => `${x.game}|${x.draw_date}`)).toEqual(['3D 9PM|2026-11-07'])
   })
 })
 

@@ -7,15 +7,19 @@ vi.mock('../records/useHealthData', () => ({ useHealthData: () => ({ readings: d
 import ExploreScreen from './ExploreScreen'
 
 afterEach(cleanup)
+// S25: the system chips sit in a MoreGrid (4 shown, then Show more); tests that need every chip open it first
+const showAll = () => { for (let i = 0; i < 3; i++) screen.queryAllByRole('button', { name: /^Show \d+ more$/ }).forEach((b) => fireEvent.click(b)) }
 const r = (test: string, value: number, labLow: number | null, labHigh: number | null): Reading => ({ personId: 'p', takenAt: '2026-10-01', test, value, labLow, labHigh })
 
 describe('Body wiki', () => {
-  it('has a Body wiki title with a Health back link, a chip carousel and a grouped list of parts', () => {
+  it('has a Body wiki title with a Health back link, a chip grid with Show more and a grouped list of parts', () => {
     data.readings = []
     const { container } = render(<ExploreScreen />)
     expect(screen.getByRole('heading', { level: 1, name: 'Body wiki' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Back to Health' }).getAttribute('href')).toBe('#health')
-    const chips = container.querySelectorAll('.carousel button.an-chip')
+    expect(container.querySelectorAll('.more-grid button.an-chip').length).toBe(4)
+    showAll()
+    const chips = container.querySelectorAll('.more-grid button.an-chip')
     expect(chips.length).toBe(9)
     expect(chips[0]!.getAttribute('aria-pressed')).toBe('true')
     fireEvent.click(container.querySelector('.an-chip[aria-label="Heart and blood"]')!)
@@ -31,6 +35,7 @@ describe('Body wiki care lists (A1)', () => {
   it('shows the 911 and doctor lists with their sources for the chosen system', () => {
     data.readings = []
     const { container } = render(<ExploreScreen />)
+    showAll()
     fireEvent.click(container.querySelector('.an-chip[aria-label="Digestion and liver"]')!)
     expect(screen.getByTestId('care-911').textContent).toBe('Get emergency help (911) if:')
     expect(screen.getByTestId('care-doctor').textContent).toBe('Call a doctor if')
@@ -42,6 +47,7 @@ describe('Body wiki care lists (A1)', () => {
   it('every system has one Call 911 link under its emergency list, a tel: link at least 48 px tall by style', () => {
     data.readings = []
     const { container } = render(<ExploreScreen />)
+    showAll()
     for (const chip of Array.from(container.querySelectorAll('.an-chip'))) {
       fireEvent.click(chip)
       const call = screen.getByTestId('care-call-911')
@@ -78,6 +84,7 @@ describe('Explore rail', () => {
   it('unknown results get a plain badge and no green pill', () => {
     data.readings = [r('creatinine', 1, null, null)]
     const { container } = render(<ExploreScreen />)
+    showAll()
     expect(container.querySelector('.an-chip[aria-label="Kidneys and bladder"] .an-badge')?.getAttribute('data-tone')).toBe('none')
     expect(container.querySelector('.an-glow')).toBeNull()
     expect(screen.queryByTestId('sys-status')).toBeNull() // default system (skeleton) has none

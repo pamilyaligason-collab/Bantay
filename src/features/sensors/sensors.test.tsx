@@ -1,5 +1,6 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { liveQuery } from 'dexie'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { track } from '../admin/events'
@@ -323,6 +324,8 @@ describe('whose phone', () => {
   const phone = () => fake({ readSteps: vi.fn(async () => [stepsHour]), granted: vi.fn(async () => true) })
   const stepRows = async () => (await ldb.activity.toArray()).filter((a) => a.kind === 'steps').map((a) => a.personId)
   const saved = (value: unknown) => db.kv.put({ key: 'sensors.state', value })
+  // A switch reads "off" before the screen has loaded the saved state and who is signed in (its first render), so "off" is not proof a tap would ask first. One more live read of the same row emits after the screen's own (same queue, subscribed later); flush it inside act.
+  const screenLoaded = () => act(async () => { await new Promise<void>((res) => { const s = liveQuery(() => db.kv.get('sensors.state')).subscribe({ next: () => { queueMicrotask(() => s.unsubscribe()); res() }, error: () => res() }) }) })
 
   it('the person who enables is the owner; anyone else signed in reads nothing and stores nothing, also no rebuild', async () => {
     const b = phone()
@@ -390,6 +393,7 @@ describe('whose phone', () => {
     render(<SensorSettings native bridge={b} />)
     await waitFor(async () => expect((await getState()).enabled).toHaveLength(4)) // the quiet reconcile on open has run
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('false'))
+    await screenLoaded()
     fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))
     expect(await screen.findByText(/saved under your name/)).toBeTruthy()
     expect(b.request).not.toHaveBeenCalled()
@@ -415,6 +419,7 @@ describe('whose phone', () => {
     await waitFor(async () => expect((await getState()).enabled).toHaveLength(4)) // the quiet reconcile on open has run
     expect(b.readSteps).not.toHaveBeenCalled()
     await waitFor(() => expect(screen.getByRole('switch', { name: 'Steps' }).getAttribute('aria-checked')).toBe('false'))
+    await screenLoaded()
     fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))
     await screen.findByText(/saved under your name/)
     fireEvent.click(screen.getByRole('switch', { name: 'Steps' }))

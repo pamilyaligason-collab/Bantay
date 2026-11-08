@@ -8,8 +8,9 @@ const MOVED: { old: string; to: RegExp; h1: string }[] = [
   { old: '#records', to: /#family\/papers$/, h1: 'Papers' },
   { old: '#family/records', to: /#family\/papers$/, h1: 'Papers' },
   { old: '#health/papers', to: /#family\/papers$/, h1: 'Papers' },
-  { old: '#health/library', to: /#discover\/learn\/library$/, h1: 'Health library' },
-  { old: '#health/videos', to: /#discover\/watch$/, h1: 'Watch' },
+  { old: '#health/library', to: /#health\/library$/, h1: 'Health library' },
+  { old: '#discover/learn/library', to: /#health\/library$/, h1: 'Health library' },
+  { old: '#health/videos', to: /#health$/, h1: 'Health' },
   { old: '#family/people', to: /#family$/, h1: 'Family' },
   { old: '#people', to: /#family$/, h1: 'Family' }
 ]
@@ -24,9 +25,9 @@ for (const m of MOVED) {
   })
 }
 
-test('#health/library/<key> keeps its key on the way to Discover > Learn', async ({ page }) => {
-  await page.goto('/#health/library/hypertension')
-  await expect(page).toHaveURL(/#discover\/learn\/library\/hypertension$/)
+test('#discover/learn/library/<key> keeps its key on the way to Health > Library', async ({ page }) => {
+  await page.goto('/#discover/learn/library/hypertension')
+  await expect(page).toHaveURL(/#health\/library\/hypertension$/)
   await expect(page.locator('main')).toBeVisible()
 })
 

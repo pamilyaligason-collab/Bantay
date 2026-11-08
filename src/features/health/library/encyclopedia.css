@@ -1,0 +1,36 @@
+/* S25 A1: the offline Health library. Prefixes lx- (home), ax- (article). App tokens only; 44 px+ targets. */
+.lx-intro { margin: 4px 4px 0; }
+.lx-ask { margin-top: 12px; min-height: 48px; }
+.lx-src { margin: 16px 4px; }
+.lx-tag { flex: none; font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--tint-amber); color: var(--tint-amber-ink); }
+
+.lx-chips { list-style: none; padding: 0; margin: 8px 0 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.lx-chip { display: inline-flex; flex-direction: column; justify-content: center; min-height: 48px; padding: 6px 16px; border-radius: 16px; background: var(--tint-green); color: var(--tint-green-ink); font-weight: 700; font-size: 16px; text-decoration: none; }
+.lx-chip-sub { font-size: 13px; font-weight: 500; color: var(--ink2); }
+
+.lx-body { list-style: none; padding: 0; margin: 8px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lx-tile { display: flex; flex-direction: column; justify-content: center; gap: 2px; min-height: 84px; padding: 10px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+.lx-tile b { font-size: 16px; }
+.lx-tile span { font-size: 13px; line-height: 1.25; color: var(--ink2); }
+.lx-tile:focus-visible, .lx-card:focus-visible, .lx-chip:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+
+.lx-card { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 6px; min-height: 64px; padding: 10px 12px; border-radius: 16px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); color: var(--ink); text-decoration: none; overflow-wrap: anywhere; }
+
+/* article */
+.ax-aka { margin: -4px 0 0; }
+.ax-pic { width: 100%; height: auto; max-height: 220px; object-fit: contain; border-radius: 14px; background: var(--card2); }
+.ax-h { margin: 0 0 6px; font-size: 17px; }
+.ax-list { margin: 0; padding-left: 22px; display: grid; gap: 6px; line-height: 1.45; }
+.ax-go { padding: 12px 14px; border-radius: 14px; border: 2px solid var(--tint-red-ink); background: var(--tint-red); color: var(--ink); }
+.ax-go .ax-h { color: var(--tint-red-ink); }
+.ax-sec { border-radius: 14px; background: var(--card2); }
+.ax-sec > summary, .ax-credits > summary { min-height: 48px; display: flex; align-items: center; padding: 0 14px; font-weight: 700; font-size: 16px; cursor: pointer; }
+.ax-sec > .ar-body, .ax-sec > .ax-list { margin: 0; padding-bottom: 14px; }
+.ax-sec > .ar-body { padding-left: 14px; padding-right: 14px; }
+.ax-sec > .ax-list { padding-left: 36px; padding-right: 14px; }
+.ax-vid { display: grid; gap: 4px; margin-top: 8px; }
+.ax-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ax-credits { color: var(--ink2); }
+.ax-credits > summary { font-size: 14px; font-weight: 600; }
+.ax-credits > p { margin: 0 14px 8px; }
+@media (prefers-reduced-motion: reduce) { .lx-tile, .lx-card, .lx-chip { transition: none; } }

@@ -32,11 +32,13 @@ describe('Lotto card', () => {
     const { container } = render(<Lotto />)
     expect(screen.getByRole('heading', { name: 'Lotto results' })).toBeTruthy()
     const rows = Array.from(container.querySelectorAll('.lotto-row'))
-    expect(rows.map((x) => x.getAttribute('aria-label'))).toEqual([
-      'Grand Lotto 6/55, Sat 7 Nov, no winner, numbers 05 12 22 27 34 43',
-      'Lotto 6/42, Sat 7 Nov, 2 winners, numbers 04 18 19 23 28 33',
-      '3D Lotto 9PM, Sat 7 Nov, numbers 4 4 7'
+    expect(rows.map((x) => x.textContent)).toEqual([
+      'Grand Lotto 6/55Sat 7 Nov · no winner051222273443',
+      'Lotto 6/42Sat 7 Nov · 2 winners041819232833',
+      '3D Lotto 9PMSat 7 Nov447'
     ])
+    // one accessible name: the visible text, read once (no aria-label on the row, balls not hidden from the reader)
+    expect(container.querySelectorAll('.lotto-row[aria-label], .lotto-row [aria-hidden]')).toHaveLength(0)
     expect(container.querySelectorAll('.lotto-ball')).toHaveLength(6 + 6 + 3)
     expect(container.textContent).not.toContain('01 02 03')
     const note = container.querySelector('.lotto-note')!

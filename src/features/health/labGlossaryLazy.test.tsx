@@ -43,7 +43,7 @@ describe('lab glossary before the chunk arrives', () => {
   it('Library shows Loading... with an empty lab list, then the tests', async () => {
     const { default: Library } = await import('./library/Library')
     render(<Library />)
-    expect(screen.getByRole('status').textContent).toBe('Loading...')
+    expect(screen.getAllByRole('status').some((s) => s.textContent === 'Loading...')).toBe(true) // other cards may add their own live region
     expect(screen.getByTestId('library-labs').children.length).toBe(0)
     await act(async () => { release() })
     await vi.waitFor(() => expect(screen.getByTestId('library-labs').children.length).toBeGreaterThan(10))

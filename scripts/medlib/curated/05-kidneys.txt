@@ -1,0 +1,233 @@
+= ckd | Chronic kidney disease | kidneys | ph
+mp: Kidney Diseases
+aka: CKD, kidney disease, sakit sa bato, bato, kidney failure, dialysis
+wiki: Chronic_kidney_disease
+s: Your kidneys slowly lose the power to clean the blood.
+s: Diabetes and high blood pressure are the top causes.
+s: Early care can slow it down, but it cannot be felt early.
+g: Very little or no urine, or swelling of the face and legs that gets worse
+g: Trouble breathing, or chest pain
+g: Confusion, vomiting that will not stop, or fits
+what: The kidneys clean waste and extra water from the blood. In chronic kidney disease they slowly lose this power over months or years. There is often no sign until late. Controlling blood pressure and sugar, a kidney-friendly diet and avoiding certain painkillers protect what is left.
+signs: Often none early ; Swollen feet or puffy eyes ; Tired, poor appetite ; Foamy urine ; Itchy skin
+home: Take blood pressure and sugar medicines as told ; Avoid ibuprofen and similar painkillers and herbal remedies unless your doctor agrees ; Eat less salt ; Ask for a diet plan, with limits on some foods ; Get blood and urine tests regularly
+prev: Control blood pressure and diabetes ; Do not smoke ; Drink enough water ; Get yearly urine and blood tests if you are at risk
+pic: ckd.webp | BruceBlaus | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0592_KidneyAnatomy_01.png
+v: 8jcL3TlgF4A | Mayo Clinic Minute: Understanding chronic kidney disease | Mayo Clinic
+
+= kidneyfailure | Kidney failure and dialysis | kidneys | ph
+mp: Kidney Failure
+aka: kidney failure, dialysis, hemodialysis, dialysis, PhilHealth dialysis, bato bumigay
+wiki: Kidney_failure
+s: When the kidneys fail, a machine or a transplant must do their work.
+s: Dialysis cleans the blood several times a week.
+s: PhilHealth helps cover dialysis sessions.
+g: Missed dialysis and now short of breath, swollen or very tired
+g: Chest pain, very fast or slow heartbeat, or muscle weakness
+g: Signs of infection around the dialysis catheter: fever, redness, pus
+what: In kidney failure the kidneys work at less than 15 of every 100 as normal. Waste and water build up. Treatment is dialysis (a machine cleans the blood) or a kidney transplant. Dialysis works only if you attend every session and follow the diet and fluid limits.
+signs: Very tired and weak ; Nausea, poor appetite ; Swelling ; Short of breath ; Itchy skin
+home: Never miss a dialysis session ; Follow limits on water, salt, potassium and phosphate ; Keep the access site clean ; Take medicines as told
+prev: Control diabetes and blood pressure ; Avoid unneeded painkillers ; Treat kidney disease early
+
+= kidneystone | Kidney stones | kidneys | ph
+mp: Kidney Stones
+aka: kidney stones, bato sa bato, nephrolithiasis, masakit ang tagiliran
+wiki: Kidney_stone_disease
+s: Stones are hard lumps that form in the kidney from salts.
+s: They cause sudden, very bad pain in the side.
+s: Drinking lots of water helps pass them and prevents more.
+g: Fever or chills with side pain
+g: Cannot pass urine, or blood in urine with pain
+g: Pain so bad you cannot sit still, or constant vomiting
+what: Kidney stones form when minerals in the urine clump together. Small stones can pass on their own with fluids and pain relief. Bigger stones may need a procedure. Dehydration is a common cause, so heat and sweating matter.
+signs: Sharp pain in the side or back, can move to the groin ; Blood in the urine ; Burning or urgent urination ; Nausea or vomiting
+home: Drink plenty of water, enough to pass pale urine ; Take pain relief as the doctor advises ; Strain your urine if told, and keep the stone for testing ; Follow-up with the doctor
+prev: Drink 2 to 3 litres of water daily ; Eat less salt ; Eat more fruit and vegetables ; Limit animal protein
+pic: kidneystone.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0595_KidneyStones.png
+
+= uti | Urine infection (UTI) | kidneys | ph
+mp: Urinary Tract Infections
+aka: UTI, urinary tract infection, impeksyon sa ihi, masakit umihi, madalas umihi, hapdi sa pag-ihi, bladder infection
+wiki: Urinary_tract_infection
+s: A UTI is an infection of the bladder or kidneys.
+s: It burns when you pass urine.
+s: Antibiotics from a doctor clear it, and fluids help.
+g: Fever and chills or pain in your back or side
+g: Blood in the urine, or vomiting
+g: Pregnant, a child, or a man with these signs
+g: Confusion in an older person with a urine infection
+what: A urinary tract infection is caused by bacteria, usually in the bladder. It is more common in women. If it spreads to the kidneys it can be serious. A doctor may test the urine. Antibiotics clear it, and you must finish the course.
+signs: Burning when passing urine ; Passing small amounts often ; Cloudy or bad-smelling urine ; Lower tummy pain ; Fever or back pain if the kidneys are involved
+home: Drink plenty of water ; See a doctor for a urine test and antibiotics ; Finish all the antibiotics ; Do not hold urine for long
+prev: Drink enough water ; Pass urine after sex ; Wipe front to back ; Do not hold in urine ; Keep the genital area clean and dry
+pic: uti.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Bladder_Infection.png
+
+= incontinence | Bladder leaks | kidneys
+mp: Urinary Incontinence
+aka: incontinence, urine leakage, naiihi sa salawal, hindi mapigil ang ihi, lumalabas ang ihi
+wiki: Urinary_incontinence
+s: Many people leak urine, and it can usually be helped.
+s: Do not hide it: treatments exist.
+s: Pelvic muscle exercises help most people.
+g: Cannot pass urine at all
+g: Blood in the urine, fever or pain
+g: Sudden weakness of the legs with leaks
+what: Leaking urine is common, mostly in women after childbirth and in older people. Types include leaks when coughing (stress), a sudden strong need (urge) and a full bladder that overflows. A doctor can find the cause and help.
+signs: Leaks when coughing, sneezing or lifting ; A sudden strong need to go ; Frequent trips to the toilet ; Getting up many times at night
+home: Do pelvic floor (Kegel) exercises daily ; Limit coffee, tea and alcohol ; Go to the toilet on a schedule ; Keep a healthy weight ; See a doctor
+prev: Keep a healthy weight ; Do pelvic floor exercises after pregnancy ; Treat constipation ; Do not smoke
+
+= prostate | Prostate problems | kidneys
+mp: Prostate Diseases
+aka: prostate, BPH, enlarged prostate, prostata, mahina ang ihi, madalas umihi sa gabi
+wiki: Benign_prostatic_hyperplasia
+s: The prostate can grow with age and block the flow of urine.
+s: This is common and not usually cancer.
+s: See a doctor for a slow stream or getting up at night.
+g: Cannot pass urine at all
+g: Fever with burning urination or pain
+g: Blood in the urine, or bone pain
+what: The prostate is a gland below the bladder in men. With age it often grows (benign prostatic hyperplasia) and presses on the urine tube. This causes a weak stream and urgency. Medicine or surgery can help. A doctor may check for prostate cancer with an exam and a blood test.
+signs: Weak or slow urine stream ; Needing to go often, especially at night ; Dribbling after finishing ; Feeling the bladder is not empty
+home: Limit fluids and coffee in the evening ; Do not hold urine ; Take medicines as prescribed ; Go for check-ups
+prev: Stay active ; Keep a healthy weight ; Talk to your doctor about prostate checks after 50
+
+= fattyliver | Fatty liver | kidneys | ph
+mp: Liver Diseases
+aka: fatty liver, taba sa atay, fatty liver disease, atay, liver
+wiki: Fatty_liver_disease
+s: Extra fat stored in the liver is very common.
+s: Most people feel nothing.
+s: Weight loss and less sugar can reverse it.
+g: Yellow skin or eyes with tummy swelling
+g: Vomiting blood or black stools
+g: Confusion or very sleepy
+what: Fatty liver means too much fat builds up in the liver. It is linked to being overweight, diabetes, high cholesterol, and sometimes alcohol. In time it can cause inflammation and scarring. It is often found on an ultrasound. Lifestyle changes work best.
+signs: Usually none ; Tiredness ; Mild ache in the upper right tummy ; Found on a scan or blood test
+home: Lose weight slowly ; Cut sugary drinks, sweets and fried food ; Avoid alcohol ; Move 30 minutes on most days ; Keep sugar and cholesterol in check
+prev: Keep a healthy weight ; Limit sugar and alcohol ; Stay active ; Get a hepatitis B vaccine
+
+= cirrhosis | Cirrhosis | kidneys | ph
+mp: Cirrhosis
+aka: cirrhosis, scarred liver, pamamaga ng tiyan, atay na may peklat
+wiki: Cirrhosis
+s: Cirrhosis is deep scarring of the liver.
+s: Long-term alcohol and hepatitis B or C are common causes.
+s: Stopping the cause protects what is left.
+g: Vomiting blood or black stools
+g: Confusion, sleepiness or odd behaviour
+g: A swollen tummy with fever or pain
+what: Years of damage turn healthy liver into scar tissue. The liver cannot clean the blood or make proteins well. Treating hepatitis, stopping alcohol and watching diet can slow it. Some people need a transplant.
+signs: Tiredness and weakness ; Yellow skin and eyes ; Swollen tummy and legs ; Easy bruising ; Itchy skin
+home: Do not drink alcohol ; Take medicines as told and ask before any herbal remedies ; Eat less salt ; Keep check-ups
+prev: Hepatitis B vaccine ; Limit alcohol ; Treat hepatitis C ; Keep a healthy weight
+pic: cirrhosis.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Liver_Cirrhosis.png
+
+= gallstones | Gallstones | kidneys
+mp: Gallstones
+aka: gallstones, bato sa apdo, apdo, sakit sa apdo
+wiki: Gallstone
+s: Gallstones are hard lumps in the gallbladder.
+s: They can cause sudden pain after a fatty meal.
+s: Surgery may be needed if they cause trouble.
+g: Pain in the upper right tummy for more than 5 hours
+g: Fever and chills, or yellow skin or eyes
+g: Vomiting that will not stop
+what: The gallbladder stores bile that helps digest fat. Stones can form and block the flow. This causes a sharp pain, often after eating fatty food. Women, those who are overweight and those over 40 have a higher risk.
+signs: Sudden pain in the upper right tummy or middle ; Pain going to the right shoulder ; Nausea, vomiting ; Pain after fatty meals
+home: Eat small, low-fat meals ; Avoid fried and fatty food ; See a doctor for an ultrasound ; Keep a healthy weight without crash diets
+prev: Keep a healthy weight ; Eat more fibre ; Avoid very fast weight loss
+pic: gallstones.webp | BruceBlaus | CC BY-SA 4.0 | https://commons.wikimedia.org/wiki/File:Gallstones.png
+
+= gerd | Heartburn and reflux | kidneys | ph
+mp: GERD
+aka: GERD, heartburn, acid reflux, hyperacidity, sikmura, asim sa sikmura, kabag, acidic
+wiki: Gastroesophageal_reflux_disease
+s: Stomach acid comes up into the food pipe and burns.
+s: Smaller meals and not lying down after eating help.
+s: Chest pain is not always heartburn.
+g: Chest pain with sweating, shortness of breath or pain in the arm or jaw
+g: Vomiting blood, black stools, or trouble swallowing
+g: Weight loss without trying
+what: GERD happens when the muscle at the end of the food pipe lets acid flow back up. It causes a burning in the chest after meals. Large meals, being overweight, smoking, coffee and lying down soon after eating make it worse. Antacids may help; if it is frequent see a doctor.
+signs: Burning in the chest, mostly after eating ; Sour taste in the mouth ; Cough at night ; Hoarse voice
+home: Eat smaller meals and stop 3 hours before bed ; Raise the head of the bed ; Limit coffee, alcohol, spicy and fatty food ; Do not smoke ; Lose weight if overweight
+prev: Keep a healthy weight ; Do not smoke ; Avoid big, late meals
+
+= ulcer | Stomach ulcer | kidneys | ph
+mp: Peptic Ulcer
+aka: ulcer, peptic ulcer, ulcer sa sikmura, sakit sa tiyan, masakit ang sikmura
+wiki: Peptic_ulcer_disease
+s: An ulcer is a sore in the stomach or gut lining.
+s: A germ called H. pylori and some painkillers cause most.
+s: Medicine heals it, and the germ can be cleared.
+g: Vomiting blood or vomit that looks like coffee grounds
+g: Black, tarry or bloody stools
+g: Sudden, severe tummy pain
+what: A peptic ulcer is an open sore in the lining of the stomach or the first part of the gut. Most are caused by H. pylori or by painkillers such as ibuprofen. Medicine to lower acid and kill the germ heals ulcers. Untreated, they can bleed.
+signs: Burning pain in the upper tummy, often between meals or at night ; Bloating, feeling full ; Nausea ; Weight loss ; Often eased by food or antacids
+home: See a doctor for treatment and test for H. pylori ; Avoid ibuprofen, aspirin and similar painkillers unless your doctor says ; Stop smoking and alcohol ; Eat regular meals
+prev: Use painkillers sparingly ; Do not smoke ; Wash hands and eat well-cooked food
+
+= constipation | Constipation | kidneys
+mp: Constipation
+aka: constipation, hirap dumumi, matigas na dumi, tibi, hindi nakakadumi
+wiki: Constipation
+s: Constipation is hard, dry stools or going less than three times a week.
+s: Fibre, water and moving usually help.
+s: See a doctor if it is new, painful or lasts weeks.
+g: Blood in the stool, or black stools
+g: Severe tummy pain and swelling with vomiting
+g: Weight loss without trying
+what: Constipation is common and often caused by too little fibre or water, not enough movement, or some medicines. It usually gets better with food and fluids. If you have new constipation after age 50, it should be checked.
+signs: Hard, dry stools ; Straining ; Bloating or tummy pain ; Feeling you cannot empty fully
+home: Eat more vegetables, fruit, oats and whole grains ; Drink 6 to 8 glasses of water ; Walk daily ; Go to the toilet when you feel the urge ; Ask a pharmacist about gentle laxatives for short use
+prev: Fibre, water and movement ; Do not ignore the urge ; Ask your doctor if a medicine causes it
+
+= hemorrhoids | Hemorrhoids (almoranas) | kidneys | ph
+mp: Hemorrhoids
+aka: almoranas, hemorrhoids, piles, dumudugo ang puwit
+wiki: Hemorrhoid
+s: Swollen veins around the bottom can itch, hurt or bleed.
+s: They are common and often get better with care.
+s: Blood in the stool should always be checked once.
+g: Heavy bleeding, dizziness or fainting
+g: Black stools, or blood mixed in the stool
+g: Severe pain or a hard, painful lump
+what: Hemorrhoids are swollen veins in the lower rectum and anus. They are caused by straining, constipation, pregnancy and sitting long. Bright red blood on the paper is a common sign, but other conditions can look the same, so see a doctor the first time.
+signs: Bright red blood after a bowel movement ; Itching or pain around the anus ; A soft lump ; Mucus
+home: Eat more fibre and water ; Do not strain or sit long on the toilet ; Warm sitz baths ; Ask a pharmacist about creams ; Keep the area clean
+prev: Treat constipation ; Do not strain ; Exercise ; Lose weight if overweight
+
+= appendicitis | Appendicitis | kidneys
+mp: Appendicitis
+aka: appendicitis, apendisitis, pananakit ng tiyan, masakit ang kanang tiyan
+wiki: Appendicitis
+s: Appendicitis is a swollen, infected appendix.
+s: It causes pain that moves to the lower right tummy.
+s: It needs urgent care.
+g: Tummy pain that gets worse, mostly on the lower right
+g: Pain with fever, vomiting or a hard belly
+g: Pain when you move, cough or press and let go
+g: Go to the hospital now. Do not take laxatives.
+what: The appendix is a small tube on the right of the lower belly. If it becomes blocked and infected, it can burst. Surgery is the usual treatment. Do not eat or drink and do not take painkillers or laxatives while you go to get help.
+signs: Pain near the belly button that moves to the lower right ; Loss of appetite ; Nausea or vomiting ; Fever ; Pain when moving or coughing
+home: Go to a hospital now ; Do not eat or drink ; Do not take laxatives
+prev: It cannot be prevented ; Get care early for belly pain that is getting worse
+pic: appendicitis.webp | BruceBlaus  | CC BY 3.0 | https://commons.wikimedia.org/wiki/File:Blausen_0043_Appendix_Child.png
+
+= ibs | Irritable bowel (IBS) | kidneys
+mp: Irritable Bowel Syndrome
+aka: IBS, irritable bowel, kabag, sakit sa tiyan, namimilipit ang tiyan
+wiki: Irritable_bowel_syndrome
+s: IBS causes cramps, bloating and changes in stool without damage to the gut.
+s: Stress and some foods make it worse.
+s: It is long-term, and often manageable.
+g: Blood in the stool, or weight loss
+g: Severe pain that wakes you at night
+g: New signs after age 50
+what: Irritable bowel syndrome is a common gut problem with cramps and changes in bowel habits (diarrhoea, constipation or both). Doctors find no damage in the bowel, but it can be painful. Finding your trigger foods and managing stress help.
+signs: Cramping pain ; Bloating and wind ; Diarrhoea, constipation or both ; Mucus in stool ; Better after passing stool
+home: Keep a food diary to find triggers ; Eat regular meals ; Add fibre slowly ; Reduce stress with walking and breathing ; See a doctor
+prev: Manage stress ; Sleep well ; Avoid foods that bring on attacks

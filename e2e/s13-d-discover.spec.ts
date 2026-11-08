@@ -84,7 +84,7 @@ test('the season row left Discover Today in S24 (D-152); the season page itself 
 
 test('Listen: one at a time, and leaving the sub stops the voice', async ({ page }) => {
   await page.goto('/#discover/listen')
-  await expect(page.getByTestId('listen-shelf').getByRole('button', { name: /^Play / })).toHaveCount(4) // the 4 listen-shelf videos come first
+  await expect(page.getByTestId('listen-shelf').getByRole('button', { name: /^Play / })).toHaveCount(7) // the 7 listen-shelf videos (ready.json Listen, S25) come first; same count as listen.test.tsx
   await expect(page.getByTestId('listen-guided').getByRole('button', { name: /^Play / })).toHaveCount(1) // the Calm guided video sits below them, above the read-aloud rows
   const rows = page.getByTestId('listen').locator('.dc-item') // read-aloud rows only: the guided row's own Play button is not one of them
   const plays = rows.getByRole('button', { name: /^Play / })
@@ -99,15 +99,15 @@ test('Listen: one at a time, and leaving the sub stops the voice', async ({ page
   await expect(page.getByRole('button', { name: /^Stop / })).toHaveCount(0)
 })
 
-test('Watch: posters scroll inside their row, a poster picks a video, nothing is embedded before the tap', async ({ page }) => {
+test('Watch: a poster picks a video, nothing is embedded before the tap', async ({ page }) => {
   await page.goto('/#discover/watch')
   await expect(page.getByTestId('watch')).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(62) // counted by hand: 27 in src/data/videos.json plus 35 in src/data/discover/ready.json (src/features/discover/watch/watch.test.tsx)
+  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(4) // the MoreGrid shows four, then Show more; Watch lists only the Discover shelf (ready.json), health clips are in Health
   await expect(page.locator('iframe')).toHaveCount(0)
   await expect(page.getByTestId('live-tv')).toContainText('Coming soon')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await page.getByRole('button', { name: /^Choose Hands-only CPR/ }).click()
-  await expect(page.getByRole('link', { name: /Open in YouTube/ })).toHaveAttribute('href', /youtube\.com\/watch\?v=M4ACYp75mjU/)
+  await page.getByRole('button', { name: /^Choose / }).first().click()
+  await expect(page.getByRole('link', { name: /Open in YouTube/ })).toHaveAttribute('href', /youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}/)
   await expect(page.locator('iframe')).toHaveCount(0)
 })
 

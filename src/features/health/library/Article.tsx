@@ -4,14 +4,21 @@ import { loadTopic, parseKey, SOURCE_LINE, type Topic } from './medline'
 import type { LabEntry } from '../labGlossary'
 import { useLabGlossary } from '../labsLogic'
 import { LabExplain } from './LabExplain'
+import { LocalArticle } from './encyclopediaArticle'
+import { BodyList } from './encyclopediaList'
+import { readArticle, type FullArticleData } from './fullLibrary'
+import { FullArticle } from './FullLibraryCard'
 import '../health.css'
 import '../m7a.css'
 
 type View = { s: 'loading' } | { s: 'ok'; topic: Topic; old: boolean } | { s: 'none' } | { s: 'offline' }
 
-/** #discover/learn/library/<key> (was #health/library/<key>): one summary from MedlinePlus Connect (one request when it is not cached), its source line, and a link to the full page. */
+/** #health/library/<key>: e:<id> a topic of the offline encyclopedia; t:<code> a lab test; otherwise one summary from MedlinePlus Connect (one request when it is not cached), its source line, and a link to the full page. */
 export default function Article({ rawKey }: { rawKey: string }) {
   const g = useLabGlossary()
+  if (rawKey.startsWith('e:')) return <LocalArticle id={rawKey.slice(2)} />
+  if (rawKey.startsWith('b:')) return <BodyList body={rawKey.slice(2)} /> // the Discover route draws Article for every deeper library address
+  if (rawKey.startsWith('f:')) return <FullArticleView k={rawKey.slice(2)} />
   if (rawKey.startsWith('t:')) {
     if (!g) return <ArticleLoading />
     const lab = g.labEntry(rawKey.slice(2))
@@ -20,11 +27,30 @@ export default function Article({ rawKey }: { rawKey: string }) {
   return <TopicArticle rawKey={rawKey} />
 }
 
+/** f:<key>: an article of the downloaded full library (works offline). When the library is not on this phone (or the key is not in it) it says so. */
+function FullArticleView({ k }: { k: string }) {
+  const [a, setA] = useState<FullArticleData | null | undefined>(undefined)
+  useEffect(() => { let live = true; setA(undefined); readArticle(k).then((r) => live && setA(r)).catch(() => live && setA(null)); return () => { live = false } }, [k])
+  if (a) return <FullArticle articleKey={k} /> // lane A2's view: title, text, mdwiki credit
+  return (
+    <>
+      <SubHeader title="Health library" backHref="#health/library" backLabel="Back to Library" />
+      {a === undefined && <article className="card ar-art" data-testid="article"><p className="sub" role="status">Loading...</p></article>}
+      {a === null && (
+        <article className="card ar-art" data-testid="article-nofull">
+          <h2 className="ar-h">Not in this phone's library</h2>
+          <p className="ar-body">This article is in the full medical library, which is not on this phone.</p>
+        </article>
+      )}
+    </>
+  )
+}
+
 /** t:<code>: a lab test from the glossary, shown without a network request. Same text as the lab detail page. */
 function LabArticle({ e }: { e: LabEntry }) {
   return (
     <>
-      <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
+      <SubHeader title="Health library" backHref="#health/library" backLabel="Back to Library" />
       <article className="card ar-art" data-testid="article">
         <h2 className="ar-h">{e.name}</h2>
         <p className="sub">{e.short}</p>
@@ -38,7 +64,7 @@ function LabArticle({ e }: { e: LabEntry }) {
 function ArticleLoading() {
   return (
     <>
-      <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
+      <SubHeader title="Health library" backHref="#health/library" backLabel="Back to Library" />
       <article className="card ar-art" data-testid="article">
         <h2 className="ar-h">Article</h2>
         <p className="sub" role="status">Loading...</p>
@@ -70,7 +96,7 @@ function TopicArticle({ rawKey }: { rawKey: string }) {
   const heading = view.s === 'ok' ? view.topic.title : key ? key.text.replace(/\b\w/g, (c) => c.toUpperCase()) : 'Article'
   return (
     <>
-      <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
+      <SubHeader title="Health library" backHref="#health/library" backLabel="Back to Library" />
       <article className="card ar-art" data-testid="article">
         <h2 className="ar-h">{heading}</h2>
         {view.s === 'loading' && <p className="sub" role="status">Loading...</p>}
