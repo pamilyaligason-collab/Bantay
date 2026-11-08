@@ -6,6 +6,7 @@ vi.mock('./data', () => ({ useMoveData: () => ({ personId: 'p1', acts: [], gateO
 vi.mock('../safety/store', () => ({ putKv: async () => undefined }))
 
 import MovePanel from './MovePanel'
+import exerciseCss from './exercise.css?raw'
 
 afterEach(cleanup)
 
@@ -22,6 +23,16 @@ describe('MovePanel without the doctor OK (H15)', () => {
     expect(moves.length).toBeLessThanOrEqual(6)
     expect(moves.every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true)
     expect(screen.queryByTestId('move-gate')).toBeNull()
+  })
+  it('S25: 4 move cards, then "Show N more", and the cards take their cell width (no fixed width, no swipe)', () => {
+    data.gateOk = true
+    render(<MovePanel />)
+    const grid = within(screen.getByTestId('move-carousel'))
+    expect(grid.getAllByRole('button').filter((b) => b.classList.contains('mv-ccard'))).toHaveLength(4)
+    expect(grid.getByRole('button', { name: /^Show \d+ more$/ })).toBeTruthy()
+    const rules = [...exerciseCss.matchAll(/\.mv-ccard \{([^}]*)\}/g)].map((m) => m[1]!).join(' ')
+    expect(rules).toMatch(/width: auto/)
+    expect(rules).not.toMatch(/(^|[; ])width: \d|scroll-snap|flex: none/)
   })
   it('R4 hideRing: no ring, the browse list stays', () => {
     data.gateOk = true

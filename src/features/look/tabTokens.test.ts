@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import v13 from './v13.css?raw'
+import calm from '../calm/calm.css?raw'
 import { parse, ratio, tokensOf } from './contrastMath'
 
 const TABS = ['today', 'health', 'discover', 'family', 'safety'] as const
@@ -34,5 +35,36 @@ describe('tab tokens contract', () => {
       const m = v13.match(new RegExp(`:root:not\\(\\[data-theme="light"\\]\\) \\.bt\\[data-tab="${tab}"\\] \\{([^}]*)\\}`))![1]!
       expect(vars(m)).toEqual(a)
     }
+  })
+})
+
+describe('tab bar active item and Calm button', () => {
+  for (const theme of ['light', 'dark'] as const) {
+    it(`${theme}: the active label and bar (--tab-accent) pass 4.5:1 on the tab bar surface (--card)`, () => {
+      const base = tokensOf(theme)
+      for (const tab of TABS) {
+        const light = vars(v13.match(LIGHT(tab))![1]!)
+        const t = { ...base, ...(theme === 'light' ? light : { ...light, ...vars(v13.match(DARK(tab))![1]!) }) }
+        expect(ratio(parse(t['--tab-accent']!)[0], parse(t['--card']!)[0]), `${tab} ${theme}`).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+  }
+  it('the active item gets the accent label and the accent bar', () => {
+    expect(v13).toMatch(/\.sh-tabs button\[aria-current="page"\], [^{]*\{ color: var\(--tab-accent/)
+    expect(v13).toMatch(/\.sh-tabs button\[aria-current="page"\]::after \{[^}]*background: var\(--tab-accent/)
+  })
+  it('Calm: the Show more button uses --calm-mint, which passes 4.5:1 on every stop of the Calm ground', () => {
+    expect(calm).toMatch(/\.cm-root \.more-grid-btn \{[^}]*color: var\(--calm-mint\)/)
+    const mint = parse(calm.match(/--calm-mint:\s*(#[0-9A-Fa-f]{6})/)![1]!)[0]
+    for (const ground of ['#1D3A6E', '#0E1B3A', '#0A1430']) expect(ratio(mint, parse(ground)[0]), ground).toBeGreaterThanOrEqual(4.5)
+  })
+  it('the flat fallback sits before the :has()/color-mix() ground', () => {
+    const flat = v13.indexOf('background-color: var(--tab-bg); }')
+    expect(flat).toBeGreaterThan(-1)
+    expect(flat).toBeLessThan(v13.indexOf(':not(:has(.cm-root)) > .scroll {'))
+  })
+  it('the E block sits after the MoreGrid block, not inside it', () => {
+    expect(v13.indexOf('.more-grid-btn {')).toBeGreaterThan(v13.indexOf('.more-grid > *'))
+    expect(v13.indexOf('.more-grid-btn {')).toBeLessThan(v13.indexOf('S25 (E)'))
   })
 })

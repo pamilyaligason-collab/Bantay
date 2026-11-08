@@ -89,6 +89,7 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 /* S25 MoreGrid (D-156): 4 cards in 2 columns, then Show more. Cards fill their cell. */
 .more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .more-grid > * { min-width: 0; width: auto; }
+.more-grid-btn { width: 100%; min-height: 48px; margin-top: 10px; border: 1.5px solid var(--tab-accent, var(--green)); background: transparent; color: var(--tab-accent, var(--green)); border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 
 /* S25 (E): per-tab colour. App sets data-tab on .bt; each tab defines the ground (top, below 320 px), the header glow, a text-safe accent and a chip fill. Red stays for SOS only.
    contrast: look/tabTokens.test.ts checks --tab-accent and --ink/--muted on both grounds in light and dark. */
@@ -113,6 +114,8 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
   :root:not([data-theme="light"]) .bt[data-tab="safety"] { --tab-bg: #111E1D; --tab-bg2: #121716; --tab-accent: #8FCFC8; --tab-accent-soft: #16322F; }
   :root:not([data-theme="light"]) .bt[data-tab] { --tab-glow-o: 16%; }
 }
+/* flat fallback for WebViews without :has() / color-mix(): the plain tab colour (the rule below replaces it where supported) */
+.bt[data-tab]:not([data-tab="none"]):not([data-wx]) > .scroll { background-color: var(--tab-bg); }
 /* page ground: a vertical wash over the first 320 px with a soft glow top right; it scrolls with the content (local). Weather and Calm keep their own grounds. */
 .bt[data-tab]:not([data-tab="none"]):not([data-wx]):not(:has(.cm-root)) > .scroll {
   background-color: var(--tab-bg2);
@@ -130,4 +133,3 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .card-depth { background-image: linear-gradient(to bottom, rgb(255 255 255 / .55), rgb(255 255 255 / 0) 42%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .7), var(--depth-card); }
 :root[data-theme="dark"] .card-depth { background-image: linear-gradient(to bottom, rgb(255 255 255 / .06), rgb(255 255 255 / 0) 42%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .08), var(--depth-card); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .card-depth { background-image: linear-gradient(to bottom, rgb(255 255 255 / .06), rgb(255 255 255 / 0) 42%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .08), var(--depth-card); } }
-.more-grid-btn { width: 100%; min-height: 48px; margin-top: 10px; border: 1.5px solid var(--tab-accent, var(--green)); background: transparent; color: var(--tab-accent, var(--green)); border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }

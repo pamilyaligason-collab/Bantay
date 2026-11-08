@@ -5,7 +5,10 @@ import { assertHero, assertJackClear, assertNarrow, assertNoSideways, assertNoWr
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
 // v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, Listen and watch (on by default), crisis card from hotlines.json.
-// The crisis card's place on the page at scroll 0: the board's one row plus the note, measured at each width (see the layout test).
+// The crisis card's place on the page at scroll 0: the 2-column grid of 4 cards, its Show more button and the note, measured at each width (see the layout test).
+// S25 fix round measured (Chromium, 390 and 450 wide): grid + button 586 px at both, gap 87 / 66, crisis card top 2223.6 / 2181.6 (was 1868 / 1826 with the one swipe row: 4 tall cards in 2 rows, 355 px lower by design).
+const CRISIS_TOP_MAX = { 390: 2232, 450: 2190 } as const
+const ROW_MAX = 592 // px: the grid (two rows of the tallest radio card) plus the 48 px Show more button and its 10 px gap; measured 586
 
 // Specs do not depend on a live stream, so the stream address is stubbed with a local fixture: state logic only. 60 s of 8 kHz 8-bit silence, a WAV made here.
 function silentWav(): Buffer {
@@ -131,6 +134,7 @@ test('one row: radio cards, the podcast link and the video posters; no stream or
   const a = page.locator('[data-testid="calm-media"] a[href="https://www.tarabrach.com/podcast/"]')
   await expect(a).toHaveAttribute('target', '_blank')
   await expect(a).toHaveAttribute('rel', /noopener/)
+  await page.getByRole('button', { name: 'Show 4 more' }).click() // the videos sit behind Show more
   await expect(page.getByRole('button', { name: /Play Steps for Stress/ })).toBeVisible()
   await expect(page.locator('[data-testid="calm-media"] iframe')).toHaveCount(0)
   await expect(page.getByTestId('calm-audio')).toHaveCount(1)
@@ -144,7 +148,7 @@ for (const [w, h] of [[390, 844], [450, 949]] as const) {
     await page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTo(0, 0))
     const m = await page.evaluate(() => {
       const box = (s: string) => document.querySelector(s)!.getBoundingClientRect()
-      const cards = [...document.querySelectorAll('[data-testid="calm-row"] > *')].map((c) => c.getBoundingClientRect())
+      const cards = [...document.querySelectorAll('[data-testid="calm-row"] .more-grid > *')].map((c) => c.getBoundingClientRect())
       return { scroll: document.querySelector('.bt .scroll')!.scrollTop, widths: cards.map((c) => Math.round(c.width)), tops: new Set(cards.map((c) => Math.round(c.top))).size, head: box('[data-testid="calm-radio-rpmellow"] .cm-media-ic').height, rowH: box('[data-testid="calm-row"]').height, gap: box('[data-testid="calm-crisis"]').top - box('[data-testid="calm-row"]').bottom, noteH: box('[data-testid="calm-row"] + p').height, crisisTop: box('[data-testid="calm-crisis"]').top }
     })
     console.log(`crisis at scroll 0, ${w} px: ${JSON.stringify(m)}`)
@@ -152,6 +156,9 @@ for (const [w, h] of [[390, 844], [450, 949]] as const) {
     expect(m.widths).toHaveLength(4); expect(new Set(m.widths).size).toBe(1) // S25: a 2-column grid of 4, then Show more
     expect(m.tops).toBe(2)
     expect(m.head).toBe(84)
+    expect(m.rowH).toBeLessThanOrEqual(ROW_MAX)
+    expect(m.gap).toBeLessThanOrEqual(m.noteH + 32) // only the note and two page gaps between the grid and the crisis card
+    expect(m.crisisTop).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
   })
 }
 
@@ -171,16 +178,20 @@ for (const [w, h] of [[390, 844], [450, 949]] as const) {
     console.log(`error ${w}: ${JSON.stringify({ rest, err })}`)
     expect(err.rowH).toBe(rest.rowH) // the failed card fits its reserved height, so no card grows
     expect(err.crisisTop).toBe(rest.crisisTop)
+    expect(err.rowH).toBeLessThanOrEqual(ROW_MAX)
+    expect(err.crisisTop).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
     await page.context().setOffline(true)
     await expect(page.getByTestId('calm-media')).toContainText('You are offline.')
     const off = await place(page)
     console.log(`offline ${w}: ${JSON.stringify(off)}`)
     await page.context().setOffline(false)
+    expect(off.rowH).toBeLessThanOrEqual(ROW_MAX)
     // the whole page moves for the app's own offline strip (OfflineBar, 70 px measured); Calm itself adds nothing above the crisis card
     const strip = off.heroTop - rest.heroTop
     expect(strip).toBeGreaterThan(0)
     expect(strip).toBeLessThanOrEqual(72)
     expect(off.crisisTop - strip).toBeLessThanOrEqual(rest.crisisTop)
+    expect(off.crisisTop - strip).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
   })
 }
 
