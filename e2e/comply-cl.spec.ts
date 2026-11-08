@@ -153,7 +153,7 @@ for (const route of ['#safety/cards', '#safety/sources', '#safety/warnings', '#m
     await seedToday(page, 'bantay', 'kv', [{ key: 'alerts:checkedAt', value: DAY }, { key: 'safety.alerts', value: [cyclone] }])
     await page.reload()
     const pill = page.locator('a.pill', { hasText: 'PAGASA bulletin' })
-    await pill.scrollIntoViewIfNeeded()
+    await expect(async () => { await pill.scrollIntoViewIfNeeded() }).toPass() // the alert list re-renders once after the reload and can swap the element mid-scroll
     await expect(pill).toBeVisible()
     const line = () => pill.evaluate((e) => getComputedStyle(e).textDecorationLine)
     expect(await line()).toBe('none')

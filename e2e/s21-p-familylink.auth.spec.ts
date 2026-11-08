@@ -25,7 +25,7 @@ for (const width of [320, 344, 360]) {
       await seed(page, 'bantay', { kv: [{ key: 'health.pins', value: PINS[n] }] })
       await page.reload()
       await expect(page.getByTestId('bodyhero')).toBeVisible()
-      await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(PINS[n]!.length)
+      await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(2) // S24: the Readings card shows an inline pair (visit/medicines) whatever health.pins holds, so the pin count no longer changes the layout
       const link = page.getByTestId('family-health').getByRole('link', { name: 'All updates' })
       await expect(link).toBeVisible()
       await settled(page)
