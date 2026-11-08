@@ -1,0 +1,18 @@
+/* Full medical library card and article (D-158). App tokens only. */
+.fl-card { display: flex; flex-direction: column; gap: 10px; }
+.fl-card h3 { margin: 0; font-size: 18px; }
+.fl-card p { margin: 0; }
+.fl-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fl-bar { height: 10px; border-radius: 999px; background: var(--card2); overflow: hidden; }
+.fl-bar > i { display: block; height: 100%; background: var(--green); border-radius: 999px; transition: width var(--dur-base) var(--ease-out); }
+.fl-pct { font-size: 15px; font-weight: 600; color: var(--ink); }
+.fl-err { color: var(--tint-red-ink); font-size: 15px; }
+.fl-ok { color: var(--ok); font-weight: 600; font-size: 15px; }
+.fl-del { background: var(--card2); color: var(--ink); }
+.fl-art h3 { font-size: 19px; margin: 14px 0 0; }
+.fl-art p { margin: 8px 0 0; line-height: 1.5; font-size: 16px; overflow-wrap: anywhere; }
+.fl-art ul { margin: 8px 0 0; padding-left: 22px; line-height: 1.5; font-size: 16px; }
+.fl-art img { max-width: 100%; height: auto; border-radius: 12px; margin-top: 12px; }
+.fl-credit { margin: 12px 4px 0; font-size: 14px; color: var(--ink2); }
+.fl-credit a { color: var(--green); min-height: 44px; display: inline-flex; align-items: center; }
+@media (prefers-reduced-motion: reduce) { .fl-bar > i { transition: none; } }
