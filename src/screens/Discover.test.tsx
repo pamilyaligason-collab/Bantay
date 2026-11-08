@@ -10,16 +10,17 @@ afterEach(cleanup)
 const day = (m: number, d: number) => new Date(2026, m - 1, d, 10, 20)
 
 describe('Discover overview (#discover)', () => {
-  it('draws the large title and one hero, then season, Learn and the rest in order; no tile grid, no pill row', () => {
-    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(day(10, 28)) // Undas, so the season row shows
+  it('draws the large title, then Learn, the Top story hero and the rest in order; no season row, no tile grid, no pill row', () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(day(10, 28)) // Undas: the season row no longer shows here (S24)
     const { container } = render(<Discover />)
     vi.useRealTimers()
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover')
     expect(screen.getByTestId('dc-head')).toBeTruthy()
     expect(container.querySelectorAll('[data-hero]').length).toBe(1)
-    const ids = ['dc-top-story', 'season-row', 'dc-hero', 'dc-learn']
+    const ids = ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
+    expect(screen.queryByTestId('season-row')).toBeNull()
     expect(screen.queryByTestId('discover-tiles')).toBeNull()
     expect(screen.queryByTestId('pick')).toBeNull()
     expect(screen.queryByRole('group', { name: 'Discover sections' })).toBeNull()

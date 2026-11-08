@@ -84,7 +84,7 @@ describe('Learn screen and the learn.medcards flag', () => {
     expect(screen.getByTestId('learn-benefits').textContent).toContain('PhilHealth Konsulta')
     expect(screen.getByTestId('learn-benefits').parentElement!.className).toContain('dc-wide')
     expect(screen.getByTestId('learn-prepping').getAttribute('href')).toBe('#discover/learn/prepping') // D-117
-    expect(screen.getByTestId('learn-repairs').getAttribute('href')).toBe('#discover/learn/repairs')
+    expect(screen.getByTestId('learn-farm-diy').getAttribute('href')).toBe('#discover/learn/farm-diy')
   })
   it('Your benefits page: only the two named benefits, each an outside link with its source and checked date', () => {
     location.hash = '#discover/learn/benefits'

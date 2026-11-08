@@ -1,5 +1,5 @@
 {
-  "_note": "D-117 shelf: being prepared at home, and home repairs. Videos: only channels that identify as official (the two unofficial Philippine Red Cross re-uploads, Ep02 and Ep05, were dropped after review); ids checked against YouTube oEmbed (HTTP 200, title and channel as listed) and the watch page (embeddable, description read) on 2026-11-04; not watched through. minutes is null, as in videos.json. reads: url answered HTTP 200 to a scripted request and its page title was read on checked. Round 3 (2026-11-04) added crisis-or-war household guides from Sweden and the UK, three Philippine official videos (PHIVOLCS, PAGASA) and two improvement videos and reads; all checked the same way (YouTube channel pages read: PHIVOLCS and PAGASA and the Swedish agency each describe themselves as the agency). Kept apart from videos.json so Today and Health keep their own health-only video list.",
+  "_note": "D-117 shelf: being prepared at home, and home repairs. Videos: only channels that identify as official (the two unofficial Philippine Red Cross re-uploads, Ep02 and Ep05, were dropped after review); ids checked against YouTube oEmbed (HTTP 200, title and channel as listed) and the watch page (embeddable, description read) on 2026-11-04; not watched through. minutes is null, as in videos.json. reads: url answered HTTP 200 to a scripted request and its page title was read on checked. Round 3 (2026-11-04) added crisis-or-war household guides from Sweden and the UK, three Philippine official videos (PHIVOLCS, PAGASA) and two improvement videos and reads; all checked the same way (YouTube channel pages read: PHIVOLCS and PAGASA and the Swedish agency each describe themselves as the agency). Kept apart from videos.json so Today and Health keep their own health-only video list. S24 (2026-11-08): topics farm-diy (replaces repairs; the old repairs videos moved under it), listen and recipes-video added with hand-picked channel videos (D-152, no live feed); every new id was checked against YouTube oEmbed on 2026-11-08 (HTTP 200, source equal to author_name; two sources are the full oEmbed names). minutes stays null. Opus health-wording check still to do.",
   "topics": [
     {
       "id": "prepping",
@@ -7,9 +7,19 @@
       "video": "Be prepared"
     },
     {
-      "id": "repairs",
-      "title": "Repairs and improvements",
-      "video": "Repairs and improvements"
+      "id": "farm-diy",
+      "title": "Farming and DIY",
+      "video": "Farming and DIY"
+    },
+    {
+      "id": "listen",
+      "title": "Listen",
+      "video": "Listen"
+    },
+    {
+      "id": "recipes-video",
+      "title": "Recipe videos",
+      "video": "Recipe videos"
     }
   ],
   "videos": [
@@ -81,7 +91,7 @@
       "id": "zMH61Yabdj0",
       "placeholder": false,
       "title": "How to repair a leaking faucet",
-      "topic": "Repairs and improvements",
+      "topic": "Farming and DIY",
       "source": "This Old House",
       "minutes": null
     },
@@ -89,7 +99,7 @@
       "id": "PLGmTzEGSIY",
       "placeholder": false,
       "title": "How to patch a drywall hole",
-      "topic": "Repairs and improvements",
+      "topic": "Farming and DIY",
       "source": "Ask This Old House",
       "minutes": null
     },
@@ -97,7 +107,7 @@
       "id": "7ePc9cz__FM",
       "placeholder": false,
       "title": "How to repair toilet tank parts",
-      "topic": "Repairs and improvements",
+      "topic": "Farming and DIY",
       "source": "Ask This Old House",
       "minutes": null
     },
@@ -105,7 +115,7 @@
       "id": "D32Hay6IQQQ",
       "placeholder": false,
       "title": "How to unclog a kitchen sink",
-      "topic": "Repairs and improvements",
+      "topic": "Farming and DIY",
       "source": "The Home Depot",
       "minutes": null
     },
@@ -113,7 +123,7 @@
       "id": "l2_kmWm3P1I",
       "placeholder": false,
       "title": "How to paint a room",
-      "topic": "Repairs and improvements",
+      "topic": "Farming and DIY",
       "source": "Ask This Old House",
       "minutes": null
     },
@@ -121,8 +131,176 @@
       "id": "rgQyZX1sg38",
       "placeholder": false,
       "title": "How to install floating shelves",
-      "topic": "Repairs and improvements",
+      "topic": "Farming and DIY",
       "source": "This Old House",
+      "minutes": null
+    },
+    {
+      "id": "CvsJhNvDytU",
+      "placeholder": false,
+      "title": "How to build a bug out bag",
+      "topic": "Be prepared",
+      "source": "City Prepping",
+      "minutes": null
+    },
+    {
+      "id": "89pzRA4bScc",
+      "placeholder": false,
+      "title": "10 things you'll wish you had before the next emergency",
+      "topic": "Be prepared",
+      "source": "City Prepping",
+      "minutes": null
+    },
+    {
+      "id": "ETTgtj7yYK4",
+      "placeholder": false,
+      "title": "If the grid goes down, start here",
+      "topic": "Be prepared",
+      "source": "City Prepping",
+      "minutes": null
+    },
+    {
+      "id": "5WPv0FsIvkY",
+      "placeholder": false,
+      "title": "When the grid goes down, how to keep cooking",
+      "topic": "Be prepared",
+      "source": "City Prepping",
+      "minutes": null
+    },
+    {
+      "id": "2JihPYiSOac",
+      "placeholder": false,
+      "title": "Bagyo at baha: disaster preparedness",
+      "topic": "Be prepared",
+      "source": "Knowledge Channel",
+      "minutes": null
+    },
+    {
+      "id": "fnl_-oBQF9M",
+      "placeholder": false,
+      "title": "Lindol: disaster preparedness",
+      "topic": "Be prepared",
+      "source": "Knowledge Channel",
+      "minutes": null
+    },
+    {
+      "id": "7WxUgGfiHb4",
+      "placeholder": false,
+      "title": "Bagyo o tropical cyclones: disaster preparedness",
+      "topic": "Be prepared",
+      "source": "Knowledge Channel",
+      "minutes": null
+    },
+    {
+      "id": "IEN3GJap2Kc",
+      "placeholder": false,
+      "title": "Emergency kit: disaster preparedness",
+      "topic": "Be prepared",
+      "source": "Knowledge Channel",
+      "minutes": null
+    },
+    {
+      "id": "3oRx8JDns2E",
+      "placeholder": false,
+      "title": "Duck, cover and hold: the National Earthquake Drill",
+      "topic": "Be prepared",
+      "source": "GMA News",
+      "minutes": null
+    },
+    {
+      "id": "0uWIL21ViGU",
+      "placeholder": false,
+      "title": "Why your gutters might be leaking",
+      "topic": "Farming and DIY",
+      "source": "This Old House",
+      "minutes": null
+    },
+    {
+      "id": "5r0Z5gJnU0Y",
+      "placeholder": false,
+      "title": "Marrying a new and old roof",
+      "topic": "Farming and DIY",
+      "source": "This Old House",
+      "minutes": null
+    },
+    {
+      "id": "qdbieBBd-Ko",
+      "placeholder": false,
+      "title": "Automated furrow irrigation for sugarcane (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agribusiness How It Works",
+      "minutes": null
+    },
+    {
+      "id": "jLbDzs84BVo",
+      "placeholder": false,
+      "title": "Sleep talk down: guided sleep meditation",
+      "topic": "Listen",
+      "source": "Jason Stephenson - Guided Sleep Meditation",
+      "minutes": null
+    },
+    {
+      "id": "T4T8ACMXGGM",
+      "placeholder": false,
+      "title": "Sleep talk down with gentle rain sounds",
+      "topic": "Listen",
+      "source": "Jason Stephenson - Guided Sleep Meditation",
+      "minutes": null
+    },
+    {
+      "id": "wCy2ETwUn3o",
+      "placeholder": false,
+      "title": "8 hours of relaxing piano music",
+      "topic": "Listen",
+      "source": "Soothing Relaxation",
+      "minutes": null
+    },
+    {
+      "id": "tEmt1Znux58",
+      "placeholder": false,
+      "title": "Box breathing: calm stress or anxiety",
+      "topic": "Listen",
+      "source": "Sunnybrook Hospital",
+      "minutes": null
+    },
+    {
+      "id": "pEMMBceYyMw",
+      "placeholder": false,
+      "title": "Classic tinolang manok",
+      "topic": "Recipe videos",
+      "source": "Panlasang Pinoy",
+      "minutes": null
+    },
+    {
+      "id": "OzfTQZVYKmY",
+      "placeholder": false,
+      "title": "Pinakbet",
+      "topic": "Recipe videos",
+      "source": "Panlasang Pinoy",
+      "minutes": null
+    },
+    {
+      "id": "t_Hsq7JcGtQ",
+      "placeholder": false,
+      "title": "A better way to cook monggo",
+      "topic": "Recipe videos",
+      "source": "Panlasang Pinoy",
+      "minutes": null
+    },
+    {
+      "id": "fSx0azcVbbw",
+      "placeholder": false,
+      "title": "Ginisang ampalaya with giniling, without the bitterness",
+      "topic": "Recipe videos",
+      "source": "Panlasang Pinoy",
+      "minutes": null
+    },
+    {
+      "id": "27baGt4-kzg",
+      "placeholder": false,
+      "title": "Puso ng saging sa gata",
+      "topic": "Recipe videos",
+      "source": "Panlasang Pinoy",
       "minutes": null
     }
   ],
@@ -177,7 +355,7 @@
     },
     {
       "id": "toh-faucet",
-      "topic": "repairs",
+      "topic": "farm-diy",
       "title": "How to repair a leaking faucet",
       "source": "This Old House",
       "url": "https://www.thisoldhouse.com/plumbing/how-to-repair-a-leaking-faucet",
@@ -185,7 +363,7 @@
     },
     {
       "id": "toh-drywall",
-      "topic": "repairs",
+      "topic": "farm-diy",
       "title": "How to patch holes in drywall",
       "source": "This Old House",
       "url": "https://www.thisoldhouse.com/walls/how-to-patch-holes-in-drywall",
@@ -193,7 +371,7 @@
     },
     {
       "id": "fh-drywall",
-      "topic": "repairs",
+      "topic": "farm-diy",
       "title": "Wall repair 101: fix a hole in drywall",
       "source": "Family Handyman",
       "url": "https://www.familyhandyman.com/project/how-to-fix-a-hole-in-drywall/",
@@ -201,7 +379,7 @@
     },
     {
       "id": "toh-paint",
-      "topic": "repairs",
+      "topic": "farm-diy",
       "title": "How to paint a room like a pro",
       "source": "This Old House",
       "url": "https://www.thisoldhouse.com/painting/how-to-paint-a-room",
@@ -209,7 +387,7 @@
     },
     {
       "id": "toh-shelves",
-      "topic": "repairs",
+      "topic": "farm-diy",
       "title": "How to install floating shelves and a mantel",
       "source": "This Old House",
       "url": "https://www.thisoldhouse.com/walls/how-to-install-floating-shelves-and-mantel",
