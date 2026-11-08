@@ -95,7 +95,7 @@ describe('Simple mode night: one Jack per screen, and only when nothing needs ac
     await db.kv.put({ key: ALERTS_KEY, value: [quake] })
     const { container } = simple()
     await screen.findByRole('region', { name: 'Active warning' })
-    expect(screen.queryByText(/Good night/)).toBeNull()
+    await waitFor(() => expect(screen.queryByText(/Good night/)).toBeNull(), { timeout: 10_000 }) // the band and Simple mode read the saved alerts separately: the band can show one tick before the sleepy line drops
     expect(container.querySelector('img.jack')).toBeNull()
   })
 })

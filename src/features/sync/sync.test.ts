@@ -258,7 +258,7 @@ describe('sensor steps hours across two phones', () => {
   })
 })
 
-describe('a long queue does not hold back an SOS', { timeout: 90_000 }, () => { // fill(200) writes 200 rows one by one through fake IndexedDB: it alone passes 15 s on a loaded PC, and a test that times out keeps running into the next one
+describe('a long queue does not hold back an SOS', () => {
   const H = 3_600_000
   const T = Date.parse('2026-10-01T06:00:00.000Z')
   const hourAt = (i: number) => ({ personId: 'p1', kind: 'steps', minutes: 60, steps: 10 + i, startedAt: new Date(T + i * H).toISOString(), source: 'health-connect' as const })
