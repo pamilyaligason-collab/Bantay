@@ -3,7 +3,8 @@ import { Section } from '../look'
 import { latestPerGame, useLotto, type LottoRow } from './lottoApi'
 import './lotto.css'
 
-export const LOTTO_NOTE = 'Numbers as posted by PCSO. Check your ticket with PCSO before claiming.'
+export const LOTTO_NOTE = 'Source: lottopcso.com (unofficial). Check your ticket with PCSO.'
+export const PCSO_URL = 'https://www.pcso.gov.ph/'
 const SHOWN = 3
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -16,7 +17,7 @@ export function drawDay(iso: string): string {
 const winnerLine = (r: LottoRow): string | null => (!/6\/\d\d/.test(r.game) || r.winners === null ? null : r.winners === 0 ? 'no winner' : `${r.winners} ${r.winners === 1 ? 'winner' : 'winners'}`)
 const balls = (r: LottoRow) => r.combination.split('-').map((n) => (n.length < 2 && /6\/\d\d/.test(r.game) ? n.padStart(2, '0') : n))
 
-/** S24: PCSO results as one card, latest draw per game (6/58, 6/55, 6/49, 6/45, 6/42, 3D 9 PM). The newest three show first; "More games" opens the rest. Hidden when there are no rows. */
+/** S24: lottopcso.com results (unofficial mirror, D-153) as one card, latest draw per game (6/58, 6/55, 6/49, 6/45, 6/42, 3D 9 PM). The newest three show first; "More games" opens the rest. Hidden when there are no rows. */
 export default function Lotto() {
   const { rows } = useLotto()
   const [all, setAll] = useState(false)
@@ -37,7 +38,7 @@ export default function Lotto() {
             </div>
           )
         })}
-        <p className="lotto-note">{LOTTO_NOTE}</p>
+        <p className="lotto-note">Source: lottopcso.com (unofficial). Check your ticket with <a href={PCSO_URL} target="_blank" rel="noopener noreferrer">PCSO</a>.</p>
       </div>
     </Section>
   )

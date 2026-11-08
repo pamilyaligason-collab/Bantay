@@ -1,4 +1,4 @@
-// PCSO lotto results ingest (S24, D-152): reads the public results page, no key. Not public: callable only with the LOTTO_CRON_SECRET in the x-lotto-secret header
+// PCSO lotto results ingest (S24, D-152): reads the lottopcso.com home page (unofficial mirror, D-153), no key. Not public: callable only with the LOTTO_CRON_SECRET in the x-lotto-secret header
 // (pg_cron + pg_net, same pattern as world-news). Deploy with --no-verify-jwt; the secret is the gate.
 // Function secrets (set by the owner): LOTTO_CRON_SECRET. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     }
   }
   const fetchText = async (url: string) => {
-    const res = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { 'User-Agent': 'FamilyBantay/1.0', Accept: 'text/html' } })
+    const res = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { 'User-Agent': 'FamilyBantay/1.0 (+results card)', Accept: 'text/html' } })
     if (!res.ok) throw new Error(`HTTP${res.status}`)
     return await res.text()
   }

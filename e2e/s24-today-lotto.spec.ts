@@ -60,7 +60,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(feed.locator('.tn-row')).toHaveCount(5)
     await expect(card).toBeVisible()
     await expect(card.locator('.lotto-row')).toHaveCount(3) // newest three draws first
-    await expect(card).toContainText('Numbers as posted by PCSO. Check your ticket with PCSO before claiming.')
+    await expect(card).toContainText('Source: lottopcso.com (unofficial). Check your ticket with PCSO.')
     expect(await page.evaluate(() => { const a = document.querySelector('[data-testid="today-news"]'), b = document.querySelector('[data-testid="today-lotto"]'); return !!a && !!b && !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) }), 'Lotto sits right after News').toBe(true)
     // health first, then weather: the dengue row leads, the typhoon row is second
     await expect(feed.locator('.tn-row').nth(0)).toContainText('health office')
