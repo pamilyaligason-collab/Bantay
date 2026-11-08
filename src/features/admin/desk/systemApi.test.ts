@@ -34,8 +34,9 @@ describe('alerts feed (red when the newest alerts-ingest run is over 60 minutes 
   it('uses 60 minutes for the feed and 30 for the other jobs', () => {
     expect(ALERTS_FEED_STALE_MIN).toBe(60)
     expect(feed.staleMin).toBe(60)
-    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news').map((j) => j.staleMin)).toEqual([30, 30])
+    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news' && j.job !== 'lotto-pcso').map((j) => j.staleMin)).toEqual([30, 30])
     expect(JOBS.find((j) => j.job === 'world-news')!.staleMin).toBe(480)
+    expect(JOBS.find((j) => j.job === 'lotto-pcso')!.staleMin).toBe(480)
     expect(JOBS.find((j) => j.job === 'alerts-digest')!.staleMin).toBe(1560)
   })
   it('59 and 60 minutes are fine, 61 is red', () => {
@@ -161,22 +162,22 @@ describe('alert reach', () => {
 
 describe('migrations.json', () => {
   const files = Object.keys(import.meta.glob('../../../../supabase/migrations/*.sql')).map((p) => p.split('/').pop()!).filter((f) => !f.endsWith('.down.sql')).map((f) => f.slice(0, 4))
-  it('is sorted, has no duplicates, skips 0028 and ends with 0038 to 0054', () => {
+  it('is sorted, has no duplicates, skips 0028 and ends with 0038 to 0053', () => {
     expect([...KNOWN_MIGRATIONS].sort()).toEqual(KNOWN_MIGRATIONS)
     expect(new Set(KNOWN_MIGRATIONS).size).toBe(KNOWN_MIGRATIONS.length)
     expect(KNOWN_MIGRATIONS).not.toContain('0028')
-    expect(KNOWN_MIGRATIONS.slice(-17)).toEqual(['0038', '0039', '0040', '0041', '0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053', '0054'])
+    expect(KNOWN_MIGRATIONS.slice(-16)).toEqual(['0038', '0039', '0040', '0041', '0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053'])
     expect(KNOWN_MIGRATIONS.every((v) => /^\d{4}$/.test(v))).toBe(true)
   })
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
     expect(files.length).toBeGreaterThan(20)
     // Written but not yet applied, so absent from migrations.json (which lists applied versions only). Each entry leaves this list when applied.
-    const writtenNotApplied: string[] = [] // a written migration waits here until the owner applies it (0053 applied 2026-11-07)
+    const writtenNotApplied: string[] = ['0054'] // a written migration waits here until the owner applies it (0054 lotto_results, S24; 0053 applied 2026-11-07)
     expect(writtenNotApplied.filter((v) => KNOWN_MIGRATIONS.includes(v))).toEqual([]) // an applied version must leave the allowlist
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v) && !writtenNotApplied.includes(v))).toEqual([])
   })
   it('has no gap except 0028 up to the last number', () => {
-    const all = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
+    const all = Array.from({ length: 53 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
     expect(KNOWN_MIGRATIONS).toEqual(all)
   })
 })

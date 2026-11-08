@@ -59,3 +59,18 @@ describe('runLotto', () => {
     expect(port.purge).not.toHaveBeenCalled()
   })
 })
+
+describe('index.ts wiring (source guard: the function itself needs Deno)', () => {
+  const src = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
+  it('checks the secret before any work, sends the agreed User-Agent, never chains .catch on a supabase builder', () => {
+    expect(src.indexOf("Deno.env.get('LOTTO_CRON_SECRET')")).toBeLessThan(src.indexOf('createClient('))
+    expect(src).toContain('x-lotto-secret')
+    expect(src).toContain('secret.length < 32')
+    expect(src).toContain("'User-Agent': 'FamilyBantay/1.0'")
+    expect(src).not.toMatch(/sb\.[\s\S]{0,80}\.catch\(/)
+    expect(src).toContain("heartbeat(sb, 'lotto-pcso'")
+  })
+  it('an Access Denied page like the one PCSO served to a plain GET parses to null, not to zero rows', () => {
+    expect(parseResults('<HTML><HEAD><TITLE>Access Denied</TITLE></HEAD><BODY>Access Denied</BODY></HTML>')).toBeNull()
+  })
+})
