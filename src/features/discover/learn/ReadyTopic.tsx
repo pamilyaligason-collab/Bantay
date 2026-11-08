@@ -5,7 +5,7 @@ import { playable } from '../../health/library/videosLogic'
 import { READY_READS, READY_TOPICS, READY_VIDEOS } from './ready'
 import './learn.css'
 
-/** #discover/learn/prepping and /repairs: the checked videos (click to load) and reads (open outside) for one D-117 topic. */
+/** #discover/learn/prepping and /farm-diy (the old /repairs link redirects there): the checked videos (click to load) and reads (open outside) for one D-117 topic. */
 export default function Ready({ id }: { id: string }) {
   const t = READY_TOPICS.find((x) => x.id === id)
   if (!t) return null

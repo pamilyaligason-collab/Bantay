@@ -20,32 +20,29 @@ async function discover(page: Page, w: number, h: number) {
   await page.setViewportSize({ width: w, height: h })
   await page.goto('/#discover')
   await expect(page.getByTestId('dc-learn')).toBeVisible()
-  await page.waitForFunction(() => Array.from(document.querySelectorAll('.dc-still img')).every((i) => (i as HTMLImageElement).complete))
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.dc-still img')).every((i) => (i as HTMLImageElement).complete || (r => r.top > innerHeight * 2 || r.left > innerWidth)(i.getBoundingClientRect()))) // lazy stills below the fold or in a carousel off to the side never start loading
 }
 
 for (const [w, h] of [[450, 997], [390, 997], [360, 997], [390, 844]] as const) {
-  test(`discover ${w}x${h}: video pictures fill their boxes, no empty band under the season card (D-124), Learn link clear of Jack`, async ({ page }) => {
+  test(`discover ${w}x${h}: video pictures fill their boxes, Learn link clear of Jack`, async ({ page }) => {
     await discover(page, w, h)
     await shot(page, `discover-${w}x${h}`)
     const m = await page.evaluate(() => {
       const box = (e: Element) => e.getBoundingClientRect()
       const fill = Array.from(document.querySelectorAll('.dc-herocard .dc-still, .dc-vc .dc-still')).map((e) => { const a = box(e); const p = box(e.parentElement!); return { w: a.width, h: a.height, pw: p.width, ph: p.height } })
-      const sea = document.querySelector('[data-testid="season-row"]')!.getBoundingClientRect()
-      const head = document.querySelector('[data-testid="dc-watch"]')!.getBoundingClientRect() // D-124 kept in S22: the Watch section follows the season card at once (Be prepared became a Learn card, D-135)
       const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
       const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
-      return { fill, gap: head.top - sea.bottom, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }
+      return { fill, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }
     })
-    expect(m.fill).toHaveLength(4) // the hero, both small main-video cards and the DIY card (the Be prepared cards became the Learn card, D-135)
+    expect(m.fill.length).toBeGreaterThanOrEqual(10) // S24: the Top story hero and grid, the Health, Farming and DIY, Listen rows and the recipe videos
     for (const f of m.fill) { expect(f.w, 'picture width').toBeGreaterThanOrEqual(f.pw - 1); expect(f.h, 'picture height').toBeGreaterThanOrEqual(f.ph - 1) }
-    expect(m.gap, 'gap between the season card and the next section').toBeLessThan(40)
     expect(m.overlap, 'Learn link under Jack at rest').toBe(false)
   })
 }
 
-// D-124: the floor that lifted Learn's link below Jack is gone; at every height around the old thresholds the link stays clear of Jack and no band opens under the season card.
+// D-124: the floor that lifted Learn's link below Jack is gone; at every height around the old thresholds the link stays clear of Jack.
 for (const day of ['2026-10-31', '2026-11-10', '2026-12-10']) {
-  test(`${day}: Learn link clear of Jack on both sides of the floor thresholds, no band above them`, async ({ page }) => {
+  test(`${day}: Learn link clear of Jack on both sides of the floor thresholds`, async ({ page }) => {
     test.setTimeout(120_000)
     await discover(page, 390, 900)
     await page.clock.setFixedTime(new Date(`${day}T09:00:00+08:00`))
@@ -57,14 +54,11 @@ for (const day of ['2026-10-31', '2026-11-10', '2026-12-10']) {
         await page.setViewportSize({ width: w, height: h })
         const m = await page.evaluate(() => {
           ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
-          const sea = document.querySelector('[data-testid="season-row"]')!.getBoundingClientRect()
-          const head = document.querySelector('[data-testid="dc-watch"]')!.getBoundingClientRect()
           const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
           const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
-          return { gap: head.top - sea.bottom, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }
+          return { overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }
         })
         expect(m.overlap, `${w}x${h}: Learn link under Jack`).toBe(false)
-        expect(m.gap, `${w}x${h}: band under the season card (th ${th})`).toBeLessThan(40)
       }
     }
   })

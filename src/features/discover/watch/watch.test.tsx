@@ -10,15 +10,15 @@ afterEach(cleanup)
 describe('Watch', () => {
   it('draws every playable video as a poster (no player) and one row per topic plus Live TV', () => {
     const { container } = render(<Watch />)
-    expect(DISCOVER_VIDEOS.filter(playable).length).toBe(33) // counted by hand: 19 in src/data/videos.json plus 14 in src/data/discover/ready.json, none a placeholder
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(33)
+    expect(DISCOVER_VIDEOS.filter(playable).length).toBe(62) // counted by hand: 27 in src/data/videos.json (19 plus 8 added in S24) plus 35 in src/data/discover/ready.json (14 plus 21 added in S24), none a placeholder
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(62)
     expect(container.querySelector('iframe')).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('33')
+    expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('62')
     const imgs = Array.from(container.querySelectorAll('img')).map((i) => i.getAttribute('src')!)
-    expect(imgs.length).toBe(33)
+    expect(imgs.length).toBe(62)
     expect(imgs.every((u) => u.startsWith('https://i.ytimg.com/vi/'))).toBe(true)
-    // topics counted by hand: Move 5, Safety 8, Mind 2, Diabetes 1, Food 3, Be prepared 8, Repairs and improvements 6
-    expect(['Move', 'Safety', 'Mind', 'Diabetes', 'Food', 'Be prepared', 'Repairs and improvements'].map((t) => screen.getByTestId('playlist-' + t).textContent)).toEqual(['Move5 videos', 'Safety8 videos', 'Mind2 videos', 'Diabetes1 video', 'Food3 videos', 'Be prepared8 videos', 'Repairs and improvements6 videos'])
+    // topics counted by hand: Move 5, Safety 12, Mind 3, Diabetes 4, Food 3, Be prepared 17, Farming and DIY 9, Listen 4, Recipe videos 5
+    expect(['Move', 'Safety', 'Mind', 'Diabetes', 'Food', 'Be prepared', 'Farming and DIY', 'Listen', 'Recipe videos'].map((t) => screen.getByTestId('playlist-' + t).textContent)).toEqual(['Move5 videos', 'Safety12 videos', 'Mind3 videos', 'Diabetes4 videos', 'Food3 videos', 'Be prepared17 videos', 'Farming and DIY9 videos', 'Listen4 videos', 'Recipe videos5 videos'])
     expect(screen.getByTestId('live-tv').textContent).toContain('Coming soon')
     expect(screen.getByText(/or opens in YouTube/)).toBeTruthy()
   })
@@ -35,16 +35,16 @@ describe('Watch', () => {
   it('a topic row narrows the poster row and a second tap shows all again', () => {
     render(<Watch />)
     fireEvent.click(within(screen.getByTestId('playlist-Safety')).getByRole('button'))
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(8)
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(12)
     expect(screen.getByRole('heading', { name: 'Safety' })).toBeTruthy()
     fireEvent.click(within(screen.getByTestId('playlist-Safety')).getByRole('button'))
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(33)
+    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(62)
   })
   it('a picture that cannot load falls back to the title on a drawn tile', () => {
     const { container } = render(<Watch />)
     fireEvent.error(container.querySelector('img')!)
     expect(container.querySelector('.dc-poster[data-thumb="off"]')).toBeTruthy()
-    expect(container.querySelectorAll('img').length).toBe(32)
+    expect(container.querySelectorAll('img').length).toBe(61)
   })
 })
 

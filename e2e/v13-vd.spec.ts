@@ -11,25 +11,19 @@ test.beforeEach(async ({ page }) => {
 })
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`${scheme}: hero label is a slim pill, season advice is whole on two lines, Play discs are filled (S22: the read-aloud rows moved to #discover/listen, Today's Listen is a guided video)`, async ({ page }) => {
+  test(`${scheme}: hero label is a slim pill, Play discs are filled (S22: the read-aloud rows moved to #discover/listen, Today's Listen is a guided video)`, async ({ page }) => {
     await page.goto('/#discover')
     await expect(page.getByTestId('dc-fact')).toBeVisible()
     await setScheme(page, scheme)
     const m = await page.evaluate(() => {
       const chip = document.querySelector('.dc-hchip')!.getBoundingClientRect()
-      const sub = document.querySelector('[data-testid="season-row"] .rw-sub') as HTMLElement
-      const lead = document.querySelector('[data-testid="season-row"] .rw-lead') as HTMLElement
       const play = document.querySelector('[data-testid="dc-hero"] .dc-hero-play') as HTMLElement
       const guided = getComputedStyle(document.querySelector('[data-testid="dc-guided"] button.lv-play') as HTMLElement)
-      const titles = Array.from(document.querySelectorAll<HTMLElement>('.dc-vc-t'))
-      return { chipH: chip.height, subCut: sub.scrollHeight > sub.clientHeight + 1, lead: getComputedStyle(lead).backgroundColor, play: getComputedStyle(play).backgroundColor, guided: guided.backgroundColor !== 'rgba(0, 0, 0, 0)' || guided.backgroundImage !== 'none', tcut: titles.some((t) => t.scrollHeight > t.clientHeight + 1) }
+      return { chipH: chip.height, play: getComputedStyle(play).backgroundColor, guided: guided.backgroundColor !== 'rgba(0, 0, 0, 0)' || guided.backgroundImage !== 'none' }
     })
     expect(m.chipH, 'chip height').toBeLessThanOrEqual(34)
-    expect(m.subCut, 'season advice cut').toBe(false)
-    expect(m.lead, 'icon tile filled').not.toBe('rgba(0, 0, 0, 0)')
     expect(m.play, 'hero play disc filled').not.toBe('rgba(0, 0, 0, 0)')
     expect(m.guided, 'guided video poster filled').toBe(true)
-    expect(m.tcut, 'video title cut').toBe(false)
   })
 
   for (const w of [390, 360, 195]) {

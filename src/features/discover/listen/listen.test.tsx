@@ -17,8 +17,8 @@ import { canSpeak, speak, stopSpeaking } from './speech'
 class Utter { text: string; rate = 1; lang = ''; onend: (() => void) | null = null; onerror: (() => void) | null = null; constructor(t: string) { this.text = t } }
 const synth = { speak: vi.fn(), cancel: vi.fn() }
 const withWeb = () => { vi.stubGlobal('SpeechSynthesisUtterance', Utter); Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: synth }) }
-/** The read-aloud rows' play buttons (the guided video's poster is not one). */
-const readBtns = async () => (await screen.findAllByRole('button', { name: /^Play / })).filter((b) => !b.closest('[data-testid="listen-guided"]'))
+/** The read-aloud rows' play buttons (the listen shelf and the guided video posters are not). */
+const readBtns = async () => (await screen.findAllByRole('button', { name: /^Play / })).filter((b) => !b.closest('[data-testid="listen-guided"], [data-testid="listen-shelf"]'))
 const noWeb =() => { vi.stubGlobal('SpeechSynthesisUtterance', undefined); Reflect.deleteProperty(window, 'speechSynthesis') }
 
 beforeEach(async () => { native.on = false; tts.speak.mockReset().mockResolvedValue(undefined); tts.stop.mockReset().mockResolvedValue(undefined); synth.speak.mockReset(); synth.cancel.mockReset(); await db.kv.clear() })
@@ -102,11 +102,11 @@ describe('Listen screen', () => {
     noWeb()
     render(<Listen />)
     expect(screen.getByText('Reading aloud is not on this phone')).toBeTruthy()
-    const btns = screen.queryAllByRole('button') // only the guided video's poster; no read-aloud buttons
-    expect(btns.length).toBe(1)
-    expect(screen.getByTestId('listen-guided').contains(btns[0]!)).toBe(true)
+    const btns = screen.queryAllByRole('button') // only video posters (the listen shelf's 4 and the guided one); no read-aloud buttons
+    expect(btns.length).toBe(5)
+    btns.forEach((b) => expect(b.closest('[data-testid="listen-guided"], [data-testid="listen-shelf"]')).toBeTruthy())
   })
-  it('the large guided row (the Calm video Discover Today shows) sits above every read-aloud row, with a 56 px play disc', async () => {
+  it('the listen shelf (the videos Discover Today lists) comes first, then the Calm guided row, above every read-aloud row, with a 56 px play disc', async () => {
     withWeb()
     render(<Listen />)
     const g = screen.getByTestId('listen-guided')
@@ -114,7 +114,11 @@ describe('Listen screen', () => {
     expect(g.textContent).toContain(CALM_VIDEOS[0]!.title)
     expect(g.querySelector('button')!.getAttribute('aria-label')).toContain(`Play ${CALM_VIDEOS[0]!.title}`)
     expect(g.compareDocumentPosition(first.find((b) => !g.contains(b))!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.getByTestId('listen').firstElementChild).toBe(g)
+    const shelf = screen.getByTestId('listen-shelf')
+    expect(shelf.querySelectorAll('button').length).toBe(4)
+    expect(shelf.textContent).toContain('Jason Stephenson')
+    expect(screen.getByTestId('listen').firstElementChild).toBe(shelf)
+    expect(shelf.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(css).toMatch(/\.dc-bigrow \.lv-btn \{ width: 56px; height: 56px; \}/)
   })
 })

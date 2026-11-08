@@ -67,7 +67,9 @@ const ROOTS = ['today', 'health', 'discover', 'family', 'safety'] as const
 const FAMILY_ROWS = outsideWarning('.rw-main') // never a row inside a warning or SOS card
 // D-135 Discover (Today view): the whole-card links (hero card, video cards, Learn cards, recipe card) may lose part of their box to Jack, hit-tested by assertJackHit (more than half stays tappable, measured 4 to 10 %); every small control still has no allowance.
 const DISCOVER_CARDS: JackAllow[] = [{ name: 'Hero card', sel: 'a.dc-herocard' }, { name: 'Video card', sel: 'a.dc-vc' }, { name: 'Learn card', sel: 'a.dc-lc' }, { name: 'Recipe card', sel: 'a.dc-rcard-t' }]
-const jackRest = (page: import('@playwright/test').Page, route: string) => route === '#discover' ? assertJackHit(page, DISCOVER_CARDS, 'discover at rest') : assertJackClear(page, { at: 'rest', allow: route === '#family' ? FAMILY_ROWS : undefined })
+// S24: Listen stacks the listen shelf and the Calm guided video above the read-aloud rows; a whole-poster play button may lose part of its box to Jack (more than half stays tappable)
+const LISTEN_POSTERS: JackAllow[] = [{ name: 'Video poster', sel: '.dc-bigrow button.lv-play' }]
+const jackRest = (page: import('@playwright/test').Page, route: string) => route === '#discover' ? assertJackHit(page, DISCOVER_CARDS, 'discover at rest') : route === '#discover/listen' ? assertJackHit(page, LISTEN_POSTERS, 'listen at rest') : assertJackClear(page, { at: 'rest', allow: route === '#family' ? FAMILY_ROWS : undefined })
 const JACK_REST_KNOWN: Record<string, string> = {
 }
 for (const route of [...ROOTS.map((r) => `#${r}`), '#discover/listen', '#discover/play', '#discover/news', '#medid', '#safety/sources']) {
