@@ -48,7 +48,9 @@ describe('DeadSheet', () => {
     render(<DeadSheet onClose={() => undefined} />)
     fireEvent.click((await screen.findAllByRole('button', { name: 'Discard' }))[0]!)
     await waitFor(async () => expect(((await db.kv.get(DEAD_KEY))?.value as unknown[]).length).toBe(1))
+    await waitFor(() => expect(screen.getAllByTestId('dead-row')).toHaveLength(1)) // the sheet has settled on the first discard before the list is replaced under it
     await db.kv.put({ key: DEAD_KEY, value: [dead(1), dead(2)] })
+    await waitFor(() => expect(screen.getAllByTestId('dead-row')).toHaveLength(2))
     fireEvent.click(await screen.findByRole('button', { name: 'Discard all' }))
     await waitFor(async () => expect(((await db.kv.get(DEAD_KEY))?.value as unknown[]).length).toBe(0))
     expect(await db.outbox.count()).toBe(0)

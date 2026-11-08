@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { configure, act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import type { Alert } from '../safety/alerts'
@@ -22,6 +22,8 @@ const ageCache = async (ms: number) => { // make the saved reading look `ms` old
 beforeEach(async () => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); await db.kv.clear(); calls.n = 0; location.hash = '#weather' })
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
+configure({ asyncUtilTimeout: 30_000 })
+vi.setConfig({ testTimeout: 60_000 }) // a render of the whole Weather screen passes 15 s when the full suite loads the PC (D-125 map test, 21 s)
 describe('Weather stays fresh', () => {
   it('asks again when the app comes back to the front, once the reading is 10 minutes old', async () => {
     serve(DRY)

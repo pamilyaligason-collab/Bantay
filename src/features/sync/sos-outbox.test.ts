@@ -278,7 +278,7 @@ describe('SOS outbox specs', () => {
         expect((await db.outbox.toArray()).some((r) => r.table === 'family_notes'), why).toBe(false)
         expect(await db.kv.get('sync.dead'), why).toBeUndefined()
       }
-    })
+    }, 120_000) // 120 rounds of fake IndexedDB: over 15 s on a loaded PC, and a timed-out round keeps running into the next test
 
     it('a held SOS waits out its own next-try time; non-urgent rows sync on schedule meanwhile and sync is never put into backoff', async () => {
       vi.useFakeTimers({ toFake: ['Date'] })

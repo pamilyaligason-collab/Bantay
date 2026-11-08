@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { configure, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { resetRefresh } from '../location/useLocation'
@@ -28,6 +28,8 @@ beforeEach(async () => {
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
+configure({ asyncUtilTimeout: 30_000 })
+vi.setConfig({ testTimeout: 60_000 }) // a render of the whole Weather screen passes 15 s when the full suite loads the PC (D-125 map test, 21 s)
 describe('WeatherScreen', () => {
   it('v13: Large Title with Back to Today, hero first, then action line, 4 tiles, the strip, 5 of the 10 days (all on a tap), the live map prompt, then sources and the footer', async () => {
     render(<WeatherScreen />)
