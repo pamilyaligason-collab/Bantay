@@ -11,11 +11,12 @@ const row = (id: string, ageH: number, o: Partial<NewsRow> = {}): NewsRow => ({ 
 afterEach(() => { cleanup(); h.items = []; h.zone = null; h.calls = [] })
 
 describe('TodayNews', () => {
-  it('shows the 3 newest with source and time; All news goes to Discover News', async () => {
+  it('shows the newest first with source and time; All news goes to Discover News', async () => {
     h.items = [row('b', 5), row('a', 1), row('d', 30), row('c', 2)]
     render(<TodayNews now={NOW} />)
-    await waitFor(() => expect(screen.getAllByRole('link', { name: /Headline/ })).toHaveLength(3))
-    expect(screen.getAllByRole('link', { name: /Headline/ }).map((a) => a.querySelector('.tn-body')!.textContent)).toEqual(['Example Daily, 1 h agoHeadline a', 'Example Daily, 2 h agoHeadline c', 'Example Daily, 5 h agoHeadline b'])
+    await waitFor(() => expect(screen.getAllByRole('link', { name: /Headline/ })).toHaveLength(4))
+    expect(screen.getAllByRole('link', { name: /Headline/ }).map((a) => a.getAttribute('href'))).toEqual(['a', 'c', 'b', 'd'].map((x) => `https://news.example/${x}`))
+    expect(screen.getAllByRole('link', { name: /Headline/ })[0]!.querySelector('.tn-body')!.textContent).toBe('Example Daily, 1 h agoHeadline a')
     expect(screen.getByRole('link', { name: 'All news' }).getAttribute('href')).toBe('#discover/news')
   })
   it('shows a category tag per row and at most 2 of one category in the strip', async () => {
@@ -30,6 +31,20 @@ describe('TodayNews', () => {
     const { container } = render(<TodayNews now={NOW} />)
     await waitFor(() => expect(container.querySelectorAll('.tn-row')).toHaveLength(2))
     expect(container.querySelector('.tn-stale')!.textContent).toMatch(/over 36 hours old/)
+  })
+  it('shows 5 rows: health first, then weather, then the rest newest first; at most 2 per category', () => {
+    const rows = [
+      row('n1', 1, { title: 'Power cut in Bohol', topic: 'national' }),
+      row('w1', 2, { title: 'Low pressure area east of Mindanao', topic: 'prepping' }),
+      row('h1', 6, { title: 'Dengue cases up', topic: 'health' }),
+      row('n2', 3, { title: 'Road repair update', topic: 'national' }),
+      row('h2', 8, { title: 'Free flu shots', topic: 'health' }),
+      row('h3', 9, { title: 'Clinic hours', topic: 'health' }),
+      row('t1', 4, { title: 'Typhoon Aling nears PAR', topic: 'prepping' }),
+      row('n3', 5, { title: 'School calendar', topic: 'national' })
+    ]
+    // health h1,h2 (h3 is the third HEALTH: capped), weather w1 (low pressure, no tag), t1, then the rest newest first n1, n2 (n3 is the third PHILIPPINES: capped)
+    expect(freshHeadlines(rows, NOW).map((n) => n.id)).toEqual(['h1', 'h2', 'w1', 't1', 'n1'])
   })
   it('drops rows older than 7 days and unreadable times', () => {
     expect(freshHeadlines([row('old', 24 * 7 + 1), row('new', 3), row('bad', 1, { published_at: 'x' })], NOW).map((n) => n.id)).toEqual(['new'])
