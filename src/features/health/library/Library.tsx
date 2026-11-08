@@ -13,6 +13,7 @@ import Article from './Article'
 import { BodyList, Row, useMedlib } from './encyclopediaList'
 import { BODIES, bodyHref, commonInPh, inSeason, searchTopics, topicHref, type Body } from './encyclopedia'
 import { FullLibraryCard, searchFullLibrary } from './FullLibraryCard'
+import { FULL_LIBRARY_HOSTED } from './fullLibrary'
 import '../health.css'
 import '../m7a.css'
 import './encyclopedia.css'
@@ -65,7 +66,7 @@ function LibraryHome() {
   const found = useMemo(() => searchTopics(topics, q), [topics, q])
   useEffect(() => { // the downloaded full library, after our own results; empty until it is downloaded
     const t = q.trim()
-    if (t.length < 3) { setMore([]); return }
+    if (t.length < 3 || !FULL_LIBRARY_HOSTED) { setMore([]); return }
     let live = true
     searchFullLibrary(t).then((r) => live && setMore(r.slice(0, 8))).catch(() => live && setMore([]))
     return () => { live = false }
@@ -127,7 +128,7 @@ function LibraryHome() {
               ))}
             </MoreGrid>
           )}
-          <FullLibraryCard />
+          {FULL_LIBRARY_HOSTED && <FullLibraryCard />}
           <h2 className="hd" id="lib-labs">Lab tests</h2>
           {!g && <p className="sub" role="status">Loading...</p>}
           <ul className="grp lb-list" aria-labelledby="lib-labs" data-testid="library-labs">
