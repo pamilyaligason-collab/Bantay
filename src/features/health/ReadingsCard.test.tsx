@@ -37,12 +37,13 @@ describe('Readings card', () => {
     expect(screen.getByTestId('rc-state').textContent).toBe('High. Above range')
     expect(screen.getByTestId('rc-state').className).toContain('above')
   })
-  it('pins the Today row does not show (default: BP for its nudge, Next visit) stay in a Pinned row inside the card, with Edit pins', async () => {
+  it('S24: the Coming up row inside the card is always two tiles (no visit, no BP: Medicines and Move; BP due takes the Medicines place)', async () => {
     show([])
     const pins = screen.getByTestId('glance')
-    expect(pins.contains(screen.getByRole('button', { name: 'Edit pins' }))).toBe(true)
-    expect(await within(pins).findByTestId('glance-visit')).toBeTruthy()
-    expect(within(pins).getByTestId('glance-progress')).toBeTruthy() // BP stays for its Due pill and nudge
+    expect(within(pins).getByText('Coming up')).toBeTruthy()
+    expect(await within(pins).findByTestId('glance-progress')).toBeTruthy() // BP due: its Due pill and nudge
+    expect(within(pins).getByTestId('glance-steps')).toBeTruthy()
+    expect(within(pins).getByTestId('pinned').children).toHaveLength(2)
   })
   it('no pulse: blood pressure leads and Pulse becomes the sub-tile; no Add button when this person cannot log', () => {
     show([rd('bp_systolic', 124, 'mmHg', 1), rd('bp_diastolic', 79, 'mmHg', 1)])
@@ -59,7 +60,7 @@ describe('Readings card', () => {
     show([rd('bp_systolic', 118, 'mmHg', 20), rd('bp_diastolic', 76, 'mmHg', 20)])
     const tile = await within(screen.getByTestId('rc-main')).findByTestId('glance-progress')
     expect(tile.querySelector('.nd-due')?.textContent).toBe('Due')
-    expect(screen.queryByTestId('glance-steps')).toBeNull() // steps and medicines stay on the Today row and Browse
+    expect(within(screen.getByTestId('rc-main')).getByTestId('glance-steps')).toBeTruthy() // no booked visit: the second tile is Move
   })
 })
 
@@ -74,7 +75,7 @@ describe('D-142 Readings card', () => {
   it('blood pressure shows once: the sub-tile, and no pinned BP tile unless it is due', async () => {
     show([rd('heart_rate', 72, 'bpm', 0), rd('bp_systolic', 118, 'mmHg', 0), rd('bp_diastolic', 76, 'mmHg', 0)])
     expect(screen.getByTestId('rc-sub-bp_systolic')).toBeTruthy()
-    await within(screen.getByTestId('rc-main')).findByTestId('glance-visit')
+    await within(screen.getByTestId('rc-main')).findByTestId('glance-meds')
     expect(within(screen.getByTestId('rc-main')).queryByTestId('glance-progress')).toBeNull()
   })
 })
