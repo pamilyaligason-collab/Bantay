@@ -1,5 +1,5 @@
 {
-  "_note": "D-117 shelf: being prepared at home, and home repairs. Videos: only channels that identify as official (the two unofficial Philippine Red Cross re-uploads, Ep02 and Ep05, were dropped after review); ids checked against YouTube oEmbed (HTTP 200, title and channel as listed) and the watch page (embeddable, description read) on 2026-11-04; not watched through. minutes is null, as in videos.json. reads: url answered HTTP 200 to a scripted request and its page title was read on checked. Round 3 (2026-11-04) added crisis-or-war household guides from Sweden and the UK, three Philippine official videos (PHIVOLCS, PAGASA) and two improvement videos and reads; all checked the same way (YouTube channel pages read: PHIVOLCS and PAGASA and the Swedish agency each describe themselves as the agency). Kept apart from videos.json so Today and Health keep their own health-only video list. S24 (2026-11-08): topics farm-diy (replaces repairs; the old repairs videos moved under it), listen and recipes-video added with hand-picked channel videos (D-152, no live feed); every new id was checked against YouTube oEmbed on 2026-11-08 (HTTP 200, source equal to author_name; two sources are the full oEmbed names). minutes stays null. Opus health-wording check still to do.",
+  "_note": "D-117 shelf: being prepared at home, and home repairs. Videos: only channels that identify as official (the two unofficial Philippine Red Cross re-uploads, Ep02 and Ep05, were dropped after review); ids checked against YouTube oEmbed (HTTP 200, title and channel as listed) and the watch page (embeddable, description read) on 2026-11-04; not watched through. minutes is null, as in videos.json. reads: url answered HTTP 200 to a scripted request and its page title was read on checked. Round 3 (2026-11-04) added crisis-or-war household guides from Sweden and the UK, three Philippine official videos (PHIVOLCS, PAGASA) and two improvement videos and reads; all checked the same way (YouTube channel pages read: PHIVOLCS and PAGASA and the Swedish agency each describe themselves as the agency). Kept apart from videos.json so Today and Health keep their own health-only video list. S24 (2026-11-08): topics farm-diy (replaces repairs; the old repairs videos moved under it), listen and recipes-video added with hand-picked channel videos (D-152, no live feed); every new id was checked against YouTube oEmbed on 2026-11-08 (HTTP 200, source equal to author_name; two sources are the full oEmbed names). minutes stays null. Opus health-wording check still to do. S25 (2026-11-08): second round, 22 videos from Philippine channels (GMA News, ABS-CBN News, Philippine Red Cross Official, Pinoy Prepper Central with PH-relevant titles only, Agribusiness How It Works, Agree sa Agri, Agri-nihan, Don Bustamante Rooftop Gardening, The Agrillenial, Raffy's Green Thumb, Mga Kwentong Pampatulog, Headspace); each id answered YouTube oEmbed with HTTP 200 and an author_name matching the source on 2026-11-08. No new recipe video was verified. Health videos moved to Health (videos.json) and no longer show on Discover.",
   "topics": [
     {
       "id": "prepping",
@@ -301,6 +301,182 @@
       "title": "Puso ng saging sa gata",
       "topic": "Recipe videos",
       "source": "Panlasang Pinoy",
+      "minutes": null
+    },
+    {
+      "id": "Eb2vT_3O848",
+      "placeholder": false,
+      "title": "Nationwide earthquake drill: what happens",
+      "topic": "Be prepared",
+      "source": "GMA News",
+      "minutes": null
+    },
+    {
+      "id": "fmJlnEExTvg",
+      "placeholder": false,
+      "title": "Safety measures during a typhoon",
+      "topic": "Be prepared",
+      "source": "ABS-CBN News",
+      "minutes": null
+    },
+    {
+      "id": "Ye2Ae3jz_xo",
+      "placeholder": false,
+      "title": "13 years after Yolanda: we remember, rebuild, prepare",
+      "topic": "Be prepared",
+      "source": "Philippine Red Cross",
+      "minutes": null
+    },
+    {
+      "id": "7Ogz8BQ_nX0",
+      "placeholder": false,
+      "title": "Blackout meals that need no stove or fridge",
+      "topic": "Be prepared",
+      "source": "Pinoy Prepper Central",
+      "minutes": null
+    },
+    {
+      "id": "CnN5geTh1OU",
+      "placeholder": false,
+      "title": "Water filter for rural homes, with a chemical backup",
+      "topic": "Be prepared",
+      "source": "Pinoy Prepper Central",
+      "minutes": null
+    },
+    {
+      "id": "hHYxtgCasGE",
+      "placeholder": false,
+      "title": "Fresh or dried malunggay? (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agribusiness How It Works",
+      "minutes": null
+    },
+    {
+      "id": "gfweUKAwvDc",
+      "placeholder": false,
+      "title": "Sun-drying and powdering moringa leaves (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agribusiness How It Works",
+      "minutes": null
+    },
+    {
+      "id": "eKkd-FxQ3_o",
+      "placeholder": false,
+      "title": "Three children finished school on a hito farm (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agree sa Agri",
+      "minutes": null
+    },
+    {
+      "id": "h9K9vH-JeZ8",
+      "placeholder": false,
+      "title": "Five incomes on one integrated farm (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agree sa Agri",
+      "minutes": null
+    },
+    {
+      "id": "hHLJiEbjWfA",
+      "placeholder": false,
+      "title": "8 things about growing ginger (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agri-nihan",
+      "minutes": null
+    },
+    {
+      "id": "XQascgMHres",
+      "placeholder": false,
+      "title": "8 tips to compost faster (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agri-nihan",
+      "minutes": null
+    },
+    {
+      "id": "YKal0IwqArc",
+      "placeholder": false,
+      "title": "8 things about sili (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agri-nihan",
+      "minutes": null
+    },
+    {
+      "id": "--3VleyQw8o",
+      "placeholder": false,
+      "title": "Fertilizers for pechay, organic and chemical (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Agri-nihan",
+      "minutes": null
+    },
+    {
+      "id": "qMh__XQhvsk",
+      "placeholder": false,
+      "title": "Make a self-watering pet bottle (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Don Bustamante Rooftop Gardening",
+      "minutes": null
+    },
+    {
+      "id": "YGxPiSBeQ7A",
+      "placeholder": false,
+      "title": "Growing kangkong in a pet bottle",
+      "topic": "Farming and DIY",
+      "source": "Don Bustamante Rooftop Gardening",
+      "minutes": null
+    },
+    {
+      "id": "ftx42ygHLqM",
+      "placeholder": false,
+      "title": "A rooftop edible garden: container ideas",
+      "topic": "Farming and DIY",
+      "source": "Don Bustamante Rooftop Gardening",
+      "minutes": null
+    },
+    {
+      "id": "PmkB07tBtmI",
+      "placeholder": false,
+      "title": "Bokashi for composting",
+      "topic": "Farming and DIY",
+      "source": "The Agrillenial",
+      "minutes": null
+    },
+    {
+      "id": "veH-Bpzdi4w",
+      "placeholder": false,
+      "title": "Common farming mistakes",
+      "topic": "Farming and DIY",
+      "source": "The Agrillenial",
+      "minutes": null
+    },
+    {
+      "id": "JkEJhm_ikc8",
+      "placeholder": false,
+      "title": "How to prepare the soil before planting (in Filipino)",
+      "topic": "Farming and DIY",
+      "source": "Raffy's Green Thumb",
+      "minutes": null
+    },
+    {
+      "id": "2Q5T4uceQL8",
+      "placeholder": false,
+      "title": "Sleep stories for children and adults (in Filipino)",
+      "topic": "Listen",
+      "source": "Mga Kwentong Pampatulog",
+      "minutes": null
+    },
+    {
+      "id": "2Co5D1i9vdM",
+      "placeholder": false,
+      "title": "Quiet mental chatter: a sleep meditation",
+      "topic": "Listen",
+      "source": "Headspace",
+      "minutes": null
+    },
+    {
+      "id": "ft-vhYwHzxw",
+      "placeholder": false,
+      "title": "Racing thoughts at bedtime? Try this",
+      "topic": "Listen",
+      "source": "Headspace",
       "minutes": null
     }
   ],

@@ -172,7 +172,7 @@ describe('migrations.json', () => {
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
     expect(files.length).toBeGreaterThan(20)
     // Written but not yet applied, so absent from migrations.json (which lists applied versions only). Each entry leaves this list when applied.
-    const writtenNotApplied: string[] = [] // a written migration waits here until the owner applies it (0054 lotto_results applied 2026-11-08)
+    const writtenNotApplied: string[] = ['0055'] // a written migration waits here until the owner applies it (0054 lotto_results applied 2026-11-08; 0055 news_videos is S25)
     expect(writtenNotApplied.filter((v) => KNOWN_MIGRATIONS.includes(v))).toEqual([]) // an applied version must leave the allowlist
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v) && !writtenNotApplied.includes(v))).toEqual([])
   })

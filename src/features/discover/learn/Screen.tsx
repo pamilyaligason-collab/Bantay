@@ -28,11 +28,12 @@ const useHash = () => {
 
 interface LearnTile { id: string; hue: Hue; icon: IconName; label: string; value: string; href: string }
 
-/** Discover > Learn. Routes: #discover/learn, /meds, /med/<id>, /recipes, /recipe/<id>, /cook/<id>, /together, /benefits (and /library, drawn by the Discover screen). */
+/** Discover > Learn. Routes: #discover/learn, /meds, /med/<id>, /recipes, /recipe/<id>, /cook/<id>, /together, /benefits. The old /library and /library/<key> hashes go to #health/library (S25). */
 export default function Screen() {
   const [medcards] = useKv<boolean>(MEDCARDS_FLAG, false)
   const [, , view, id] = useHash().replace(/^#/, '').split('/')
   useEffect(() => { if (view === 'repairs') location.replace('#discover/learn/farm-diy') }, [view]) // the S24 rename: old deep links land on the new page
+  useEffect(() => { if (view === 'library') location.replace(location.hash.replace('#discover/learn/library', '#health/library')) }, [view]) // S25: the library moved into Health (keeps an article key)
   if (view === 'recipes') return <Recipes />
   const topic = READY_TOPICS.find((t) => t.id === (view === 'repairs' ? 'farm-diy' : view))
   if (topic) return <ReadyTopic id={topic.id} />
@@ -62,7 +63,7 @@ export default function Screen() {
   const tiles: LearnTile[] = [
     ...(medcards ? [{ id: 'meds', hue: 'green' as Hue, icon: 'pill' as IconName, label: 'Medicine wiki', value: 'What each medicine is for', href: ROOT + '/meds' }] : []),
     { id: 'recipes', hue: 'amber', icon: 'meal', label: 'Recipes', value: `${RECIPES.length} low-salt recipes`, href: ROOT + '/recipes' },
-    { id: 'library', hue: 'amber', icon: 'file', label: 'Library', value: 'Plain reads on health topics', href: ROOT + '/library' },
+    { id: 'library', hue: 'amber', icon: 'file', label: 'Library', value: 'Plain reads on health topics', href: '#health/library' },
     { id: 'together', hue: 'green', icon: 'users', label: 'Learn together', value: 'Short lessons to share', href: ROOT + '/together' },
     ...READY_TOPICS.map((t): LearnTile => ({ id: t.id, hue: t.id === 'prepping' ? 'green' : 'amber', icon: t.id === 'prepping' ? 'bag' : 'home', label: t.title, value: countLine(t), href: ROOT + '/' + t.id }))
   ]

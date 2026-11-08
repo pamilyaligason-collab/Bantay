@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Row } from '../../look'
-import type { IconName } from '../../shell/Icon'
+import { MoreGrid, Row } from '../../look'
+import { Icon, type IconName } from '../../shell/Icon'
 import { LiteVideo } from '../../media/LiteVideo'
 import { playable, type Video } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
 
-const TOPIC_ICON: Record<string, IconName> = { Move: 'move', Safety: 'shield', Mind: 'brain', Diabetes: 'drop', Food: 'meal', 'Be prepared': 'bag', 'Farming and DIY': 'home' }
+const TOPIC_ICON: Record<string, IconName> = { 'Be prepared': 'bag', 'Farming and DIY': 'home', Listen: 'moon', 'Recipe videos': 'meal' }
 
 /** The Discover overview stores the tapped video's id here; Watch opens it once and clears it. */
 export const WATCH_PICK = 'dc.watch'
@@ -15,12 +15,10 @@ const readPick = () => { try { return sessionStorage.getItem(WATCH_PICK) } catch
 function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
   const [off, setOff] = useState(false)
   return (
-    <li>
-      <button type="button" className="dc-poster" aria-pressed={on} aria-label={`Choose ${v.title}${v.minutes ? `, ${v.minutes} min` : ''}`} data-thumb={off ? 'off' : 'on'} onClick={pick}>
-        {!off && <img src={`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
-        <span className="dc-poster-cap" data-contrast-bg={off ? undefined : '#555555'}><b>{v.title}</b>{v.minutes ? <> <span>{v.minutes} min</span></> : null}</span>
-      </button>
-    </li>
+    <button type="button" className="dc-poster" aria-pressed={on} aria-label={`Choose ${v.title}${v.minutes ? `, ${v.minutes} min` : ''}`} data-thumb={off ? 'off' : 'on'} onClick={pick}>
+      {!off && <img src={`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
+      <span className="dc-poster-cap" data-contrast-bg={off ? undefined : '#555555'}><b>{v.title}</b>{v.minutes ? <> <span>{v.minutes} min</span></> : null}</span>
+    </button>
   )
 }
 
@@ -40,9 +38,9 @@ export default function Watch() {
   return (
     <div className="dc-list" data-testid="watch">
       <div className="dc-sh"><h2 className="sh-h2">{topic ?? 'Checked videos'}</h2><span className="sub">{list.length}</span></div>
-      <ul className="dc-posters" aria-label={topic ? `${topic} videos` : 'Checked videos'}>
+      <MoreGrid key={topic ?? 'all'} label={topic ? `${topic} videos` : 'Checked videos'} testId="watch-grid">
         {list.map((v) => <Poster key={v.id} v={v} on={v.id === sel} pick={() => pick(v.id)} />)}
-      </ul>
+      </MoreGrid>
       {chosen && (
         <div ref={player} className="card dc-player" data-testid="watch-player">
           <LiteVideo key={chosen.id} id={chosen.id} title={chosen.title} minutes={chosen.minutes} />
@@ -56,6 +54,7 @@ export default function Watch() {
         })}
         <Row icon="play" title="Live TV" sub="News and weather. Coming soon" testId="live-tv" />
       </div>
+      <a className="card dc-hlink" href="#health" data-testid="watch-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
       <p className="sub dc-quiet">Checked videos only. Each one plays here after you tap it, or opens in YouTube.</p>
     </div>
   )
