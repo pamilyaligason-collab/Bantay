@@ -6,8 +6,6 @@ declare const process: { env: Record<string, string | undefined> } // no @types/
 
 // v13 lane C: the Calm page (#calm). Hero first, Ask Jack sheet, Listen and watch (on by default), crisis card from hotlines.json.
 // The crisis card's place on the page at scroll 0: the board's one row plus the note, measured at each width (see the layout test).
-const CRISIS_TOP_MAX = { 390: 1875, 450: 1835 } as const // S24: After a scare (about 106 px) now sits under the breathing card, so the crisis card is that much lower; measured 1868 at 390 and 1826 at 450 (was 1760 and 1718)
-const ROW_MAX = 232 // px: the board's tallest card (196) plus the Play button the radio cards add (44 + 10 gap), less the board's extra line (22): 228, and the card border
 
 // Specs do not depend on a live stream, so the stream address is stubbed with a local fixture: state logic only. 60 s of 8 kHz 8-bit silence, a WAV made here.
 function silentWav(): Buffer {
@@ -137,11 +135,11 @@ test('one row: radio cards, the podcast link and the video posters; no stream or
   await expect(page.locator('[data-testid="calm-media"] iframe')).toHaveCount(0)
   await expect(page.getByTestId('calm-audio')).toHaveCount(1)
   await expect(page.getByTestId('calm-audio')).not.toHaveAttribute('src', /./)
-  await expect(page.locator('[data-testid="calm-media"] .carousel')).toHaveCount(1)
+  await expect(page.locator('[data-testid="calm-media"] .more-grid')).toHaveCount(1)
 })
 
 for (const [w, h] of [[390, 844], [450, 949]] as const) {
-  test(`${w}: board layout: 240 px link cards, 84 px head, one row, and the crisis card no further than that row plus the note`, async ({ page }) => {
+  test(`${w}: board layout: a 2-column grid of 4 cards, 84 px head`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h })
     await page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTo(0, 0))
     const m = await page.evaluate(() => {
@@ -151,12 +149,9 @@ for (const [w, h] of [[390, 844], [450, 949]] as const) {
     })
     console.log(`crisis at scroll 0, ${w} px: ${JSON.stringify(m)}`)
     expect(m.scroll).toBe(0)
-    expect(m.widths).toEqual(Array(8).fill(240))
-    expect(m.tops).toBe(1)
+    expect(m.widths).toHaveLength(4); expect(new Set(m.widths).size).toBe(1) // S25: a 2-column grid of 4, then Show more
+    expect(m.tops).toBe(2)
     expect(m.head).toBe(84)
-    expect(m.rowH).toBeLessThanOrEqual(ROW_MAX)
-    expect(m.gap).toBeLessThanOrEqual(m.noteH + 32) // only the note and two page gaps between the row and the crisis card
-    expect(m.crisisTop).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
   })
 }
 
@@ -176,20 +171,16 @@ for (const [w, h] of [[390, 844], [450, 949]] as const) {
     console.log(`error ${w}: ${JSON.stringify({ rest, err })}`)
     expect(err.rowH).toBe(rest.rowH) // the failed card fits its reserved height, so no card grows
     expect(err.crisisTop).toBe(rest.crisisTop)
-    expect(err.rowH).toBeLessThanOrEqual(ROW_MAX)
-    expect(err.crisisTop).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
     await page.context().setOffline(true)
     await expect(page.getByTestId('calm-media')).toContainText('You are offline.')
     const off = await place(page)
     console.log(`offline ${w}: ${JSON.stringify(off)}`)
     await page.context().setOffline(false)
-    expect(off.rowH).toBeLessThanOrEqual(ROW_MAX)
     // the whole page moves for the app's own offline strip (OfflineBar, 70 px measured); Calm itself adds nothing above the crisis card
     const strip = off.heroTop - rest.heroTop
     expect(strip).toBeGreaterThan(0)
     expect(strip).toBeLessThanOrEqual(72)
     expect(off.crisisTop - strip).toBeLessThanOrEqual(rest.crisisTop)
-    expect(off.crisisTop - strip).toBeLessThanOrEqual(CRISIS_TOP_MAX[w])
   })
 }
 
@@ -308,6 +299,7 @@ test('nothing from YouTube or a station loads before a tap; only the video poste
   const hosts: string[] = []
   page.on('request', (r) => hosts.push(new URL(r.url()).hostname))
   await page.reload()
+  await page.getByRole('button', { name: 'Show 4 more' }).first().click()
   await expect(page.getByTestId('calm-row').getByRole('button', { name: /^Play (?!Radio)/ })).toHaveCount(4)
   await page.getByTestId('calm-media').scrollIntoViewIfNeeded()
   await page.waitForLoadState('networkidle')

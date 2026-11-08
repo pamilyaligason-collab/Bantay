@@ -17,7 +17,7 @@ describe('MovePanel without the doctor OK (H15)', () => {
     const row = screen.getByTestId('doctor-ok')
     expect(row.textContent).toContain('Not yet')
     expect(row.textContent).toContain('Check with your doctor before starting new exercise.')
-    const moves = within(screen.getByTestId('move-carousel')).getAllByRole('button')
+    const moves = within(screen.getByTestId('move-carousel')).getAllByRole('button').filter((b) => !b.classList.contains('more-grid-btn'))
     expect(moves.length).toBeGreaterThan(2)
     expect(moves.length).toBeLessThanOrEqual(6)
     expect(moves.every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true)

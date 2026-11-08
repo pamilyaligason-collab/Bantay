@@ -1,4 +1,4 @@
-import { Carousel } from '../look/Carousel'
+import { MoreGrid } from '../look/MoreGrid'
 import { Section } from '../look/Section'
 import { LiteVideo } from '../media/LiteVideo'
 import { useOnline } from '../media/useOnline'
@@ -13,7 +13,7 @@ export default function MediaLinks() {
   return (
     <Section title="Listen and watch" testId="calm-media">
       <audio ref={radio.audio} preload="none" data-testid="calm-audio" {...radio.events} />
-      <Carousel label="Listen and watch" testId="calm-row">
+      <MoreGrid label="Listen and watch" testId="calm-row">
         {RADIO.map((s) => {
           const state = radio.now?.id === s.id ? radio.now.state : null
           const active = state === 'loading' || state === 'playing'
@@ -40,7 +40,7 @@ export default function MediaLinks() {
           <div key={v.id} className="card cm-video"><LiteVideo id={v.id} title={v.title} />
             <span className="cm-sub cm-chan">Channel: {v.channel}</span></div>
         ))}
-      </Carousel>
+      </MoreGrid>
       <p className="cm-sub" role="status">{online ? 'Radio plays here after a tap. Radio stops when you leave Calm. Videos use YouTube privacy mode. Links open their sites.' : 'You are offline. These open when you are back online.'}</p>
     </Section>
   )
