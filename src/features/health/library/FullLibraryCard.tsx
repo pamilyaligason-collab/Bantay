@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { SubHeader } from '../../shell/SubHeader'
 import {
-  download, getStatus, readArticle, remove, searchFullLibrary, connectionKnown, FullLibraryError, FULL_LIBRARY_MB, MDWIKI_CREDIT, MDWIKI_LICENCE_URL,
+  download, getStatus, readArticle, remove, searchFullLibrary, FullLibraryError, FULL_LIBRARY_MB, MDWIKI_CREDIT, MDWIKI_LICENCE_URL,
   type FullArticleData, type FullLibraryStatus,
 } from './fullLibrary'
 import './fullLibrary.css'
@@ -51,7 +51,7 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
     <section className="card fl-card" aria-label="Full medical library" data-testid="full-library">
       <h3>Full medical library</h3>
       {st.state !== 'ready' && (
-        <p className="sub">mdwiki, thousands of articles and pictures. Download once on Wi-Fi, then it works offline. About {size} MB.</p>
+        <p className="sub">mdwiki, thousands of articles in plain text. Download once on Wi-Fi, then it works offline. About {size} MB.</p>
       )}
       {st.state === 'downloading' && (
         <>
@@ -78,7 +78,7 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
       )}
       {(st.state === 'none' || st.state === 'error') && (ask === 'wifi' ? (
         <div className="fl-row">
-          <span>{connectionKnown() ? 'You are not on Wi-Fi.' : 'Wi-Fi is not confirmed.'} Download {size} MB anyway?</span>
+          <span>Wi-Fi is not confirmed. Download {size} MB anyway?</span>
           <button type="button" className="btn" onClick={() => void start(true)}>Download</button>
           <button type="button" className="btn2" onClick={() => setAsk(null)}>Not now</button>
         </div>
@@ -105,7 +105,7 @@ function Body({ text }: { text: string }) {
   return <Fragment>{out}</Fragment>
 }
 
-/** One article from the downloaded pack: title, text, picture if the pack has one, and the mdwiki credit. */
+/** One article from the downloaded pack: title, text, picture if the pack has one (only packs built with --images), and the mdwiki credit. */
 export function FullArticle({ articleKey }: { articleKey: string }) {
   const [a, setA] = useState<FullArticleData | null | undefined>(undefined)
   useEffect(() => {
@@ -116,7 +116,7 @@ export function FullArticle({ articleKey }: { articleKey: string }) {
   }, [articleKey])
   return (
     <>
-      <SubHeader title="Health library" backHref="#discover/learn/library" backLabel="Back to the library" />
+      <SubHeader title="Health library" backHref="#health/library" backLabel="Back to the library" />
       <article className="card fl-art" data-testid="full-article">
         {a === undefined && <p className="sub" role="status">Loading...</p>}
         {a === null && <p className="sub">This article is not in the downloaded library. Open the library and check that the full medical library is ready.</p>}

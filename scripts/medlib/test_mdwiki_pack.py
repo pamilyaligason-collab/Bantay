@@ -45,10 +45,10 @@ class PackTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             zim, out = os.path.join(d, 't.zim'), os.path.join(d, 't.pack')
             make_zim(zim)
-            header, size = mp.build(zim, out)
+            header, size = mp.build(zim, out, built='2026-11-01')  # pinned so the committed fixture never changes on a rerun
             self.assertEqual(size, os.path.getsize(out))
             self.assertEqual((header['articles'], header['images']), (2, 0))  # the redirect and the empty page are skipped
-            self.assertEqual(header['changes'], 'converted to plain text')
+            self.assertEqual(header['changes'], 'converted to plain text; citations, navigation boxes and edit links removed')
             self.assertEqual(header['licence'], 'CC BY-SA 4.0')
             h, index, get = mp.read_pack(out)
             self.assertEqual(sorted(r[0] for r in index), ['Diabetes mellitus', 'Hypertension'])

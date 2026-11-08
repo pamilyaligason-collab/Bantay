@@ -8,6 +8,9 @@ import { _resetFullLibrary } from './fullLibrary'
 // Built by scripts/medlib/test_mdwiki_pack.py. The specifier is a variable so tsc does not need @types/node.
 const nodeFs = 'node:fs'
 const { readFileSync } = await import(/* @vite-ignore */ nodeFs)
+// jsdom has no DecompressionStream (every WebView we ship to does); lend Node's.
+const nodeWeb = 'node:stream/web'
+globalThis.DecompressionStream ??= (await import(/* @vite-ignore */ nodeWeb)).DecompressionStream
 const PACK = new Uint8Array(readFileSync('scripts/medlib/fixtures/mini.pack'))
 
 /** A download that sends half the pack, then waits until release() before sending the rest. */
@@ -38,6 +41,7 @@ beforeEach(async () => {
   await new Promise<void>((res) => { const r = indexedDB.deleteDatabase('bantay-medlib'); r.onsuccess = r.onerror = r.onblocked = () => res() })
   _resetFullLibrary()
   Object.defineProperty(navigator, 'storage', { configurable: true, value: { estimate: async () => ({ usage: 0, quota: 1e12 }), persist: async () => true } })
+  Object.defineProperty(navigator, 'connection', { configurable: true, value: { type: 'wifi' } })
 })
 
 describe('FullLibraryCard', () => {
@@ -49,7 +53,7 @@ describe('FullLibraryCard', () => {
     expect(await screen.findByText(/Download once on Wi-Fi, then it works offline/)).toBeTruthy()
     await u.click(screen.getByRole('button', { name: 'Get' }))
     const bar = await screen.findByRole('progressbar')
-    await waitFor(() => expect(bar.getAttribute('aria-valuenow')).toBe('50'))
+    await waitFor(() => expect(bar.getAttribute('aria-valuenow')).toBe(String(Math.floor(Math.floor(PACK.length / 2) / PACK.length * 100))))
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy()
     g.release()
     const del = await screen.findByRole('button', { name: /^Delete \(\d+ MB\)$/ })
@@ -76,5 +80,24 @@ describe('FullLibraryCard', () => {
     render(<FullLibraryCard />)
     await u.click(await screen.findByRole('button', { name: 'Get' }))
     expect(await screen.findByText(/Not enough free space/)).toBeTruthy()
+  })
+
+  it('asks before downloading when Wi-Fi is not confirmed', async () => {
+    Object.defineProperty(navigator, 'connection', { configurable: true, value: undefined })
+    const f = gatedFetch()
+    vi.stubGlobal('fetch', f.fn)
+    const u = userEvent.setup()
+    render(<FullLibraryCard />)
+    await u.click(await screen.findByRole('button', { name: 'Get' }))
+    expect(await screen.findByText(/Wi-Fi is not confirmed\. Download \d+ MB anyway\?/)).toBeTruthy()
+    expect(f.fn).not.toHaveBeenCalled()
+    await u.click(screen.getByRole('button', { name: 'Not now' }))
+    expect(screen.queryByRole('button', { name: 'Download' })).toBeNull()
+    await u.click(screen.getByRole('button', { name: 'Get' }))
+    await u.click(await screen.findByRole('button', { name: 'Download' }))
+    expect(await screen.findByRole('progressbar')).toBeTruthy()
+    expect(f.fn).toHaveBeenCalledTimes(1)
+    f.release()
+    await screen.findByRole('button', { name: /^Delete \(\d+ MB\)$/ })
   })
 })

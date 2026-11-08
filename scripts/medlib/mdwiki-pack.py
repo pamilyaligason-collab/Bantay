@@ -144,7 +144,10 @@ def make_image(archive, entry_path, img, max_kb):
     return None
 
 
-def build(zim_path, out_path, images=False, limit=None, max_image_kb=30):
+CHANGES = 'converted to plain text; citations, navigation boxes and edit links removed'
+
+
+def build(zim_path, out_path, images=False, limit=None, max_image_kb=30, built=None):
     from libzim.reader import Archive
     arc = Archive(zim_path)
     body = tempfile.TemporaryFile()
@@ -177,11 +180,11 @@ def build(zim_path, out_path, images=False, limit=None, max_image_kb=30):
         index.append([key, title, off, len(blob), text.split('\n', 1)[0][:160]])
         off += len(blob)
     header = {
-        'format': 'bantay-mdwiki-pack', 'version': 1, 'built': time.strftime('%Y-%m-%d', time.gmtime()),
+        'format': 'bantay-mdwiki-pack', 'version': 1, 'built': built or time.strftime('%Y-%m-%d', time.gmtime()),
         'source': 'mdwiki', 'sourceUrl': 'https://mdwiki.org/', 'zim': os.path.basename(zim_path),
         'licence': 'CC BY-SA 4.0', 'licenceUrl': 'https://creativecommons.org/licenses/by-sa/4.0/',
-        'changes': 'converted to plain text',
-        'credit': 'Text from mdwiki.org (WikiProject Med), licensed CC BY-SA 4.0. Changes: converted to plain text; citation numbers, edit links and navigation boxes removed.',
+        'changes': CHANGES,
+        'credit': 'Text from mdwiki.org (WikiProject Med), licensed CC BY-SA 4.0. Changes: ' + CHANGES + '.',
         'articles': len(index), 'images': n_img,
     }
     h = json.dumps(header, ensure_ascii=False).encode()
