@@ -102,8 +102,8 @@ describe('Listen screen', () => {
     noWeb()
     render(<Listen />)
     expect(screen.getByText('Reading aloud is not on this phone')).toBeTruthy()
-    const btns = screen.queryAllByRole('button') // only video posters (the listen shelf's 4 and the guided one); no read-aloud buttons
-    expect(btns.length).toBe(5)
+    const btns = screen.queryAllByRole('button') // only video posters (the listen shelf's 7 (4 before S25) and the guided one); no read-aloud buttons
+    expect(btns.length).toBe(8)
     btns.forEach((b) => expect(b.closest('[data-testid="listen-guided"], [data-testid="listen-shelf"]')).toBeTruthy())
   })
   it('the listen shelf (the videos Discover Today lists) comes first, then the Calm guided row, above every read-aloud row, with a 56 px play disc', async () => {
@@ -115,7 +115,7 @@ describe('Listen screen', () => {
     expect(g.querySelector('button')!.getAttribute('aria-label')).toContain(`Play ${CALM_VIDEOS[0]!.title}`)
     expect(g.compareDocumentPosition(first.find((b) => !g.contains(b))!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const shelf = screen.getByTestId('listen-shelf')
-    expect(shelf.querySelectorAll('button').length).toBe(4)
+    expect(shelf.querySelectorAll('button').length).toBe(7)
     expect(shelf.textContent).toContain('Jason Stephenson')
     expect(screen.getByTestId('listen').firstElementChild).toBe(shelf)
     expect(shelf.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

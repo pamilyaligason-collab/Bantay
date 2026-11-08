@@ -17,7 +17,7 @@ describe('Discover overview (#discover)', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover')
     expect(screen.getByTestId('dc-head')).toBeTruthy()
     expect(container.querySelectorAll('[data-hero]').length).toBe(1)
-    const ids = ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health']
+    const ids = ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health-link']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
     expect(screen.queryByTestId('season-row')).toBeNull()
@@ -94,17 +94,6 @@ describe('Discover sub pages', () => {
     render(<Discover />)
     expect(screen.queryByText('News lane screen')).toBeNull()
     expect(screen.getByTestId('watch')).toBeTruthy()
-  })
-  it('#discover/learn/library draws the Health library, with its Back going to Learn', () => {
-    location.hash = '#discover/learn/library'
-    render(<Discover />)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Health library')
-    expect(screen.getByRole('link', { name: 'Back to Learn' }).getAttribute('href')).toBe('#discover/learn')
-  })
-  it('a library article goes back to the library list', () => {
-    location.hash = '#discover/learn/library/c%3Adiabetes'
-    render(<Discover />)
-    expect(screen.getByRole('link', { name: 'Back to the library' }).getAttribute('href')).toBe('#discover/learn/library')
   })
 })
 

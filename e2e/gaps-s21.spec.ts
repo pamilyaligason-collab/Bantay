@@ -69,7 +69,7 @@ test('discover: every section link stays left of Jack at rest, and a video card 
     return Array.from(document.querySelectorAll('section.sec[data-testid^="dc-"] > .sec-h a')).filter((a) => a.getBoundingClientRect().right > fab.left - 4).map((a) => a.textContent)
   })
   expect(bad, "section links in Jack's column").toEqual([])
-  await page.getByTestId('dc-health').locator('.dc-vc').first().click()
+  await page.getByTestId('dc-farm').locator('.dc-vc').first().click()
   await expect(page).toHaveURL(/#discover\/watch/)
 })
 

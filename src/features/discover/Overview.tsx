@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Carousel, EmptyState, JackArt, LargeTitle, PreviewTile, Section } from '../look'
+import { EmptyState, JackArt, LargeTitle, MoreGrid, PreviewTile, Section } from '../look'
 import { HeadActions } from '../shell/HeadActions'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
@@ -14,7 +14,8 @@ import { useNewsZone } from './news/Screen'
 import Saved from './Saved'
 import { DiscoverTabs, panelId, tabId, type View } from './Tabs'
 import { WATCH_PICK } from './watch/Screen'
-import { DISCOVER_SET, playable, type Video } from '../health/library/videosLogic'
+import type { Video } from '../health/library/videosLogic'
+import { NewsVideos } from './newsvideo/NewsVideos'
 import { READY_TOPICS, countLine, readyShelf as shelf } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
@@ -95,19 +96,19 @@ function TopStory({ now }: { now: Date }) {
   )
 }
 
-/** A titled row of video cards with the channel chips above it; a chip narrows the row to that channel, tapping it again shows all. */
+/** A titled shelf of video cards with the channel chips above it; a chip narrows the shelf to that channel, tapping it again shows all. Four cards show, "Show more" adds four at a time (D-156), and the title link says how many there are. */
 function VideoShelf({ title, link, testId, videos, tint }: { title: string; link: { href: string; label: string }; testId: string; videos: Video[]; tint: Tint }) {
   const [src, setSrc] = useState<string | null>(null)
   const sources = [...new Set(videos.map((v) => v.source))]
   const list = src ? videos.filter((v) => v.source === src) : videos
   if (!videos.length) return null
   return (
-    <Section title={title} link={link} testId={testId}>
+    <Section title={title} link={{ href: link.href, label: `${link.label} ${videos.length}` }} testId={testId}>
       <div className="nw">
-        <div className="nw-chips" role="group" aria-label={`${title} channels`}>
+        <div className="nw-chips dc-wrapchips" role="group" aria-label={`${title} channels`}>
           {sources.map((s) => <button key={s} type="button" className="nw-chip" aria-pressed={src === s} onClick={() => setSrc(src === s ? null : s)}>{s}</button>)}
         </div>
-        <Carousel label={`${title} videos`} testId={testId + '-row'}>{list.map((v) => <VidCard key={v.id} v={v} tint={tint} className="dc-vrow" />)}</Carousel>
+        <MoreGrid key={src ?? 'all'} label={`${title} videos`} testId={testId + '-row'}>{list.map((v) => <VidCard key={v.id} v={v} tint={tint} className="dc-vgcard" />)}</MoreGrid>
       </div>
     </Section>
   )
@@ -127,7 +128,7 @@ function Learn() {
     <Section title="Learn" link={{ href: '#discover/learn', label: 'All topics' }} testId="dc-learn">
       <p className="sub dc-sub">Short reads you can open offline.</p>
       <div className="dc-lgrid">
-        <LearnCard tint="purple" title="Health topics" sub="Plain reads on heart, sugar and more" href="#discover/learn/library" testId="dc-learn-topics" />
+        <LearnCard tint="purple" title="Health topics" sub="Plain reads on heart, sugar and more" href="#health/library" testId="dc-learn-topics" />
         {prep && <LearnCard tint="amber" title="Be prepared" sub={countLine(prep)} href="#discover/learn/prepping" testId="dc-learn-prepping" />}
         {farm && <LearnCard tint="green" title="Garden and farm" sub={countLine(farm)} href="#discover/learn/farm-diy" testId="dc-learn-farm" />}
         {medcards
@@ -142,7 +143,7 @@ function Learn() {
 function Listen() {
   const [g, ...rest] = shelf('listen')
   return (
-    <Section title="Listen" link={{ href: '#discover/listen', label: 'See all' }} testId="dc-listen">
+    <Section title="Listen" link={{ href: '#discover/listen', label: `All ${shelf('listen').length}` }} testId="dc-listen">
       {g
         ? (
           <div className="nw">
@@ -151,7 +152,7 @@ function Listen() {
               <b className="dc-guided-t">{g.title}</b>
               <span className="dc-guided-s">{g.source} · large controls</span>
             </div>
-            {rest.length > 0 && <Carousel label="More to listen to" testId="dc-listen-row">{rest.map((v) => <VidCard key={v.id} v={v} tint="purple" className="dc-vrow" />)}</Carousel>}
+            {rest.length > 0 && <MoreGrid label="More to listen to" testId="dc-listen-row">{rest.map((v) => <VidCard key={v.id} v={v} tint="purple" className="dc-vgcard" />)}</MoreGrid>}
           </div>
         )
         : <p className="sub">Nothing to listen to yet.</p>}
@@ -164,7 +165,7 @@ function Recipes({ now }: { now: Date }) {
   const list = [...RECIPES].sort((a, b) => Number(!!b.image) - Number(!!a.image)).slice(0, 4)
   const videos = turn(shelf('recipes-video'), now, 2)
   return (
-    <Section title="Recipes" link={{ href: '#discover/learn/recipes', label: 'All' }} testId="dc-recipes">
+    <Section title="Recipes" link={{ href: '#discover/learn/recipes', label: `All ${RECIPES.length}` }} testId="dc-recipes">
       <div className="dc-rgrid">
         {list.map((r) => (
           <div key={r.id} className="card dc-rcard" data-testid="dc-recipe">
@@ -183,8 +184,9 @@ function Today({ now }: { now: Date }) {
   return (
     <>
       <Learn />
+      <NewsVideos now={now.getTime()} />
       <TopStory now={now} />
-      <VideoShelf title="Health videos" link={{ href: '#discover/watch', label: 'All' }} testId="dc-health" videos={[...DISCOVER_SET].reverse().filter(playable)} tint="purple" />
+      <a className="card dc-hlink" href="#health" data-testid="dc-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
       <VideoShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} tint="green" />
       <Listen />
       <Recipes now={now} />
@@ -212,7 +214,7 @@ export default function Overview({ now = new Date() }: { now?: Date }) {
   const [view, setView] = useState<View>('today')
   return (
     <>
-      <LargeTitle testId="dc-head" kicker="Learn, watch, play" title="Discover" actions={<HeadActions><a className="sh-iconbtn dc-search" href="#discover/learn/library" aria-label="Search health topics" data-testid="dc-search"><Icon name="search" size={22} /></a></HeadActions>} />
+      <LargeTitle testId="dc-head" kicker="Learn, watch, play" title="Discover" actions={<HeadActions><a className="sh-iconbtn dc-search" href="#health/library" aria-label="Search health topics" data-testid="dc-search"><Icon name="search" size={22} /></a></HeadActions>} />
       <DiscoverTabs view={view} onChange={setView} />
       <div role="tabpanel" id={panelId(view)} aria-labelledby={tabId(view)} className="dc-panel">
         {view === 'today' ? <Today now={now} /> : view === 'news' ? <NewsPanel /> : <Saved now={now.getTime()} />}

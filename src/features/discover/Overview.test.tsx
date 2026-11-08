@@ -27,7 +27,7 @@ describe('head and the Today | News | Saved control', () => {
     const head = screen.getByTestId('dc-head')
     expect(within(head).getByRole('heading', { level: 1 }).textContent).toBe('Discover')
     expect(head.querySelector('.lt-kicker')!.textContent).toBe('Learn, watch, play')
-    expect(screen.getByTestId('dc-search').getAttribute('href')).toBe('#discover/learn/library')
+    expect(screen.getByTestId('dc-search').getAttribute('href')).toBe('#health/library') // S25: the library moved into Health
   })
   it('is a tablist of three tabs, Today selected, one tabpanel labelled by the selected tab', () => {
     render(<Overview now={now} />)
@@ -57,12 +57,12 @@ describe('head and the Today | News | Saved control', () => {
 })
 
 describe('Today: sections in order', () => {
-  it('Learn, Top story, Health videos, Farming and DIY, Listen, Recipes, Play, Did you know', () => {
+  it('Learn, Regional news, Top story, the Health pointer, Farming and DIY, Listen, Recipes, Play, Did you know', () => {
     render(<Overview now={now} />)
-    const ids = ['dc-learn', 'dc-top-story', 'dc-health', 'dc-farm', 'dc-listen', 'dc-recipes', 'dc-play', 'dc-fact']
+    const ids = ['dc-learn', 'dc-top-story', 'dc-health-link', 'dc-farm', 'dc-listen', 'dc-recipes', 'dc-play', 'dc-fact']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
-    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Learn', 'Top story', 'Health videos', 'Farming and DIY', 'Listen', 'Recipes', 'Play'])
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Learn', 'Top story', 'Farming and DIY', 'Listen', 'Recipes', 'Play']) // Regional news has no rows here (no server), so it stays hidden
   })
   it('no news headline and no season row on Today: the news lives on the Today tab (D-142); the News tab stays', async () => {
     feed([row('a')])
@@ -79,7 +79,7 @@ const idOf = (img: Element) => /vi\/([\w-]{11})\//.exec(img.getAttribute('src')!
 const pics = (el: Element) => Array.from(el.querySelectorAll('.dc-still img'))
 
 describe('Top story (prepping videos)', () => {
-  // 28 Oct 2026 is day 20754 since 1970; 20754 mod 17 prepping videos = 14, so the turn starts at the 15th video (counted by hand from ready.json)
+  // 28 Oct 2026 is day 20754 since 1970; 20754 mod 20 prepping videos = 14, so the turn starts at the 15th video (counted by hand from ready.json)
   it('one large card and a 2 x 2 grid of today\'s five prepping videos, All prepping link', () => {
     render(<Overview now={now} />)
     const sec = screen.getByTestId('dc-top-story')
@@ -90,12 +90,12 @@ describe('Top story (prepping videos)', () => {
     expect(hero.getAttribute('href')).toBe('#discover/watch')
     const grid = screen.getByTestId('dc-top-grid')
     expect(grid.querySelectorAll('a.dc-vgcard')).toHaveLength(4)
-    expect(pics(grid).map(idOf)).toEqual(['IEN3GJap2Kc', '3oRx8JDns2E', 'oTyYzHntBxQ', 'NYRmHwmbhIk'])
+    expect(pics(grid).map(idOf)).toEqual(['IEN3GJap2Kc', '3oRx8JDns2E', 'fmJlnEExTvg', '7Ogz8BQ_nX0'])
   })
   it('every picture is a still from i.ytimg.com with no referrer, sized and lazy, and nothing from YouTube loads before a tap', () => {
     const { container } = render(<Overview now={now} />)
     const imgs = Array.from(container.querySelectorAll('.dc-still img'))
-    expect(imgs.length).toBe(46) // 1 + 4 + 27 + 9 + 3 + 2, counted by hand
+    expect(imgs.length).toBe(15) // 1 hero + 4 grid + 4 Farming + 4 Listen + 2 recipe videos, counted by hand (each shelf shows 4 until Show more)
     imgs.forEach((img) => {
       expect(img.getAttribute('src')).toMatch(/^https:\/\/i\.ytimg\.com\/vi\/[\w-]{11}\/mqdefault\.jpg$/)
       expect(img.getAttribute('alt')).toBe(''); expect(img.getAttribute('loading')).toBe('lazy')
@@ -119,35 +119,42 @@ describe('Top story (prepping videos)', () => {
   })
 })
 
-describe('Health videos and Farming and DIY rows', () => {
-  it('Health videos: newest first (the appended Philippine videos lead), every card names its channel and opens Watch', () => {
+describe('Health pointer and Farming and DIY shelf', () => {
+  it('Health videos left Discover: no Health shelf, one link card that goes to Health', () => {
     render(<Overview now={now} />)
-    const row = screen.getByTestId('dc-health-row')
-    const cards = Array.from(row.querySelectorAll('a.dc-vrow'))
-    expect(cards).toHaveLength(27) // 19 in videos.json plus 8 added in S24
-    expect(idOf(cards[0]!.querySelector('img')!)).toBe('HhHTnDOtxe8')
-    expect(cards[0]!.querySelector('.dc-vc-k')!.textContent).toBe('Department of Health (Philippines)')
-    cards.forEach((c) => expect(c.getAttribute('href')).toBe('#discover/watch'))
+    expect(screen.queryByTestId('dc-health')).toBeNull()
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).not.toContain('Health videos')
+    const link = screen.getByTestId('dc-health-link')
+    expect(link.textContent).toBe('Health videos are in Health')
+    expect(link.getAttribute('href')).toBe('#health')
   })
-  it('channel chips narrow the row to one channel; a second tap shows all', () => {
+  it('Farming and DIY: 4 cards then Show more (4 at a time), every card names its channel and opens Watch, link says All 23', () => {
     render(<Overview now={now} />)
-    const group = screen.getByRole('group', { name: 'Health videos channels' })
-    const mayo = within(group).getByRole('button', { name: 'Mayo Clinic' })
-    expect(within(group).getByRole('button', { name: 'Doc Willie Ong' })).toBeTruthy()
-    fireEvent.click(mayo)
-    expect(mayo.getAttribute('aria-pressed')).toBe('true')
-    const kickers = () => Array.from(screen.getByTestId('dc-health-row').querySelectorAll('.dc-vc-k')).map((k) => k.textContent)
-    expect(kickers()).toHaveLength(8) // 4 Mayo Clinic videos before S24, 4 more added
-    expect(new Set(kickers())).toEqual(new Set(['Mayo Clinic']))
-    fireEvent.click(mayo)
-    expect(kickers()).toHaveLength(27)
+    const row = screen.getByTestId('dc-farm-row')
+    const cards = () => Array.from(row.querySelectorAll('a.dc-vgcard'))
+    expect(cards()).toHaveLength(4)
+    expect(cards()[0]!.querySelector('.dc-vc-k')!.textContent).toBe('This Old House')
+    cards().forEach((c) => expect(c.getAttribute('href')).toBe('#discover/watch'))
+    fireEvent.click(within(row).getByRole('button', { name: 'Show 4 more' }))
+    expect(cards()).toHaveLength(8)
+    expect(within(screen.getByTestId('dc-farm')).getByRole('link', { name: 'All 23' }).getAttribute('href')).toBe('#discover/learn/farm-diy') // 23 farm-diy videos counted by hand in ready.json
   })
-  it('Farming and DIY: the nine farm and repair videos, chips for the four channels', () => {
+  it('channel chips (wrapping buttons) narrow the shelf to one channel; a second tap shows all', () => {
     render(<Overview now={now} />)
-    expect(screen.getByTestId('dc-farm-row').querySelectorAll('a.dc-vrow')).toHaveLength(9) // 6 moved from Repairs plus 3 added
-    const chips = within(screen.getByRole('group', { name: 'Farming and DIY channels' })).getAllByRole('button').map((b) => b.textContent)
-    expect(chips).toEqual(['This Old House', 'Ask This Old House', 'The Home Depot', 'Agribusiness How It Works'])
-    expect(within(screen.getByTestId('dc-farm')).getByRole('link', { name: 'All' }).getAttribute('href')).toBe('#discover/learn/farm-diy')
+    const group = screen.getByRole('group', { name: 'Farming and DIY channels' })
+    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['This Old House', 'Ask This Old House', 'The Home Depot', 'Agribusiness How It Works', 'Agree sa Agri', 'Agri-nihan', 'Don Bustamante Rooftop Gardening', 'The Agrillenial', "Raffy's Green Thumb"])
+    const chip = within(group).getByRole('button', { name: 'Agri-nihan' })
+    fireEvent.click(chip)
+    expect(chip.getAttribute('aria-pressed')).toBe('true')
+    const kickers = () => Array.from(screen.getByTestId('dc-farm-row').querySelectorAll('.dc-vc-k')).map((k) => k.textContent)
+    expect(kickers()).toEqual(['Agri-nihan', 'Agri-nihan', 'Agri-nihan', 'Agri-nihan']) // 4 Agri-nihan videos in ready.json
+    expect(within(screen.getByTestId('dc-farm')).queryByRole('button', { name: /Show .* more/ })).toBeNull()
+    fireEvent.click(chip)
+    expect(kickers()[0]).toBe('This Old House')
+  })
+  it('no side-swipe row is left on Discover Today', () => {
+    const { container } = render(<Overview now={now} />)
+    expect(container.querySelector('.carousel, .dc-posters, .dc-vrow, .dc-prep')).toBeNull()
   })
 })
 
@@ -158,12 +165,12 @@ describe('Learn', () => {
     const sec = screen.getByTestId('dc-learn')
     expect(within(sec).getByRole('link', { name: 'All topics' }).getAttribute('href')).toBe('#discover/learn')
     expect(cards()).toEqual([
-      ['Health topics', '#discover/learn/library', 'purple'], ['Be prepared', '#discover/learn/prepping', 'amber'],
+      ['Health topics', '#health/library', 'purple'], ['Be prepared', '#discover/learn/prepping', 'amber'],
       ['Garden and farm', '#discover/learn/farm-diy', 'green'], ['Low-salt recipes', '#discover/learn/recipes', 'teal']
     ])
     expect(sec.querySelectorAll('.dc-lc-blob')).toHaveLength(4)
     expect(screen.getByTestId('dc-learn-recipes').textContent).toContain(RECIPES.length + ' low-salt recipes')
-    expect(screen.getByTestId('dc-learn-farm').textContent).toContain('9 videos · 5 reads') // counted by hand in ready.json
+    expect(screen.getByTestId('dc-learn-farm').textContent).toContain('23 videos · 5 reads') // counted by hand in ready.json
   })
   it('the blobs drift slowly and stand still under reduced motion', () => {
     expect(css).toMatch(/\.dc-lc-blob\s*\{[^}]*animation:\s*dc-drift 14s/)
@@ -178,14 +185,15 @@ describe('Learn', () => {
 })
 
 describe('Listen', () => {
-  it('one large guided video (a play button naming it, big title, channel), See all, then a row of the other three', () => {
+  it('one large guided video (a play button naming it, big title, channel), All 7, then the other six as 4 cards and Show more', () => {
     const { container } = render(<Overview now={now} />)
     const sec = screen.getByTestId('dc-listen')
-    expect(within(sec).getByRole('link', { name: 'See all' }).getAttribute('href')).toBe('#discover/listen')
+    expect(within(sec).getByRole('link', { name: 'All 7' }).getAttribute('href')).toBe('#discover/listen')
     expect(within(sec).getByRole('button', { name: /^Play Sleep talk down: guided sleep meditation/ })).toBeTruthy()
     expect(screen.getByTestId('dc-guided').querySelector('.dc-guided-t')!.textContent).toBe('Sleep talk down: guided sleep meditation')
     expect(screen.getByTestId('dc-guided').querySelector('.dc-guided-s')!.textContent).toContain('Jason Stephenson')
-    expect(pics(screen.getByTestId('dc-listen-row')).map(idOf)).toEqual(['T4T8ACMXGGM', 'wCy2ETwUn3o', 'tEmt1Znux58'])
+    expect(pics(screen.getByTestId('dc-listen-row')).map(idOf)).toEqual(['T4T8ACMXGGM', 'wCy2ETwUn3o', 'tEmt1Znux58', '2Q5T4uceQL8'])
+    expect(within(screen.getByTestId('dc-listen-row')).getByRole('button', { name: 'Show 2 more' })).toBeTruthy()
     expect(container.querySelector('iframe')).toBeNull() // plays only after a tap
   })
 })

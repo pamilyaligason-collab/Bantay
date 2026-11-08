@@ -1,0 +1,44 @@
+// Regional news video ingest (S25, D-155/D-159): reads the public YouTube RSS feeds of four news channels, no key. Not public: callable only with the YT_FEED_CRON_SECRET in the x-yt-secret header
+// (pg_cron + pg_net, same pattern as lotto-pcso). Deploy with --no-verify-jwt; the secret is the gate.
+// Function secrets (set by the owner): YT_FEED_CRON_SECRET; optional YT_API_KEY (used only when every feed fails). SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
+import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
+import { heartbeat } from '../_shared/heartbeat.ts'
+import { type Port, runFeeds } from './feed.ts'
+
+const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
+
+function same(a: string, b: string): boolean {
+  const x = new TextEncoder().encode(a)
+  const y = new TextEncoder().encode(b)
+  let d = x.length ^ y.length
+  for (let i = 0; i < Math.max(x.length, y.length); i++) d |= (x[i] ?? 0) ^ (y[i] ?? 0)
+  return d === 0
+}
+
+Deno.serve(async (req) => {
+  if (req.method !== 'POST') return reply(405, { ok: false, error: 'bad_input' })
+  const secret = Deno.env.get('YT_FEED_CRON_SECRET')
+  if (!secret || secret.length < 32) return reply(500, { ok: false, error: 'not_configured' }) // before any other work
+  if (!same(req.headers.get('x-yt-secret') ?? '', secret)) return reply(401, { ok: false, error: 'unauthorized' })
+
+  const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, { auth: { persistSession: false } })
+  const port: Port = {
+    async upsert(rows) {
+      const { error } = await sb.from('news_videos').upsert(rows, { onConflict: 'video_id' })
+      if (error) throw new Error('write')
+    },
+    async purge(beforeIso) {
+      const { error } = await sb.from('news_videos').delete().lt('published_at', beforeIso)
+      if (error) throw new Error('write')
+    }
+  }
+  const fetchText = async (url: string) => {
+    const res = await fetch(url, { signal: AbortSignal.timeout(15_000), headers: { 'User-Agent': 'FamilyBantay/1.0 (+news videos)', Accept: 'application/atom+xml, application/json' } })
+    if (!res.ok) throw new Error(`HTTP${res.status}`) // the message never carries the URL (the API URL holds the key)
+    return await res.text()
+  }
+  let result
+  try { result = await runFeeds(port, fetchText, Date.now(), Deno.env.get('YT_API_KEY') || undefined) } catch { result = { ok: false, rows: 0, source: 'none' as const } }
+  await heartbeat(sb, 'yt-feed', result.ok, { rows: result.rows })
+  return reply(result.ok ? 200 : 502, result)
+})
