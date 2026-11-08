@@ -10,7 +10,7 @@ vi.mock('./usePlan', () => ({ usePlan: () => ({ tasks: [], events: h.events, not
 vi.mock('./messagesApi', () => ({ listMessages: async () => ({ ok: true, data: [] }) }))
 vi.mock('../shell/useKv', () => ({ useKv: () => [null, vi.fn(), true] }))
 vi.mock('../scan/open', () => ({ openScan: vi.fn(), openScanWithFile: h.file }))
-import { calSummary, recentPapers, TogetherList } from './TogetherList'
+import { calSummary, PapersSection, recentPapers, TogetherList } from './TogetherList'
 
 afterEach(cleanup)
 beforeEach(() => { h.queue = { count: 0, byPerson: {} }; h.docs = []; h.events = []; h.file.mockClear() })
@@ -51,19 +51,19 @@ describe('recentPapers', () => {
 describe('Papers card', () => {
   it('shows "<n> to review" from the viewer own queue only when n > 0', () => {
     h.queue = { count: 5, byPerson: { p1: 2, p2: 3 } }
-    render(<TogetherList />)
+    render(<><TogetherList /><PapersSection /></>)
     expect(screen.getByTestId('papers-review').textContent).toBe('2 to review')
   })
 
   it('no pill when only other people have papers waiting', () => {
     h.queue = { count: 3, byPerson: { p2: 3 } }
-    render(<TogetherList />)
+    render(<><TogetherList /><PapersSection /></>)
     expect(screen.queryByTestId('papers-review')).toBeNull()
   })
 
   it('lists the 3 newest papers (date + Done) and "All papers (4)"', () => {
     h.docs = [bundle('a', 'lab', '2026-01-05'), bundle('b', 'lab', '2026-09-01'), bundle('c', 'rx', '2026-10-20'), bundle('d', 'lab', '2026-03-01')]
-    render(<TogetherList />)
+    render(<><TogetherList /><PapersSection /></>)
     const rows = screen.getAllByTestId('paper-row')
     expect(rows).toHaveLength(3)
     expect(rows.every((r) => r.textContent?.includes('Done'))).toBe(true)
@@ -73,20 +73,20 @@ describe('Papers card', () => {
   })
 
   it('before any paper has loaded (or with none) the link has no count', () => {
-    render(<TogetherList />)
+    render(<><TogetherList /><PapersSection /></>)
     expect(screen.queryAllByTestId('paper-row')).toHaveLength(0)
     expect(screen.getByTestId('papersrow').textContent).toBe('All papers')
   })
 
   it('Upload hands the picked file to the scan flow', () => {
-    render(<TogetherList />)
+    render(<><TogetherList /><PapersSection /></>)
     const f = new File(['x'], 'a.jpg', { type: 'image/jpeg' })
     fireEvent.change(screen.getByTestId('papers-file'), { target: { files: [f] } })
     expect(h.file).toHaveBeenCalledWith(f)
   })
 
   it('the sub line says these are your papers', () => {
-    render(<TogetherList />)
+    render(<><TogetherList /><PapersSection /></>)
     expect(screen.getByTestId('papers-card').textContent).toContain('Your papers')
   })
 })

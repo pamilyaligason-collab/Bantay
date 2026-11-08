@@ -52,12 +52,38 @@ function Tile(p: { href: string; icon: IconName; tint: 'amber' | 'blue' | 'green
   )
 }
 
-/** Papers first (highlighted card: Upload, Scan, the 3 newest confirmed papers, All papers), then Plan, Calendar, Messages, Memories as a 2x2 grid (board S24Family, D-152). */
-export function TogetherList() {
-  const { people, selfId } = useFamilyPeople()
-  const { tasks, events, notes } = usePlan()
+/** Papers (highlighted card: Upload, Scan, the 3 newest confirmed papers, All papers). S25 (board S25Family): it sits right under Together. */
+export function PapersSection() {
+  const { selfId } = useFamilyPeople()
   const queue = useQueue()
   const docs = useConfirmedDocs(selfId ?? '')
+  const recent = recentPapers(docs)
+  const toReview = selfId ? queue.byPerson[selfId] ?? 0 : 0 // the viewer's own queue, the same scope as the rows below
+  return (
+    <Section title="Papers" testId="papers-section">
+      <div className="fm-papers" data-testid="papers-card">
+        <div className="fm-papers-top">
+          <div><b className="fm-papers-h">Labs, photos and documents</b><span className="fm-tile-s">Your papers in one place, ready for the next visit</span></div>
+          {toReview > 0 && <span className="fm-pill" data-testid="papers-review">{toReview} to review</span>}
+        </div>
+        <PaperActions />
+        {recent.map((b) => (
+          <a key={b.doc.id} className="fm-doc" href="#family/papers" data-testid="paper-row">
+            <Icon name="file" size={20} />
+            <span className="fm-doc-t"><b>{KIND[b.doc.kind] ?? 'Document'}</b><span className="fm-tile-s">{paperDate(b.doc.doc_date ?? b.doc.confirmed_at)}</span></span>
+            <span className="fm-pill fm-pill-done">Done</span>
+          </a>
+        ))}
+        <a className="fm-all" href="#family/papers" data-testid="papersrow">All papers{docs.length > 0 ? ` (${docs.length})` : ''}<Icon name="chev" size={16} /></a>
+      </div>
+    </Section>
+  )
+}
+
+/** Plan, Calendar, Messages, Memories as a 2x2 grid of soft-gradient cards (board S25Family, D-152). */
+export function TogetherList() {
+  const { people } = useFamilyPeople()
+  const { tasks, events, notes } = usePlan()
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [seen, , seenLoaded] = useKv<string | null>(SEEN, null)
   useEffect(() => {
@@ -71,35 +97,14 @@ export function TogetherList() {
   const planOpen = prog.total > 0 ? prog.total - prog.done : todayRows.length
   const m = messagesPreview(msgs, people, seenLoaded ? seen : new Date().toISOString())
   const calSub = calSummary(events, now)
-  const recent = recentPapers(docs)
-  const toReview = selfId ? queue.byPerson[selfId] ?? 0 : 0 // the viewer's own queue, the same scope as the rows below
   return (
-    <>
-      <Section title="Papers" testId="papers-section">
-        <div className="fm-papers" data-testid="papers-card">
-          <div className="fm-papers-top">
-            <div><b className="fm-papers-h">Labs, photos and documents</b><span className="fm-tile-s">Your papers in one place, ready for the next visit</span></div>
-            {toReview > 0 && <span className="fm-pill" data-testid="papers-review">{toReview} to review</span>}
-          </div>
-          <PaperActions />
-          {recent.map((b) => (
-            <a key={b.doc.id} className="fm-doc" href="#family/papers" data-testid="paper-row">
-              <Icon name="file" size={20} />
-              <span className="fm-doc-t"><b>{KIND[b.doc.kind] ?? 'Document'}</b><span className="fm-tile-s">{paperDate(b.doc.doc_date ?? b.doc.confirmed_at)}</span></span>
-              <span className="fm-pill fm-pill-done">Done</span>
-            </a>
-          ))}
-          <a className="fm-all" href="#family/papers" data-testid="papersrow">All papers{docs.length > 0 ? ` (${docs.length})` : ''}<Icon name="chev" size={16} /></a>
-        </div>
-      </Section>
-      <Section title="Together" link={familyFeedOn() ? { href: '#family/feed', label: 'Updates' } : undefined} testId="together">
+    <Section title="Together" link={familyFeedOn() ? { href: '#family/feed', label: 'Updates' } : undefined} testId="together">
         <div className="fm-tiles" data-testid="together-list">
           <Tile testId="planrow" href="#family/plan" icon="calendar" tint="amber" title="Plan" sub={planOpen > 0 ? `${planOpen} open · ${planSub(todayRows)}` : planSub(todayRows)} />
           <Tile testId="calrow" href="#family/calendar" icon="calendar" tint="blue" title="Calendar" sub={calSub} />
           <Tile testId="msgs" href="#family/messages" icon="msg" tint="green" title="Messages" sub={m.sub} badge={m.unread} />
           <Tile testId="memoriesrow" href="#family/memories" icon="photo" tint="purple" title="Memories" sub="Family photos, kept private" />
         </div>
-      </Section>
-    </>
+    </Section>
   )
 }

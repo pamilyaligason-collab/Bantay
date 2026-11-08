@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { EmptyState } from '../look'
+import { EmptyState, MoreGrid } from '../look'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import { addPhoto, listPhotos, removePhoto, type Photo } from './memoriesApi'
@@ -48,18 +48,18 @@ function MemoriesOn({ turnOff }: { turnOff: () => void }) {
       {view.kind === 'loading' && <div className="card"><p className="sub fm-empty" role="status">Loading</p></div>}
       {view.kind !== 'loading' && view.kind !== 'ready' && <div className="card" role="status" data-testid="mem-state"><b>{WORDS[view.kind]}</b></div>}
       {view.kind === 'ready' && (
-        <ul className="mem-strip" aria-label="Family photos">
-          <li className="mem-tile">
+        <MoreGrid label="Family photos" testId="mem-grid">
+          <div className="mem-tile" key="add">
             <button type="button" className="mem-add" onClick={() => input.current?.click()}><span className="mem-img"><Icon name="plus" size={28} /></span><b>Add a photo</b></button>
-          </li>
+          </div>
           {view.photos.map((p) => (
-            <li className="mem-tile" key={p.id}>
+            <div className="mem-tile" key={p.id}>
               <span className="mem-img">{p.url ? <img src={p.url} alt={p.caption ?? 'Family photo'} loading="lazy" /> : <Icon name="photo" size={28} />}</span>
               <span className="mem-cap"><b>{p.caption ?? 'Photo'}</b><span className="sub">{shortDay(p.takenOn ?? p.createdAt) ?? ''}</span></span>
               {p.mine && <button type="button" className="mem-del" onClick={() => setGone(p)} aria-label={`Delete ${p.caption ?? 'this photo'}`}><Icon name="trash" size={20} /></button>}
-            </li>
+            </div>
           ))}
-        </ul>
+        </MoreGrid>
       )}
       <input ref={input} type="file" accept="image/*" hidden data-testid="mem-file" onChange={(e) => { void onFile(e.target.files?.[0]); e.target.value = '' }} />
       {note && <p className="sub" role="status">{note}</p>}

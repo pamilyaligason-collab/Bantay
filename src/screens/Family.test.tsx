@@ -78,7 +78,7 @@ describe('Family root', () => {
     expect(hrefs).toEqual(['#family/plan', '#family/calendar', '#family/messages', '#family/memories'])
   })
 
-  it('the Papers card comes first, with Upload and Scan buttons and a link to all papers', async () => {
+  it('the Papers card follows Together, with Upload and Scan buttons and a link to all papers', async () => {
     location.hash = '#family'
     render(<Family />)
     const card = await screen.findByTestId('papers-card')
@@ -87,7 +87,17 @@ describe('Family root', () => {
     expect(screen.getByRole('button', { name: 'Scan' })).toBeTruthy()
     expect(screen.getByTestId('papersrow').getAttribute('href')).toBe('#family/papers')
     expect(screen.queryByTestId('papers-review')).toBeNull() // nothing waiting: no pill
-    expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy() // S25: Together first, then Papers
+  })
+
+  it('S25 order: Together, Papers, Where, Needs, People, then the shown Today and Activity', async () => {
+    location.hash = '#family'
+    const { container } = render(<Family />)
+    await screen.findByTestId('papers-card')
+    const ids = ['together', 'papers-section', 'where', 'needs', 'people', 'facesrow', 'activity']
+    const found = [...container.querySelectorAll('[data-testid]')].map((el) => el.getAttribute('data-testid')!).filter((id) => ids.includes(id))
+    expect(found).toEqual(ids.filter((id) => found.includes(id))) // whatever shows is in board order, none repeated
+    expect(found.slice(0, 2)).toEqual(['together', 'papers-section'])
   })
 
   it('Scan opens the scan flow', async () => {
