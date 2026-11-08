@@ -163,22 +163,22 @@ describe('alert reach', () => {
 
 describe('migrations.json', () => {
   const files = Object.keys(import.meta.glob('../../../../supabase/migrations/*.sql')).map((p) => p.split('/').pop()!).filter((f) => !f.endsWith('.down.sql')).map((f) => f.slice(0, 4))
-  it('is sorted, has no duplicates, skips 0028 and ends with 0039 to 0054', () => {
+  it('is sorted, has no duplicates, skips 0028 and ends with 0040 to 0055', () => {
     expect([...KNOWN_MIGRATIONS].sort()).toEqual(KNOWN_MIGRATIONS)
     expect(new Set(KNOWN_MIGRATIONS).size).toBe(KNOWN_MIGRATIONS.length)
     expect(KNOWN_MIGRATIONS).not.toContain('0028')
-    expect(KNOWN_MIGRATIONS.slice(-16)).toEqual(['0039', '0040', '0041', '0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053', '0054'])
+    expect(KNOWN_MIGRATIONS.slice(-16)).toEqual(['0040', '0041', '0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053', '0054', '0055'])
     expect(KNOWN_MIGRATIONS.every((v) => /^\d{4}$/.test(v))).toBe(true)
   })
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
     expect(files.length).toBeGreaterThan(20)
     // Written but not yet applied, so absent from migrations.json (which lists applied versions only). Each entry leaves this list when applied.
-    const writtenNotApplied: string[] = ['0055'] // a written migration waits here until the owner applies it (0054 lotto_results applied 2026-11-08; 0055 news_videos is S25)
+    const writtenNotApplied: string[] = [] // a written migration waits here until the owner applies it (0055 news_videos applied 2026-11-09)
     expect(writtenNotApplied.filter((v) => KNOWN_MIGRATIONS.includes(v))).toEqual([]) // an applied version must leave the allowlist
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v) && !writtenNotApplied.includes(v))).toEqual([])
   })
   it('has no gap except 0028 up to the last number', () => {
-    const all = Array.from({ length: 54 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
+    const all = Array.from({ length: 55 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
     expect(KNOWN_MIGRATIONS).toEqual(all)
   })
 })
