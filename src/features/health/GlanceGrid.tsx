@@ -58,14 +58,6 @@ export function useTodayDoses(personId: string): { doses: DoseState[]; hasMeds: 
   }, [meds, takes, personId])
 }
 
-/** Today's doses done over due, live. Null until the medicines are read; "No medicines yet" when none. */
-export function useDoseLine(personId: string): string | null {
-  const t = useTodayDoses(personId)
-  if (!t) return null
-  if (!t.doses.length) return t.hasMeds ? 'Nothing due today' : 'No medicines yet'
-  return `${t.doses.filter((d) => d.state === 'pending').length} of ${t.doses.length} left today`
-}
-
 /** The week's goals and streak (nudgeLogic), live. Same data the old NudgeCard read. */
 export function useNudge(personId: string, readings: Reading[]) {
   const meds = useMedications(personId)

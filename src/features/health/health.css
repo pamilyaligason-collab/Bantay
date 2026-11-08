@@ -223,8 +223,10 @@
 .fy-stack { display: grid; gap: 12px; }
 .card.fy-video { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; color: var(--ink); text-decoration: none; overflow: hidden; }
 .fy-video > :not(.fy-poster) { padding: 0 12px; }
-.fy-vids { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-:root[data-narrow] .fy-vids { grid-template-columns: minmax(0, 1fr); }
+.fy-vids { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x proximity; padding-bottom: 4px; margin-inline: -4px; padding-inline: 4px; } /* S24: a swipe row of 4 to 6 */
+.fy-item { flex: none; width: min(210px, 72%); scroll-snap-align: start; display: flex; }
+.fy-item > .card { flex: 1 1 auto; min-width: 0; }
+.fy-reads { display: grid; gap: 10px; }
 .fy-poster { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; margin-bottom: 8px; overflow: hidden; background: var(--tint-purple); color: var(--tint-purple-ink); }
 .fy-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .fy-play { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .92); color: #1C1B19; }
@@ -284,6 +286,20 @@
 .hb-none { opacity: .6; }
 @keyframes hb-rise { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .card.hb { animation: none; } }
+/* S24 photo Browse: picture, dark bottom gradient, white text; a failed picture leaves the plain tint and its own ink */
+.card.hb { position: relative; overflow: hidden; }
+.card.hb[data-photo="on"] { color: #fff; background: #2a2a28; }
+.card.hb > .hb-t, .card.hb > .hb-pv { position: relative; }
+.hb-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: hb-zoom 18s ease-in-out infinite alternate; }
+.hb-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, .1) 20%, rgba(0, 0, 0, .74) 100%); }
+.card.hb[data-photo="on"] .hb-s { color: #fff; opacity: 1; } /* beats the global muted .hb-s: white over the .74 black gradient */
+.hb-pv .hb-pill { background: var(--tint-fill); } /* the chip behind is var(--card), so the pill needs its own fill to stay visible */
+.hb-pv { align-self: flex-start; display: inline-flex; max-width: 100%; padding: 6px 10px; border-radius: 12px; background: var(--card); color: var(--tint-ink); }
+.hb-pv:empty { display: none; }
+@keyframes hb-zoom { from { transform: scale(1.02); } to { transform: scale(1.12) translate(-2%, -2%); } }
+@media (prefers-reduced-motion: reduce) { .hb-img { animation: none; } }
+.hb-credits { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin: 8px 4px 0; font-size: 12px; line-height: 1.4; color: var(--ink2); }
+.hb-credits a { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink2); text-decoration: underline; }
 .fy-link { display: flex; flex-direction: column; gap: 4px; justify-content: center; min-height: 88px; padding: 12px 16px; color: var(--ink); text-decoration: none; }
 .fy-link b { font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
 
@@ -383,3 +399,4 @@
 .rc-pins .pn-cell > .pt { padding: 12px; }
 .rc-pins .pt-k.nd-k { gap: 4px; }
 .rc-pins-edit { min-height: 44px; padding: 0 8px; background: none; border: 0; color: var(--accent, inherit); font: inherit; font-weight: 600; }
+.hb-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

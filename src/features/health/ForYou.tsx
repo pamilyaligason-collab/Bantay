@@ -8,6 +8,8 @@ import { WATCH_PICK } from '../discover/watch/Screen'
 import { articleHref } from './library/medline'
 import { playable, VIDEOS, type Video } from './library/videosLogic'
 import { metricLabel } from './model'
+import { useVisits } from './useVisits'
+import { nextVisitLine } from './visitsLogic'
 import type { Reading } from './ranges'
 import './health.css'
 
@@ -22,18 +24,18 @@ export function clipReasons(readings: Reading[], attention: Attention | null): C
   return out
 }
 
-/** Up to two checked videos. Clips that fit a reason come first (one per reason), then today's pick and the next on the list; those carry their topic as the reason. */
+export const MAX_CLIPS = 6
+/** Up to six checked videos (S24 row). Clips that fit a reason come first (up to two per reason), then today's pick and the next on the list; those say what they cover ("Because it covers Move"). */
 export function forYouClips(list: Video[], reasons: ClipReason[], now = new Date()): { video: Video; reason: string }[] {
   if (!list.length) return []
   const out: { video: Video; reason: string }[] = []
   for (const r of reasons) {
-    const v = list.find((x) => r.match(x) && !out.some((o) => o.video === x))
-    if (v && out.length < 2) out.push({ video: v, reason: r.text })
+    for (const v of list.filter((x) => r.match(x)).slice(0, 2)) if (!out.some((o) => o.video === v) && out.length < MAX_CLIPS) out.push({ video: v, reason: r.text })
   }
   const first = videoOfTheDay(now, list)
-  for (let i = 0; out.length < Math.min(2, list.length) && i < list.length; i++) {
+  for (let i = 0; out.length < Math.min(MAX_CLIPS, list.length) && i < list.length; i++) {
     const v = i === 0 ? first : list[(list.indexOf(first) + i) % list.length]!
-    if (!out.some((o) => o.video === v)) out.push({ video: v, reason: v.topic })
+    if (!out.some((o) => o.video === v)) out.push({ video: v, reason: `Because it covers ${v.topic}` })
   }
   return out
 }
@@ -59,16 +61,29 @@ function Clip({ video, reason, testId }: { video: Video; reason: string; testId:
 export function ForYou({ personId, readings, attention, canLog, onAdd }: { personId: string; readings: Reading[]; attention: Attention | null; canLog: boolean; onAdd: (code: 'bp' | 'fasting_glucose') => void }) {
   const clips = useMemo(() => forYouClips(VIDEOS.filter(playable), clipReasons(readings, attention)), [readings, attention])
   const label = attention ? metricLabel(attention.reading.test) : null
+  const next = nextVisitLine(useVisits(personId))
+  const visit = next?.text.startsWith('Next visit: ') ? next : null // a follow-up due is not a booked visit
   return (
     <Section title="For you" testId="for-you" link={{ href: '#discover/watch', label: 'More' }}>
       <div className="fy-stack">
-        {clips.length > 0 && <div className="fy-vids">{clips.map((c, i) => <Clip key={c.video.id} video={c.video} reason={c.reason} testId={i ? 'foryou-video-2' : 'foryou-video'} />)}</div>}
-        {label && (
-          <a className="card fy-link press" href={articleHref('s', label)} data-testid="foryou-because">
-            <span className="pt-k">Because of your {label}</span>
-            <b>A short, checked explainer</b>
-            <span className="sub">Read</span>
-          </a>
+        {clips.length > 0 && <div className="fy-vids" role="list" aria-label="Videos for you">{clips.map((c, i) => <div key={c.video.id} role="listitem" className="fy-item"><Clip video={c.video} reason={c.reason} testId={i ? `foryou-video-${i + 1}` : 'foryou-video'} /></div>)}</div>}
+        {(label || visit) && (
+          <div className="fy-reads">
+            {label && (
+              <a className="card fy-link press" href={articleHref('s', label)} data-testid="foryou-because">
+                <span className="pt-k">Because of your {label}</span>
+                <b>A short, checked explainer</b>
+                <span className="sub">Read</span>
+              </a>
+            )}
+            {visit && (
+              <a className="card fy-link press" href="#health/visits" data-testid="foryou-visit">
+                <span className="pt-k">Because you have a visit coming</span>
+                <b>Questions to bring on {visit.text.replace('Next visit: ', '')}</b>
+                <span className="sub">From your visit notes</span>
+              </a>
+            )}
+          </div>
         )}
         {readings.length > 0 && <div data-testid="foryou-log"><NudgeRow personId={personId} readings={readings} canLog={canLog} onAdd={onAdd} /></div>}
       </div>

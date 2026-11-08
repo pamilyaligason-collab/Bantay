@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
 import { ldb } from '../log/store'
 import { NUDGE_PLAY_MS, NUDGE_SETTLE_MS, resetNudges } from '../nudge/nudgeDue'
-import { PinnedTiles } from './PinnedTiles'
+import { doseSummary, PinnedTiles } from './PinnedTiles'
 import type { Reading } from './ranges'
 import { vdb } from './visitsStore'
 
@@ -43,7 +43,8 @@ describe('PinnedTiles', () => {
     await waitFor(() => expect(screen.getByTestId('glance-meds').textContent).toContain('None added'))
     expect(screen.getByTestId('glance-meds').textContent).toContain('Add or scan')
     await ldb.medications.add({ personId: 'p1', name: 'Metformin', schedule: { v: 1, times: ['08:00', '20:00'] } } as never)
-    await waitFor(() => expect(screen.getByTestId('glance-meds').textContent).toContain('2 of 2 left today'))
+    await waitFor(() => expect(screen.getByTestId('glance-meds').textContent).toContain('8 AM'))
+    expect(screen.getByTestId('glance-meds').textContent).toContain('Next dose · 0 of 2 taken')
   })
   it('Steps: Not connected, or today\'s steps', async () => {
     show()
@@ -178,5 +179,56 @@ describe('D-125 nudges on Pinned', () => {
     await screen.findByTestId('glance-weight')
     await settle()
     expect(movers()).toEqual(['glance-weight'])
+  })
+})
+
+describe('S24 inline row inside the Readings card: always two tiles', () => {
+  const inline = (readings: Reading[] = []) => render(<PinnedTiles personId="p1" readings={readings} inline />)
+  const ids = () => Array.from(screen.getByTestId('pinned').querySelectorAll('[data-testid^="glance-"]')).map((e) => e.getAttribute('data-testid'))
+  const book = () => vdb.appointments.add({ clientId: 'a1', personId: 'p1', startsAt: new Date(Date.now() + 5 * 86_400_000).toISOString(), provider: 'Dr. Reyes', purpose: 'Check-up' })
+  const settled = () => waitFor(() => expect(screen.getByTestId('pinned').children.length).toBe(2))
+  it('next visit booked, BP current: Next visit + Medicines', async () => {
+    await book()
+    inline(bp(120, 80, 1))
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-meds']))
+  })
+  it('next visit booked, BP due: BP takes the Medicines place', async () => {
+    await book()
+    inline()
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-progress']))
+    expect(screen.getByTestId('glance-progress').querySelector('.nd-due')?.textContent).toBe('Due')
+  })
+  it('no next visit: Medicines + Move; with BP due, BP + Move; never one or three', async () => {
+    inline(bp(120, 80, 1))
+    await settled()
+    expect(ids()).toEqual(['glance-meds', 'glance-steps'])
+    cleanup()
+    inline()
+    await settled()
+    expect(ids()).toEqual(['glance-progress', 'glance-steps'])
+  })
+  it('a booked visit never flashes the no-visit pair: the row is empty until the visits answer, then Next visit + Medicines', async () => {
+    await book()
+    inline(bp(120, 80, 1))
+    const seen: (string | null)[][] = []
+    const obs = new MutationObserver(() => seen.push(ids()))
+    obs.observe(screen.getByTestId('pinned'), { childList: true, subtree: true })
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-meds']))
+    obs.disconnect()
+    expect(seen.some((s) => s.includes('glance-steps'))).toBe(false)
+  })
+  it('the pins list does not change the inline row, and there is no Edit pins button', async () => {
+    await db.kv.put({ key: 'health.pins', value: ['fasting_glucose', 'weight'] })
+    await book()
+    inline(bp(120, 80, 1))
+    await waitFor(() => expect(ids()).toEqual(['glance-visit', 'glance-meds']))
+    expect(screen.queryByRole('button', { name: 'Edit pins' })).toBeNull()
+  })
+  it('doseSummary: next pending dose time and the taken count, hand-computed', () => {
+    const d = (at: number, state: 'taken' | 'skipped' | 'pending') => ({ at, state }) as never
+    expect(doseSummary([])).toEqual({ value: 'Nothing due', sub: 'Today' })
+    expect(doseSummary([d(480, 'taken'), d(1200, 'pending'), d(1290, 'pending')])).toEqual({ value: '8 PM', sub: 'Next dose · 1 of 3 taken' })
+    expect(doseSummary([d(480, 'taken'), d(1215, 'skipped')])).toEqual({ value: 'All done', sub: '1 of 2 taken' })
+    expect(doseSummary([d(0, 'pending')]).value).toBe('12 AM')
   })
 })

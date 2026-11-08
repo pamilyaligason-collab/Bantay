@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Segmented, useReducedMotion } from '../look'
 import { BreathOrb } from '../look/BreathOrb'
 import { DotSphere } from '../look/DotSphere'
@@ -38,7 +38,7 @@ const patternLabel = (p: Pattern) => (p.id === 'calm' ? 'Calm box · 4-4-4-4' : 
 
 /** The one hero: an idle breathing orb on the chosen pattern's cycle, a pattern row and a length row, and Start, which opens the existing breath sheet on that pattern and length.
  *  Sleep (4-7-8) is not offered while SLEEP_478_ENABLED is off (clinician gate): the rows come from SHOWN_PATTERNS. */
-export default function CalmHero() {
+export default function CalmHero({ between }: { between?: ReactNode }) {
   const [pid, setPid] = useState<Pattern['id']>(SHOWN_PATTERNS[0]!.id)
   const [mins, setMins] = useState<string>('3')
   const p = SHOWN_PATTERNS.find((x) => x.id === pid)!
@@ -67,6 +67,7 @@ export default function CalmHero() {
       <HeroState key={round} />
       {open && <BreathSheet initial={{ pattern: pid, minutes: Number(mins) }} onClose={() => { setOpen(false); setRound((r) => r + 1); start.current?.focus() }} />}
     </section>
+    {between}
     <section className="cm-ex" aria-labelledby="cm-ex-h" data-testid="calm-exercises">
       <h2 id="cm-ex-h" className="cm-ex-t">Exercises</h2>
       {SHOWN_PATTERNS.map((x) => (
@@ -81,7 +82,7 @@ export default function CalmHero() {
   )
 }
 
-/** "After a scare" sits after the crisis card (CalmScreen), so the crisis card keeps its place on the page. */
+/** "After a scare": CalmScreen passes it to CalmHero as `between`, so it sits just under the breathing card and above the Exercises list (board S24Calm). */
 export function AfterScare() {
   const [scare, setScare] = useState(false)
   return (
