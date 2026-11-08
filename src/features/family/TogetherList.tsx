@@ -89,7 +89,7 @@ export function TogetherList() {
               <span className="fm-pill fm-pill-done">Done</span>
             </a>
           ))}
-          <a className="fm-all" href="#family/papers" data-testid="papersrow">All papers{docs.length > 0 ? ` (${docs.length})` : ''} ›</a>
+          <a className="fm-all" href="#family/papers" data-testid="papersrow">All papers{docs.length > 0 ? ` (${docs.length})` : ''}<Icon name="chev" size={16} /></a>
         </div>
       </Section>
       <Section title="Together" testId="together">
