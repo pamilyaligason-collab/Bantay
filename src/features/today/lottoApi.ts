@@ -8,16 +8,22 @@ interface Saved { savedAt: number; rows: LottoRow[] }
 const CACHE = 'today.lotto'
 export const LOTTO_DAYS = 30 // the server keeps 30 days; so does the saved copy
 
-/** The games the card shows, in order: the posted name must contain the match. 3D is the 9 PM draw only. */
+/** The games the card shows, in order: the posted name must contain the match. 3D matches any draw time: the newest posted one shows (its time is in the name), so the card keeps a 3D row until the 9 PM draw posts. */
 export const GAMES: { key: string; match: RegExp }[] = [
   { key: '6/58', match: /6\/58/ }, { key: '6/55', match: /6\/55/ }, { key: '6/49', match: /6\/49/ }, { key: '6/45', match: /6\/45/ }, { key: '6/42', match: /6\/42/ },
-  { key: '3D 9PM', match: /\b3D\b.*9\s*PM/i }
+  { key: '3D', match: /\b3D\b/i }
 ]
+
+/** Hour (0-23) in a game name such as "3D 9PM"; 0 when none, so a same-day tie keeps the later draw. */
+const drawHour = (game: string): number => {
+  const m = /(\d{1,2})\s*(AM|PM)/i.exec(game)
+  return m ? (Number(m[1]) % 12) + (m[2].toUpperCase() === 'PM' ? 12 : 0) : 0
+}
 
 /** The newest draw of each shown game, in GAMES order; a game with no row is left out. */
 export function latestPerGame(rows: LottoRow[]): LottoRow[] {
   return GAMES.flatMap((g) => {
-    const mine = rows.filter((r) => g.match.test(r.game)).sort((a, b) => (a.draw_date < b.draw_date ? 1 : a.draw_date > b.draw_date ? -1 : 0))
+    const mine = rows.filter((r) => g.match.test(r.game)).sort((a, b) => (a.draw_date < b.draw_date ? 1 : a.draw_date > b.draw_date ? -1 : drawHour(b.game) - drawHour(a.game)))
     return mine[0] ? [mine[0]] : []
   })
 }

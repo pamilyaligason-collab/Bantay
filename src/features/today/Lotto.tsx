@@ -17,7 +17,7 @@ export function drawDay(iso: string): string {
 const winnerLine = (r: LottoRow): string | null => (!/6\/\d\d/.test(r.game) || r.winners === null ? null : r.winners === 0 ? 'no winner' : `${r.winners} ${r.winners === 1 ? 'winner' : 'winners'}`)
 const balls = (r: LottoRow) => r.combination.split('-').map((n) => (n.length < 2 && /6\/\d\d/.test(r.game) ? n.padStart(2, '0') : n))
 
-/** S24: lottopcso.com results (unofficial mirror, D-153) as one card, latest draw per game (6/58, 6/55, 6/49, 6/45, 6/42, 3D 9 PM). The newest three show first; "More games" opens the rest. Hidden when there are no rows. */
+/** S24: lottopcso.com results (unofficial mirror, D-153) as one card, latest draw per game (6/58, 6/55, 6/49, 6/45, 6/42, 3D, newest draw time). The newest three show first; "More games" opens the rest. Hidden when there are no rows. */
 export default function Lotto() {
   const { rows } = useLotto()
   const [all, setAll] = useState(false)
@@ -32,9 +32,9 @@ export default function Lotto() {
         {shown.map((r) => {
           const w = winnerLine(r)
           return (
-            <div key={r.game} className="lotto-row" role="group" aria-label={`${r.game}, ${drawDay(r.draw_date)}${w ? `, ${w}` : ''}, numbers ${balls(r).join(' ')}`}>
+            <div key={r.game} className="lotto-row">
               <span className="lotto-name">{r.game}<span className="lotto-sub">{drawDay(r.draw_date)}{w ? ` · ${w}` : ''}</span></span>
-              <span className="lotto-balls" aria-hidden="true">{balls(r).map((n, i) => <span key={i} className="lotto-ball">{n}</span>)}</span>
+              <span className="lotto-balls">{balls(r).map((n, i) => <span key={i} className="lotto-ball">{n}</span>)}</span>
             </div>
           )
         })}
