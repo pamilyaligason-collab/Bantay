@@ -35,11 +35,11 @@ describe('PeopleList flag word (D-109)', () => {
     expect(screen.getByTestId('people-add').getAttribute('href')).toBe('#me/family')
     expect(document.body.textContent).not.toMatch(/place sharing/i)
   })
-  it('People is a 2-column grid, not a sideways scroller', () => {
+  it('People is a 2-column grid, and the Add card is a cell in it, also after Show more', () => {
     render(<PeopleList people={people} />)
     const grid = within(screen.getByTestId('people-list')).getByRole('group', { name: 'People' })
     expect(grid.className).toBe('more-grid')
-    expect(grid.querySelector('.fm2-faces-row, .mem-strip')).toBeNull()
+    expect(grid.lastElementChild).toBe(screen.getByTestId('people-add')) // inside the grid, last cell
   })
   it('five people: four cards, anyone flagged or not checked in first, Show 1 more adds the rest', () => {
     render(<PeopleList people={[...people, person('x1', 'Ana Cruz'), person('x2', 'Ben Cruz')]} />)
@@ -59,5 +59,14 @@ describe('PeopleList flag word (D-109)', () => {
     expect(row(/Zed/).textContent).toContain('2 to check')
     fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }))
     expect(names()).toEqual(['Zed', 'You', 'Ana', 'Ben', 'Cy'])
+  })
+  it('with more than four people the Add card stays the last cell of the grid, before and after Show more', () => {
+    render(<PeopleList people={[...people, person('x1', 'Ana Cruz'), person('x2', 'Ben Cruz')]} />)
+    const grid = () => within(screen.getByTestId('people-list')).getByRole('group', { name: 'People' })
+    expect(grid().children).toHaveLength(5) // four people and Add
+    expect(grid().lastElementChild).toBe(screen.getByTestId('people-add'))
+    fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }))
+    expect(grid().children).toHaveLength(6)
+    expect(grid().lastElementChild).toBe(screen.getByTestId('people-add'))
   })
 })

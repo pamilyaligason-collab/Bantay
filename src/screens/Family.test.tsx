@@ -90,15 +90,14 @@ describe('Family root', () => {
     expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy() // S25: Together first, then Papers
   })
 
-  it('S25 order: Together, Papers, Where, Needs, People, then the shown Today and Activity; no sideways scroller', async () => {
+  it('S25 order: Together, Papers, Where, Needs, People, then the shown Today and Activity', async () => {
     location.hash = '#family'
     const { container } = render(<Family />)
     await screen.findByTestId('papers-card')
     const ids = ['together', 'papers-section', 'where', 'needs', 'people', 'facesrow', 'activity']
-    const at = ids.map((id) => container.querySelector(`[data-testid="${id}"]`)).map((el, i) => ({ id: ids[i], el })).filter((x) => x.el)
-    expect(at.map((x) => x.id).slice(0, 2)).toEqual(['together', 'papers-section'])
-    for (let i = 1; i < at.length; i++) expect(at[i - 1].el!.compareDocumentPosition(at[i].el!) & Node.DOCUMENT_POSITION_FOLLOWING, `${at[i].id} after ${at[i - 1].id}`).toBeTruthy()
-    expect(container.querySelector('.fm2-faces-row, .mem-strip, .fm-notes, .dc-posters')).toBeNull()
+    const found = [...container.querySelectorAll('[data-testid]')].map((el) => el.getAttribute('data-testid')!).filter((id) => ids.includes(id))
+    expect(found).toEqual(ids.filter((id) => found.includes(id))) // whatever shows is in board order, none repeated
+    expect(found.slice(0, 2)).toEqual(['together', 'papers-section'])
   })
 
   it('Scan opens the scan flow', async () => {

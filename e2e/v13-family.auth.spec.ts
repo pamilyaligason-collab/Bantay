@@ -24,7 +24,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
     })
 
-    test('root (D-109): opens on Me; title, pill, add, one Today card, Activity, Needs, People, Together', async ({ page }) => {
+    test('root (D-109): opens on Me; title, pill, add, Together, Needs, People, one Today card, Activity', async ({ page }) => {
       await openFamily(page)
       await expect(page.locator('h1')).toHaveText('Family')
       await expect(page.locator('.lt-kicker')).not.toContainText('PEOPLE') // no head count: it counted people you may not see

@@ -20,7 +20,7 @@ export function PeopleList({ people, places }: { people: FamilyPerson[]; places?
   const ordered = [...people].sort((a, b) => Number(checkInLabel(loaded[a.id]).ok && !flagged(a.id)) - Number(checkInLabel(loaded[b.id]).ok && !flagged(b.id))) // anyone flagged or not checked in leads, so the fold never hides them
   return (
     <Section title="People" testId="people">
-      <MoreGrid label="People" testId="people-list" step={SHOWN}>
+      <MoreGrid label="People" testId="people-list" step={SHOWN} tail={<a className="pp-card pp-add" href="#me/family" data-testid="people-add"><Icon name="plus" size={28} /><b>Add a person</b></a>}>
         {ordered.map((p) => {
           const c = checkInLabel(loaded[p.id])
           const place = places?.find((x) => x.personId === p.id)
@@ -35,7 +35,6 @@ export function PeopleList({ people, places }: { people: FamilyPerson[]; places?
           )
         })}
       </MoreGrid>
-      <a className="pp-card pp-add" href="#me/family" data-testid="people-add"><Icon name="plus" size={28} /><b>Add a person</b></a>
     </Section>
   )
 }

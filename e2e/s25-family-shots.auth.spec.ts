@@ -13,7 +13,7 @@ test.use({ viewport: { width: 390, height: 844 } })
 test.describe.configure({ timeout: 90_000 })
 test.beforeEach(async ({ page }) => {
   await skipOnboarding(page)
-  await page.emulateMedia({ colorScheme: "light" }) // no reducedMotion here: with it the roster did not draw after the reload in this fixture (also v13-family.auth root); the CSS honours it regardless
+  await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
 })
 
 test('S25 Family order and no sideways scroller: Together, Papers, Where, Needs, People, Today, Activity', async ({ page }) => {
@@ -31,6 +31,7 @@ test('S25 Family order and no sideways scroller: Together, Papers, Where, Needs,
     await at(page, 0); await page.screenshot({ path: `${SHOTS}/root-top-me.png` })
     await page.getByTestId('needs').scrollIntoViewIfNeeded(); await page.screenshot({ path: `${SHOTS}/root-middle-me.png` })
     await page.getByTestId('people').scrollIntoViewIfNeeded(); await page.screenshot({ path: `${SHOTS}/root-people-me.png` })
+    await page.locator('.bt .scroll').evaluate((el) => { el.scrollTop = el.scrollHeight }); await page.screenshot({ path: `${SHOTS}/root-bottom-today-activity-me.png` })
   }
 })
 
@@ -39,4 +40,14 @@ test('S25 Family with another person selected: Open on a Needs line shows that p
   await page.getByTestId('need-row').first().getByRole('button', { name: /^Open/ }).click()
   await expect(page.getByTestId('person-card').first()).toBeInViewport() // the pick brings Today into view, not the top of the page
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/root-selected-ate.png` })
+})
+
+test('S25 Together tiles in system dark (no data-theme): the dark shadow and highlight apply', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
+  await openFamily(page)
+  expect(await page.evaluate(() => document.documentElement.getAttribute('data-theme'))).not.toBe('light')
+  const tile = page.locator('.fm-tile').first()
+  await expect(tile).toBeVisible()
+  expect(await tile.evaluate((e) => getComputedStyle(e).boxShadow)).toContain('rgba(255, 255, 255, 0.12)') // the dark inset edge, from the media block
+  if (SHOTS) { await page.getByTestId('together').scrollIntoViewIfNeeded(); await page.screenshot({ path: `${SHOTS}/together-dark.png` }) }
 })
