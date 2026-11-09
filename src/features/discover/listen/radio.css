@@ -17,7 +17,7 @@
 .rd-eq { display: flex; gap: 3px; align-items: flex-end; height: 18px; margin-top: 8px; }
 .rd-eq i { width: 4px; background: #fff; border-radius: 2px; animation: rd-eq 1s ease-in-out infinite alternate; }
 .rd-eq i:nth-child(1) { height: 8px; } .rd-eq i:nth-child(2) { height: 16px; animation-delay: .2s; } .rd-eq i:nth-child(3) { height: 11px; animation-delay: .4s; } .rd-eq i:nth-child(4) { height: 14px; animation-delay: .1s; }
-.rd-spin { animation: rd-spin 900ms linear infinite; }
+.rd-spin { display: inline-flex; animation: rd-spin 900ms linear infinite; }
 @keyframes rd-flow { from { background-position: 0% 30%; } to { background-position: 100% 70%; } }
 @keyframes rd-eq { from { height: 4px; } to { height: 18px; } }
 @keyframes rd-spin { to { transform: rotate(360deg); } }

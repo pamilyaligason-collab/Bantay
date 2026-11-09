@@ -4,8 +4,8 @@ import { STATIONS, type Station } from './stations'
 import { getRadioState, playStation, stopRadio, subscribeRadio } from './radioPlayer'
 import './radio.css'
 
-const Spin = () => <svg className="rd-spin" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9" strokeOpacity=".25" /><path d="M12 3a9 9 0 0 1 9 9" /></svg>
-const Play = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+const Spin = () => <span className="rd-spin" aria-hidden="true"><Icon name="rotate" size={24} /></span>
+const Play = () => <Icon name="play" size={24} />
 const Stop = () => <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2" /></svg>
 
 function Card({ s }: { s: Station }) {
