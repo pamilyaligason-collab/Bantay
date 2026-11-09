@@ -1,15 +1,15 @@
 /** Optional 'Full medical library' (D-158): the mdwiki offline pack built by scripts/medlib/mdwiki-pack.py.
  *  Downloaded once (resumable, Range), kept in OPFS (IndexedDB when OPFS cannot write), searched by title in memory. Nothing here runs until the person taps Get. */
 
-// Placeholder date: the orchestrator sets it to the build date of the pack it uploads as the GitHub release asset. Until then the download fails with a clear message.
-export const FULL_LIBRARY_DATE = '2026-11-01'
+// Build date of the pack uploaded to release medlib-v1 (scripts/medlib/README-mdwiki.md).
+export const FULL_LIBRARY_DATE = '2026-11-09'
 // Same-origin path: functions/medlib/[file].ts forwards it to the GitHub release asset (tag medlib-v1), because GitHub release downloads send no CORS headers.
 export const FULL_LIBRARY_URL = `/medlib/medlib-mdwiki-${FULL_LIBRARY_DATE}.pack`
 // Shown before the size is known (it is read from the server on the first request). Orchestrator: set to the built pack's size.
-export const FULL_LIBRARY_MB = 400
+export const FULL_LIBRARY_MB = 178 // medlib-mdwiki-2026-11-09.pack: 185,868,551 bytes, 71,520 articles
 /** The card shows only once the pack is uploaded as medlib-mdwiki-<FULL_LIBRARY_DATE>.pack on release medlib-v1. */
-export const FULL_LIBRARY_HOSTED = false
-export const MDWIKI_CREDIT = 'Text from mdwiki.org (WikiProject Med). Licensed CC BY-SA 4.0. Changes: converted to plain text; citations, navigation boxes and edit links removed.'
+export const FULL_LIBRARY_HOSTED = true
+export const MDWIKI_CREDIT = 'Text from mdwiki.org (WikiProject Med). Licensed CC BY-SA 4.0. Changes: converted to plain text; citations, navigation and data boxes, page notes and edit links removed.'
 export const MDWIKI_LICENCE_URL = 'https://creativecommons.org/licenses/by-sa/4.0/'
 
 export type FullLibraryState = 'none' | 'downloading' | 'ready' | 'error'

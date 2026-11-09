@@ -23,4 +23,4 @@ Test: `python -m unittest scripts/medlib/test_mdwiki_pack.py` builds a tiny synt
 
 ## Licence
 
-mdwiki.org text is CC BY-SA 4.0. The changes are: HTML to plain text (headings kept as `## Heading`, list items as `- item`); citations, navigation boxes and edit links removed. The header carries that statement and every article carries its mdwiki source URL; the app shows the credit, the licence link and the source link on every article.
+mdwiki.org text is CC BY-SA 4.0. The changes are: HTML to plain text (headings kept as `## Heading`, list items as `- item`); citations, navigation boxes, data boxes (infobox), page notes (hatnotes) and edit links removed. The header carries the shorter statement (unchanged since the first build); the app's per-article credit (MDWIKI_CREDIT) carries the full one and every article carries its mdwiki source URL; the app shows the credit, the licence link and the source link on every article.
