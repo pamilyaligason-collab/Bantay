@@ -220,9 +220,8 @@ test('H9: Browse is six cards (tall in two columns, Body wiki wide), each with a
 test('H10: For you is a swipe row of videos (S24), the because read, then the log row; the video cards are tall', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await assertOrder(page, ['foryou-video', 'foryou-because', 'foryou-log'])
+  await expect.poll(async () => Math.abs((await box(page, '[data-testid=foryou-video]')).y - (await box(page, '[data-testid=foryou-video-2]')).y), { message: 'one row (the cards settle after their reveal)' }).toBeLessThanOrEqual(2)
   const v = await box(page, '[data-testid=foryou-video]')
-  const v2 = await box(page, '[data-testid=foryou-video-2]')
-  expect(Math.abs(v.y - v2.y), 'one row').toBeLessThanOrEqual(2)
   expect(await page.locator('[data-testid^=foryou-video]').count()).toBeGreaterThanOrEqual(4)
   expect(v.height).toBeGreaterThanOrEqual(180)
 })
