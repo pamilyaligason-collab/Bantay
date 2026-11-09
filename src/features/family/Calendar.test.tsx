@@ -120,6 +120,33 @@ describe('Calendar masks events of other people (D-109)', () => {
     expect(document.body.textContent).not.toContain('Dentist for Ma')
   })
 
+  it('the Later list masks too: next week and next month for another person never show the real title; whole-family keeps its title; unreadable people read Family member', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
+    const on = (d: number, m = 10) => new Date(2026, m, d, 9, 0).toISOString()
+    await fdb.events.bulkPut([
+      { clientId: 'w1', title: 'Ma cardiology', startsAt: on(3), endsAt: null, allDay: false, personId: 'p2' },
+      { clientId: 'm1', title: 'Ma MRI scan', startsAt: on(5, 11), endsAt: null, allDay: false, personId: 'p2' },
+      { clientId: 'u1', title: 'Hidden biopsy', startsAt: on(4), endsAt: null, allDay: false, personId: 'zz' },
+      { clientId: 'f1', title: 'Family reunion', startsAt: on(6), endsAt: null, allDay: false, personId: null }
+    ])
+    render(<Calendar detailFor="p1" />)
+    const later = await screen.findByTestId('cal-later')
+    const check = () => {
+      const t = screen.getByTestId('cal-later').textContent ?? ''
+      expect(t).toContain('Family reunion')
+      expect(t).toContain('Whole family')
+      expect(t).toContain('Family member')
+      expect(t).toContain('Doctors & Lab Appointments')
+      expect(document.body.textContent).not.toMatch(/Ma cardiology|Ma MRI scan|Hidden biopsy/)
+    }
+    expect(later.textContent).toContain('2026-11-03')
+    check()
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
+    await waitFor(() => expect(screen.getByTestId('cal-later').textContent).toContain('2026-12-05'))
+    check()
+  })
+
   it('without detailFor (the Calendar page) every readable event shows in full', async () => {
     await seed()
     render(<Calendar />)

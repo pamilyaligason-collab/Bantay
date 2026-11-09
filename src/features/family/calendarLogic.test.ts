@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { kindsOn, monthCells, otherRows, rowsOn, weekSun, type CalSource } from './calendarLogic'
+import { kindsOn, laterRows, monthCells, otherRows, rowsOn, weekSun, type CalSource } from './calendarLogic'
 
 // Fri 30 Oct 2026 is the day under test (hand-computed: 25 Oct 2026 is a Sunday).
 const FRI = '2026-10-30'
@@ -90,6 +90,13 @@ describe('rowsOn', () => {
     expect(r[0]!.sub).toMatch(/^Mama · /) // given name and time only
     expect(JSON.stringify(r[0])).not.toMatch(/Dentist|Secret|Private/)
     expect(rowsOn(FRI, { ...s, masked: undefined }, FRI)[0]!.title).toBe('Dentist') // left out of the Family root, the whole record shows
+  })
+  it('laterRows masks like rowsOn: another person’s later event shows only the label, name and date; unreadable reads Family member', () => {
+    const ev = (clientId: string, title: string, personId: string | null) => ({ clientId, title, startsAt: at('2026-11-04', 9), endsAt: null, allDay: false, personId })
+    const s = src({ events: [ev('a', 'Biopsy', 'm'), ev('b', 'Scan', 'zz'), ev('c', 'Reunion', null), ev('d', 'Mine', 'j')] as CalSource['events'], masked: (id) => id !== 'j' })
+    const r = laterRows(s, FRI)
+    expect(r.map((x) => [x.title, x.sub])).toEqual([['Doctors & Lab Appointments', 'Mama · 2026-11-04'], ['Doctors & Lab Appointments', 'Family member · 2026-11-04'], ['Mine', 'Ate · 2026-11-04'], ['Reunion', 'Whole family · 2026-11-04']].sort((x, y) => x[0]!.localeCompare(y[0]!)))
+    expect(JSON.stringify(r)).not.toMatch(/Biopsy|Scan/)
   })
   it('kindsOn gives each kind once, in fixed order; an empty day gives none', () => {
     const s = src({ tasks: [{ clientId: 'a', title: 'a', due: FRI, assigneePersonId: null, done: false }, { clientId: 'b', title: 'b', due: FRI, assigneePersonId: null, done: true }] })

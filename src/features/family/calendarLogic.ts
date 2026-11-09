@@ -57,6 +57,8 @@ export function monthCells(d: Date): { day: string; num: number; inMonth: boolea
 export const monthName = (d: Date) => d.toLocaleDateString('en', { month: 'long' })
 
 const given = (n: string) => n.trim().split(/\s+/)[0] || n
+/** Who a masked event names: the given name, or 'Family member' for someone the viewer cannot read (nameOf falls back to 'Family', which would look like a whole-family booking). */
+const maskedWho = (s: Pick<CalSource, 'nameOf'>, id: string) => { const n = s.nameOf(id); return n === 'Family' ? 'Family member' : given(n) }
 
 /** What is on one day, earliest first: doses, visits, events, tasks (open ones overdue show on today), pinned notes (today only). */
 export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Date())): CalRow[] {
@@ -78,7 +80,7 @@ export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Dat
   })
   for (const e of s.events) {
     if (eventDay(e) !== day) continue
-    if (e.personId && s.masked?.(e.personId)) { out.push({ key: `event|${e.clientId}`, kind: 'event', title: MASKED_APPT, sub: `${given(s.nameOf(e.personId))} · ${timeLabel(e)}`, sort: e.allDay ? '00:00' : hhmm(e.startsAt), done: false, masked: true }); continue } // title, place and notes stay with their person (D-109)
+    if (e.personId && s.masked?.(e.personId)) { out.push({ key: `event|${e.clientId}`, kind: 'event', title: MASKED_APPT, sub: `${maskedWho(s, e.personId)} · ${timeLabel(e)}`, sort: e.allDay ? '00:00' : hhmm(e.startsAt), done: false, masked: true }); continue } // title, place and notes stay with their person (D-109)
     const who = e.personId ? given(s.nameOf(e.personId)) : 'Whole family'
     out.push({ key: `event|${e.clientId}`, kind: 'event', title: e.title, sub: `${who} · ${timeLabel(e)}`, sort: e.allDay ? '00:00' : hhmm(e.startsAt), done: false })
   }
@@ -106,10 +108,10 @@ export function otherRows(s: Pick<CalSource, 'tasks' | 'notes' | 'nameOf'>): Cal
 }
 
 /** Open tasks and events dated after the last visible day, soonest first (D-168: a saved item stays reachable without paging). */
-export function laterRows(s: Pick<CalSource, 'tasks' | 'events' | 'nameOf'>, after: string): CalRow[] {
+export function laterRows(s: Pick<CalSource, 'tasks' | 'events' | 'nameOf' | 'masked'>, after: string): CalRow[] {
   const out: CalRow[] = []
   for (const t of s.tasks) if (!t.done && t.due && t.due > after) out.push({ key: `task|${t.clientId}`, kind: 'task', title: t.title, sub: `${t.assigneePersonId ? given(s.nameOf(t.assigneePersonId)) : 'Everyone'} · ${t.due}`, sort: t.due, done: false })
-  for (const e of s.events) { const d = eventDay(e); if (d > after) out.push({ key: `event|${e.clientId}`, kind: 'event', title: e.title, sub: `${e.personId ? given(s.nameOf(e.personId)) : 'Whole family'} · ${d}`, sort: d, done: false }) }
+  for (const e of s.events) { const d = eventDay(e); if (d <= after) continue; if (e.personId && s.masked?.(e.personId)) { out.push({ key: `event|${e.clientId}`, kind: 'event', title: MASKED_APPT, sub: `${maskedWho(s, e.personId)} · ${d}`, sort: d, done: false, masked: true }); continue }; out.push({ key: `event|${e.clientId}`, kind: 'event', title: e.title, sub: `${e.personId ? given(s.nameOf(e.personId)) : 'Whole family'} · ${d}`, sort: d, done: false }) }
   return out.sort((a, b) => a.sort.localeCompare(b.sort) || a.title.localeCompare(b.title))
 }
 
