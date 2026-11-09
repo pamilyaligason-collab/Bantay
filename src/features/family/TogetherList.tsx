@@ -15,6 +15,7 @@ import type { FamilyEvent } from './store'
 import type { DocBundle } from '../records/api'
 import './family.css'
 import './v13-family.css'
+import './s28-family.css'
 
 export const SEEN = 'family.msgs.seen' // kv: ISO time the family chat was last opened on this phone
 
@@ -40,8 +41,8 @@ const paperDate = (iso: string | null) => {
 function Tile(p: { href: string; icon: IconName; tint: 'amber' | 'blue' | 'green' | 'purple'; title: string; sub: string; testId: string; badge?: number }) {
   return (
     <a className="fm-tile" href={p.href} data-tint={p.tint} data-testid={p.testId}>
-      <Icon name={p.icon} size={28} />
-      <span><b>{p.title}{p.badge ? <span className="fm-tile-n"> · {p.badge} new</span> : null}</b><span className="fm-tile-s">{p.sub}</span></span>
+      <span className="fm-tile-ic"><Icon name={p.icon} size={28} /></span>
+      <span><b className="cd-title">{p.title}{p.badge ? <span className="fm-tile-n"> · {p.badge} new</span> : null}</b><span className="fm-tile-s cd-meta">{p.sub}</span></span>
     </a>
   )
 }

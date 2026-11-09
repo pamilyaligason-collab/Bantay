@@ -92,11 +92,11 @@ describe('Family root', () => {
     expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy() // S25: Together first, then Papers
   })
 
-  it('S26 order: the one Calendar, Together, Papers, Where, Needs, People, then Activity; no separate Today list', async () => {
+  it('S28 order: the one Calendar, Together, Papers, Activity, Where, Needs, then Today (the people cards); no second list of people', async () => {
     location.hash = '#family'
     const { container } = render(<Family />)
     await screen.findByTestId('papers-card')
-    const ids = ['calendar', 'together', 'papers-section', 'where', 'needs', 'people', 'activity']
+    const ids = ['calendar', 'together', 'papers-section', 'activity', 'where', 'needs', 'people']
     const found = [...container.querySelectorAll('[data-testid]')].map((el) => el.getAttribute('data-testid')!).filter((id) => ids.includes(id))
     expect(found).toEqual(ids.filter((id) => found.includes(id))) // whatever shows is in board order, none repeated
     expect(found.slice(0, 3)).toEqual(['calendar', 'together', 'papers-section'])

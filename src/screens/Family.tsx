@@ -57,7 +57,7 @@ function groupsOf(options: { id: string; isMe: boolean }[], writable: string[], 
   return out
 }
 
-/** The Family root (v13, D-109): large title with the "Who to show" pill and Add, then (S26 board, D-168) the one Calendar card (Plan folded in), Together (Messages, Memories), Papers, Where everyone is, Needs you now, People (each card carries today's status) and last the shown person's Activity. It opens on Me and shows one person at a time; only a writer carer's "missed a medicine" reaches the page for anyone else. Everything is read from this phone; nothing is invented. */
+/** The Family root (v13, D-109): large title with the "Who to show" pill and Add, then (S26 board, D-168; S28 order) the one Calendar card (Plan folded in), Together (Messages, Memories), Papers, the shown person's Activity, Where everyone is, Needs you now and last Today (the people cards, each carrying today's status once). It opens on Me and shows one person at a time; only a writer carer's "missed a medicine" reaches the page for anyone else. Everything is read from this phone; nothing is invented. */
 function Root() {
   const { shown, options, select, isOwner } = useFamilyScope()
   const writable = useCarerIds()
@@ -79,11 +79,11 @@ function Root() {
       <Calendar detailFor={shown.id} /> {/* the one Calendar card (Plan folded in) leads, as on the S26 board; anyone else's doses and visits show no details here (D-109) */}
       <TogetherList />
       <PapersSection />
+      <ActivityCard people={shown.id ? [shown] : []} /> {/* S28 (D-168): Activity moves up, above Where everyone is */}
       <PlaceNotice />
       <WhereCard places={places} />
-      <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} onSelect={(id) => { location.hash = `family/people/${id}` }} />
+      <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} onSelect={(id) => { location.hash = `family/people/${id}` }} cardIds={linked.map((p) => p.id)} />
       <PeopleList people={linked} places={places} focus={needs.items} selfName={me?.name ?? ''} />
-      <ActivityCard people={shown.id ? [shown] : []} />
     </>
   )
 }

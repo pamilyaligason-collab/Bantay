@@ -37,6 +37,12 @@ export function classifyFile(f: { type: string; name: string; size: number }): {
   return t ? { kind: 'file', ...t } : { error: 'type' }
 }
 
+/** A Messenger name from what a person types: "@name", "m.me/name" or a pasted m.me link become the handle. Null for empty or anything the database check would refuse (letters, digits and dots, 5 to 50). */
+export function cleanMessenger(input?: string | null): string | null {
+  const h = (input ?? '').trim().replace(/^https?:\/\//i, '').replace(/^(www\.)?m\.me\//i, '').replace(/^@/, '').replace(/\/+$/, '')
+  return /^[A-Za-z0-9.]{5,50}$/.test(h) ? h : null
+}
+
 /** The Messenger link for one person. No saved handle (or an unsafe one) = null = no button; it never falls back to messenger.com. */
 export function messengerHref(handle?: string | null): { href: string; label: string } | null {
   const h = (handle ?? '').trim()

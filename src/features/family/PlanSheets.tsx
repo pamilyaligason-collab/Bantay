@@ -5,6 +5,7 @@ import { pickDay, repeatDays, type Repeat, type WhenPick } from './planList'
 import Sheet from './Sheet'
 import type { FamilyPerson } from './roster'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
+import { useRingsHere } from './taskReminders'
 import { addTask, removeTask, saveTask } from './tasks'
 
 const SAVE_FAIL = 'Could not save on this phone. Try again.'
@@ -45,6 +46,8 @@ export function ItemSheet({ start, day, people, onClose, onNote }: { start: Item
   const [allDay, setAllDay] = useState(e?.allDay ?? false)
   const [time, setTime] = useState(e && !e.allDay ? hhmm(e.startsAt) : '09:00')
   const [endTime, setEndTime] = useState(e?.endsAt ? hhmm(e.endsAt) : '')
+  const [remindAt, setRemindAt] = useState(t?.remindAt ?? '') // optional reminder time for a task with a day (S28)
+  const rings = useRingsHere(who || null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -59,9 +62,9 @@ export function ItemSheet({ start, day, people, onClose, onNote }: { start: Item
     if (kind === 'task') {
       const due = pick === 'none' ? null : date || null
       if (pick !== 'none' && !due) return setErr('Pick a day for it.')
-      if (t) return void run(() => saveTask({ ...t, title, due, assigneePersonId: who || null }))
+      if (t) return void run(() => saveTask({ ...t, title, due, assigneePersonId: who || null, remindAt: remindAt || null }))
       const days = due ? repeatDays(due, repeat) : [null]
-      return void run(async () => { for (const d of days) await addTask({ title, due: d, assigneePersonId: who || null }) })
+      return void run(async () => { for (const d of days) await addTask({ title, due: d, assigneePersonId: who || null, remindAt: remindAt || null }) })
     }
     const next = toEvent({ title, date, time, allDay, endTime, personId: who }, e?.clientId)
     if (!next) return setErr('Pick a day for it.')
@@ -90,6 +93,16 @@ export function ItemSheet({ start, day, people, onClose, onNote }: { start: Item
           {kind === 'task' && <button type="button" aria-pressed={pick === 'none'} onClick={() => choose('none')}>No date</button>}
         </div>
         {pick === 'date' && <input id="fm-date" type="date" aria-label="Day" value={date} onChange={(ev) => { setDate(ev.target.value); setErr('') }} />}
+        {kind === 'task' && pick !== 'none' && (
+          <div className="fm-remind" data-testid="remind-at">
+            <label htmlFor="fm-remind">Remind me at (optional)</label>
+            <div className="fm-remind-row">
+              <input id="fm-remind" type="time" value={remindAt} onChange={(ev) => setRemindAt(ev.target.value)} />
+              {remindAt && <button type="button" className="btn2" onClick={() => setRemindAt('')}>No time</button>}
+            </div>
+            {remindAt && <p className="sub fm-hint">{rings ? 'This phone rings at that time.' : 'The time shows in the Calendar. This phone does not ring for it.'}</p>}
+          </div>
+        )}
         {kind === 'event' && (
           <>
             <label className="fm-check"><input type="checkbox" checked={allDay} onChange={(ev) => setAllDay(ev.target.checked)} /> All day</label>

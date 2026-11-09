@@ -13,7 +13,7 @@ import type { useFocuses } from './useFocuses'
 import './v13-family.css'
 
 /** Needs you now (board): a grouped list of what the Today card on show does not already say, and a writer carer's "missed a medicine" for anyone they look after. Open puts that person on show. Hidden while acting (the old rule) and when empty. */
-export function NeedsList({ fx, people, selfName, shownId, onSelect }: { fx: ReturnType<typeof useFocuses>; people: FamilyPerson[]; selfName: string; shownId?: string; onSelect: (personId: string) => void }) {
+export function NeedsList({ fx, people, selfName, shownId, onSelect, cardIds }: { fx: ReturnType<typeof useFocuses>; people: FamilyPerson[]; selfName: string; shownId?: string; onSelect: (personId: string) => void; /** People whose Today card already says "Missed a medicine" (S28): that line is not repeated here. */ cardIds?: string[] }) {
   const { acting } = useActing()
   const phones = useAlertRows().filter((r) => r.kind === 'phone_health' && r.seenAt == null && r.personId)
   const [answering, setAnswering] = useState<{ name: string; med: Medication } | null>(null)
@@ -24,7 +24,7 @@ export function NeedsList({ fx, people, selfName, shownId, onSelect }: { fx: Ret
     : <button type="button" className="pc-btn rw-ctl" onClick={() => onSelect(a.personId)} aria-label={`Open ${shortName(people.find((p) => p.id === a.personId)?.name) ?? 'them'}`}>Open</button>
   useEffect(() => { if (!note) return; const t = setTimeout(() => setNote(''), 4000); return () => clearTimeout(t) }, [note])
   if (acting || !fx.loaded) return null
-  const rows = needsRows(fx.items, phones, people, shownId)
+  const rows = needsRows(fx.items, phones, people, shownId, cardIds)
   if (!rows.length) return null
   return (
     <Section title="Needs you now" meta={rows.length === 1 ? '1 thing' : `${rows.length} things`} testId="needs">
