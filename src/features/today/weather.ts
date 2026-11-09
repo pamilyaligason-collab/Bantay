@@ -1,5 +1,7 @@
 import type { LatLon } from '../location/geo'
-import { conditionWords, getForecast, useForecast, type Forecast } from '../weather/forecast'
+import { wxFlag } from '../weather/flags'
+import { conditionWords, getForecast, type Forecast } from '../weather/forecast'
+import { useBlendedWeather } from '../weather/useBlendedWeather'
 import { rainLine, type Wx } from './heroCards'
 
 // Lane M4: the forecast itself lives in features/weather/forecast.ts (one request, one cache, shared by every surface).
@@ -38,7 +40,7 @@ const MAX_AGE = 6 * 3600_000 // an older reading is not shown here: it could say
 
 /** Latest weather for a point: cached reading first (works offline), then a fresh fetch. null until something is known. */
 export function useWeather(p: LatLon | null): Wx | null {
-  const { fc, offline } = useForecast(p)
+  const { fc, offline } = useBlendedWeather(p, { on: wxFlag('blend') }) // D-163: the same hook and flag as the Weather screen, so the three screens show one set of numbers
   if (!fc || Date.now() - Date.parse(fc.fetchedAt) >= MAX_AGE) return null
   return toWx(fc, offline)
 }

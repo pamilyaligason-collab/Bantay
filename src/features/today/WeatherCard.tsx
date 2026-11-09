@@ -13,6 +13,7 @@ import { placeLineOf, placeNameOf } from './placeName'
 import { heroRainLine } from './heroRain'
 import { stormSlots, type Slot } from './stormView'
 import HourlyStrip, { hourlySlots } from './HourlyStrip'
+import { ForecastNote } from '../weather/ForecastNote'
 import RainMini, { miniSlots } from './RainMini'
 import './weatherHero.css'
 
@@ -139,9 +140,10 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
             {expanded && <HourlyStrip slots={hourlySlots(wx, now, storm)} />}
             {!expanded && next.length > 0 && (
               <ul className="td-wxh-hrs" aria-label="Next hours">
-                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{Math.round(s.pct)}%<span className="td-vh"> chance of rain</span></span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
+                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{Math.round(s.pct)}% rain</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>
             )}
+            <ForecastNote className="td-wxh-credit" place={placeNameOf(place)} />
           </>
         )}
       >

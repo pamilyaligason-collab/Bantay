@@ -19,6 +19,8 @@ import { CARDS } from './Practice'
 import { Icon, type IconName } from '../shell/Icon'
 import { useAutoBasemap } from './autoMaps'
 import { GroupedList, Row, Section, type Tint } from '../look'
+import { ForecastNote } from '../weather/ForecastNote'
+import { placeNameOf } from '../today/placeName'
 import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { type useLocation } from '../location/useLocation'
 import ZonePicker from '../location/ZonePicker'
@@ -142,6 +144,7 @@ function RightNow({ place }: { place: Place }) {
   return (
     <Section title="Right now" link={{ href: '#safety/sources', label: 'Sources' }}>
       <GroupedList icons label="Right now" testId="right-now">{rows.map(asRow)}</GroupedList>
+      {wx && wx.temp != null && <p className="sf-wxnote"><ForecastNote place={placeNameOf(place)} /></p>}
     </Section>
   )
 }

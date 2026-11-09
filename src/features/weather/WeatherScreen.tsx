@@ -24,6 +24,7 @@ import { actionLines, RAIN_WATCH_HOURS } from './actionLine'
 import StormTrack from './StormTrack'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, type Day, type Forecast, type Kind } from './forecast'
 import { heatIndexC } from './heatIndex'
+import { ForecastNote } from './ForecastNote'
 import { wxFlag } from './flags'
 import { AroundYou, Credits, Next2h, OtherNotices } from './BlendCards'
 import { useBlendedWeather, type BlendedState } from './useBlendedWeather'
@@ -245,7 +246,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
       <div className="card wx-stripbox">
         <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
           {strip.map((h, i) => (
-            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}%`}</span></li>
+            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}% rain`}</span></li>
           ))}
         </ul>
       </div>
@@ -262,6 +263,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         <b className="wx-cond">{cap(conditionWords(c.code))}</b>
         <span className="wx-sub">Feels like {deg(fl.value)}</span>
         <span className="wx-sub">H:{deg(today?.max ?? null)}  L:{deg(today?.min ?? null)}</span>
+        <ForecastNote className="wx-sub wx-fnote" place={name} link />
       </section>
 
       <WarnRow warn={warn} unchecked={unchecked} name={name} />

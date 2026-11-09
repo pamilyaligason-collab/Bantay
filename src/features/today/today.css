@@ -647,3 +647,6 @@
   .card.td-done-card { animation: none; }
   .td-fold > svg { transition: none; }
 }
+
+.td-wxh-credit { display: block; margin-top: 6px; font-size: 13px; line-height: 1.3; color: #fff; }
+.sf-wxnote { margin: 8px 16px 0; font-size: 14px; color: var(--muted); }

@@ -100,7 +100,7 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByText('High 34° · Low 26°')).toBeTruthy() // live parity: today's range stays on the expanded card
     expect(container.querySelector('[data-size="expanded"]')).toBeTruthy()
     expect(container.querySelectorAll('.td-hs li')).toHaveLength(12)
-    expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
+    expect(screen.getByText('30% rain')).toBeTruthy() // slot 3 hours on
     expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['#weather', '#weather?from=action']) // Full forecast row, then the cover link
     expect(screen.getByRole('link', { name: /Full forecast/ })).toBeTruthy()
     expect([...container.querySelectorAll('.td-hs li')].slice(1).every((li) => li.textContent!.includes('27°'))).toBe(true) // every later item shows its temperature; the first is now (33°)
