@@ -60,6 +60,10 @@ class PackTest(unittest.TestCase):
             with open(os.path.join(HERE, 'fixtures', 'mini.pack'), 'wb') as f, open(out, 'rb') as g:
                 f.write(g.read())
 
+    def test_furniture_dropped(self):
+        html = '<body><table class="infobox"><tr><td>CAS Number 22007048</td></tr></table><div class="hatnote navigation-not-searchable">For other uses see X</div><p>Dengue is spread by mosquitoes.</p><div class="mw-references-wrap">REF</div><div class="zim-footer">Kiwix</div></body>'
+        self.assertEqual(mp.html_to_text(html)[0], 'Dengue is spread by mosquitoes.')
+
     def test_limit(self):
         with tempfile.TemporaryDirectory() as d:
             zim, out = os.path.join(d, 't.zim'), os.path.join(d, 't.pack')

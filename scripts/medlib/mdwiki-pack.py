@@ -26,8 +26,9 @@ from urllib.parse import quote, unquote
 
 MAGIC = b'BMDW1\n'
 SKIP_TAGS = {'script', 'style', 'head', 'nav', 'noscript'}
-# citation numbers, edit links and navigation boxes are page furniture, not article text
-SKIP_CLASSES = {'reference', 'mw-editsection', 'navbox', 'reflist', 'noprint'}
+# citation numbers, edit links, navigation boxes, data boxes (infobox: CAS, SMILES, InChI ...), hatnotes, reference lists,
+# interactive sliders and the Kiwix footer are page furniture, not article text
+SKIP_CLASSES = {'reference', 'mw-editsection', 'navbox', 'reflist', 'noprint', 'infobox', 'hatnote', 'mw-references-wrap', 'refbegin', 'OWIDSlider', 'zim-footer'}
 BLOCK = {'p', 'div', 'li', 'br', 'tr', 'ul', 'ol', 'blockquote', 'table', 'section', 'dt', 'dd'}
 HEADINGS = {'h2', 'h3', 'h4', 'h5', 'h6'}
 VOID = {'br', 'img', 'hr', 'meta', 'link', 'input', 'wbr', 'col', 'source'}

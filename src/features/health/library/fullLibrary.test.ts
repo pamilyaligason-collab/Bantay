@@ -81,7 +81,7 @@ describe('full library pack', () => {
     await expect(download()).rejects.toBeInstanceOf(FullLibraryError)
     expect(await getStatus()).toMatchObject({ state: 'error', bytes: 300 })
     await download()
-    expect(f.calls).toEqual([undefined, 'bytes=300-'])
+    expect(f.calls).toEqual(['bytes=0-', 'bytes=300-'])
     expect(await getStatus()).toMatchObject({ state: 'ready', bytes: PACK.length })
     expect(await searchFullLibrary('diabetes')).toHaveLength(1)
   })
@@ -133,7 +133,7 @@ describe('full library pack', () => {
   })
 
   it('names the dated pack asset', () => {
-    expect(FULL_LIBRARY_URL).toMatch(/\/medlib-v1\/medlib-mdwiki-\d{4}-\d{2}-\d{2}\.pack$/)
+    expect(FULL_LIBRARY_URL).toMatch(/^\/medlib\/medlib-mdwiki-\d{4}-\d{2}-\d{2}\.pack$/) // same origin, served by functions/medlib/[file].ts
   })
 
   it('resumes with Range plus If-Range (the stored ETag)', async () => {
@@ -141,7 +141,7 @@ describe('full library pack', () => {
     vi.stubGlobal('fetch', f.fn)
     await expect(download()).rejects.toThrow()
     await download()
-    expect(f.calls).toEqual([undefined, 'bytes=300-'])
+    expect(f.calls).toEqual(['bytes=0-', 'bytes=300-'])
     expect(f.ifRange).toEqual([undefined, '"v1"'])
     expect((await getStatus()).state).toBe('ready')
   })
@@ -152,7 +152,7 @@ describe('full library pack', () => {
     const f = fakeFetch()
     vi.stubGlobal('fetch', f.fn)
     await download({ url: 'https://example.test/b.pack' })
-    expect(f.calls).toEqual([undefined])
+    expect(f.calls).toEqual(['bytes=0-'])
     expect(await getStatus()).toMatchObject({ state: 'ready', bytes: PACK.length })
   })
 
