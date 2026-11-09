@@ -4,18 +4,18 @@ import { Icon } from '../shell/Icon'
 import { crisisLines, telHref, type HotlineRow } from './crisis'
 import './calm.css'
 
-/** S26 (D-164): the Today hero card. Calm teal (never SOS red, never the 911 button style), the one --shadow-hero on the screen. "Talk" opens #calm, where the numbers are (CrisisCard below);
+/** S26 (D-164), softened S27: a quiet Today card below Calm. Calm teal (never SOS red, never the 911 button style), no hero depth. "Open" opens #calm, where the numbers are (CrisisCard below);
  *  911 stays first in the words. Tracks card_talk when shown and when Talk is tapped. */
 export function TalkCard() {
   // card_talk is recorded on tap only (D-160)
   return (
     <section className="cm-talk" data-testid="today-talk" aria-labelledby="cm-talk-h">
-      <Icon name="chat" size={32} />
+      <Icon name="chat" size={24} />
       <div className="cm-talk-body">
-        <h2 id="cm-talk-h" className="cm-talk-t">Need to talk to someone?</h2>
-        <p className="cm-talk-s">Hotline numbers and calming tools. In danger now? Call 911.</p>
+        <h2 id="cm-talk-h" className="cm-talk-t">Here if you need to talk</h2>
+        <p className="cm-talk-s">Hotlines and calming tools, any time. In an emergency, call 911.</p>
       </div>
-      <a className="cm-talk-btn" href="#calm" aria-label="Talk to someone: open hotline numbers" onClick={() => void track('action', 'card_talk')}>Talk</a>
+      <a className="cm-talk-btn" href="#calm" aria-label="Talk to someone: open hotline numbers" onClick={() => void track('action', 'card_talk')}>Open</a>
     </section>
   )
 }

@@ -35,12 +35,12 @@ describe('CrisisCard', () => {
   })
 })
 
-describe('TalkCard (Today hero, S26)', () => {
-  it('names the card, leads with 911 in words, and Talk opens #calm with a 48 px target; tracks card_talk on tap only', () => {
+describe('TalkCard (quiet Today card, S27)', () => {
+  it('names the card, leads with 911 in words, and Open opens #calm with a 48 px target; tracks card_talk on tap only', () => {
     tr.mockClear()
     render(<TalkCard />)
-    expect(screen.getByRole('heading', { name: 'Need to talk to someone?' })).toBeTruthy()
-    expect(screen.getByText(/Call 911\./)).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Here if you need to talk' })).toBeTruthy()
+    expect(screen.getByText(/In an emergency, call 911\./)).toBeTruthy()
     const talk = screen.getByRole('link', { name: /Talk to someone/ })
     expect(talk.getAttribute('href')).toBe('#calm')
     expect(tr).not.toHaveBeenCalled()
@@ -49,17 +49,17 @@ describe('TalkCard (Today hero, S26)', () => {
     expect(tr).toHaveBeenCalledWith('action', 'card_talk')
     expect(css).toMatch(/\.cm-talk-btn \{[^}]*min-height: 48px/)
   })
-  it('is the hero depth, teal, and not SOS red', () => {
-    expect(css).toMatch(/\.cm-talk \{[^}]*box-shadow: var\(--shadow-hero\)/)
+  it('is not the hero (no --shadow-hero), teal, and not SOS red', () => {
+    expect(/\.cm-talk \{[^}]*\}/.exec(css)![0]).not.toMatch(/--shadow-hero/)
     expect(css).not.toMatch(/\.cm-talk[^{]*\{[^}]*(#B42318|#C8372D|var\(--red\)|var\(--danger-bg\))/)
   })
   const pick = (block: string, name: string) => parse(new RegExp(`--talk-${name}: (#[0-9A-Fa-f]{6})`).exec(block)![1]!)[0]
   const light = /\.cm-talk \{ (--talk-bg[^}]*?);\s*display/.exec(css)![1]!
   const dark = /:root\[data-theme="dark"\] \.cm-talk \{([^}]*)\}/.exec(css)![1]!
-  it.each([['light', light], ['dark', dark]])('%s: title, sub line and Talk button text are >= 4.5:1 on their fill', (_n, b) => {
+  it.each([['light', light], ['dark', dark]])('%s: title, sub line and Open button text are >= 4.5:1 on their fill', (_n, b) => {
     expect(ratio(pick(b, 'ink'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
     expect(ratio(pick(b, 'sub'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
-    expect(ratio(pick(b, 'on-btn'), pick(b, 'btn'))).toBeGreaterThanOrEqual(4.5)
-    expect(ratio(pick(b, 'line'), pick(b, 'bg'))).toBeGreaterThanOrEqual(3) // icon and edge
+    expect(ratio(pick(b, 'btn'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
+    expect(ratio(pick(b, 'icon'), pick(b, 'bg'))).toBeGreaterThanOrEqual(3) // muted icon
   })
 })

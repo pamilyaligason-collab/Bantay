@@ -77,7 +77,7 @@ describe('Today simple mode', () => {
     const { container } = render(<Today />)
     await screen.findByTestId('myday')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).filter((id) => !id!.startsWith('head-')) // the bell and avatar in the title row
-    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'today-talk', 'myday', 'calm', 'numbers', 'alerts', 'nearby'])
+    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'myday', 'calm', 'today-talk', 'numbers', 'alerts', 'nearby'])
   })
   it('the weather hero is always expanded and My day carries the medicines count', async () => {
     meds.due = false; meds.review = 3

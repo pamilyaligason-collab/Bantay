@@ -80,10 +80,10 @@ export default function Today() {
       <WarningCard notify={notify} />
       <AlertCardToday />
       <PlaceNotice />
-      <TalkCard />
       <MyDay notify={notify} />
       <BatteryCard />
       <CalmCard />
+      <TalkCard />
       <YourNumbers />
       <TodayNews /><PricesCard /><PlantCard /><FxCard /><Lotto />
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
