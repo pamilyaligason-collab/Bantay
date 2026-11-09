@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore, type CSSProperties } from 'react'
 import { Icon } from '../../shell/Icon'
-import { STATIONS, type Station } from './stations'
+import { SECTIONS, STATIONS, type Station } from './stations'
 import { getRadioState, playStation, stopRadio, subscribeRadio } from './radioPlayer'
 import './radio.css'
 
@@ -22,6 +22,7 @@ function Card({ s }: { s: Station }) {
         {mine === 'error'
           ? <div className="rd-err" role="status">Could not play. Check data or Wi-Fi.</div>
           : <div className="rd-sub" role={mine === 'idle' ? undefined : 'status'}>{mine === 'playing' ? 'Playing now' : mine === 'connecting' ? 'Connecting…' : s.sub}</div>}
+        <a className="rd-site" href={s.site} target="_blank" rel="noopener noreferrer">Official site<span className="rd-sr"> of {s.name} (opens outside)</span></a>
       </div>
       <button type="button" className="rd-play" aria-label={label} onClick={() => (mine === 'playing' || mine === 'connecting' ? stopRadio() : void playStation(s))}>
         {mine === 'connecting' ? <Spin /> : mine === 'playing' ? <Stop /> : <Play />}
@@ -30,15 +31,30 @@ function Card({ s }: { s: Station }) {
   )
 }
 
+/** The station cards grouped by section (D-178), shared by Discover > Listen > Live radio and Calm > Listen and watch. One player behind all of them (radioPlayer); it stops when this block leaves the screen. */
+export function RadioSections({ headingLevel = 3 }: { headingLevel?: 2 | 3 }) {
+  useEffect(() => stopRadio, [])
+  const H = `h${headingLevel}` as 'h2' | 'h3'
+  return (
+    <>
+      {SECTIONS.map((sec) => (
+        <section key={sec.id} className="rd-sec" data-testid={`radio-sec-${sec.id}`} aria-labelledby={`rd-h-${sec.id}`}>
+          <H id={`rd-h-${sec.id}`} className="rd-sech">{sec.label}</H>
+          <ul className="rd-list" role="list">{STATIONS.filter((s) => s.section === sec.id).map((s) => <Card key={s.id} s={s} />)}</ul>
+        </section>
+      ))}
+    </>
+  )
+}
+
 /** Discover > Listen > Live radio (D-166). Leaving the page stops the stream so mobile data is not spent in the background. */
 export default function Radio() {
-  useEffect(() => stopRadio, [])
   return (
     <div data-testid="radio">
       <a className="rd-back" href="#discover/listen"><Icon name="back" size={20} />Back to Listen</a>
       <h2 className="sh-h2 rd-h">Live radio</h2>
       <p className="sub rd-lead">One station plays at a time. Uses mobile data: up to about 60 MB an hour.</p>
-      <ul className="rd-list" role="list">{STATIONS.map((s) => <Card key={s.id} s={s} />)}</ul>
+      <RadioSections headingLevel={3} />
       <p className="sub rd-fine">Streams belong to each station; for personal listening.</p>
     </div>
   )

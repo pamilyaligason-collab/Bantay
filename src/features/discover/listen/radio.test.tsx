@@ -1,7 +1,9 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Radio from './Radio'
-import { STATIONS } from './stations'
+import { SECTIONS, STATIONS } from './stations'
+import { announceMedia, onOtherMedia } from '../../media/mediaStart'
+import { SOS_STARTED_EVENT } from '../../sos/active'
 import { resetRadioForTests } from './radioPlayer'
 
 /** A mock Audio: one instance is created lazily, so "created once" proves the element is shared. */
@@ -105,6 +107,51 @@ describe('Live radio', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play Love Radio' })) })
     unmount()
     expect(made[0]!.pause).toHaveBeenCalled()
+  })
+
+  it('groups the stations into three sections, each credited with its own official site', () => {
+    render(<Radio />)
+    const secs = Array.from(document.querySelectorAll('section.rd-sec')).map((s) => ({ h: s.querySelector('h3')!.textContent, names: Array.from(s.querySelectorAll('.rd-nm')).map((n) => n.textContent) }))
+    expect(secs).toEqual([
+      { h: 'Music & Light Rock', names: ['Easy Rock', 'Home Radio'] },
+      { h: 'Pop & Mass', names: ['Love Radio', 'Magic 89.9'] },
+      { h: 'News & Talk', names: ['DZRH'] }
+    ])
+    expect(SECTIONS.map((s) => s.label)).toEqual(['Music & Light Rock', 'Pop & Mass', 'News & Talk'])
+    for (const s of STATIONS) {
+      const a = screen.getByTestId(`radio-${s.id}`).querySelector('a.rd-site')!
+      expect(a.getAttribute('href')).toBe(s.site)
+      expect(a.getAttribute('rel')).toBe('noopener noreferrer')
+    }
+  })
+
+  it('is the one player: a video starting stops the radio, and starting a station tells videos to stop', async () => {
+    const heard: unknown[] = []
+    const off = onOtherMedia('video-test', () => heard.push(1))
+    render(<Radio />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play Love Radio' })) })
+    expect(heard).toHaveLength(1) // the radio announced itself
+    act(() => made[0]!.fire('playing'))
+    expect(screen.getByTestId('radio-love').dataset.state).toBe('playing')
+    act(() => announceMedia('video-test'))
+    expect(screen.getByTestId('radio-love').dataset.state).toBe('idle')
+    expect(made[0]!.pause).toHaveBeenCalled()
+    off()
+  })
+
+  it('an SOS stops the radio', async () => {
+    render(<Radio />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play DZRH' })) })
+    act(() => { window.dispatchEvent(new Event(SOS_STARTED_EVENT)) })
+    expect(screen.getByTestId('radio-dzrh').dataset.state).toBe('idle')
+  })
+
+  it('no Zeno host is used anywhere (every link returned 401 or 404)', () => {
+    for (const s of STATIONS) {
+      expect(new URL(s.url).hostname, s.id).not.toMatch(/zeno/i)
+      expect(new URL(s.site).hostname, s.id).not.toMatch(/zeno/i)
+    }
+    expect(STATIONS.map((s) => s.id)).toEqual(['love', 'easyrock', 'dzrh', 'home', 'magic'])
   })
 
   it('white text on every gradient stop is at least 4.5:1', () => {

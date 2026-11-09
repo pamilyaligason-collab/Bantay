@@ -1,4 +1,8 @@
+import { announceMedia, onOtherMedia } from '../../media/mediaStart'
+import { SOS_STARTED_EVENT } from '../../sos/active'
 import { STATIONS, type Station } from './stations'
+
+const TOKEN = 'radio' // this player's token for mediaStart
 
 export type RadioState = { id: string | null; status: 'idle' | 'connecting' | 'playing' | 'error' }
 
@@ -36,6 +40,7 @@ function el(): HTMLAudioElement {
 export async function playStation(s: Station): Promise<void> {
   const a = el()
   last = s.id
+  announceMedia(TOKEN) // a playing video stops; this player ignores its own start
   set({ id: s.id, status: 'connecting' })
   a.src = s.url
   const ms = media()
@@ -51,7 +56,11 @@ export function stopRadio(): void {
   if (ms) ms.playbackState = 'none'
 }
 
-if (typeof window !== 'undefined') window.addEventListener('pagehide', stopRadio)
+if (typeof window !== 'undefined') {
+  window.addEventListener('pagehide', stopRadio)
+  window.addEventListener(SOS_STARTED_EVENT, stopRadio)
+  onOtherMedia(TOKEN, stopRadio) // a video started
+}
 
 /** Test hook: forget the element and state. */
 export function resetRadioForTests(): void { audio = null; state = { id: null, status: 'idle' }; last = null }
