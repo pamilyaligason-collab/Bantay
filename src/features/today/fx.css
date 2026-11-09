@@ -1,0 +1,9 @@
+/* S26 board S26Today: US dollar card. Rest depth only (the Talk card is the screen's one hero). */
+.fx { display: grid; gap: 8px; min-width: 0; }
+.fx-chip { justify-self: start; padding: 4px 12px; border-radius: 999px; background: var(--tint-amber); color: var(--tint-amber-ink); font-size: 15px; line-height: 20px; font-weight: 600; }
+.fx-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 12px; }
+.fx-rate { font-size: 30px; line-height: 36px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+.fx-sub { font-size: 15px; line-height: 20px; color: var(--muted); }
+.fx-chg { font-size: 16px; line-height: 22px; color: var(--ink); }
+.fx-note { margin: 0; font-size: 15px; line-height: 20px; color: var(--muted); }
+.fx-credit { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 600; color: var(--link); }

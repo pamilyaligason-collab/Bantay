@@ -27,12 +27,21 @@
 .lk2-say { text-align: center; display: grid; gap: 4px; padding: 10px 18px; border-radius: 18px; color: #fff; background: var(--lk-chip); }
 .lk2-say b { font-size: 16px; font-weight: 600; }
 .lk2-say span { font-size: 14px; }
+.lk2-say [role="alert"] { font-size: 17px; line-height: 24px; font-weight: 600; } /* S26: the failed-attempt text is status text, 17 px */
 .lk2-lnk { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 18px; border-radius: 999px; border: 0; color: #fff; font: inherit; font-size: 15px; font-weight: 600; text-decoration: none; background: var(--lk-chip); cursor: pointer; }
 .lk2-sos { align-self: stretch; display: flex; justify-content: space-between; gap: 10px; }
 .lk2-sos .lk2-lnk { min-height: 60px; font-weight: 700; }
 .lk2-sos .lk2-red { background: #B42318; }
 .lk2-sos .lk2-out { background: var(--lk-chip); box-shadow: inset 0 0 0 2px #fff; }
 .lk2-fp:focus-visible, .lk2-lnk:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+/* S26 (D-170) frosted glass: the prompt chip and the two links over the mountains. The solid --lk-chip above is the fallback; the tint is dark enough that white text stays >= 4.5:1 even over a pure white backdrop (FingerGate.test). */
+.lk2 { --lk-frost: rgba(14, 26, 24, .62); }
+:root[data-theme="dark"] .lk2 { --lk-frost: rgba(8, 16, 14, .62); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lk2 { --lk-frost: rgba(8, 16, 14, .62); } }
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .lk2-say, .lk2-mid .lk2-lnk { background: var(--lk-frost); border: 1px solid rgba(255, 255, 255, .28); -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%); box-shadow: var(--shadow-raised); }
+  .lk2-mid .lk2-lnk:active { box-shadow: var(--shadow-press); }
+}
 @media (prefers-reduced-motion: reduce) { .lk2-fog { animation: none; } .lk2-halo { display: none; } }
 .lk2-still .lk2-fog { animation: none; }
 .lk2-still .lk2-halo { display: none; }

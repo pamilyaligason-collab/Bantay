@@ -60,7 +60,7 @@ export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: {
         </div>
         <div className="lk2-say">
           <b>Touch the fingerprint sensor</b>
-          {tried ? <span role="status">That did not work. Touch the sensor again, or use your PIN.</span> : <span>to open Bantay</span>}
+          {tried ? <span role="alert">That did not work. Touch the sensor again, or use your PIN.</span> : <span>to open Bantay</span>}
         </div>
         <button type="button" className="lk2-lnk" onClick={onUsePin}>Use PIN instead</button>
         <button type="button" className="lk2-lnk" onClick={onNotYou}>{shown ? `Not ${shown}?` : 'Not you?'}</button>

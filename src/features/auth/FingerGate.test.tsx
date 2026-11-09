@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import css from './lock.css?raw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { over, parse, ratio as rat } from '../look/contrastMath'
 
 const h = vi.hoisted(() => ({ prompt: vi.fn(), mode: vi.fn(), enrol: vi.fn() }))
 vi.mock('./biometric', () => ({ promptFingerprint: h.prompt, unlockMode: h.mode, openFingerprintEnrol: h.enrol }))
@@ -23,7 +24,7 @@ describe('LockScreen', () => {
     h.prompt.mockResolvedValue(false)
     const onUnlocked = vi.fn(), onUsePin = vi.fn(), onNotYou = vi.fn()
     render(<LockScreen name="Mama" onUnlocked={onUnlocked} onUsePin={onUsePin} onNotYou={onNotYou} />)
-    expect((await screen.findByRole('status')).textContent).toMatch(/did not work/)
+    expect((await screen.findByRole('alert')).textContent).toMatch(/did not work/)
     fireEvent.click(screen.getByRole('button', { name: 'Use PIN instead' }))
     fireEvent.click(screen.getByRole('button', { name: 'Not Mama?' }))
     expect(onUnlocked).not.toHaveBeenCalled()
@@ -191,6 +192,17 @@ describe('lock.css', () => {
     got.forEach((g, i) => { expect(g).toBeGreaterThanOrEqual(4.5); expect(Math.abs(g - want[i])).toBeLessThan(0.15) })
   })
   it('white on the red Call 911 button passes (hand value 6.57)', () => { expect(ratio('#ffffff', '#B42318')).toBeGreaterThan(6.5) })
+  it('S26 frosted glass: chip and links blur the backdrop, with a solid fallback outside @supports', () => {
+    expect(css).toMatch(/@supports \(\(-webkit-backdrop-filter: blur\(1px\)\) or \(backdrop-filter: blur\(1px\)\)\) \{\s*\.lk2-say, \.lk2-mid \.lk2-lnk \{[^}]*backdrop-filter: blur\(20px\)/)
+    expect(css).toMatch(/\.lk2-say \{[^}]*background: var\(--lk-chip\)/)
+    expect(css).toMatch(/\.lk2-lnk \{[^}]*background: var\(--lk-chip\)/)
+  })
+  it.each(['light', 'dark'])('S26 frosted glass %s: white text is >= 4.5:1 over the frost on a pure white backdrop (lighter than any sky stop plus fog) and on the lightest sky stop', (n) => {
+    const sel = n === 'light' ? '\\.lk2 \\{ --lk-frost: (rgba\\([^)]*\\))' : ':root\\[data-theme="dark"\\] \\.lk2 \\{ --lk-frost: (rgba\\([^)]*\\))'
+    const frost = parse(new RegExp(sel).exec(css)![1]!)
+    for (const back of [[255, 255, 255], [232, 228, 216]] as [number, number, number][]) expect(rat([255, 255, 255], over(frost, back))).toBeGreaterThanOrEqual(4.5)
+  })
+  it('S26: the failed-attempt text is 17 px', () => { expect(css).toMatch(/\.lk2-say \[role="alert"\] \{ font-size: 17px/) })
   it('dark tokens are repeated under prefers-color-scheme dark', () => { expect(media).toContain(tok(dark, 'sky-a')); expect(media).toContain(tok(dark, 'chip')) })
   it('emergency targets keep 60px; the halo and fog are off under reduced motion; dark fingerprint override exists', () => {
     expect(css).toMatch(/\.lk2-sos \.lk2-lnk \{ min-height: 60px/)
