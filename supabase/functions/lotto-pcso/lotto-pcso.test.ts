@@ -2,7 +2,7 @@
 // The fixture follows the real lottopcso.com table shapes; most draw numbers are the public 6-8 Nov 2026 results (public draw data, no personal data), some amounts and all skip-rule rows are invented. Expected values are hand-counted, not copied from the parser.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
-import { isoDate, parseResults, runLotto, SOURCE_URL } from './lotto.ts'
+import { isoDate, jackpot, parseNext, parseResults, runLotto, SOURCE_URL } from './lotto.ts'
 
 const html = readFileSync(new URL('./fixtures/results.html', import.meta.url), 'utf8')
 const NOW = Date.parse('2026-11-08T02:00:00Z')
@@ -47,6 +47,46 @@ describe('parseResults', () => {
   })
 })
 
+describe('jackpot', () => {
+  it('reads pesos with cents, Million and Billion; under P5,000,000, junk and nothing are null, never 0', () => {
+    expect(jackpot('₱489,846,673.65')).toBe(489846673.65)
+    expect(jackpot('₱486 Million')).toBe(486000000)
+    expect(jackpot('P12.5 million')).toBe(12500000)
+    expect(jackpot('P1.2 Billion')).toBe(1200000000)
+    expect(jackpot('₱5,000,000.00')).toBe(5000000)
+    for (const bad of ['₱1.00', '₱4,999,999.99', 'P4 Million', '*', 'Stand by', '', undefined]) expect(jackpot(bad)).toBeNull()
+  })
+  it('the P1.00 placeholder rows in the fixture carry no jackpot; the real ones do (hand-counted)', () => {
+    const rows = parseResults(html, NOW)!
+    expect(rows.filter((r) => r.game.startsWith('6/')).map((r) => r.jackpot_php)).toEqual([489846673.65, 31250400.5, 87844738.1, 15000000, 10000000])
+    const placeholder = '<table><tr><th>6/42 Lotto</th><th>November 7, 2026</th></tr><tr><td>Winning Combination</td><td>18-33-28-23-19-04</td></tr><tr><td>Jackpot Prize</td><td>₱1.00</td></tr></table>'
+    expect(parseResults(placeholder, NOW)).toEqual([{ game: '6/42 Lotto', draw_date: '2026-11-07', combination: '18-33-28-23-19-04', jackpot_php: null, winners: null }])
+  })
+})
+
+describe('parseNext', () => {
+  it('keeps the Stand by 6/58 draw of today with its P486 Million jackpot; posted results, past days and placeholders are not upcoming rows', () => {
+    expect(parseNext(html, NOW)).toEqual([{ game: '6/58 Ultra Lotto', draw_date: '2026-11-08', jackpot_php: 486000000 }])
+  })
+  it('the window: today and up to 7 days ahead on a draw day; yesterday, 8 days ahead, a wrong draw day, a P1.00 jackpot and two different jackpots are dropped', () => {
+    const t = (d: string, j = '₱486 Million', g = '6/58 Ultra Lotto') => `<table><tr><th>${g}</th><th>${d}</th></tr><tr><td>Winning Combination</td><td>Stand by</td></tr><tr><td>Jackpot Prize</td><td>${j}</td></tr></table>`
+    const keep = (h: string) => parseNext(h, NOW).map((r) => r.draw_date)
+    expect(keep(t('November 15, 2026'))).toEqual(['2026-11-15']) // Sunday, 7 days ahead
+    expect(keep(t('November 17, 2026'))).toEqual([]) // Tuesday, 9 days ahead
+    expect(keep(t('November 6, 2026'))).toEqual([]) // Friday, yesterday-ish: already past
+    expect(keep(t('November 10, 2026', undefined, '6/45 Mega Lotto'))).toEqual([]) // Tuesday is not a 6/45 day
+    expect(keep(t('November 10, 2026'))).toEqual(['2026-11-10'])
+    expect(keep(t('November 10, 2026', '₱1.00'))).toEqual([])
+    expect(keep(t('November 10, 2026') + t('November 10, 2026', '₱500 Million'))).toEqual([])
+    expect(parseNext(t('November 9, 2026', undefined, '6/55 Grand Lotto'), Date.parse('2026-11-08T16:30:00Z'))).toHaveLength(1) // Manila is already the 9th (a Monday 6/55 day): today counts
+    expect(parseNext(t('November 8, 2026'), Date.parse('2026-11-08T16:30:00Z'))).toEqual([]) // the 8th is over in Manila
+  })
+  it('bad input gives an empty list', () => {
+    expect(parseNext(null, NOW)).toEqual([])
+    expect(parseNext('<html>429</html>', NOW)).toEqual([])
+  })
+})
+
 describe('isoDate', () => {
   it('reads "November 8, 2026" and yyyy-mm-dd; rejects 31 Feb, junk and a short month name', () => {
     expect(isoDate('November 8, 2026')).toBe('2026-11-08')
@@ -59,23 +99,31 @@ describe('isoDate', () => {
 
 describe('runLotto', () => {
   it('upserts the valid rows, trims rows older than 30 days, returns the count', async () => {
-    const port = { upsert: vi.fn(async (_r: { fetched_at: string }[]) => undefined), purge: vi.fn(async (_d: string) => undefined) }
+    const port = { upsert: vi.fn(async (_r: { fetched_at: string }[]) => undefined), purge: vi.fn(async (_d: string) => undefined), upsertNext: vi.fn(async (_r: unknown[]) => undefined), purgeNext: vi.fn(async (_d: string) => undefined) }
     const fetchText = vi.fn(async (_u: string) => html)
     expect(await runLotto(port, fetchText, NOW)).toEqual({ ok: true, rows: 9 })
     expect(fetchText).toHaveBeenCalledWith(SOURCE_URL)
     expect(port.upsert.mock.calls[0]![0]).toHaveLength(9)
     expect(port.upsert.mock.calls[0]![0].every((r) => r.fetched_at === '2026-11-08T02:00:00.000Z')).toBe(true)
     expect(port.purge).toHaveBeenCalledWith('2026-10-09')
+    expect(port.upsertNext).toHaveBeenCalledWith([{ game: '6/58 Ultra Lotto', draw_date: '2026-11-08', jackpot_php: 486000000, fetched_at: '2026-11-08T02:00:00.000Z' }])
+    expect(port.purgeNext).toHaveBeenCalledWith('2026-11-08')
+  })
+  it('a missing lotto_next_jackpot table (0058 not applied) never fails the run or the results', async () => {
+    const port = { upsert: vi.fn(async (_r: unknown[]) => undefined), purge: vi.fn(async (_d: string) => undefined), upsertNext: vi.fn(async (_r: unknown[]) => { throw new Error('write') }), purgeNext: vi.fn(async (_d: string) => undefined) }
+    expect(await runLotto(port, async () => html, NOW)).toEqual({ ok: true, rows: 9 })
+    expect(port.upsert).toHaveBeenCalled()
+    expect(port.purge).toHaveBeenCalled()
   })
   it('a page with tables but no valid draw is a failure (the function answers non-200) and writes and trims nothing', async () => {
-    const port = { upsert: vi.fn(async (_r: unknown[]) => undefined), purge: vi.fn(async (_d: string) => undefined) }
+    const port = { upsert: vi.fn(async (_r: unknown[]) => undefined), purge: vi.fn(async (_d: string) => undefined), upsertNext: vi.fn(async (_r: unknown[]) => undefined), purgeNext: vi.fn(async (_d: string) => undefined) }
     const stale = '<table><tr><th>6/58 Ultra Lotto</th><th>November 8, 2026</th></tr><tr><td>Winning Combination</td><td>Stand by</td></tr></table>'
     expect(await runLotto(port, async () => stale, NOW)).toEqual({ ok: false, rows: 0 })
     expect(port.upsert).not.toHaveBeenCalled()
     expect(port.purge).not.toHaveBeenCalled()
   })
   it('an unreadable page writes and trims nothing', async () => {
-    const port = { upsert: vi.fn(async (_r: unknown[]) => undefined), purge: vi.fn(async (_d: string) => undefined) }
+    const port = { upsert: vi.fn(async (_r: unknown[]) => undefined), purge: vi.fn(async (_d: string) => undefined), upsertNext: vi.fn(async (_r: unknown[]) => undefined), purgeNext: vi.fn(async (_d: string) => undefined) }
     expect(await runLotto(port, async () => '<html>429</html>', NOW)).toEqual({ ok: false, rows: 0 })
     expect(port.upsert).not.toHaveBeenCalled()
     expect(port.purge).not.toHaveBeenCalled()
