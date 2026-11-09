@@ -47,10 +47,10 @@ describe('Family root (D-109)', () => {
   it('opens on Me: Rey and Ma are the only People cards; Ma reads as one line with no medicine name and no number; Papa and Tita are named nowhere, Calendar rows included', async () => {
     render(<Family />)
     await peopleRows()
-    const needs = await screen.findByTestId('needs-list')
-    expect(within(needs).getAllByTestId('need-row')).toHaveLength(1)
-    expect(needs.textContent).toContain('Ma: missed a medicine')
-    expect(needs.textContent).not.toMatch(/Quillon|Brandel|Zorbex|\d doses|\d medicines/)
+    expect(screen.queryByTestId('needs')).toBeNull() // S28: Ma's missed medicine is the one line on her Today card, so Needs does not repeat her
+    const maCard = within(await screen.findByTestId('people-list')).getAllByTestId('people-row').find((r) => r.textContent?.includes('Ma'))!
+    expect(within(maCard).getByTestId('pp-today').textContent).toBe('Missed a medicine')
+    expect(maCard.textContent).not.toMatch(/Quillon|Brandel|Zorbex|\d doses|\d medicines/)
     const cal = screen.getByTestId('calendar')
     await waitFor(() => expect(cal.textContent).toContain('Fetch pills')) // Plan rows for Papa and Tita still show, but under "Family", not by name
     const rows = within(within(cal).getByRole('list', { name: 'Today' })).getAllByRole('listitem')
@@ -120,9 +120,10 @@ describe('Family root (D-109)', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Who to show: Me' }))
     fireEvent.click(within(await screen.findByRole('dialog', { name: 'Who to show' })).getByText('Papa Villar'))
     expect(await screen.findByRole('button', { name: 'Who to show: Papa' })).toBeTruthy()
-    const rows = within(await screen.findByTestId('needs-list')).getAllByTestId('need-row')
-    expect(rows).toHaveLength(1)
-    expect(rows[0]!.textContent).toContain('Ma: missed a medicine')
-    expect(screen.getByTestId('needs').textContent).not.toContain('Papa:')
+    const list = await peopleRows()
+    await waitFor(() => expect(list.textContent).toMatch(/Missed a medicine/))
+    expect(within(list).getAllByTestId('people-row').filter((r) => /Missed a medicine/.test(r.textContent ?? ''))).toHaveLength(1) // Ma's line, once, on her Today card
+    expect(screen.queryByTestId('needs')).toBeNull() // and not again as a Needs row
+    expect(document.body.textContent).not.toContain('Papa:')
   })
 })

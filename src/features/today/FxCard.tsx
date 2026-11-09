@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Section } from '../look'
 import { track } from '../admin/events'
 import { useKv } from '../shell/useKv'
+import { clockIn } from '../weather/forecast'
 import './fx.css'
 
 export const FX_URL = 'https://open.er-api.com/v6/latest/USD'
@@ -9,7 +10,7 @@ export const FX_NOTE = 'Market rate, not the BSP reference rate.'
 export interface FxSaved { php: number; at: number; prev: number | null; prevAt: number | null }
 
 const dayOf = (ms: number) => { const d = new Date(ms); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}` } // the phone's own day
-const timeOf = (ms: number) => new Date(ms).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+const timeOf = (ms: number) => clockIn(ms)
 const dayWord = (ms: number, now: number) => (dayOf(ms) === dayOf(now - 86_400_000) ? 'yesterday' : new Date(ms).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }))
 const peso = (n: number) => `₱${n.toFixed(2)}`
 /** The saved value moves to "previous" only when a new day's rate arrives, so a same-day reload never erases the comparison. */
@@ -55,8 +56,8 @@ export default function FxCard() {
             </div>
           )}
         </div>
-        <p className="fx-note">{FX_NOTE}</p>
-        <a className="fx-credit" onClick={() => void track('action', 'card_fx')} href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer">Rates by exchangerate-api.com</a>
+        <p className="fx-note cd-meta">{FX_NOTE}</p>
+        <a className="fx-credit" onClick={() => void track('action', 'card_fx')} href="https://www.exchangerate-api.com/docs/free" target="_blank" rel="noopener noreferrer">Rates from open.er-api.com (ExchangeRate-API)</a>
       </div>
     </Section>
   )

@@ -4,9 +4,8 @@ import { Icon } from '../shell/Icon'
 import { checkIn, FAIL_TEXT } from '../today/actions'
 import { useActing, useViewedVisibleIds } from '../viewas/viewAs'
 import FmAvatar from './FmAvatar'
-import { bubbleStatus } from './messagesLogic'
-import { messagePrefill } from './Messages'
-import { checkInLabel, rollCall, useCheckInsLoaded, useFamilyPeople, type FamilyPerson } from './roster'
+import { bubbleStatus, reachOptions } from './messagesLogic'
+import { checkInLabel, dial, rollCall, useCheckInsLoaded, useFamilyPeople, type FamilyPerson } from './roster'
 import { useFlagLines, useReportAccess } from './reportData'
 import { useSosActive } from './sosActive'
 import Sheet from './Sheet'
@@ -134,7 +133,7 @@ function FaceSheet({ person, onClose }: { person: FamilyPerson; onClose: () => v
     <Sheet title={person.isMe ? 'You' : name} onClose={onClose}>
       <div className="fm2-sheet-acts">
         {access === true && <a className="btn2" href={`#family/people/${person.id}`} onClick={onClose}><Icon name="heart" size={20} />See their stats</a>}
-        <a className="btn" href="#family/messages" onClick={() => { if (!person.isMe) messagePrefill.text = `@${name} `; onClose() }}><Icon name="msg" size={20} />Send a message</a>
+        {reachOptions(person, dial(person.phone)).map((r) => <a key={r.label} className="btn" href={r.href} onClick={onClose} {...(r.external ? { target: '_blank', rel: 'noreferrer' } : {})}><Icon name={r.label === 'Call' ? 'phone' : 'msg'} size={20} />{r.label === 'Call' ? `Call ${name}` : r.label}</a>)}
       </div>
     </Sheet>
   )

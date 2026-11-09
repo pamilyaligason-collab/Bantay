@@ -21,7 +21,7 @@ export default function PricesCard() {
             <div key={`${i.row.commodity}|${i.row.specification}`} className="dpc-row" role="listitem"><span>{i.label}</span><b>{priceText(i.row)}</b></div>
           ))}
         </div>
-        <p className="dpc-note">{PRICES_NOTE}</p>
+        <p className="dpc-note cd-meta">{PRICES_NOTE}</p>
       </div>
     </Section>
   )

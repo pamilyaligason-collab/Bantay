@@ -5,7 +5,7 @@ import { vdb, type Appointment } from '../health/visitsStore'
 import { ldb, type Medication } from '../log/store'
 import { Icon } from '../shell/Icon'
 import { useActing, useActingCan, useViewedVisibleIds } from '../viewas/viewAs'
-import { KIND, doneRows, kindsOn, laterRows, monthCells, monthName, otherRows, rowsOn, weekSun, type CalRow, type CalSource } from './calendarLogic'
+import { KIND, KIND_ORDER, doneRows, kindsOn, laterRows, monthCells, monthName, otherRows, rowsOn, weekSun, type CalKind, type CalRow, type CalSource } from './calendarLogic'
 import { dayKey } from './events'
 import { addDay, dayLabel, emptyHint } from './planList'
 import { ItemSheet, NoteSheet } from './PlanSheets'
@@ -16,9 +16,12 @@ import { useFamilyPeople } from './roster'
 import { usePlan } from './usePlan'
 import './family.css'
 import './plan.css'
+import './s28-family.css'
 
 type Open = { t: 'item'; item: { kind: 'task'; item?: FamilyTask } | { kind: 'event'; item?: FamilyEvent } } | { t: 'note'; note?: FamilyNote }
 
+/** Kinds drawn as a small icon in the week and month markers (medicine, check-up or lab, visit); the rest stay dots. The legend under the month grid explains each. */
+const MARK = new Set<CalKind>(['dose', 'checkup', 'visit'])
 const NO_MEDS: Medication[] = []
 const NO_APPTS: Appointment[] = []
 
@@ -95,7 +98,7 @@ export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
       <button type="button" key={day} className={`fm2-d${extra ? ' ' + extra : ''}`} aria-pressed={sel === day} aria-current={day === today ? 'date' : undefined} data-today={day === today || undefined} onClick={() => setSel(day)}>
         {label && <small>{label}</small>}
         <span>{num}</span>
-        <i aria-hidden="true">{k.map((x) => <b key={x} data-hue={KIND[x].hue} />)}</i>
+        <i aria-hidden="true">{k.map((x) => MARK.has(x) ? <span key={x} className="fm2-mk" data-hue={KIND[x].hue}><Icon name={KIND[x].icon} size={16} /></span> : <b key={x} data-hue={KIND[x].hue} />)}</i>
         <span className="fm-sr">{`${day === today ? ', today' : ''}, ${k.length ? `${rowsOn(day, src, today).length} things` : 'nothing planned'}`}</span>
       </button>
     )
@@ -119,6 +122,11 @@ export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
         <div className="fm2-week" role="group" aria-label="Days of this week">
           {weekSun(selDate).map((d) => cell(dayKey(d), d.getDate(), d.toLocaleDateString('en', { weekday: 'short' })))}
         </div>
+      )}
+      {month && (
+        <ul className="fm2-key" aria-label="What the marks mean" data-testid="cal-legend">
+          {KIND_ORDER.map((k) => <li key={k}>{MARK.has(k) ? <span className="fm2-mk" data-hue={KIND[k].hue}><Icon name={KIND[k].icon} size={16} /></span> : <b className="fm2-kd" data-hue={KIND[k].hue} aria-hidden="true" />}{k === 'dose' ? 'Medicine' : KIND[k].label}</li>)}
+        </ul>
       )}
       <ul className="fm2-day" aria-label={dayLabel(sel, now)}>
         {rows.map(line)}

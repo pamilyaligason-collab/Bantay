@@ -72,7 +72,7 @@ describe('WeatherScreen', () => {
     for (const a of links) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('details')).toBeNull()
     expect(screen.getByText('How this is made')).toBeTruthy()
-    expect(screen.getByText('Forecast for your area from Open-Meteo (global models, about 9 km). Official warnings: PAGASA.')).toBeTruthy()
+    expect(screen.getByText('Forecast for your spot (rounded to about 1 km) from Open-Meteo. Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeTruthy()
   })
 
   describe('the Official warnings row does not need a forecast', () => {
@@ -144,7 +144,7 @@ describe('WeatherScreen', () => {
     await db.kv.clear(); resetRefresh()
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
-    expect(document.querySelector('.wx-k')!.textContent).toBe('Dampas · your home area')
+    expect(document.querySelector('.wx-k')!.textContent).toBe('Dampas, Tagbilaran · your home area')
   })
 
   it('blend plug point is absent by default; with bantay.flag.wx.blend an empty state and no numbers', async () => {

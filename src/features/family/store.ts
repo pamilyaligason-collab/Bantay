@@ -3,7 +3,7 @@ import { enqueue } from '../../db'
 
 // Family plan (migration 0012): tasks, calendar events and notes. Local first, then the outbox.
 // Own Dexie database so the main schema version is never bumped for this. Unknown is null, never ''.
-export interface FamilyTask { id?: number; clientId: string; title: string; due: string | null; assigneePersonId: string | null; done: boolean }
+export interface FamilyTask { id?: number; clientId: string; title: string; due: string | null; assigneePersonId: string | null; done: boolean; /** Optional reminder clock time "HH:MM" on the due day (S28, family_tasks.remind_at from 0061). Unset = null = no reminder. */ remindAt?: string | null }
 export interface FamilyEvent { id?: number; clientId: string; title: string; startsAt: string; endsAt: string | null; allDay: boolean; personId: string | null }
 export interface FamilyNote { id?: number; clientId: string; body: string; pinned: boolean }
 

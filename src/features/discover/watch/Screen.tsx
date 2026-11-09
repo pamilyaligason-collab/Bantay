@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { MoreGrid, Row } from '../../look'
+import { Row } from '../../look'
+import { MediaCard } from '../../look/media/MediaCard'
+import { MediaList } from '../../look/media/MediaList'
 import { Icon, type IconName } from '../../shell/Icon'
 import { LiteVideo } from '../../media/LiteVideo'
-import { playable, type Video } from '../../health/library/videosLogic'
+import { playable } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
+import { trackWatch } from '../channels'
 
 const TOPIC_ICON: Record<string, IconName> = { 'Be prepared': 'bag', 'Farming and DIY': 'home', Listen: 'moon', 'Recipe videos': 'meal' }
 
@@ -11,18 +14,7 @@ const TOPIC_ICON: Record<string, IconName> = { 'Be prepared': 'bag', 'Farming an
 export const WATCH_PICK = 'dc.watch'
 const readPick = () => { try { return sessionStorage.getItem(WATCH_PICK) } catch { return null } }
 
-/** A 160 x 90 still picture (i.ytimg.com, no cookies). If it cannot load, the drawn tile and the title stand in. Tapping it picks the video; nothing else loads from YouTube. */
-function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
-  const [off, setOff] = useState(false)
-  return (
-    <button type="button" className="dc-poster" aria-pressed={on} aria-label={["Video", v.title, v.source, v.minutes != null ? `${v.minutes} minutes` : null].filter(Boolean).join(", ")} data-thumb={off ? 'off' : 'on'} onClick={pick}>
-      {!off && <img src={`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
-      <span className="dc-poster-cap" data-contrast-bg={off ? undefined : '#555555'}><b>{v.title}</b>{v.minutes ? <> <span>{v.minutes} min</span></> : null}</span>
-    </button>
-  )
-}
-
-/** Discover > Watch: a checked list of official videos. A grid of 4 posters with Show more (D-156), the chosen video in a player that loads only after a second tap (LiteVideo, no-cookie address,
+/** Discover > Watch: a checked list of official videos. One column of 4 video cards with Show more (D-156, D-180), the chosen video in a player that loads only after a second tap (LiteVideo, no-cookie address,
  *  with an "Open in YouTube" link), then one row per topic and Live TV (coming). */
 export default function Watch() {
   const all = DISCOVER_VIDEOS.filter(playable)
@@ -35,15 +27,15 @@ export default function Watch() {
   const list = topic ? all.filter((v) => v.topic === topic) : all
   const chosen = list.find((v) => v.id === sel)
   useEffect(() => { if (chosen) player.current?.querySelector<HTMLElement>('.lv-play, .lv-yt')?.focus() }, [chosen?.id]) // S26: focus moves to the player when it opens
-  const pick = (id: string) => { setSel(id); setTimeout(() => player.current?.scrollIntoView?.({ block: 'nearest' }), 0) }
+  const pick = (id: string) => { setSel(id); trackWatch(all.find((v) => v.id === id)?.source); setTimeout(() => player.current?.scrollIntoView?.({ block: 'nearest' }), 0) }
   return (
     <div className="dc-list" data-testid="watch">
       <div className="dc-sh"><h2 className="sh-h2">{topic ?? 'Checked videos'}</h2><span className="sub">{list.length}</span></div>
-      <MoreGrid key={topic ?? 'all'} label={topic ? `${topic} videos` : 'Checked videos'} testId="watch-grid">
-        {list.map((v) => <Poster key={v.id} v={v} on={v.id === sel} pick={() => pick(v.id)} />)}
-      </MoreGrid>
+      <MediaList key={topic ?? 'all'} label={topic ? `${topic} videos` : 'Checked videos'} testId="watch-grid">
+        {list.map((v) => <MediaCard key={v.id} variant="row" id={v.id} title={v.title} channel={v.source} minutes={v.minutes} pressed={v.id === sel} onClick={() => pick(v.id)} />)}
+      </MediaList>
       {chosen && (
-        <div ref={player} className="card dc-player" data-testid="watch-player">
+        <div ref={player} className="card dc-player" data-testid="watch-player" onClickCapture={(e) => { if ((e.target as Element).closest('.lv-play')) trackWatch(chosen.source) }}>
           <LiteVideo key={chosen.id} id={chosen.id} title={chosen.title} minutes={chosen.minutes} />
           <span className="sub">{chosen.topic} · {chosen.source}</span>
         </div>

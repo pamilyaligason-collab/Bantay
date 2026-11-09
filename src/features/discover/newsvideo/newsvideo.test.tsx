@@ -1,6 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import newsCss from './newsvideo.css?raw'
 
 // A fake supabase: rows is what the table answers; eq narrows by channel_id like the real filter; `fail` is a read error.
 const h = vi.hoisted(() => ({
@@ -12,7 +11,7 @@ const h = vi.hoisted(() => ({
   reads: 0
 }))
 const tr = vi.hoisted(() => ({ calls: [] as string[] }))
-vi.mock('../../admin/events', () => ({ track: async (_k: string, n: string) => { tr.calls.push(n); return true } }))
+vi.mock('../../admin/events', async (orig) => ({ ...(await orig<typeof import('../../admin/events')>()), track: async (_k: string, n: string) => { tr.calls.push(n); return true } }))
 vi.mock('../../../db', () => ({ db: { kv: { get: async (k: string) => { h.reads++; return h.kv.get(k) }, put: async (v: { key: string; value: unknown }) => { h.kv.set(v.key, v) } } } }))
 vi.mock('../../auth/client', () => ({
   get supabase() {
@@ -32,7 +31,7 @@ vi.mock('../../auth/client', () => ({
     }
   }
 }))
-import { ageBadge, loadNewsVideos, updatedLine } from './api'
+import { ageText, loadNewsVideos, updatedLine } from './api'
 import { NewsVideos } from './NewsVideos'
 
 const NOW = Date.parse('2026-11-08T12:00:00Z')
@@ -47,17 +46,17 @@ const SEVEN = [mk(1, GMA, 'GMA News', 40), mk(2, ABS, 'ABS-CBN News', 90), mk(3,
 beforeEach(() => { h.rows = []; h.fail = false; h.connected = true; h.kv.clear(); h.eqs = []; h.reads = 0 })
 afterEach(cleanup)
 
-describe('ageBadge and updatedLine', () => {
-  it('NEW under an hour, then hours, then days', () => {
+describe('ageText and updatedLine', () => {
+  it('minutes under an hour, then hours, then days', () => {
     const at = (m: number) => new Date(NOW - m * 60_000).toISOString()
-    expect(ageBadge(at(40), NOW)).toBe('NEW · 40 MIN')
-    expect(ageBadge(at(0), NOW)).toBe('NEW · 1 MIN')
-    expect(ageBadge(at(59), NOW)).toBe('NEW · 59 MIN')
-    expect(ageBadge(at(60), NOW)).toBe('1 HR')
-    expect(ageBadge(at(300), NOW)).toBe('5 HR')
-    expect(ageBadge(at(24 * 60), NOW)).toBe('1 DAY')
-    expect(ageBadge(at(2 * 24 * 60 + 5), NOW)).toBe('2 DAYS')
-    expect(ageBadge(new Date(NOW + 5 * 60_000).toISOString(), NOW)).toBe('NEW · 1 MIN') // a clock a little behind never shows a negative age
+    expect(ageText(at(40), NOW)).toBe('40 min ago')
+    expect(ageText(at(0), NOW)).toBe('1 min ago')
+    expect(ageText(at(59), NOW)).toBe('59 min ago')
+    expect(ageText(at(60), NOW)).toBe('1 hr ago')
+    expect(ageText(at(300), NOW)).toBe('5 hr ago')
+    expect(ageText(at(24 * 60), NOW)).toBe('1 day ago')
+    expect(ageText(at(2 * 24 * 60 + 5), NOW)).toBe('2 days ago')
+    expect(ageText(new Date(NOW + 5 * 60_000).toISOString(), NOW)).toBe('1 min ago') // a clock a little behind never shows a negative age
   })
   it('Updated n min ago, hours, days', () => {
     expect(updatedLine(NOW - 12 * 60_000, NOW)).toBe('Updated 12 min ago')
@@ -104,24 +103,25 @@ describe('loadNewsVideos', () => {
 })
 
 describe('Regional news section', () => {
-  it('shows heading, Updated 12 min ago, five chips, the newest as a wide lead card then 4 cards and Show more', async () => {
+  it('shows heading, Updated 12 min ago, NO channel chips, the newest as a hero card then 4 rows and Show more', async () => {
     h.rows = SEVEN
     render(<NewsVideos now={NOW} />)
     const sec = await screen.findByTestId('dc-regional')
     expect(within(sec).getByRole('heading', { level: 2 }).textContent).toBe('Regional news')
     expect(sec.textContent).toContain('Updated 12 min ago')
-    const chips = within(within(sec).getByRole('group', { name: 'News channels' })).getAllByRole('button')
-    expect(chips.map((b) => b.textContent)).toEqual(['All', 'GMA News', 'ABS-CBN News', 'Bilyonaryo', 'GMA Public Affairs'])
-    expect(chips.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false', 'false'])
+    expect(within(sec).queryByRole('group', { name: 'News channels' })).toBeNull() // S28: the channel chip row is gone
+    expect(within(sec).queryByRole('button', { name: 'GMA News' })).toBeNull()
+    expect(within(sec).queryByRole('button', { name: 'All' })).toBeNull()
+    expect(sec.querySelector('.nw-chip, .nv-chips, select')).toBeNull()
     const lead = within(sec).getByTestId('nv-lead')
-    expect(lead.textContent).toContain('NEW · 40 MIN')
+    expect(lead.className).toContain('md-hero')
+    expect(lead.querySelector('.md-meta')!.textContent).toBe('GMA News · 40 min ago')
     expect(lead.textContent).toContain('Story 1')
-    expect(lead.textContent).toContain('GMA News')
     expect(lead.querySelector('img')!.getAttribute('src')).toBe('https://i.ytimg.com/vi/vid00000001/mqdefault.jpg')
     expect(lead.querySelector('img')!.getAttribute('referrerpolicy')).toBe('no-referrer')
     const cards = within(sec).getAllByTestId('nv-card')
     expect(cards).toHaveLength(4) // 5 rows after the lead: 4 show, 1 more
-    expect(cards.map((c) => c.querySelector('.nv-age')!.textContent)).toEqual(['1 HR', '5 HR', '1 DAY', '2 DAYS'])
+    expect(cards.map((c) => c.querySelector('.md-meta')!.textContent)).toEqual(['ABS-CBN News · 1 hr ago', 'GMA News · 5 hr ago', 'ABS-CBN News · 1 day ago', 'GMA News · 2 days ago'])
     fireEvent.click(within(sec).getByRole('button', { name: 'Show 1 more' }))
     expect(within(sec).getAllByTestId('nv-card')).toHaveLength(5)
     expect(sec.querySelector('.carousel')).toBeNull()
@@ -138,35 +138,28 @@ describe('Regional news section', () => {
     fireEvent.click(screen.getAllByTestId('nv-card')[0]!)
     expect(within(screen.getByTestId('nv-player')).getByRole('button', { name: 'Play Story 2' })).toBeTruthy()
   })
-  it('a news card is named "Video, title, channel", counts card_regional_video on a tap, and focus moves to the player', async () => {
+  it('a news card is named "Video, title, channel", counts card_regional_video and its channel (watch_ch_<key>) on a tap, and focus moves to the player', async () => {
     h.rows = SEVEN
     tr.calls.length = 0
     render(<NewsVideos now={NOW} />)
     const lead = await screen.findByTestId('nv-lead')
-    expect(lead.getAttribute('aria-label')).toBe('Video, Story 1, GMA News')
+    expect(lead.getAttribute('aria-label')).toBe('Video, Story 1, GMA News, 40 min ago') // the age is on the card, so it is in the name (WCAG 2.5.3)
     fireEvent.click(lead)
+    expect(tr.calls).toEqual(['card_regional_video', 'watch_ch_gma_news'])
+    fireEvent.click(screen.getAllByTestId('nv-card')[0]!)
+    expect(tr.calls.slice(2)).toEqual(['card_regional_video', 'watch_ch_abs_cbn_news'])
+    await waitFor(() => expect(document.activeElement).toBe(within(screen.getByTestId('nv-player')).getByRole('button', { name: 'Play Story 2' })))
+  })
+  it('a channel that is not on the list is counted as a card tap only, never under a made-up name', async () => {
+    h.rows = [mk(1, 'UCzzzzzzzzzzzzzzzzzzzzzz', 'Some Other Channel 9', 10)]
+    tr.calls.length = 0
+    render(<NewsVideos now={NOW} />)
+    fireEvent.click(await screen.findByTestId('nv-lead'))
     expect(tr.calls).toEqual(['card_regional_video'])
-    await waitFor(() => expect(document.activeElement).toBe(within(screen.getByTestId('nv-player')).getByRole('button', { name: 'Play Story 1' })))
   })
-  it('a chip filters to one channel (and says so with aria-pressed); All shows every channel again; an empty channel says so', async () => {
-    h.rows = SEVEN
-    render(<NewsVideos now={NOW} />)
-    await screen.findByTestId('nv-lead')
-    fireEvent.click(screen.getByRole('button', { name: 'ABS-CBN News' }))
-    await waitFor(() => expect(screen.getByTestId('nv-lead').textContent).toContain('Story 2'))
-    expect(screen.getByRole('button', { name: 'ABS-CBN News' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getAllByTestId('nv-card').map((c) => c.textContent)).toEqual([expect.stringContaining('Story 4'), expect.stringContaining('Story 6')])
-    fireEvent.click(screen.getByRole('button', { name: 'Bilyonaryo' }))
-    expect(await screen.findByText('No news videos yet')).toBeTruthy()
-    expect(screen.queryByText(/Updated/)).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'All' }))
-    await waitFor(() => expect(screen.getByTestId('nv-lead').textContent).toContain('Story 1'))
-    expect(screen.getAllByTestId('nv-card')).toHaveLength(4)
-  })
-  it('an empty table shows the quiet message, with the chips', async () => {
+  it('an empty table shows the quiet message', async () => {
     render(<NewsVideos now={NOW} />)
     expect(await screen.findByText('No news videos yet')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'GMA News' })).toBeTruthy()
   })
   it('offline with a saved copy: the last list shows with its own Updated time; offline with nothing saved: hidden', async () => {
     h.rows = SEVEN
@@ -182,12 +175,5 @@ describe('Regional news section', () => {
     const { container } = render(<NewsVideos now={NOW} />)
     await waitFor(() => expect(h.reads).toBeGreaterThan(0)) // the read has settled with nothing saved
     expect(container.innerHTML).toBe('')
-  })
-})
-
-describe('layout rules', () => {
-  it('chips wrap (no swipe row) and cards fill their cell', () => {
-    expect(newsCss).toMatch(/\.nv-chips \{[^}]*flex-wrap: wrap/)
-    expect(newsCss).toMatch(/\.card\.nv-card \{[^}]*width: 100%/)
   })
 })

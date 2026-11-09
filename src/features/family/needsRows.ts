@@ -8,7 +8,7 @@ export interface NeedRow { id: string; person: FamilyPerson | undefined; title: 
 
 /** What still needs you on the Family root (D-109). Other people's cards are not on the page, so a writer carer keeps the glance here: "Ma: missed a medicine", with no medicine name and no number, and Open puts that person on show.
  *  The caller passes only you and the people you are a writer carer of (Family's Root filters before it gets here). Also: unanswered "Still taking it?" questions (no medicine name either) unless that person's card is on show and already says so, and every "phone may miss alarms" (a card never carries those). */
-export function needsRows(items: PersonFocus[], phoneAlerts: AlertRow[], people: FamilyPerson[], shownId?: string): NeedRow[] {
+export function needsRows(items: PersonFocus[], phoneAlerts: AlertRow[], people: FamilyPerson[], shownId?: string, cardIds: string[] = []): NeedRow[] {
   const out: NeedRow[] = []
   for (const it of items) {
     const name = shortName(it.person.name) ?? 'Someone'
@@ -16,7 +16,7 @@ export function needsRows(items: PersonFocus[], phoneAlerts: AlertRow[], people:
       const a = it.asks[0]!
       out.push({ id: `q|${it.person.id}`, person: it.person, title: `${name}: ${it.asks.length} ${it.asks.length === 1 ? 'question' : 'questions'}`, sub: `Asked ${a.days === 1 ? 'yesterday' : `${a.days} days ago`}`, action: { kind: 'answer', ask: a } })
     }
-    if (it.missedDoses.length && !it.person.isMe) out.push({ id: `d|${it.person.id}`, person: it.person, title: `${name}: missed a medicine`, sub: 'Open to see which one', action: { kind: 'select', personId: it.person.id } })
+    if (it.missedDoses.length && !it.person.isMe && !(it.focus.kind === 'missed' && cardIds.includes(it.person.id))) out.push({ id: `d|${it.person.id}`, person: it.person, title: `${name}: missed a medicine`, sub: 'Open to see which one', action: { kind: 'select', personId: it.person.id } })
   }
   const seen = new Set<string>()
   for (const r of phoneAlerts) {

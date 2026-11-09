@@ -227,3 +227,24 @@ describe('Calendar holds the old Plan (D-168)', () => {
     expect((await fdb.notes.toArray())[0]).toMatchObject({ body: 'Gate code 1234', pinned: true })
   })
 })
+
+// S28 (D-168): medicine and check-up markers on the week and month grids, with a legend under the month grid.
+describe('Calendar markers', () => {
+  it('shows an icon marker on a check-up day (week and month) and a legend only under the month grid', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
+    const { vdb } = await import('../health/visitsStore')
+    await vdb.appointments.clear()
+    await vdb.appointments.add({ personId: 'p1', startsAt: new Date(2026, 9, 27, 9, 0).toISOString(), purpose: 'Annual check-up' })
+    const { container } = render(<Calendar />)
+    await waitFor(() => expect(container.querySelector('.fm2-d[data-today] .fm2-mk[data-hue="teal"]')).toBeTruthy()) // the check-up's own marker on today (teal, not Note's lilac)
+    expect(screen.queryByTestId('cal-legend')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
+    const legend = await screen.findByTestId('cal-legend')
+    expect(within(legend).getAllByRole('listitem').map((l) => l.textContent)).toEqual(['Medicine', 'Check-up or lab', 'Visit', 'Event', 'Task', 'Note'])
+    expect(container.querySelector('.fm2-month .fm2-d[data-today] .fm2-mk')).toBeTruthy()
+    const hues = [...legend.querySelectorAll('li')].map((li) => li.querySelector('[data-hue]')!.getAttribute('data-hue'))
+    expect(new Set(hues).size).toBe(6) // every kind has its own colour: the check-up is no longer Note's lilac
+    expect(hues[1]).toBe('teal')
+  })
+})

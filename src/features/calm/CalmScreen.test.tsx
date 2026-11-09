@@ -91,27 +91,22 @@ describe('arrival', () => {
 })
 
 describe('Listen and watch and crisis', () => {
-  it('one row: two radio cards, the podcast link and four checked videos, no flag needed, and loads nothing before a tap', () => {
+  it('radio by section, then four checked videos, no flag needed, and loads nothing before a tap', () => {
     render(<CalmScreen />)
     const media = screen.getByTestId('calm-media')
-    fireEvent.click(within(media).getByRole('button', { name: 'Show 4 more' })) // S25: a grid of 4, then Show more
     const row = screen.getByTestId('calm-row')
-    expect(row.querySelector('.more-grid')).not.toBeNull()
     expect(media.querySelectorAll('.carousel')).toHaveLength(0)
-    expect(row.querySelectorAll('.more-grid > *')).toHaveLength(8)
-    expect(within(row).getAllByRole('button', { name: /^Play Radio/ }).map((b) => b.getAttribute('aria-label'))).toEqual(['Play Radio Paradise Mellow', 'Play Radio Swiss Classic'])
-    expect(within(row).getByRole('link', { name: /SomaFM/ }).getAttribute('href')).toBe('https://somafm.com/') // refuses the app's host, so a plain link
-    const links = within(row).getAllByRole('link', { name: /Tara Brach/ })
-    expect(links.map((a) => a.getAttribute('href'))).toEqual(['https://www.tarabrach.com/podcast/'])
-    expect(links[0]!.getAttribute('target')).toBe('_blank')
-    expect(links[0]!.getAttribute('rel')).toBe('noopener noreferrer')
-    expect(within(row).getAllByRole('button', { name: /^Play (?!Radio)/ })).toHaveLength(4)
-    expect(within(media).getByRole('button', { name: /Play Steps for Stress/ })).toBeTruthy()
-    expect(media.textContent).toMatch(/Channel: NHS inform/)
+    expect(row.querySelectorAll('.md-list > *')).toHaveLength(4)
+    expect(row.querySelectorAll('[data-hero]')).toHaveLength(0) // Calm's own breathing card is the one hero; the videos are rows
+    expect(row.querySelector('.more-grid')).toBeNull()
+    expect(within(media).getAllByRole('button', { name: /^Play (Love Radio|Easy Rock|DZRH|Home Radio|Magic 89\.9)/ })).toHaveLength(5)
+    expect(['music', 'pop', 'news'].map((s) => within(media).getByTestId(`radio-sec-${s}`).querySelectorAll('li').length)).toEqual([2, 2, 1])
+    expect(within(row).getAllByRole('button', { name: /^Video, / }).map((b) => b.getAttribute('aria-label'))).toEqual(['Video, Steps for Stress: a breathing exercise, NHS inform', 'Video, Heavy Rain and Thunder Soundscape, The Ambient Warrior', 'Video, Forest stream with birdsong, Wildflow Nature', 'Video, Ocean waves on a pebble beach, Alesia in Wonderland'])
+    expect(within(media).getByRole('button', { name: /^Video, Steps for Stress/ })).toBeTruthy()
+    expect(media.textContent).toMatch(/NHS inform/)
+    expect(media.textContent).not.toMatch(/Radio Paradise|Swiss|SomaFM|Tara Brach/)
     expect(media.querySelector('iframe, video')).toBeNull() // nothing embeds before a tap
-    expect(media.querySelectorAll('audio')).toHaveLength(1)
-    expect(media.querySelector('audio')!.hasAttribute('src')).toBe(false) // and nothing streams
-    expect(media.textContent).toMatch(/Radio plays here after a tap\. Radio stops when you leave Calm\. Videos use YouTube privacy mode\. Links open their sites\./)
+    expect(media.textContent).toMatch(/Radio plays here after a tap\. Radio stops when you leave Calm\./)
   })
   it('Relaxing radio lands on Listen and watch: #calm/listen scrolls the section into view', () => {
     const into = vi.fn(); Element.prototype.scrollIntoView = into as never
@@ -123,18 +118,15 @@ describe('Listen and watch and crisis', () => {
   })
   it('a tap loads the privacy-mode player for that video only', () => {
     render(<CalmScreen />)
-    fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' })) // S25
-    fireEvent.click(screen.getByRole('button', { name: /Play Heavy Rain/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Video, Heavy Rain/ })) // the card opens and plays at once: one tap
     const frames = screen.getByTestId('calm-media').querySelectorAll('iframe')
     expect(frames).toHaveLength(1)
     expect(frames[0]!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/gzUSh6eEtKE\?/)
   })
-  it('offline: one plain line, links stay', () => {
+  it('offline: one plain line', () => {
     const on = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     render(<CalmScreen />)
     expect(screen.getByText(/You are offline/)).toBeTruthy()
-    expect(within(screen.getByTestId('calm-media')).getByRole('link', { name: /Tara Brach/ })).toBeTruthy()
-    expect((screen.getByRole('button', { name: 'Play Radio Paradise Mellow' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.getByTestId('calm-row').nextElementSibling!.textContent).toMatch(/^You are offline/) // takes the note's place, so the crisis card does not move down
     on.mockRestore()
   })

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Icon, type IconName } from '../shell/Icon'
 import type { Tint } from './Row'
+import './cards.css'
 import './v13.css'
 
 /** 2-column tile (contract 4): kicker, big value, sub line and a 44 px action label at the bottom. The whole tile is the link.

@@ -77,7 +77,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('group', { name: 'Checked videos' })).toBeVisible() // a MoreGrid now, not a scrolling row
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
       const p = (await page.getByRole('button', { name: /^Video, / }).first().boundingBox())!
-      expect(p.width).toBeGreaterThanOrEqual(160); expect(p.height).toBeGreaterThanOrEqual(90) // grid posters, 16:9
+      expect(p.width).toBeGreaterThanOrEqual(160); expect(p.height).toBeGreaterThanOrEqual(88) // D-180: a media row card is 88 px at least (128 px still, 16:9)
     })
   })
 }

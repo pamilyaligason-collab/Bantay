@@ -61,7 +61,7 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
       await expect(fx).toBeVisible()
       await expect(fx).toContainText('₱63.10')
       await expect(fx).toContainText('Market rate, not the BSP reference rate.')
-      await expect(fx).toContainText('Rates by exchangerate-api.com')
+      await expect(fx).toContainText('Rates from open.er-api.com (ExchangeRate-API)')
       if (mode === 'today-rate') {
         await expect(fx.getByTestId('fx-change')).toContainText('Up ₱0.08 since yesterday')
         await expect(fx.getByRole('status')).toHaveCount(0)

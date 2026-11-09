@@ -6,11 +6,12 @@ import { usePlan } from '../family/usePlan'
 import type { FamilyEvent, FamilyTask } from '../family/store'
 import { useActingPersonId } from '../viewas/viewAs'
 import { Icon } from '../shell/Icon'
+import { clockIn } from '../weather/forecast'
 
 const SHOW = 4
 export type PlanRow = { key: string; title: string; time: string; task?: FamilyTask; event?: FamilyEvent; sort: string }
 
-const hhmm = (iso: string) => new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
+const hhmm = (iso: string) => clockIn(iso)
 
 // another person's event shows only as "Doctors & Lab Appointments" (D-109, Lloyd 2026-11-09); 'self' is the person on show (View-as follows the acting person); while unknown every personal event is masked
 const eventTitle = (e: FamilyEvent, selfId: string | null) => (e.personId && e.personId !== selfId ? MASKED_APPT : e.title)

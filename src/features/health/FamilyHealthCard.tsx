@@ -6,8 +6,11 @@ import { familyFeedOn } from '../family/flags'
 import FmAvatar from '../family/FmAvatar'
 import { listPhotos } from '../family/memoriesApi'
 import { listMessages } from '../family/messagesApi'
-import { rollCall, useCheckInsLoaded, useFamilyPeople } from '../family/roster'
+import { checkInLabel, rollCall, useCheckInsLoaded, useFamilyPeople } from '../family/roster'
+import { useCarerIds } from '../family/CarerCards'
 import { useLinkedPeople, useWriterFlags } from '../family/useFamilyScope'
+import { supabase } from '../auth/client'
+import { FamilyRings } from './FamilyRings'
 import { hdb } from '../records/store'
 import { useActing } from '../viewas/viewAs'
 import { properName } from './medName'
@@ -25,6 +28,7 @@ export function FamilyHealthCard({ ids }: { ids: string[] }) {
   const key = ids.join()
   const people = useMemo(() => linked.filter((p) => key.split(',').includes(p.id)), [linked, key]) // only you and the people you are linked to (D-109), and of those who the viewer (or the person being acted as) can see
   const last = useCheckInsLoaded()
+  const writable = useCarerIds()
   const flags = useWriterFlags(people) // flag lines only for you and the people you are a writer carer of (D-109)
   const [photos, setPhotos] = useState<number | null>(null) // null: offline or not set up, so no row
   const [msgs, setMsgs] = useState<number | null>(null)
@@ -51,6 +55,7 @@ export function FamilyHealthCard({ ids }: { ids: string[] }) {
   if (people.length < 2) return null
   const rc = last ? rollCall(people, last) : null
   const flagged = people.filter((p) => flags[p.id])
+  const detail = people.filter((p) => p.isMe || acting || !supabase || writable.includes(p.id)) // same set as useWriterFlags (D-109): rings carry numbers, so read-only links get none
   return (
     <Section title="Family health" link={{ href: posts.length ? '#family/feed' : '#family', label: 'All updates' }} testId="family-health">
       <div className="card fh">
@@ -61,6 +66,9 @@ export function FamilyHealthCard({ ids }: { ids: string[] }) {
         <div className="fh-acts">
           {acting ? <span className="sub fh-share">View only</span> : <a className="btn2 fh-share" href="#family/messages">Share yours</a>}
         </div>
+        <ul className="fh-ms" aria-label="Family today" data-testid="fh-members">
+          {detail.map((p) => <FamilyRings key={p.id} person={p} checkedIn={last ? checkInLabel(last[p.id]).ok : null} />)}
+        </ul>
         {(posts.length > 0 || flagged.length > 0 || !!photos || !!msgs) && (
           <GroupedList icons>
             {posts.map((x) => {

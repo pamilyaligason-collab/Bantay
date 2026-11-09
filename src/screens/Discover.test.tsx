@@ -10,10 +10,11 @@ afterEach(cleanup)
 const day = (m: number, d: number) => new Date(2026, m - 1, d, 10, 20)
 
 describe('Discover overview (#discover)', () => {
-  it('draws the large title, then Learn, the Top story hero and the rest in order; no season row, no tile grid, no pill row', () => {
+  it('draws the large title, then Learn, the Top story hero and the rest in order; no season row, no tile grid, no pill row', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(day(10, 28)) // Undas: the season row no longer shows here (S24)
     const { container } = render(<Discover />)
     vi.useRealTimers()
+    await screen.findByTestId('dc-hero') // Top stories are read once a day before they show
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Discover')
     expect(screen.getByTestId('dc-head')).toBeTruthy()
     expect(container.querySelectorAll('[data-hero]').length).toBe(1)

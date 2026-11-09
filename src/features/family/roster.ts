@@ -4,6 +4,7 @@ import { loadFamily } from '../auth/family'
 import { ldb } from '../log/store'
 import { usePeople } from '../records/useRecordsServer'
 import { useProfiles, useSelfPersonId } from '../setup/useProfile'
+import { useMessengers } from './messengerApi'
 
 export interface FamilyPerson {
   id: string
@@ -12,7 +13,7 @@ export interface FamilyPerson {
   /** Small cached picture from the sign-in list (data URL), used until the real photo loads. */
   thumb: string | null
   phone: string | null
-  /** Saved Messenger name (m.me/<name>). No profile column holds one yet, so this stays unset until one is saved; unset = no Messenger button. */
+  /** Saved Messenger name (m.me/<name>, people.messenger from migration 0061). Unset or not readable = no Messenger button. */
   messenger?: string | null
   birthdate: string | null
   isMe: boolean
@@ -23,6 +24,7 @@ export function useFamilyPeople(): { people: FamilyPerson[]; selfId: string | nu
   const stored = usePeople()
   const profiles = useProfiles()
   const selfId = useSelfPersonId()
+  const names = useMessengers()
   const people = useMemo(() => {
     const cached = loadFamily()
     const ids = new Set([...stored.map((p) => p.id), ...cached.map((c) => c.personId)])
@@ -30,10 +32,10 @@ export function useFamilyPeople(): { people: FamilyPerson[]; selfId: string | nu
       const s = stored.find((p) => p.id === id)
       const c = cached.find((m) => m.personId === id)
       const p = profiles[id]
-      return { id, name: s?.name ?? c?.displayName ?? 'Family member', photoPath: p?.photoPath ?? null, thumb: c?.photo ?? null, phone: p?.phone ?? null, birthdate: p?.birthdate ?? null, isMe: id === selfId }
+      return { id, name: s?.name ?? c?.displayName ?? 'Family member', photoPath: p?.photoPath ?? null, thumb: c?.photo ?? null, phone: p?.phone ?? null, messenger: names[id] ?? null, birthdate: p?.birthdate ?? null, isMe: id === selfId }
     })
     return list.sort((a, b) => Number(b.isMe) - Number(a.isMe) || a.name.localeCompare(b.name))
-  }, [stored, profiles, selfId])
+  }, [stored, profiles, selfId, names])
   return { people, selfId }
 }
 

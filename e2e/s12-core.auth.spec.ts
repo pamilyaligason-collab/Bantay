@@ -155,8 +155,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await settle(page)
     await shot(page, 'family-member', scheme)
     await noSideways(page)
-    await page.getByRole('button', { name: 'Message Ate' }).click()
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Message Ate' })).toHaveCount(0) // S28 lane E: the group chat is read-only alerts, so the person page has no Message button; the People card has the Messenger / WhatsApp / Call link
   })
 
   test(`simple-today with a dose and nothing due ${scheme}`, async ({ page }) => {

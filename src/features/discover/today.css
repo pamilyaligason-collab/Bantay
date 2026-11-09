@@ -3,7 +3,7 @@
 .dc-seg button { min-height: 44px; border: 0; border-radius: 10px; background: none; font: inherit; font-size: 15px; font-weight: 500; color: var(--ink); }
 .dc-seg button[aria-selected="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(40, 30, 10, .14); font-weight: 600; }
 .dc-seg button:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-.dc-panel { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.dc-panel { display: flex; flex-direction: column; gap: var(--sp-5, 24px); min-width: 0; }
 .dc-panel > * { min-width: 0; }
 .nw { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .nw-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
@@ -40,8 +40,8 @@
 .nw-save[aria-pressed="true"] { color: var(--green2); }
 .dc-more { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 4px; border: 0; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--link); }
 .nw-off { min-height: 52px; }
-[data-testid="dc-watch"] .dc-poster-box { height: 210px; }
 .dc-lgrid, .dc-rgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 299px) { .dc-lgrid, .dc-rgrid { grid-template-columns: minmax(0, 1fr); } } /* 200% text: two 80 px cards cannot hold a title */
 .card.dc-lc { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 120px; padding: 14px; text-decoration: none; background: var(--tint-fill); color: var(--tint-ink); }
 .dc-lc[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
 .dc-lc[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
@@ -62,26 +62,13 @@
 .dc-credit { position: relative; z-index: 1; font-size: 12px; line-height: 16px; color: var(--muted); }
 .dc-credit a { display: inline-flex; align-items: center; min-height: 44px; color: var(--link); } /* the credit link on its own line, 44 px target */
 .dc-rcard .dc-credit, .lr-dish .dc-credit { order: 9; } /* FX-DISC fix1: the credit is the last line of a card, at its bottom edge, so a tap in the middle opens the recipe */
-/* S24 Discover: video stills are the card picture and zoom slowly (Ken Burns, transform only; still under reduced motion). */
-.dc-still img { transform-origin: 50% 50%; animation: dc-kb 18s ease-in-out infinite alternate; }
-@keyframes dc-kb { from { transform: scale(1.02) translate(0, 0); } to { transform: scale(1.14) translate(-3%, -2%); } }
 @keyframes dc-drift { from { transform: translate(0, 0) rotate(0); } to { transform: translate(8%, 6%) rotate(8deg); } }
 /* Learn cards: a soft blurred blob drifts behind the text. The blob is a darker hue of the card tint (the tint ink mixed into the fill), at .35, so it follows light and dark and the ink stays readable. */
 .card.dc-lc { overflow: hidden; isolation: isolate; }
 .dc-lc-blob { position: absolute; inset: -20%; z-index: -1; pointer-events: none; opacity: .35; filter: blur(18px); --blob: color-mix(in srgb, var(--tint-ink) 45%, var(--tint-fill)); background: radial-gradient(circle at 70% 30%, var(--blob), transparent 60%); animation: dc-drift 14s ease-in-out infinite alternate; }
 .dc-lc:nth-child(even) .dc-lc-blob { background: radial-gradient(circle at 30% 70%, var(--blob), transparent 60%); animation-duration: 18s; }
-@media (prefers-reduced-motion: reduce) { .dc-still img, .dc-lc-blob { animation: none; } }
-.dc-still.is-paused img { animation-play-state: paused; } /* off screen: no compositor work */
+@media (prefers-reduced-motion: reduce) { .dc-lc-blob { animation: none; } }
 .dc-sub { margin: -4px 4px 0; }
-/* Top story: the large card carries its title over the picture (white on a dark shade); below it a 2 x 2 grid. */
-.card.dc-herocard.dc-over { position: relative; }
-.dc-over .dc-poster-box { height: 260px; }
-.dc-over .dc-hero-body { position: absolute; left: 0; right: 0; bottom: 0; padding: 48px 16px 14px; color: #fff; background: linear-gradient(to top, rgb(0 0 0 / .8), rgb(0 0 0 / 0)); }
-.dc-over .dc-hero-t, .dc-over .dc-hero-s { color: #fff; }
-.dc-vgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.dc-vgrid .dc-vc-pic, .dc-rgrid .dc-vc-pic { height: 104px; }
-.dc-vc-n { font-size: 13px; line-height: 18px; color: var(--muted); }
-.card.dc-vgcard { min-width: 0; }
 /* S25 (D-156): chips wrap instead of swiping; the Health pointer is a plain 52 px link card. */
 .nw-chips.dc-wrapchips { flex-wrap: wrap; overflow: visible; }
 .card.dc-hlink { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 0 16px; font-size: 16px; font-weight: 600; color: var(--ink); text-decoration: none; }

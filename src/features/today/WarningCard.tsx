@@ -3,7 +3,8 @@ import { track } from '../admin/events'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
 import { AlertCard } from '../look'
-import { ALERTS_KEY, type Alert, affectsUs, checkedOf, freshness, freshText, kmTail, newestChecked, outdatedLine, placeOnly, plainWhat } from '../safety/alerts'
+import { ALERTS_KEY, type Alert, affectsUs, checkedOf, freshness, kmTail, newestChecked, outdatedLine, placeOnly, plainWhat } from '../safety/alerts'
+import { checkedWords } from './timeWords'
 import { useNow } from '../safety/AlertCard'
 import { StormBlock } from '../safety/StormCard'
 import { liveSignals, signalOf, stormTitle } from '../safety/stormMode'
@@ -79,7 +80,7 @@ export default function WarningCard({ notify, now }: { notify?: (msg: string) =>
                   {hazard.kind === 'gdacs' && plainWhat(hazard) && <p>{plainWhat(hazard)}</p>}
                   <p><b>{who.line}</b>{kmTail(who)}</p>
                   {who.steps && <p>{hazard.doNow}</p>}
-                  <p className="td-wc-meta">{freshText(f)}{f.tone === 'ok' ? ' · Hide: still in Safety.' : ''}</p>
+                  <p className="td-wc-meta">{checkedWords(f.ageMin)}{f.tone === 'ok' ? ' · Hide: still in Safety.' : ''}</p>
                   {f.tone !== 'ok' && <p className="td-wc-meta" role="status">{outdatedLine(at)}</p>}
                 </>
               )}

@@ -51,7 +51,7 @@ async function start(page: Page, scheme: 'light' | 'dark', o: { code?: number; d
   await expect(page.getByTestId('myday')).toBeVisible()
   // The mocked server never takes the app's own writes, so the sync pill and the bell dot come and go with timing; they are not what this lane shows.
   await page.addStyleTag({ content: '.sync-status, .sh-badge { display: none !important; }' })
-  await expect(page.getByRole('region', { name: 'Weather' })).toBeVisible() // the forecast answers after the first paint
+  await expect(page.getByRole('region', { name: 'Weather', exact: true })).toBeVisible() // the forecast answers after the first paint
   await expect(page.getByTestId('myday-checkin')).toBeVisible()
   await signedIn(page) // the member lookup finished: wait so a rerun draws the same page (ML-25, ML-32)
 }
@@ -114,7 +114,7 @@ for (const scheme of ['light', 'dark'] as const) {
   for (const [name, code] of [['clear', 0], ['storm', 95]] as const) {
     test(`weather card ${name} ${scheme}`, async ({ page }) => {
       await start(page, scheme, { code })
-      const wx = page.getByRole('region', { name: 'Weather' })
+      const wx = page.getByRole('region', { name: 'Weather', exact: true })
       await expect(wx).toBeVisible()
       await wx.screenshot({ path: `${SHOTS}/weather-${name}-${scheme}.png`, animations: 'disabled' })
     })
@@ -122,7 +122,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`weather card compact with a dose due ${scheme}`, async ({ page }) => {
     await start(page, scheme, { dose: true, code: 0 })
-    const wx = page.getByRole('region', { name: 'Weather' })
+    const wx = page.getByRole('region', { name: 'Weather', exact: true })
     await expect(wx).toBeVisible()
     await wx.screenshot({ path: `${SHOTS}/weather-compact-${scheme}.png`, animations: 'disabled' })
   })

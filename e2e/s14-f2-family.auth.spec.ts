@@ -70,7 +70,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, 'family-home', scheme)
       await page.getByTestId('msgs').click()
       await expect(page).toHaveURL(/#family\/messages$/)
-      await expect(page.getByRole('group', { name: 'Quick replies' })).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Family feed' })).toBeVisible() // S28: Messages is read-only alerts, no quick replies
       await shot(page, 'messages', scheme)
       await page.getByRole('link', { name: 'Back to Family' }).click()
       await expect(page.getByTestId('planrow')).toHaveCount(0) // D-168: Plan is part of the one Calendar card
@@ -83,10 +83,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.locator('h1').first()).toHaveText('Family') // v13: the roster is on the root; the ID card moved to #medid
     })
 
-    test('a quick reply sends the words', async ({ page }) => {
+    test('Messages has no quick replies and sends nothing (S28: read-only alerts)', async ({ page }) => {
       await page.goto('/#family/messages')
-      await page.getByRole('group', { name: 'Quick replies' }).getByRole('button', { name: 'All good' }).click()
-      await expect.poll(() => sent.map((r) => r.body), { timeout: 15_000 }).toContain('All good')
+      await expect(page.getByRole('region', { name: 'Family feed' })).toBeVisible()
+      await expect(page.getByRole('group', { name: 'Quick replies' })).toHaveCount(0)
+      expect(sent).toEqual([])
     })
 
     // House convention for 200% text: a 195 px wide viewport (e2e/health-labs.spec.ts), because the app's CSS uses px font sizes.

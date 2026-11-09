@@ -80,7 +80,8 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
     await expect(pl).toBeVisible()
     await expect(pl.locator('.gpl-tile')).toHaveCount(3)
     await expect(pl.locator('.gpl-tile').first()).toContainText('Sitaw₱109.30/kg')
-    expect(await pl.locator('.gpl-tile img').first().evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), 'photo loaded').toBe(true)
+    await pl.locator('.gpl-tile img').first().scrollIntoViewIfNeeded() // the photos are lazy: at 195 px the card is below the first screen
+    await expect.poll(() => pl.locator('.gpl-tile img').first().evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: 'photo loaded' }).toBe(true)
     expect(await overflow(page, '[data-testid="today-plant"] *')).toEqual([])
     if (dir) { await pl.scrollIntoViewIfNeeded(); await page.screenshot({ path: `${dir}/plant-card-${w}-${scheme}.png` }) }
 
@@ -89,9 +90,9 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
     await expect(page).toHaveURL(/#garden\/plant$/)
     const pg = page.getByTestId('plant-page')
     await expect(pg.locator('article.gpl-poster')).toHaveCount(6)
-    await expect(pg.getByTestId('poster-Chayote')).toContainText('Grows best above 1,000 m')
+    await expect(pg.getByTestId('poster-Chayote')).toContainText('Grows best in cool upland areas')
     await expect(pg.getByTestId('poster-Yardlong bean')).toContainText('45 to 50 days')
-    await expect(pg).toContainText('General guide from the Bureau of Plant Industry planting calendar (PCAARRD bulletin 200, 2000).')
+    await expect(pg).toContainText('General guide from the planting calendar of PCARRD, now PCAARRD (bulletin 200, 2000), with data from the Bureau of Plant Industry.')
     expect(await overflow(page, '[data-testid="plant-page"] *')).toEqual([])
     for (const a of await pg.locator('.gpl-credit a').all()) expect((await a.boundingBox())!.height, 'credit link target').toBeGreaterThanOrEqual(43.5)
     if (dir) { await page.screenshot({ path: `${dir}/poster-top-${w}-${scheme}.png` }); await pg.getByTestId('poster-Chayote').scrollIntoViewIfNeeded(); await page.screenshot({ path: `${dir}/poster-sayote-${w}-${scheme}.png` }) }

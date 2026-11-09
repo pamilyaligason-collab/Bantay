@@ -14,7 +14,6 @@ vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 import Family, { parseFamily } from '../../screens/Family'
 import MemberPage from './MemberPage'
-import Messages from './Messages'
 import { fdb } from './store'
 
 beforeEach(async () => {
@@ -84,35 +83,13 @@ describe('Faces row', () => {
     expect(outside.split('\n').filter((l) => /fm-ok/.test(l) && /(transition|animation)\s*:/.test(l))).toEqual([])
   })
 
-  const ben = { id: 'p2', name: 'Kuya Ben', photoPath: null, thumb: null, phone: null as string | null, birthdate: null, isMe: false }
-  const sheet = (phone: string | null, nudge: { text: string; href: string } | null) => render(<Messages who={{ ...ben, phone }} people={[{ ...ben, phone }]} nudge={nudge} onClose={() => undefined} onOpenPage={() => undefined} />)
-
-  it('no phone: the messages sheet shows no hello nudge and no Call', async () => {
-    sheet(null, null)
-    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
-    expect(within(dlg).queryByText('Not checked in today: send a hello')).toBeNull()
-    expect(within(dlg).queryByRole('link', { name: /Call Kuya/ })).toBeNull()
-  })
-
-  it('with a phone saved, the messages sheet has Call and the hello link', async () => {
-    sheet('+63 917 123 4567', { text: 'Not checked in today: send a hello', href: 'sms:+639171234567' })
-    const dlg = await screen.findByRole('dialog', { name: 'Message Kuya' })
-    expect(within(dlg).getByRole('link', { name: 'Call Kuya' }).getAttribute('href')).toBe('tel:+639171234567')
-    expect(within(dlg).getByText('Not checked in today: send a hello').getAttribute('href')).toBe('sms:+639171234567')
-    expect(within(dlg).queryByRole('link', { name: /Messenger/ })).toBeNull() // no saved handle = no Messenger link
-    expect(await within(dlg).findByText('Messages need you to be signed in')).toBeTruthy()
-  })
-
-  it("Kuya's People card (no check-in, no phone) has a Message button that opens the one chat with @name ready, and no Messenger or WhatsApp", async () => {
+  it("Kuya's People card (no phone, no saved name) has no Message button and no Messenger or WhatsApp: it offers Add Messenger name on his page", async () => {
     location.hash = '#family'
-    const { unmount } = render(<Family />)
-    const card = (await screen.findAllByTestId('people-row')).find((r) => /Kuya/.test(r.textContent ?? ''))!
-    expect(within(card).queryByRole('link', { name: /Messenger|WhatsApp/ })).toBeNull()
-    fireEvent.click(within(card).getByRole('button', { name: 'Message' }))
-    unmount()
-    location.hash = '#family/messages'
     render(<Family />)
-    expect((await screen.findByLabelText('Message') as HTMLTextAreaElement).value).toBe('@Kuya Ben ')
+    const card = (await screen.findAllByTestId('people-row')).find((r) => /Kuya/.test(r.textContent ?? ''))!
+    expect(within(card).queryByRole('button', { name: 'Message' })).toBeNull()
+    expect(within(card).queryByRole('link', { name: /Messenger$|WhatsApp/ })).toBeNull()
+    expect(within(card).getByRole('link', { name: 'Add Messenger name' }).getAttribute('href')).toBe('#family/people/p2')
   })
 })
 

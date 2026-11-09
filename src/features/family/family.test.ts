@@ -31,7 +31,7 @@ describe('tasks', () => {
     expect(row!.table).toBe('family_tasks')
     expect(row!.payload).toMatchObject({ client_id: t!.clientId })
     expect(row!.payload).not.toHaveProperty('id')
-    expect(body(row!)).toEqual({ title: 'Buy medicines', due: '2026-10-23', assignee_person_id: 'p1', done: false, deleted_at: null, client_id: t!.clientId })
+    expect(body(row!)).toEqual({ title: 'Buy medicines', due: '2026-10-23', assignee_person_id: 'p1', done: false, remind_at: null, deleted_at: null, client_id: t!.clientId })
   })
 
   it('unknown stays null: no due date and no assignee are sent as null, never 0 or empty', async () => {

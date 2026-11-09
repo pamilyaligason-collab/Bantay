@@ -59,14 +59,14 @@ export function useNewsVideos(channel?: string): NewsVideoList | null {
   return state.channel === channel ? state.list : null
 }
 
-/** "NEW · 40 MIN" under an hour, then "3 HR", then "2 DAYS": a short badge for the card. */
-export function ageBadge(publishedAt: string, now: number): string {
-  const mins = Math.max(0, Math.floor((now - Date.parse(publishedAt)) / 60_000))
-  if (mins < 60) return `NEW · ${Math.max(1, mins)} MIN`
+/** "40 min ago" under an hour, then "3 hr ago", then "2 days ago": the age on the card's meta line. */
+export function ageText(publishedAt: string, now: number): string {
+  const mins = Math.max(1, Math.floor((now - Date.parse(publishedAt)) / 60_000))
+  if (mins < 60) return `${mins} min ago`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs} HR`
+  if (hrs < 24) return `${hrs} hr ago`
   const days = Math.floor(hrs / 24)
-  return `${days} ${days === 1 ? 'DAY' : 'DAYS'}`
+  return `${days} ${days === 1 ? 'day' : 'days'} ago`
 }
 
 /** "Updated 12 min ago" for the section heading. */

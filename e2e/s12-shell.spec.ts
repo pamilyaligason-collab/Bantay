@@ -44,7 +44,7 @@ test('five tabs in order; Discover opens with its five sub-tabs; Watch is regist
   // v13: the overview is the video hero plus Section links; the sub-tab pills live on the sub screens
   await expect(page.getByTestId('dc-hero')).toBeVisible()
   const ORDER = ['Learn', 'Watch', 'Listen', 'Play', 'News'] // pill order of S16, so no two neighbouring hues repeat
-  for (const [label, hash] of [['All topics', 'learn'], ['See all', 'listen'], ['All games', 'play']] as const) {
+  for (const [label, hash] of [['All topics', 'learn'], [/^All \d+/, 'listen'], ['All games', 'play']] as const) { // the Listen link counts its shelf ("All 6")
     await expect(page.locator(`a[href="#discover/${hash}"]`).filter({ hasText: label })).toHaveCount(1)
   }
   // D-135: News is a view of Discover (Today | News | Saved), not a Section link on the overview

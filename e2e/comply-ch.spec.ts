@@ -77,7 +77,9 @@ test('Readings: 7-day averages are grouped rows, not tiles', async ({ page }) =>
 test('A1: Body wiki shows the 911 and doctor lists for every system, with sources, ', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await at(page, '#health/body', 'Body wiki')
-  const chips = page.getByTestId('body-systems').getByRole('button')
+  const more = page.getByTestId('body-systems').getByRole('button', { name: /^Show \d+ more$/ })
+  while (await more.count()) await more.first().click() // D-156 (S25): the systems show four at a time
+  const chips = page.getByTestId('body-systems').locator('button.an-chip')
   const n = await chips.count()
   expect(n).toBe(9)
   for (let i = 0; i < n; i++) {

@@ -14,7 +14,7 @@
 .cm-root .card { border: .5px solid rgba(160,190,255,.22); }
 .cm-root .more-grid-btn { border-color: var(--calm-mint); color: var(--calm-mint); } /* S25: not the tab accent, which is dark amber and ~2.4:1 on the navy */
 .cm { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
-.cm-hero { background: none; color: var(--ink); min-width: 0; text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
+.card.cm-hero { background: none; color: var(--ink); min-width: 0; text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
 /* the orb is a dotted sphere (S22-C); the word and count sit on a solid ground disc, and are hidden before Start */
 .cm-hero .bo-label { display: none; } /* board: the idle orb is empty before Start; the words belong to the session sheet */
 .cm-hero .bo-word { font-size: 16px; font-weight: 700; }
@@ -53,36 +53,6 @@
 .cm-call { flex-direction: column; }
 .cm-call .cm-net { color: #2B3A5E; }
 .cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
-/* the board's row: 240 px cards with an 84 px icon head; never wider than a narrow screen */
-.cm-media { position: relative; width: auto; display: flex; flex-direction: column; color: var(--ink); text-decoration: none; box-sizing: border-box; padding: 0 0 14px; overflow: hidden; }
-.cm-media b { font-size: 17px; line-height: 22px; font-weight: 600; margin-top: 2px; }
-.cm-media .cm-sub { font-size: 13px; line-height: 18px; margin-top: 4px; }
-.cm-media > :not(.cm-media-ic) { margin-inline: 14px; }
-.cm-media-ic { flex: none; width: 100%; height: 84px; display: grid; place-items: center; background: #1D3A6E; color: #BFD4FF; margin-bottom: 12px; }
-.cm-media-ic > * { grid-area: 1 / 1; }
-.cm-k { font-size: 13px; line-height: 18px; font-weight: 600; color: #BFD4FF; }
-.cm-media .cm-sub { margin-bottom: 10px; }
-/* Play and the station's site share one line, so no radio state makes the row taller */
-.cm-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin-top: auto; }
-.cm-play { flex: 1 1 88px; min-width: 0; }
-.cm-out { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); font-size: 15px; font-weight: 600; white-space: nowrap; }
-/* equaliser bars while a station plays, from the board; with reduced motion the glyph stays and the word Playing says it */
-.cm-eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 20px; }
-.cm-eq i { width: 4px; height: 20px; border-radius: 2px; background: var(--calm-mint); animation: cm-eq 1s ease-in-out infinite; }
-.cm-eq i:nth-child(2) { animation-delay: -.4s; } .cm-eq i:nth-child(3) { animation-delay: -.7s; } .cm-eq i:nth-child(4) { animation-delay: -.2s; }
-@keyframes cm-eq { 50% { height: 4px; } }
-.cm-media-ic:has(.cm-eq) > svg { display: none; }
-@media (prefers-reduced-motion: reduce) { .cm-eq { display: none; } .cm-media-ic:has(.cm-eq) > svg { display: block; } }
-.cm-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.cm-video { position: relative; padding: 0; overflow: hidden; width: auto; box-sizing: border-box; }
-.cm-video .lv-poster, .cm-video .lv-frame { border-radius: 0; }
-.cm-video .lv-yt { padding-inline: 14px; }
-/* a 240 px poster is 135 px tall: the 64 px play disc and a two-line caption overlap, so a smaller disc sits above a solid caption band that also covers words burned into a poster */
-.cm-video .lv-play { justify-content: flex-start; padding-top: 12px; }
-.cm-video .lv-btn { width: 44px; height: 44px; }
-.cm-video .lv-play b { font-size: 15px; line-height: 18px; }
-.cm-video .lv-play[data-thumb='on'] .lv-cap { padding: 8px 12px; background: rgb(0 0 0 / .72); }
-.cm-chan { display: block; padding: 0 14px 12px; }
 .bt:has(.cm-root) .tabbar.sh-tabs { background: var(--card); } /* the glass bar was see-through over the navy page: labels fell under 4.5:1 in light */
 
 /* compliance CD: the board's dashed "coming" pill, and the done-today pill */
@@ -109,14 +79,14 @@
 .cm-ex-m b { font-size: 17px; font-weight: 600; }
 .cm-ex-m span, .cm-ex-d { font-size: 13px; line-height: 18px; color: var(--muted); }
 /* S27: "Here if you need to talk" on Today, below Calm. A quiet card, not a hero: resting shadow, 1px soft teal edge, pale tint, outlined secondary button. Calm teal, never SOS red and not the 911 style. Colours are tokens of this card so the contrast test reads them (calm.contrast.test). */
-.cm-talk { --talk-bg: #EEF6F4; --talk-line: #BCD9D4; --talk-icon: #4A8A83; --talk-ink: #123F3B; --talk-sub: #2C4F4C; --talk-btn: #1F5F59;
+.cm-talk { --talk-bg: #D3ECE7; --talk-line: #7DBBB1; --talk-icon: #1F6B63; --talk-ink: #0C3330; --talk-sub: #1B4641; --talk-btn: #12504A;
   display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin: 0 0 14px; box-sizing: border-box; min-width: 0; border-radius: 20px; border: 1px solid var(--talk-line); background: var(--talk-bg); color: var(--talk-ink); box-shadow: var(--shadow); }
-:root[data-theme="dark"] .cm-talk { --talk-bg: #152B29; --talk-line: #2F5A55; --talk-icon: #7FB5AE; --talk-ink: #E6F4F2; --talk-sub: #BFE0DB; --talk-btn: #8FD3C9; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cm-talk { --talk-bg: #152B29; --talk-line: #2F5A55; --talk-icon: #7FB5AE; --talk-ink: #E6F4F2; --talk-sub: #BFE0DB; --talk-btn: #8FD3C9; } }
+:root[data-theme="dark"] .cm-talk { --talk-bg: #1B413D; --talk-line: #4A8A83; --talk-icon: #8FD3C9; --talk-ink: #EAF7F5; --talk-sub: #C6E6E1; --talk-btn: #A5E0D7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cm-talk { --talk-bg: #1B413D; --talk-line: #4A8A83; --talk-icon: #8FD3C9; --talk-ink: #EAF7F5; --talk-sub: #C6E6E1; --talk-btn: #A5E0D7; } }
 .cm-talk > svg { flex: none; color: var(--talk-icon); }
 .cm-talk-body { flex: 1; min-width: 0; }
-.cm-talk-t { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; color: var(--talk-ink); }
-.cm-talk-s { margin: 2px 0 0; font-size: 16px; line-height: 22px; color: var(--talk-sub); }
+.cm-talk .cm-talk-t { margin: 0; font-size: var(--fs-title, 20px); line-height: var(--lh-tight, 1.2); font-weight: 700; color: var(--talk-ink); }
+.cm-talk .cm-talk-s { margin: 2px 0 0; font-size: var(--fs-body, 17px); line-height: var(--lh-body, 1.45); color: var(--talk-sub); }
 .cm-talk-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; padding: 0 18px; box-sizing: border-box; border-radius: 999px; border: 1.5px solid var(--talk-btn); background: transparent; color: var(--talk-btn); font-size: 16px; font-weight: 600; text-decoration: none; transition: transform var(--dur-2, 220ms) var(--ease-out, ease-out); }
 .cm-talk-btn:active { transform: scale(.98); }
 .cm-talk-btn:focus-visible { outline: 3px solid var(--talk-ink); outline-offset: 3px; }

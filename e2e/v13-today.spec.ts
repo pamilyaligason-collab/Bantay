@@ -33,7 +33,7 @@ test('order: hero, My day, Calm, Your numbers; no SOS pill, no family feed', asy
 })
 
 test('the hero is one link to Weather', async ({ page }) => {
-  await expect(page.getByTestId('weather-hero').getByRole('link').first()).toHaveAttribute('href', /#weather/)
+  await expect(page.getByTestId('weather-hero').locator('a[href*="#weather"]').first()).toHaveAttribute('href', /#weather/) // the data credit (S26) is an outside link too
 })
 
 test('My day: ring, the three rows and the breath row', async ({ page }) => {
@@ -45,11 +45,11 @@ test('My day: ring, the three rows and the breath row', async ({ page }) => {
   await expect(day.getByTestId('selfcare')).toBeVisible()
 })
 
-test('Your numbers: empty tiles are honest, and the radio row opens Calm', async ({ page }) => {
+test('Your numbers: empty tiles are honest, and the radio row opens Listen radio', async ({ page }) => {
   const nums = page.getByTestId('numbers')
   await expect(nums.getByText('--/--')).toBeVisible()
   await expect(nums.getByText('Log now').first()).toBeVisible()
-  await expect(page.getByRole('link', { name: /Relaxing radio/ })).toHaveAttribute('href', '#calm/listen')
+  await expect(page.getByRole('link', { name: /Relaxing radio/ })).toHaveAttribute('href', '#discover/listen/radio') // D-178: the radio lives in Listen now
   await expect(page.getByRole('link', { name: 'Open Calm' })).toHaveAttribute('href', '#calm') // the only way into the Calm page
 })
 
@@ -78,7 +78,7 @@ test('T4: the hero is 260 to 330 px, the temperature 76 px at weight 200, the co
   await expect(hero.locator('.td-wxh-t')).toBeVisible() // the forecast has landed, not the empty slot
   const h = await box(hero)
   expect(h.height).toBeGreaterThanOrEqual(260)
-  expect(h.height).toBeLessThanOrEqual(330) // D-139: the hourly strip and the one-line rain estimate sit inside the hero (measured 317 here, was 300 max)
+  expect(h.height).toBeLessThanOrEqual(400) // S26 one weather source adds the credit line, S28 the two-line kicker; was 330. D-139: the hourly strip and the one-line rain estimate sit inside the hero (measured 317 here, was 300 max)
   const t = hero.locator('.td-wxh-t')
   expect(await t.evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight] })).toEqual(['76px', '200']) // D-115 A2: the weight-200 digit face is loaded (numfont.css), so 200 really renders
   const [tb, cb, hb] = [await box(t), await box(hero.locator('.td-wxh-c')), await box(hero.locator('.td-wxh-hl'))]

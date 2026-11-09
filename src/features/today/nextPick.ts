@@ -54,8 +54,9 @@ export const doseDay = (d: DuePerson, now: Date) => addManilaDays(manilaDay(now)
 
 export const joinNames = (n: string[]) => (n.length < 2 ? n.join('') : `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`)
 
-/** "40 min" / "1 h 5 min" from a minute count. */
-const span = (n: number) => (n < 60 ? `${n} min` : `${Math.floor(n / 60)} h${n % 60 ? ` ${n % 60} min` : ''}`)
+/** "40 minutes" / "1 hour 5 minutes" from a minute count (S28: whole words, no '9m'). */
+const unit = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
+const span = (n: number) => (n < 60 ? unit(n, 'minute') : `${unit(Math.floor(n / 60), 'hour')}${n % 60 ? ` ${unit(n % 60, 'minute')}` : ''}`)
 
 /** "8:00 PM · in 40 min · 1 tablet": only the parts we know (the dose text is the medicine's own dose field; nothing is made up). */
 export function whenLine(d: DuePerson, now: Date): string {

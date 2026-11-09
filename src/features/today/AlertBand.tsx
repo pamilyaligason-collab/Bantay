@@ -1,6 +1,7 @@
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
-import { ALERTS_KEY, type Alert, affectsUs, freshness, checkedOf, freshText, kmTail, outdatedLine, placeOnly, plainWhat } from '../safety/alerts'
+import { ALERTS_KEY, type Alert, affectsUs, freshness, checkedOf, kmTail, outdatedLine, placeOnly, plainWhat } from '../safety/alerts'
+import { checkedWords } from './timeWords'
 import { useNow } from '../safety/AlertCard'
 import { useKv } from '../safety/store'
 import { zoneAlert } from './heroCards'
@@ -26,7 +27,7 @@ export default function AlertBand() {
       {a.kind === 'gdacs' && plainWhat(a) && <p>{plainWhat(a)}</p>}
       <p><b>{who.line}</b>{kmTail(who)}</p>
       {who.steps && <p>{a.doNow}</p>}
-      <p>{freshText(f)}</p>
+      <p>{checkedWords(f.ageMin)}</p>
       {f.tone !== 'ok' && <p role="status">{outdatedLine(at)}</p>}
       <div className="td-act"><a className="td-pill light" href="#safety/warnings">{who.affects ? 'What to do' : 'See details'}</a></div>
     </section>

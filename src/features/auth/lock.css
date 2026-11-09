@@ -34,13 +34,15 @@
 .lk2-sos .lk2-red { background: #B42318; }
 .lk2-sos .lk2-out { background: var(--lk-chip); box-shadow: inset 0 0 0 2px #fff; }
 .lk2-fp:focus-visible, .lk2-lnk:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-/* S26 (D-170) frosted glass: the prompt chip and the two links over the mountains. The solid --lk-chip above is the fallback; the tint is dark enough that white text stays >= 4.5:1 even over a pure white backdrop (FingerGate.test). */
-.lk2 { --lk-frost: rgba(14, 26, 24, .62); }
-:root[data-theme="dark"] .lk2 { --lk-frost: rgba(8, 16, 14, .62); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lk2 { --lk-frost: rgba(8, 16, 14, .62); } }
+/* S28 glass (owner 2026-11-09: "glass, not plain black"): the prompt chip, the two links and the fingerprint disc are the same light frosted glass as the weather card (--lk-glass over the blurred scene, dark ink --lk-glass-ink, white edge, inner highlight). Dark theme uses the weather card's dark glass with light ink. Outside @supports the solid --lk-chip with white text above is used. FingerGate.test computes the ink contrast over the darkest and lightest scene stops. */
+.lk2 { --lk-frost: rgba(255, 255, 255, .72); --lk-glass-hi: rgba(255, 255, 255, .6); }
+:root[data-theme="dark"] .lk2 { --lk-frost: rgba(20, 32, 40, .55); --lk-glass-hi: rgba(255, 255, 255, .14); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .lk2 { --lk-frost: rgba(20, 32, 40, .55); --lk-glass-hi: rgba(255, 255, 255, .14); } }
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .lk2-say, .lk2-mid .lk2-lnk { background: var(--lk-frost); border: 1px solid rgba(255, 255, 255, .28); -webkit-backdrop-filter: blur(20px) saturate(140%); backdrop-filter: blur(20px) saturate(140%); box-shadow: var(--shadow-raised); }
-  .lk2-mid .lk2-lnk:active { box-shadow: var(--shadow-press); }
+  .lk2-say, .lk2-mid .lk2-lnk { color: var(--lk-glass-ink); background: var(--lk-frost); border: 1px solid var(--lk-glass-edge); -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%); box-shadow: inset 0 1px 0 var(--lk-glass-hi), var(--shadow-raised); }
+  .lk2-mid .lk2-lnk:active { box-shadow: inset 0 1px 0 var(--lk-glass-hi), var(--shadow-press); }
+  /* The longer selectors beat the solid dark-mode fallbacks above. */
+  .lk2 .lk2-fp, :root[data-theme="dark"] .lk2 .lk2-fp, :root:not([data-theme="light"]) .lk2 .lk2-fp { background: var(--lk-frost); color: var(--lk-glass-ink); border: 1px solid var(--lk-glass-edge); -webkit-backdrop-filter: blur(20px) saturate(150%); backdrop-filter: blur(20px) saturate(150%); box-shadow: inset 0 1px 0 var(--lk-glass-hi), 0 8px 28px rgba(20, 50, 40, .25); }
 }
 @media (prefers-reduced-motion: reduce) { .lk2-fog { animation: none; } .lk2-halo { display: none; } }
 .lk2-still .lk2-fog { animation: none; }

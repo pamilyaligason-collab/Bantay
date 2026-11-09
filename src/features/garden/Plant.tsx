@@ -52,7 +52,7 @@ export function PlantCard() {
         <span className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
         <span className="gpl-tiles">
           {tiles.map((t) => 'g' in t ? (
-            <span key={t.g.name} className="gpl-tile"><img src={t.g.img} alt={t.g.alt} loading="lazy" /><span className="gpl-tn">{t.g.name}{priceOf(t.g, d) && <small>{priceText(priceOf(t.g, d)!)}</small>}</span></span>
+            <span key={t.g.name} className="gpl-tile"><img src={t.g.img} alt={t.g.alt} loading="lazy" /><span className="gpl-tn" data-contrast-bg="#0A190F">{t.g.name}{priceOf(t.g, d) && <small>{priceText(priceOf(t.g, d)!)}</small>}</span></span>
           ) : (
             <span key={t.name} className="gpl-tile gpl-tile--bare"><span className="gpl-tn">{t.name}<small>Guide coming</small></span></span>
           ))}

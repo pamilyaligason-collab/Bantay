@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { playable, VIDEOS, VIDEO_ID } from '../../health/library/videosLogic'
 import ReadyTopic from './ReadyTopic'
@@ -29,13 +29,30 @@ describe('D-117 list', () => {
 })
 
 describe('Learn topic page', () => {
-  it('lists the topic videos as click-to-load players and its reads as outside links', () => {
+  it('lists the topic videos as media cards (4, then Show more; 23 in all) that open a click-to-load player, and its reads as outside links', () => {
     const { container } = render(<ReadyTopic id="farm-diy" />)
     expect(screen.getByTestId('ready-farm-diy')).toBeTruthy()
-    expect(container.querySelectorAll('.ry-video').length).toBe(23) // 9 + 14 added in S25, counted by hand
+    const list = screen.getByTestId('ready-videos')
+    expect(list.querySelectorAll('button.md-row')).toHaveLength(4)
+    for (let i = 0; i < 6 && within(list).queryByRole('button', { name: /Show \d+ more/ }); i++) fireEvent.click(within(list).getByRole('button', { name: /Show \d+ more/ }))
+    expect(list.querySelectorAll('button.md-row')).toHaveLength(23) // 9 + 14 added in S25, counted by hand
     expect(container.querySelector('iframe')).toBeNull()
+    expect(screen.queryByTestId('ready-player')).toBeNull()
+    fireEvent.click(list.querySelector('button.md-row')!)
+    expect(within(screen.getByTestId('ready-player')).getByRole('button', { name: /^Play / })).toBeTruthy()
+    expect(container.querySelector('iframe')).toBeNull() // still nothing from YouTube until the second tap
     const links = Array.from(container.querySelectorAll('a.lr-tile'))
     expect(links.map((a) => a.getAttribute('href'))).toEqual(READY_READS.filter((r) => r.topic === 'farm-diy').map((r) => r.url))
+  })
+  it('going to the other topic starts again with 4 cards and no chosen video', () => {
+    const { rerender } = render(<ReadyTopic id="prepping" />)
+    const list = () => screen.getByTestId('ready-videos')
+    fireEvent.click(within(list()).getByRole('button', { name: 'Show 4 more' }))
+    fireEvent.click(list().querySelector('button.md-row')!)
+    expect(screen.getByTestId('ready-player')).toBeTruthy()
+    rerender(<ReadyTopic id="farm-diy" />)
+    expect(list().querySelectorAll('button.md-row')).toHaveLength(4)
+    expect(screen.queryByTestId('ready-player')).toBeNull()
   })
   it('an unknown topic draws nothing', () => {
     expect(render(<ReadyTopic id="nope" />).container.textContent).toBe('')

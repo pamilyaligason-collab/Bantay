@@ -21,6 +21,7 @@ const seed = (page: Page) =>
 // Scoped to main: the L0 tab bar active-state contrast (axe color-contrast on button[aria-current]) is an L0 shell issue.
 for (const tab of ['health']) { // Papers (old #health/papers) is the Family lane's now
   test(`${tab}: no axe violations, empty and with data`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 2600 }) // tall: axe reads only the text inside the viewport, so a video card cut by the fold looks like a name with extra words
     await page.goto(`/#${tab}`)
     await expect(page.locator('h1')).toBeVisible()
     expect((await new AxeBuilder({ page }).include("main").analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([])

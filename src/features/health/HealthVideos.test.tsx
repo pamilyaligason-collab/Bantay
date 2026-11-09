@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { HealthVideos } from './HealthVideos'
 import css from './health.css?raw'
 import { DISCOVER_SET, forSub, SUBS, VIDEOS } from './library/videosLogic'
+import { mediaName } from '../look/media/MediaCard'
 
 afterEach(cleanup)
 const cards = () => Array.from(screen.getByTestId('hv-grid').querySelectorAll('[data-testid^="hv-"]'))
@@ -14,7 +15,7 @@ describe('Health videos (S25)', () => {
     expect(chips.map((c) => c.textContent)).toEqual(['Heart and BP', 'Diabetes', 'Infections', 'First aid', 'Mind and sleep', 'Food', 'Kids'])
     expect(chips.every((c) => c.getAttribute('aria-pressed') === 'false')).toBe(true)
     expect(cards()).toHaveLength(4)
-    expect(cards().every((c) => c.querySelector('.hv-ph'))).toBe(true) // 40 clips, Philippine ones lead
+    expect(cards().every((c) => c.querySelector('.md-flag')!.textContent === 'Philippines')).toBe(true) // 40 clips, Philippine ones lead
     fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
     expect(cards()).toHaveLength(8)
   })
@@ -25,14 +26,14 @@ describe('Health videos (S25)', () => {
     expect(chip.getAttribute('aria-pressed')).toBe('true')
     expect(cards()).toHaveLength(2) // counted by hand: two Kids videos
     expect(screen.queryByRole('button', { name: /Show .* more/ })).toBeNull()
-    const img = cards()[0]!.querySelector('img.hv-img')!
+    const img = cards()[0]!.querySelector('img')!
     expect(img.getAttribute('src')).toMatch(/^https:\/\/i\.ytimg\.com\/vi\/[A-Za-z0-9_-]{11}\/mqdefault\.jpg$/)
     expect(img.getAttribute('referrerpolicy')).toBe('no-referrer')
     fireEvent.click(chip)
     expect(chip.getAttribute('aria-pressed')).toBe('false')
     expect(cards()).toHaveLength(4)
   })
-  it('each card shows title, source, minutes and a PH flag only for a Philippine source', () => {
+  it('each card shows title, source, minutes and a Philippines tag only for a Philippine source', () => {
     render(<HealthVideos />)
     fireEvent.click(screen.getByRole('button', { name: 'Heart and BP' }))
     for (const c of cards()) {
@@ -40,35 +41,47 @@ describe('Health videos (S25)', () => {
       const v = forSub('heart-bp').find((x) => x.id === id)!
       expect(c.textContent).toContain(v.title)
       expect(c.textContent).toContain(v.source)
-      expect(c.querySelector('.hv-len')!.textContent).toBe(`${v.minutes} min`)
-      expect(!!c.querySelector('.hv-ph')).toBe(!!v.ph)
+      expect(c.querySelector('.md-len')!.textContent).toBe(`${v.minutes} min`)
+      expect(!!c.querySelector('.md-flag')).toBe(!!v.ph)
     }
   })
   it('a tap opens the card across the grid and plays it in LiteVideo (no-cookie embed), one at a time', () => {
     render(<HealthVideos />)
     const first = cards()[0]!
-    fireEvent.click(first.querySelector('button.hv-vbtn')!)
+    fireEvent.click(first.querySelector('button.md')!)
     const open = screen.getByTestId(first.getAttribute('data-testid')!)
     expect(open.hasAttribute('data-open')).toBe(true)
     expect(open.querySelector('.hv-open')).toBeNull() // hv-open is the full-row link style; the player wrapper must not carry it
     expect(open.querySelector('.hv-opened')).not.toBeNull()
     expect(open.querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/[A-Za-z0-9_-]{11}\?/)
-    fireEvent.click(cards()[1]!.querySelector('button.hv-vbtn')!)
+    fireEvent.click(cards()[1]!.querySelector('button.md')!)
     expect(screen.getByTestId(first.getAttribute('data-testid')!).hasAttribute('data-open')).toBe(false) // the first folds back to its still
   })
-  it('each card button has a play icon and is named "Video, title, channel, length"; opening it moves focus into the player', async () => {
+  it('each card is one button with a play icon, named "Video, [tag,] title, channel, length"; opening it moves focus into the player', async () => {
     render(<HealthVideos />)
     const first = cards()[0]!
     const id = first.getAttribute('data-testid')!.slice(3)
     const v = VIDEOS.find((x) => x.id === id)!
-    const btn = first.querySelector('button.hv-vbtn')!
-    expect(btn.querySelector('.hv-play')).toBeTruthy()
-    expect(btn.getAttribute('aria-label')).toBe(`Video, ${v.title}, ${v.source}${v.minutes != null ? `, ${v.minutes} minutes` : ''}`)
+    const btn = first.querySelector('button.md')!
+    expect(btn.querySelector('.md-play svg')).toBeTruthy()
+    expect(btn.getAttribute('aria-label')).toBe(mediaName(v.title, v.source, v.minutes, v.ph ? 'Philippines' : undefined))
+    expect(btn.getAttribute('aria-label')).toBe(`Video, ${v.title}, ${v.source}${v.ph ? ', Philippines' : ''}${v.minutes != null ? `, ${v.minutes} min` : ''}`)
     fireEvent.click(btn)
     const box = screen.getByTestId(`hv-${id}`).querySelector('.hv-opened')!
     await waitFor(() => expect(box.contains(document.activeElement)).toBe(true))
   })
-  it('a tappable video card carries the raised shadow', () => expect(css).toMatch(/\.card\.hv-vc \{[^}]*box-shadow: var\(--shadow-raised\)/))
+  it('all rows (Health already has its one hero, so no [data-hero] here); one column with no side-swipe row', () => {
+    render(<HealthVideos />)
+    expect(cards().map((c) => c.querySelector('.md')!.className.includes('md-row'))).toEqual([true, true, true, true])
+    expect(document.querySelectorAll('[data-hero]')).toHaveLength(0)
+    expect(screen.getByTestId('health-videos').querySelector('.carousel, .more-grid')).toBeNull()
+    expect(css).not.toMatch(/\.hv-vc\[data-open\] \{[^}]*border:/) // a card has a shadow or a border, never both
+  })
+  it('nothing loads from YouTube before a tap: stills only, no iframe', () => {
+    render(<HealthVideos />)
+    expect(screen.getByTestId('health-videos').querySelector('iframe')).toBeNull()
+    for (const img of Array.from(screen.getByTestId('health-videos').querySelectorAll('img'))) expect(img.getAttribute('src')).toMatch(/^https:\/\/i\.ytimg\.com\//)
+  })
   it('every chip has a video; the stylesheet gives chips a 44 px height and lets the row wrap with no side scroll', () => {
     render(<HealthVideos />)
     expect(SUBS.every((s) => forSub(s.sub).length > 0)).toBe(true)

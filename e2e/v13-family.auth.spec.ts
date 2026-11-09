@@ -37,12 +37,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('facesrow')).toHaveCount(0)
       await expect(page.getByTestId('people-row').first()).toContainText('You') // my status is on my People card
       expect(await short(page, '.pp-card a, .pp-card button, .ps-pill')).toEqual([])
-      // Needs holds Ate Joy's missed dose as one line (no medicine, no number) and Papa's phone
+      // S28 lane E (Today merge): Ate Joy's missed dose is said once, on her People card; Needs holds Papa's phone only (no medicine, no number)
       const needs = page.getByTestId('need-row')
-      await expect(needs).toHaveCount(2)
-      await expect(needs.first()).toContainText('Ate Joy: missed a medicine')
+      await expect(needs).toHaveCount(1)
+      await expect(page.getByTestId('people-row').filter({ hasText: 'Ate Joy' }).first()).toContainText('Missed a medicine')
       await expect(page.getByTestId('needs')).not.toContainText('Nasal')
-      await expect(needs.nth(1)).toContainText("Papa Ben's phone may miss alarms")
+      await expect(needs.first()).toContainText("Papa Ben's phone may miss alarms")
       await expect(page.getByTestId('people-row')).toHaveCount(4) // S25: a 2-column grid of four cards, no See all
       await expect(page.getByTestId('together-list').getByRole('link')).toHaveCount(2) // Messages and Memories; Plan is part of the one Calendar card
       await expect(page.getByTestId('planrow')).toHaveCount(0)
@@ -60,7 +60,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('Open on a missed-dose line opens that person page; picking them in the pill puts their Activity on show, the hash stays', async ({ page }) => {
       await openFamily(page)
       await expect(page.getByTestId('people-row').filter({ hasText: 'Ate' }).first()).toContainText('Missed a medicine') // today status on the People card
-      await page.getByTestId('need-row').first().getByRole('button', { name: /^Open/ }).click()
+      await page.getByTestId('people-row').filter({ hasText: 'Ate' }).first().locator('a.pp-main').click() // S28 Today merge: the People card is the way in
       await expect(page).toHaveURL(/#family\/people\/[^/]+$/)
       await page.goto('/#family')
       await page.getByRole('button', { name: /^Who to show/ }).click()
@@ -97,7 +97,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByText('Off for now')).toHaveCount(0)
       if (SHOTS) await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/memories-${scheme}.png` })
       await page.goto('/#family/messages')
-      await expect(page.locator('#msg-text')).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Family feed' })).toBeVisible() // S28 (D-179 era): the Messages page is read-only alerts, there is no compose box
       const empties = await page.locator('.bt .scroll *').evaluateAll((els) => els.filter((e) => !e.children.length && !(e.textContent || '').trim() && !['IMG', 'SVG', 'svg', 'path', 'INPUT', 'TEXTAREA', 'AUDIO', 'CIRCLE', 'LINE', 'use', 'canvas'].includes(e.tagName) && e.getBoundingClientRect().height > 40 && !e.hasAttribute('aria-hidden')).map((e) => e.className))
       expect(empties).toEqual([])
       if (SHOTS) await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/messages-${scheme}.png` })

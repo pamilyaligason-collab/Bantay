@@ -24,7 +24,8 @@ async function discover(page: Page, w: number, h: number, day: string) {
   await page.setViewportSize({ width: w, height: h })
   await page.goto('/#discover')
   await expect(page.getByTestId('dc-learn')).toBeVisible()
-  await page.waitForFunction(() => Array.from(document.querySelectorAll('.dc-still img')).every((i) => (i as HTMLImageElement).complete || (r => r.top > innerHeight * 2 || r.left > innerWidth)(i.getBoundingClientRect()))) // lazy stills below the fold or in a carousel off to the side never start loading
+  await expect(page.getByTestId('dc-hero')).toBeVisible() // Top stories show once the day's order is read
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.md-pic img')).every((i) => (i as HTMLImageElement).complete || (r => r.top > innerHeight * 2 || r.left > innerWidth)(i.getBoundingClientRect()))) // lazy stills below the fold or in a carousel off to the side never start loading
 }
 
 for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoon months, no season
@@ -42,13 +43,13 @@ for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoo
           const fab = b('.sh-jackfab')
           return {
             gap: story.top - learnB.bottom,
-            href: link.getAttribute('href'), cards: document.querySelectorAll('[data-testid="dc-top-grid"] .dc-vc').length, order: learnB.top < story.top,
+            href: link.getAttribute('href'), cards: document.querySelectorAll('[data-testid="dc-top-rows"] a.md').length, order: learnB.top < story.top,
             overlap: lr.left < fab.right && lr.right > fab.left && lr.top < fab.bottom && lr.bottom > fab.top, linkH: lr.height, title: document.querySelector('[data-testid="dc-learn"] h2')!.textContent
           }
         })
         expect(m.title).toBe('Learn')
         expect(m.href).toBe('#discover/learn')
-        expect(m.cards).toBe(2) // the two half cards under the Top stories hero (S26)
+        expect(m.cards).toBe(4) // the four rows under the Top stories hero before Show more (S28)
         expect(m.order).toBe(true)
         expect(m.gap, 'gap between the Learn section and Top story').toBeLessThan(40)
         expect(m.overlap, 'All topics link under Jack at rest').toBe(false)
@@ -69,7 +70,7 @@ test('discover: every section link stays left of Jack at rest, and a video card 
     return Array.from(document.querySelectorAll('section.sec[data-testid^="dc-"] > .sec-h a')).filter((a) => a.getBoundingClientRect().right > fab.left - 4).map((a) => a.textContent)
   })
   expect(bad, "section links in Jack's column").toEqual([])
-  await page.getByTestId('dc-farm').locator('.dc-vc').first().click()
+  await page.getByTestId('dc-farm').locator('a.md').first().click()
   await expect(page).toHaveURL(/#discover\/watch/)
 })
 
@@ -107,7 +108,7 @@ for (const mode of ['out', 'in'] as const) {
           if (name === 'needs') { await expect(page.getByTestId('need-row').first()).toBeVisible() }
           await page.waitForTimeout(400)
           // from the card's visible bottom (D-124), not the section box
-          const gap = () => sec.evaluate((e) => e.nextElementSibling!.getBoundingClientRect().top - e.querySelector('.card.ac')!.getBoundingClientRect().bottom)
+          const gap = () => sec.evaluate((e) => (e.nextElementSibling?.getBoundingClientRect().top ?? e.getBoundingClientRect().bottom) - e.querySelector('.card.ac')!.getBoundingClientRect().bottom)
           expect(await gap(), 'gap between the Activity card and the next section').toBeLessThan(40)
           const card = sec.locator('.card.ac')
           const h0 = (await card.boundingBox())!.height

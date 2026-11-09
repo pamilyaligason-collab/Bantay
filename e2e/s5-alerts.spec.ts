@@ -37,7 +37,7 @@ const FLOOD = {
   where: 'South Cotabato (near Conel, General Santos City)', when: '2026-10-26 07:30 PH time', doNow: 'Do not walk or drive through floodwater.',
   source: 'PAGASA', sourceUrl: 'https://www.pagasa.dost.gov.ph/flood', issuedAt: hoursAgo(3), lat: 6.2015121, lon: 125.1878084, bulletin: 'Source: PAGASA, CC BY 4.0.', checkedAt: hoursAgo(0.1)
 }
-const PHONE_CHECK = { key: 'phone.check', value: { at: hoursAgo(1), notif_ok: true, exact_ok: true, battery_ok: false, alarms_ok: true, call_ok: true, oem: null } }
+const PHONE_CHECK = { key: 'phone.check', value: { at: hoursAgo(1), notif_ok: false, exact_ok: true, battery_ok: true, alarms_ok: true, call_ok: true, oem: null } }
 
 async function open(page: Page, hash: string, scheme: 'light' | 'dark', rows: Row[]) {
   await skipOnboarding(page)
@@ -74,7 +74,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('article', { name: /Wind Signal No. 2/ }).getByText('PAGASA, CC BY 4.0').first()).toBeVisible()
     await page.getByText('If a source is down').click()
     await expect(page.getByText(/GDACS and Open-Meteo carry on/)).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Open the PAGASA bulletin' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Open the PAGASA bulletin', exact: true })).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/safety-warnings-${scheme}.png` })
   })
 
@@ -137,7 +137,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await open(page, '#today', scheme, [{ key: 'safety.alerts', value: [OLD_QUAKE] }])
     const row = page.getByRole('region', { name: 'Nearby report' })
     await expect(row.getByText('Earthquake M3 near Pondaguitan, Philippines')).toBeVisible()
-    await expect(row.getByText(/89 km away · you may not feel it · 30 min ago/)).toBeVisible()
+    await expect(row.getByText(/89 km away · you may not feel it · 30 minutes ago/)).toBeVisible()
     await expect(row.getByRole('link', { name: 'Details' })).toHaveAttribute('href', '#safety/warnings')
     await expect(page.getByRole('region', { name: 'Active warning' })).toHaveCount(0)
     await expect(page.getByText(/no action needed/i)).toHaveCount(0)
@@ -177,7 +177,7 @@ for (const scheme of ['light', 'dark'] as const) {
 }
 
 test('hub has no Phone alerts tile when the phone check is clean or missing', async ({ page }) => {
-  await open(page, '#safety', 'light', [{ ...PHONE_CHECK, value: { ...PHONE_CHECK.value, battery_ok: true } }])
+  await open(page, '#safety', 'light', [{ ...PHONE_CHECK, value: { ...PHONE_CHECK.value, notif_ok: true } }])
   await expect(page.getByRole('list', { name: 'Be ready' }).getByRole('link', { name: /Phone alerts/ })).toHaveCount(0)
   await expect(page.getByRole('region', { name: 'Storm mode' })).toHaveCount(0)
 })

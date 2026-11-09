@@ -8,12 +8,13 @@
 .rd-st::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 85% 15%, rgba(255,255,255,.28), rgba(255,255,255,0) 45%); pointer-events: none; }
 .rd-st.is-playing { box-shadow: var(--shadow-hero), inset 0 0 0 3px #fff; transform: translateY(-2px); }
 .rd-txt { position: relative; z-index: 1; min-width: 0; }
-.rd-freq { font-size: 13px; line-height: 16px; font-weight: 800; letter-spacing: .08em; }
+.rd-freq { font-size: var(--fs-meta, 15px); line-height: 20px; font-weight: 800; letter-spacing: .08em; }
 .rd-nm { font-size: 22px; line-height: 27px; font-weight: 800; margin-top: 2px; overflow-wrap: anywhere; }
 .rd-sub { font-size: 16px; line-height: 22px; font-weight: 600; margin-top: 2px; color: #fff; }
 .rd-err { display: inline-block; background: #fff; color: #8E1F31; font-size: 16px; line-height: 22px; font-weight: 600; border-radius: 8px; padding: 4px 10px; margin-top: 6px; }
 .rd-play { position: relative; z-index: 1; width: 60px; height: 60px; border-radius: 50%; border: 0; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,.25); transition: transform var(--dur-1, 120ms) var(--ease-out); }
 .rd-play:active { transform: scale(.94); }
+.rd-play:disabled { opacity: .5; }
 .rd-eq { display: flex; gap: 3px; align-items: flex-end; height: 18px; margin-top: 8px; }
 .rd-eq i { width: 4px; background: #fff; border-radius: 2px; animation: rd-eq 1s ease-in-out infinite alternate; }
 .rd-eq i:nth-child(1) { height: 8px; } .rd-eq i:nth-child(2) { height: 16px; animation-delay: .2s; } .rd-eq i:nth-child(3) { height: 11px; animation-delay: .4s; } .rd-eq i:nth-child(4) { height: 14px; animation-delay: .1s; }
@@ -26,3 +27,9 @@
 .card.rd-link { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 14px 16px; text-decoration: none; color: var(--ink); box-shadow: var(--shadow-raised); }
 .rd-link-t { display: block; font-size: 18px; line-height: 24px; font-weight: 700; }
 .rd-link-s { display: block; font-size: 15px; line-height: 21px; color: var(--muted); }
+
+/* S28 (D-178): sections and the station credit link */
+.rd-sec { margin-top: var(--sp-5, 24px); }
+.rd-sech { margin: 0; font-size: var(--fs-title, 20px); line-height: var(--lh-tight, 1.2); font-weight: 700; color: var(--ink); }
+.rd-site { position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: 44px; margin-top: 2px; font-size: var(--fs-meta, 15px); line-height: 20px; font-weight: 600; color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.rd-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

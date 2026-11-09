@@ -54,7 +54,7 @@ describe('rowsOn', () => {
       notes: [{ clientId: 'n', body: 'Bring the lab papers', pinned: true }]
     })
     const r = rowsOn(FRI, s, FRI)
-    expect(r.map((x) => x.kind)).toEqual(['dose', 'visit', 'event', 'task', 'note'])
+    expect(r.map((x) => x.kind)).toEqual(['dose', 'checkup', 'event', 'task', 'note']) // "blood tests" is a lab visit (S28)
     expect(r[0]).toMatchObject({ title: 'Losartan 50 mg', sub: expect.stringMatching(/^Mama · 9:00/) })
     expect(r[1]!.sub).toMatch(/^Clinic · 3:00/)
     expect(r[3]!.sub).toBe('Ate')

@@ -1,0 +1,110 @@
+[
+ {
+  "region": "Metro Manila",
+  "barangays": 900,
+  "placeNodes": 105,
+  "splitByProvince": false
+ },
+ {
+  "region": "Calabarzon",
+  "barangays": 1316,
+  "placeNodes": 2234,
+  "splitByProvince": false
+ },
+ {
+  "region": "Ilocos Region",
+  "barangays": 156,
+  "placeNodes": 2708,
+  "splitByProvince": false
+ },
+ {
+  "region": "Cordillera Administrative Region",
+  "barangays": 150,
+  "placeNodes": 1064,
+  "splitByProvince": false
+ },
+ {
+  "region": "Cagayan Valley",
+  "barangays": 92,
+  "placeNodes": 1776,
+  "splitByProvince": false
+ },
+ {
+  "region": "Central Luzon",
+  "barangays": 911,
+  "placeNodes": 1840,
+  "splitByProvince": false
+ },
+ {
+  "region": "Mimaropa",
+  "barangays": 120,
+  "placeNodes": 1174,
+  "splitByProvince": false
+ },
+ {
+  "region": "Bicol Region",
+  "barangays": 63,
+  "placeNodes": 2860,
+  "splitByProvince": false
+ },
+ {
+  "region": "Western Visayas",
+  "barangays": 165,
+  "placeNodes": 2822,
+  "splitByProvince": false
+ },
+ {
+  "region": "Central Visayas",
+  "barangays": 188,
+  "placeNodes": 1880,
+  "splitByProvince": false
+ },
+ {
+  "region": "Eastern Visayas",
+  "barangays": 278,
+  "placeNodes": 3562,
+  "splitByProvince": false
+ },
+ {
+  "region": "Zamboanga Peninsula",
+  "barangays": 27,
+  "placeNodes": 1458,
+  "splitByProvince": false
+ },
+ {
+  "region": "Bangsamoro",
+  "barangays": 23,
+  "placeNodes": 1170,
+  "splitByProvince": false
+ },
+ {
+  "region": "Soccsksargen",
+  "barangays": 72,
+  "placeNodes": 1014,
+  "splitByProvince": false
+ },
+ {
+  "region": "Caraga",
+  "barangays": 24,
+  "placeNodes": 1213,
+  "splitByProvince": false
+ },
+ {
+  "region": "Northern Mindanao",
+  "barangays": 42,
+  "placeNodes": 1609,
+  "splitByProvince": false
+ },
+ {
+  "region": "Davao Region",
+  "barangays": 172,
+  "placeNodes": 1033,
+  "splitByProvince": false
+ },
+ {
+  "region": "Negros Island Region",
+  "barangays": 339,
+  "placeNodes": 984,
+  "splitByProvince": false
+ }
+]

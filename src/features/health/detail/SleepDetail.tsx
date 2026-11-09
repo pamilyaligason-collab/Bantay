@@ -1,4 +1,5 @@
 import { shortDate, type Activity } from '../model'
+import { dailyActivity, present, sleepAverage } from '../trendLogic'
 import { hm, lastNight, sleepSentence } from './sleepLogic'
 import './detail.css'
 
@@ -12,6 +13,8 @@ export function SleepHero({ acts, age, now }: { acts: Activity[]; age: number | 
   const ago = Math.round((today.getTime() - new Date(`${n.day}T12:00:00`).getTime()) / 86_400_000)
   const title = ago === 0 ? 'Last night' : `Last sleep on file · ${shortDate(`${n.day}T12:00:00`)}`
   const sentence = sleepSentence(n.minutes / 60, age)
+  const week = dailyActivity(acts, 'sleep', now, 7)
+  const avg = sleepAverage(week)
   return (
     <div className="grp sd-hero" data-testid="sleep-hero">
       <div className="row sd-col">
@@ -20,6 +23,7 @@ export function SleepHero({ acts, age, now }: { acts: Activity[]; age: number | 
         {n.napMinutes > 0 && <span className="sub">plus {hm(n.napMinutes)} nap</span>}
         {n.bedAt && <span className="sd-times"><span className="sub">Went to sleep</span> <strong>{clock(n.bedAt)}</strong></span>}
         {sentence && <p className="sd-line" data-testid="sleep-sentence">{sentence}</p>}
+        {avg && <p className="sd-line" data-testid="sleep-avg">Average over the last 7 days: {avg.text}, from {present(week).length} {present(week).length === 1 ? 'night' : 'nights'} with sleep shared.</p>}
       </div>
     </div>
   )

@@ -1,8 +1,10 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Radio from './Radio'
-import { STATIONS } from './stations'
-import { resetRadioForTests } from './radioPlayer'
+import { SECTIONS, STATIONS } from './stations'
+import { announceMedia, onOtherMedia } from '../../media/mediaStart'
+import { SOS_STARTED_EVENT } from '../../sos/active'
+import { RADIO_STALL_MS, resetRadioForTests } from './radioPlayer'
 
 /** A mock Audio: one instance is created lazily, so "created once" proves the element is shared. */
 const made: FakeAudio[] = []
@@ -32,6 +34,51 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); Reflect.deleteProperty(navigator, 'mediaSession') })
 
 describe('Live radio', () => {
+  it('offline: Play is disabled and the offline note shows; a station already playing can still stop', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    render(<Radio />)
+    expect((screen.getByRole('button', { name: 'Play Love Radio' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByText('You are offline. These open when you are back online.')).toBeTruthy()
+    vi.restoreAllMocks()
+  })
+
+  it('a stream that stays silent for 15 s becomes the Could not connect state', async () => {
+    vi.useFakeTimers()
+    try {
+      render(<Radio />)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play Love Radio' })) })
+      expect(screen.getByTestId('radio-love').dataset.state).toBe('connecting')
+      act(() => { vi.advanceTimersByTime(RADIO_STALL_MS - 1) })
+      expect(screen.getByTestId('radio-love').dataset.state).toBe('connecting')
+      act(() => { vi.advanceTimersByTime(1) })
+      expect(screen.getByTestId('radio-love').dataset.state).toBe('error')
+      expect(screen.getByText('Could not connect, try again.')).toBeTruthy()
+      expect(made[0]!.src).toBe('')
+    } finally { vi.useRealTimers() }
+  })
+
+  it('a station with a second address tries it after the first fails, then errors; playing cancels the stall timer', async () => {
+    vi.useFakeTimers()
+    const love = STATIONS[0]!
+    love.alt = 'https://alt.example.test/love'
+    try {
+      render(<Radio />)
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play Love Radio' })) })
+      expect(made[0]!.src).toBe(love.url)
+      act(() => made[0]!.fire('error'))
+      expect(made[0]!.src).toBe(love.alt)
+      expect(screen.getByTestId('radio-love').dataset.state).toBe('connecting')
+      act(() => made[0]!.fire('error'))
+      expect(screen.getByTestId('radio-love').dataset.state).toBe('error')
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Try Love Radio again' })) })
+      act(() => { vi.advanceTimersByTime(RADIO_STALL_MS) }) // first address stalls: the second is tried
+      expect(made[0]!.src).toBe(love.alt)
+      act(() => made[0]!.fire('playing'))
+      act(() => { vi.advanceTimersByTime(RADIO_STALL_MS * 2) })
+      expect(screen.getByTestId('radio-love').dataset.state).toBe('playing')
+    } finally { delete love.alt; vi.useRealTimers() }
+  })
+
   it('lists the five stations, all over HTTPS, and the data and personal-use notes', () => {
     render(<Radio />)
     expect(STATIONS).toHaveLength(5)
@@ -72,7 +119,7 @@ describe('Live radio', () => {
     render(<Radio />)
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play Home Radio' })) })
     act(() => made[0]!.fire('error'))
-    expect(screen.getByText('Could not play. Check data or Wi-Fi.')).toBeTruthy()
+    expect(screen.getByText('Could not connect, try again.')).toBeTruthy()
     expect(screen.getByTestId('radio-home').dataset.state).toBe('error')
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Try Home Radio again' })) })
     expect(made[0]!.play).toHaveBeenCalledTimes(2)
@@ -105,6 +152,51 @@ describe('Live radio', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play Love Radio' })) })
     unmount()
     expect(made[0]!.pause).toHaveBeenCalled()
+  })
+
+  it('groups the stations into three sections, each credited with its own official site', () => {
+    render(<Radio />)
+    const secs = Array.from(document.querySelectorAll('section.rd-sec')).map((s) => ({ h: s.querySelector('h3')!.textContent, names: Array.from(s.querySelectorAll('.rd-nm')).map((n) => n.textContent) }))
+    expect(secs).toEqual([
+      { h: 'Music & Light Rock', names: ['Easy Rock', 'Home Radio'] },
+      { h: 'Pop & Mass', names: ['Love Radio', 'Magic 89.9'] },
+      { h: 'News & Talk', names: ['DZRH'] }
+    ])
+    expect(SECTIONS.map((s) => s.label)).toEqual(['Music & Light Rock', 'Pop & Mass', 'News & Talk'])
+    for (const s of STATIONS) {
+      const a = screen.getByTestId(`radio-${s.id}`).querySelector('a.rd-site')!
+      expect(a.getAttribute('href')).toBe(s.site)
+      expect(a.getAttribute('rel')).toBe('noopener noreferrer')
+    }
+  })
+
+  it('is the one player: a video starting stops the radio, and starting a station tells videos to stop', async () => {
+    const heard: unknown[] = []
+    const off = onOtherMedia('video-test', () => heard.push(1))
+    render(<Radio />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play Love Radio' })) })
+    expect(heard).toHaveLength(1) // the radio announced itself
+    act(() => made[0]!.fire('playing'))
+    expect(screen.getByTestId('radio-love').dataset.state).toBe('playing')
+    act(() => announceMedia('video-test'))
+    expect(screen.getByTestId('radio-love').dataset.state).toBe('idle')
+    expect(made[0]!.pause).toHaveBeenCalled()
+    off()
+  })
+
+  it('an SOS stops the radio', async () => {
+    render(<Radio />)
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Play DZRH' })) })
+    act(() => { window.dispatchEvent(new Event(SOS_STARTED_EVENT)) })
+    expect(screen.getByTestId('radio-dzrh').dataset.state).toBe('idle')
+  })
+
+  it('no Zeno host is used anywhere (every link returned 401 or 404)', () => {
+    for (const s of STATIONS) {
+      expect(new URL(s.url).hostname, s.id).not.toMatch(/zeno/i)
+      expect(new URL(s.site).hostname, s.id).not.toMatch(/zeno/i)
+    }
+    expect(STATIONS.map((s) => s.id)).toEqual(['love', 'easyrock', 'dzrh', 'home', 'magic'])
   })
 
   it('white text on every gradient stop is at least 4.5:1', () => {

@@ -6,6 +6,7 @@ import { HOME_ZONES, type LatLon, type Loc } from './geo'
 import { resolvePlace, type ZoneId } from './place'
 import { shouldRefresh, weatherFixState } from './freshness'
 import { familyPlacesOn } from '../family/flags'
+import { useBarangayTick } from './nearestPlace'
 
 export interface Home {
   name: string
@@ -164,6 +165,7 @@ export const usePlace = (o?: { weather?: boolean }) => {
 
 /** Same, over a useLocation() the caller already holds, so a screen with several readers shares one position. */
 export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
+  useBarangayTick() // re-render when an offline barangay lookup lands (S28, D-181)
   // undefined until Dexie has answered, so a saved Conel pick never shows Dampas first
   const [saved, setSaved] = useState<ZoneId | null | undefined>(undefined)
   useEffect(() => {

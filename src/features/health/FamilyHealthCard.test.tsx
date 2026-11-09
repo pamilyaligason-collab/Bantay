@@ -105,4 +105,20 @@ describe('FamilyHealthCard', () => {
     expect(within(c).queryByRole('link', { name: 'Share yours' })).toBeNull()
     expect(c.textContent).toContain('View only')
   })
+  it('S28 C1: one rings row for you and each writer carer; a read-only link gets no row, no numbers (D-109)', () => {
+    state.writable = ['p2'] // Pa Sample is read-only
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
+    const c = screen.getByTestId('family-health')
+    expect(within(c).getByTestId('fh-m-p1').textContent).toContain('You')
+    expect(within(c).getByTestId('fh-m-p2').textContent).toContain('Ma Sample')
+    expect(within(c).queryByTestId('fh-m-p3')).toBeNull()
+    expect(within(c).getByTestId('fh-m-p2').textContent).toContain('No steps yet') // no data on this phone: null, never 0
+    expect(within(c).getByTestId('fh-m-p2').textContent).toContain('check-in')
+  })
+  it('S28 C1: a check-in shows as Done for who checked in and Not yet for who did not', () => {
+    state.last = { p1: now } // p2 has not
+    render(<FamilyHealthCard ids={['p1', 'p2', 'p3']} />)
+    expect(within(screen.getByTestId('fh-m-p1')).getByTestId('fh-checkin').textContent).toContain('Done')
+    expect(within(screen.getByTestId('fh-m-p2')).getByTestId('fh-checkin').textContent).toContain('Not yet')
+  })
 })

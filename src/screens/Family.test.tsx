@@ -3,6 +3,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const acting = vi.hoisted(() => ({ on: false }))
+const where = vi.hoisted(() => ({ places: null as import('../features/family/placeApi').Place[] | null }))
+vi.mock('../features/family/placeApi', async (orig) => ({ ...(await orig<typeof import('../features/family/placeApi')>()), usePlaces: () => where.places }))
 vi.mock('../features/auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 vi.mock('../features/sync/SyncStatus', () => ({ SyncStatus: () => null })) // HeadActions shows it; it needs the sync module
 vi.mock('../features/viewas/viewAs', async (orig) => ({ ...(await orig<object>()), useActing: () => ({ acting: acting.on, personId: acting.on ? 'p9' : null, name: 'Mama' }) }))
@@ -11,21 +13,21 @@ import type { FamilyPerson } from '../features/family/roster'
 import type { Msg } from '../features/family/messagesApi'
 import Family, { messagesPreview } from './Family'
 
-afterEach(() => { cleanup(); acting.on = false; location.hash = '' })
+afterEach(() => { cleanup(); acting.on = false; where.places = null; location.hash = '' })
 
 const person = (id: string, name: string): FamilyPerson => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe: false })
 const people = [person('p2', 'Ate Joy Cruz'), person('p3', 'Papa Ben')]
 const msg = (o: Partial<Msg>): Msg => ({ id: 'x', clientId: null, mine: false, senderPersonId: 'p2', kind: 'text', body: 'hi', name: null, durationS: null, createdAt: '2026-10-27T02:00:00+00:00', url: null, ...o })
 
 describe('messagesPreview', () => {
-  it('no messages: Say hello and nothing unread', () => {
-    expect(messagesPreview([], people, null)).toEqual({ sub: 'Say hello', unread: 0 })
+  it('no messages: No alerts yet and nothing unread', () => {
+    expect(messagesPreview([], people, null)).toEqual({ sub: 'No alerts yet', unread: 0 })
   })
 
   it('names the sender of the newest message (first word) and says "You" for your own', () => {
-    expect(messagesPreview([msg({ body: 'Dinner at 6' })], people, '2026-10-27T03:00:00Z').sub).toMatch(/^Family chat · Ate: Dinner at 6/)
-    expect(messagesPreview([msg({ mine: true, body: 'ok' })], people, null).sub).toMatch(/^Family chat · You: ok/)
-    expect(messagesPreview([msg({ senderPersonId: 'zz', body: 'ok' })], people, null).sub).toMatch(/^Family chat · Family: ok/)
+    expect(messagesPreview([msg({ body: 'Dinner at 6' })], people, '2026-10-27T03:00:00Z').sub).toMatch(/^Ate: Dinner at 6/)
+    expect(messagesPreview([msg({ mine: true, body: 'ok' })], people, null).sub).toMatch(/^You: ok/)
+    expect(messagesPreview([msg({ senderPersonId: 'zz', body: 'ok' })], people, null).sub).toMatch(/^Family: ok/)
   })
 
   it('words for attachments, not their paths', () => {
@@ -92,14 +94,19 @@ describe('Family root', () => {
     expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy() // S25: Together first, then Papers
   })
 
-  it('S26 order: the one Calendar, Together, Papers, Where, Needs, People, then Activity; no separate Today list', async () => {
+  it('S28 order: the one Calendar, Together, Papers, Activity, Where, Needs, then Today (the people cards); Activity and Where both render, Activity first; no second list of people', async () => {
     location.hash = '#family'
+    where.places = [{ personId: 'p1', lat: 14.6, lon: 121, accuracyM: 20, fixedAt: Date.now() - 60_000, batteryPct: 80, charging: false }] // Where shows only when someone shares
     const { container } = render(<Family />)
     await screen.findByTestId('papers-card')
-    const ids = ['calendar', 'together', 'papers-section', 'where', 'needs', 'people', 'activity']
+    await screen.findByTestId('where')
+    const ids = ['calendar', 'together', 'papers-section', 'activity', 'where', 'needs', 'people']
     const found = [...container.querySelectorAll('[data-testid]')].map((el) => el.getAttribute('data-testid')!).filter((id) => ids.includes(id))
+    expect(found).toContain('activity')
+    expect(found).toContain('where')
+    expect(found.indexOf('activity')).toBeLessThan(found.indexOf('where')) // Activity moved up, above Where everyone is
     expect(found).toEqual(ids.filter((id) => found.includes(id))) // whatever shows is in board order, none repeated
-    expect(found.slice(0, 3)).toEqual(['calendar', 'together', 'papers-section'])
+    expect(found.slice(0, 5)).toEqual(['calendar', 'together', 'papers-section', 'activity', 'where'])
     expect(container.querySelector('[data-testid="facesrow"]')).toBeNull()
   })
 

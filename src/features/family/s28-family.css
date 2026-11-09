@@ -1,0 +1,46 @@
+/* S28 lane E (D-168): Together cards, calendar markers, per-person Messenger/WhatsApp rows, Memories share, task reminder time.
+   Tokens come from L0 with px fallbacks. Every motion here is off under prefers-reduced-motion. */
+
+/* Together cards: a .card.tint with data-hue (contract, L0 cards.css gives --h and --h-ic), an icon chip, a dotted pattern and a slow drift of the light spot. The sub line takes the tint's ink mixed 55% with the page ink (>= 4.5:1 on the gradient's worst stop, light and dark, tested).
+   The fallbacks after each var() keep the card right if the hue rules are missing. */
+.fm-tile { --tk: var(--h-ic, var(--tint-green-ink)); gap: var(--sp-3, 12px); }
+.card.tint.fm-tile[data-hue] { display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; padding: var(--card-pad, 16px); border-radius: 22px; background: linear-gradient(155deg, var(--h, var(--tint-green)), color-mix(in srgb, var(--h, var(--tint-green)) 62%, var(--card))); }
+.fm-tile::before { content: ""; position: absolute; inset: 0; pointer-events: none; background-image: radial-gradient(circle, color-mix(in srgb, var(--tk) 16%, transparent) 1.5px, transparent 2px); background-size: 16px 16px; -webkit-mask-image: linear-gradient(200deg, #000, transparent 65%); mask-image: linear-gradient(200deg, #000, transparent 65%); }
+.fm-tile > * { position: relative; z-index: 1; }
+.fm-tile-ic { display: inline-grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; background: color-mix(in srgb, var(--tk) 14%, var(--card)); color: var(--tk); }
+.fm-tile .cd-title { font-size: var(--fs-title, 20px); line-height: var(--lh-tight, 1.2); }
+.fm-tile .fm-tile-s { font-size: var(--fs-meta, 15px); line-height: 1.35; color: color-mix(in srgb, var(--tk) 55%, var(--ink)); font-weight: 600; } /* the tint's ink pulled toward the page ink: the bare ink was 3.0:1 on the dark gradient */
+@media (prefers-reduced-motion: no-preference) {
+  .fm-tile::after { animation: fm-drift calc(var(--dur-sheet, 280ms) * 32) var(--ease-out, ease-in-out) infinite alternate; } /* a slow drift: 32 x the sheet time, about 9 s */
+  @keyframes fm-drift { from { transform: translate(0, 0); } to { transform: translate(-14px, 10px); } }
+}
+
+/* Calendar markers: medicine (pill), check-up or lab (flask), visit (cross) are small icons; events, tasks and notes stay dots. */
+.fm2-d i { min-height: 16px; align-items: center; justify-content: center; flex-wrap: wrap; height: auto; }
+.bt .fm2-d { min-height: 64px; }
+.fm2-month .fm2-d { min-height: 56px; }
+.fm2-mk { display: inline-flex; color: var(--hue-green-ic); }
+.fm2-mk[data-hue="blue"] { color: var(--hue-blue-ic); } .fm2-mk[data-hue="lilac"] { color: var(--hue-lilac-ic); } .fm2-mk[data-hue="amber"] { color: var(--hue-amber-ic); } .fm2-mk[data-hue="terra"] { color: var(--hue-terra-ic); } .fm2-mk[data-hue="teal"] { color: var(--tint-teal-ink); }
+.fm2-d[aria-pressed="true"] .fm2-mk { color: var(--on-green); }
+.fm2-key { list-style: none; margin: var(--sp-3, 12px) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: var(--fs-meta, 15px); color: var(--ink); }
+.fm2-key li { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; }
+.fm2-kd { width: 8px; height: 8px; border-radius: 50%; background: var(--hue-green-ic); display: inline-block; }
+.fm2-kd[data-hue="amber"] { background: var(--hue-amber-ic); } .fm2-kd[data-hue="terra"] { background: var(--hue-terra-ic); } .fm2-kd[data-hue="lilac"] { background: var(--hue-lilac-ic); } .fm2-kd[data-hue="blue"] { background: var(--hue-blue-ic); } .fm2-kd[data-hue="teal"] { background: var(--tint-teal-ink); }
+.fm2-tag[data-hue="teal"] { --h: var(--tint-teal); --h-ic: var(--tint-teal-ink); }
+
+/* Messages: a row per person with Messenger / WhatsApp / Add Messenger name */
+.rc-btns { display: flex; flex-wrap: wrap; gap: var(--sp-2, 8px); justify-content: flex-end; }
+[data-testid="reach"] .rw { flex-wrap: wrap; }
+[data-testid="reach"] .rw-sub { font-size: var(--fs-meta, 15px); }
+[data-testid="reach"] .pc-btn { min-height: 44px; font-size: var(--fs-meta, 15px); }
+
+/* Task reminder time (Add sheet) */
+.fm-remind { display: grid; gap: var(--sp-2, 8px); }
+.fm-remind-row { display: flex; gap: var(--sp-2, 8px); align-items: center; }
+
+/* Memories: one tap share, under the picture, next to the caption */
+.bt .mem-share { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 0; border-radius: 22px; background: var(--card2, var(--card)); color: var(--ink); font-size: var(--fs-meta, 15px); font-weight: 600; box-shadow: inset 0 0 0 1.5px var(--line); }
+
+/* Integration: a day is 44 px wide at 360 (7 columns in a 328 px card need 8 px side padding), and the Together tiles end 72 px short of the gutter so neither lies under Jack at rest (e2e comply-ct-family, no allowance) */
+@media (max-width: 375px) { .bt .fm2-cal, .card.fm2-cal { padding-left: 8px; padding-right: 8px; } }
+.fm-tiles { padding-right: var(--jack-clear, 72px); }
