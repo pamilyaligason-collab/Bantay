@@ -10,7 +10,6 @@ import { hdb } from '../records/store'
 import type { Reading } from '../health/ranges'
 import { ageOf, checkInLabel, dial, lastCheckIn, nudgeFor, useCheckIns, useFamilyPeople } from './roster'
 import { useReportAccess } from './reportData'
-import Messages from './Messages'
 import { messengerHref, whatsappHref } from './messagesLogic'
 import { useCarerIds } from './CarerCards'
 import { MessengerEditor } from './ReachList'
@@ -96,7 +95,6 @@ export default function MemberPage({ id }: { id: string }) {
   const { people } = useFamilyPeople()
   const last = useCheckIns()
   const access = useReportAccess(id)
-  const [talk, setTalk] = useState(false)
   const [mess, setMess] = useState(false)
   const writable = useCarerIds()
   const { isOwner } = useFamilyScope()
@@ -134,7 +132,7 @@ export default function MemberPage({ id }: { id: string }) {
       ) : (
         <p className="sub fm-empty">No phone number saved for {first}. They can add it in Me.</p>
       )}
-      <button type="button" className="pill ghost fm-msg" onClick={() => setTalk(true)}>Message {first}</button>
+      {(() => { const n = nudgeFor(p, c.ok); return n ? <a className="pill ghost fm-msg" href={n.href}>{n.text}</a> : null })()}
       <div className="fm-actions" data-testid="member-reach">
         {messengerHref(p.messenger) && <a className="pill ghost" href={messengerHref(p.messenger)!.href} target="_blank" rel="noreferrer">Messenger</a>}
         {!p.isMe && whatsappHref(p.phone) && <a className="pill ghost" href={whatsappHref(p.phone)!.href} target="_blank" rel="noreferrer">WhatsApp</a>}
@@ -157,7 +155,6 @@ export default function MemberPage({ id }: { id: string }) {
         <p className="sub">Health readings and records are private. Only {first}, the family owner, and the people {first} shares with can see them.</p>
       </div>
       {mess && <MessengerEditor person={p} onClose={() => setMess(false)} />}
-      {talk && <Messages who={p} people={people} nudge={(() => { const n = nudgeFor(p, c.ok); return n ? { text: n.text, href: n.href } : null })()} onClose={() => setTalk(false)} onOpenPage={() => setTalk(false)} />}
     </>
   )
 }

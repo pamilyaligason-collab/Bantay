@@ -56,6 +56,20 @@ export function whatsappHref(phone?: string | null): { href: string; label: stri
   return raw.startsWith('+') && d.length >= 8 && d.length <= 15 ? { href: `https://wa.me/${d}`, label: 'WhatsApp' } : null
 }
 
+/** The ways to reach one person from the People card and the face sheet (S28, D-168): their Messenger and WhatsApp when saved; with neither, a phone call if a number is saved,
+ *  else a link to add a Messenger name (their page; your own name on the Messages page). Never an in-app chat. `dial` is the saved number reduced to digits (roster.dial). */
+export type Reach = { href: string; label: string; external: boolean }
+export function reachOptions(p: { id: string; isMe: boolean; messenger?: string | null; phone?: string | null }, dial: string | null): Reach[] {
+  const out: Reach[] = []
+  const m = p.isMe ? null : messengerHref(p.messenger)
+  const w = p.isMe ? null : whatsappHref(p.phone)
+  if (m) out.push({ ...m, external: true })
+  if (w) out.push({ ...w, external: true })
+  if (out.length) return out
+  if (!p.isMe && dial) return [{ href: `tel:${dial}`, label: 'Call', external: false }]
+  return [{ href: p.isMe ? '#family/messages' : `#family/people/${p.id}`, label: 'Add Messenger name', external: false }]
+}
+
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, Math.floor(s) % 60)).padStart(2, '0')}`
 
 /** "7:40 AM" today, else "Mon 19 Oct, 7:40 AM". Null for a bad date. */

@@ -6,28 +6,40 @@ import { cleanMessenger } from './messagesLogic'
 type Names = Record<string, string | null>
 let cache: { at: number; map: Names } | null = null
 let inflight: Promise<Names> | null = null
+let gen = 0 // bumped by a reset, so a read that started before a sign-out never fills the cache after it
 const subs = new Set<(m: Names) => void>()
 const TTL = 60_000
 
+let wired = false
+/** Once, the first time names are read: a sign-out forgets every name, so a shared phone never shows one person's saved names to the next (ML-46). */
+function wireSignOut() {
+  if (wired || !supabase) return
+  wired = true
+  try { supabase.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') resetMessengers() }) } catch { wired = false }
+}
+
 export async function loadMessengers(force = false): Promise<Names> {
+  wireSignOut()
   if (!force && cache && Date.now() - cache.at < TTL) return cache.map
   if (!supabase) return cache?.map ?? {}
   inflight ??= (async () => {
+    const mine = gen
     try {
       const r = await supabase!.from('people').select('id,messenger')
       if (r.error) return cache?.map ?? {}
       const map: Names = {}
       for (const x of r.data ?? []) map[String(x.id)] = cleanMessenger(x.messenger as string | null)
+      if (mine !== gen) return {}
       cache = { at: Date.now(), map }
       subs.forEach((f) => f(map))
       return map
-    } catch { return cache?.map ?? {} } finally { inflight = null }
+    } catch { return cache?.map ?? {} } finally { if (mine === gen) inflight = null }
   })()
   return inflight
 }
 
 /** Forget every name (sign-out on a shared phone, tests). */
-export function resetMessengers() { cache = null; inflight = null; subs.forEach((f) => f({})) }
+export function resetMessengers() { gen++; cache = null; inflight = null; subs.forEach((f) => f({})) }
 
 export function useMessengers(): Names {
   const [m, setM] = useState<Names>(cache?.map ?? {})

@@ -38,9 +38,12 @@ const paperDate = (iso: string | null) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(day) ? new Date(`${day}T00:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Saved'
 }
 
-function Tile(p: { href: string; icon: IconName; tint: 'amber' | 'blue' | 'green' | 'purple'; title: string; sub: string; testId: string; badge?: number }) {
+/** The contract hue for each tile colour (look/cards.css data-hue). */
+const HUE = { amber: 'amber', blue: 'blue', green: 'green', purple: 'lilac' } as const
+
+function Tile(p: { href: string; icon: IconName; tint: keyof typeof HUE; title: string; sub: string; testId: string; badge?: number }) {
   return (
-    <a className="fm-tile" href={p.href} data-tint={p.tint} data-testid={p.testId}>
+    <a className="card tint fm-tile" href={p.href} data-hue={HUE[p.tint]} data-testid={p.testId}>
       <span className="fm-tile-ic"><Icon name={p.icon} size={28} /></span>
       <span><b className="cd-title">{p.title}{p.badge ? <span className="fm-tile-n"> · {p.badge} new</span> : null}</b><span className="fm-tile-s cd-meta">{p.sub}</span></span>
     </a>

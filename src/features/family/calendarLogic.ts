@@ -6,9 +6,10 @@ import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 /** Family calendar rows (S16 L4, mockup family-s16). Pure: the screen passes what it read, this decides what shows on which day. */
 export type CalKind = 'dose' | 'checkup' | 'visit' | 'event' | 'task' | 'note'
 /** Icon + label + hue per kind (colour plus shape plus word, D-96). */
-export const KIND: Record<CalKind, { label: string; icon: IconName; hue: Hue }> = {
+/** The five card hues are all taken by the other kinds, so the check-up marker borrows teal (its own colour, distinct from Note's lilac). */
+export const KIND: Record<CalKind, { label: string; icon: IconName; hue: Hue | 'teal' }> = {
   dose: { label: 'Dose', icon: 'pill', hue: 'green' },
-  checkup: { label: 'Check-up or lab', icon: 'flask', hue: 'lilac' }, // S28 (D-168): its own shape and colour in the week and month markers
+  checkup: { label: 'Check-up or lab', icon: 'flask', hue: 'teal' }, // S28 (D-168): its own shape and colour (teal, not Note's lilac) in the markers, the legend and the row tag
   visit: { label: 'Visit', icon: 'cross', hue: 'blue' },
   event: { label: 'Event', icon: 'calendar', hue: 'amber' },
   task: { label: 'Task', icon: 'check', hue: 'terra' },

@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./roster', async (orig) => ({
@@ -9,7 +9,6 @@ vi.mock('./roster', async (orig) => ({
 }))
 const acc = vi.hoisted(() => ({ v: true as boolean | null }))
 vi.mock('./reportData', async (orig) => ({ ...(await orig<typeof import('./reportData')>()), useReportAccess: () => acc.v }))
-vi.mock('./Messages', () => ({ default: ({ who }: { who: { name: string } }) => <div role="dialog" aria-label={`Messages with ${who.name}`} /> }))
 import MemberPage, { todayView, whenAgo } from './MemberPage'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
@@ -73,12 +72,13 @@ describe('MemberPage', () => {
   })
   it('a "SURNAME, Given" name shows the given name on the buttons: Rey, not VILLAR,', async () => {
     render(<MemberPage id="p3" />)
-    expect(await screen.findByRole('button', { name: 'Message Rey' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Call Rey' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Call Rey' })).toBeTruthy()
   })
-  it('the Message button opens the Messages sheet for this person', async () => {
+  it('there is no in-app Message button or chat sheet: the page offers Call, Text and the Messenger name instead', async () => {
     render(<MemberPage id="p2" />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Message Lola' }))
-    expect(screen.getByRole('dialog', { name: 'Messages with Lola Sample' })).toBeTruthy()
+    await screen.findByRole('link', { name: 'Call Lola' })
+    expect(screen.queryByRole('button', { name: /^Message/ })).toBeNull()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByTestId('member-reach')).toBeTruthy()
   })
 })

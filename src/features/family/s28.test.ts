@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { isCheckup, kindsOn, rowsOn, MASKED_APPT, type CalSource } from './calendarLogic'
 import { newestFirst } from './memoriesLogic'
-import { cleanMessenger, messengerHref } from './messagesLogic'
+import { over, parse, ratio, tokensOf, type RGB, type Theme } from '../look/contrastMath'
+import { cleanMessenger, messengerHref, reachOptions } from './messagesLogic'
 import { needsRows } from './needsRows'
 import { plannedTaskRings, ringsHere, TASK_ID_BASE, TASK_ID_SPAN } from './taskReminders'
 import { cleanClock } from './tasks'
@@ -112,4 +113,72 @@ describe('Memories order', () => {
     const c = { id: 'c', takenOn: null, createdAt: '2026-10-20T12:00:00Z' }
     expect(newestFirst([a, b, c]).map((x) => x.id)).toEqual(['c', 'b', 'a'])
   })
+})
+
+describe('0061 down file is safe to run twice', () => {
+  const down = readFileSync('supabase/migrations/0061_family_messenger_reminder.down.sql', 'utf8')
+  const sql = down.split(String.fromCharCode(10)).filter((l) => !l.trim().startsWith('--')).join(String.fromCharCode(10))
+  it('the column grant is revoked first, inside a guard that checks the column exists; every other statement is if-exists', () => {
+    const at = (re: RegExp) => sql.search(re)
+    expect(at(/revoke update \(messenger\)/)).toBeGreaterThanOrEqual(0)
+    expect(at(/revoke update \(messenger\)/)).toBeLessThan(at(/drop column if exists messenger/)) // revoke before drop
+    expect(sql).toMatch(/do \$\$ begin\s+if exists \(select 1 from information_schema\.columns[^;]*column_name = 'messenger'\)\s+then\s+revoke update \(messenger\) on public\.people from authenticated;\s+end if;\s+end \$\$;/)
+    const bare = sql.replace(/do \$\$[\s\S]*?end \$\$;/, '').split(';').map((x) => x.trim()).filter(Boolean)
+    expect(bare.length).toBe(4)
+    for (const st of bare) expect(st, st).toMatch(/drop (constraint|column) if exists/)
+  })
+})
+
+describe('reach options (no in-app chat, D-168)', () => {
+  const p = (o: Partial<{ messenger: string | null; phone: string | null; isMe: boolean }> = {}) => ({ id: 'x1', isMe: false, messenger: null, phone: null, ...o })
+  it('Messenger and WhatsApp when saved, in that order, both external', () => {
+    expect(reachOptions(p({ messenger: 'rosa.santos', phone: '+63 917 123 4567' }), '+639171234567')).toEqual([
+      { href: 'https://m.me/rosa.santos', label: 'Messenger', external: true }, { href: 'https://wa.me/639171234567', label: 'WhatsApp', external: true }])
+  })
+  it('with neither: a phone call when a number is saved, else Add Messenger name on their page', () => {
+    expect(reachOptions(p({ phone: '0917 123 4567' }), '09171234567')).toEqual([{ href: 'tel:09171234567', label: 'Call', external: false }])
+    expect(reachOptions(p(), null)).toEqual([{ href: '#family/people/x1', label: 'Add Messenger name', external: false }])
+  })
+  it('for yourself only the Messenger name editor (the Messages page), never a call or a chat link', () => {
+    expect(reachOptions(p({ isMe: true, messenger: 'me.myself', phone: '+639171234567' }), '+639171234567')).toEqual([{ href: '#family/messages', label: 'Add Messenger name', external: false }])
+  })
+})
+
+describe('Together tiles (contract hues, motion tokens, contrast)', () => {
+  const css = readFileSync('src/features/family/s28-family.css', 'utf8')
+  const tsx = readFileSync('src/features/family/TogetherList.tsx', 'utf8')
+  it('the tiles are .card.tint with a data-hue from the contract, not their own data-tint', () => {
+    expect(tsx).toMatch(/className="card tint fm-tile"/)
+    expect(tsx).toMatch(/data-hue=\{HUE\[p\.tint\]\}/)
+    expect(tsx).not.toMatch(/data-tint=/)
+    expect(css).not.toMatch(/data-tint/)
+    expect(css).toMatch(/\.fm-tile-s \{[^}]*color: color-mix\(in srgb, var\(--tk\) 55%, var\(--ink\)\)/)
+  })
+  it('the only animation uses --dur-sheet and --ease-out tokens, and sits inside the no-preference block', () => {
+    const anim = css.match(/animation:[^;]*;/g) ?? []
+    expect(anim).toHaveLength(1)
+    expect(anim[0]).toMatch(/calc\(var\(--dur-sheet, 280ms\) \* 32\)/)
+    expect(anim[0]).toMatch(/var\(--ease-out,/)
+    expect(css).not.toMatch(/\d+s ease/)
+    const block = css.match(/@media \(prefers-reduced-motion: no-preference\) \{[\s\S]*?\n\}/)![0]
+    expect(block).toContain('animation:')
+    expect(css.replace(block, '')).not.toMatch(/animation|transition/)
+  })
+  const mix = (a: RGB, b: RGB, wa: number): RGB => a.map((v, i) => v * wa + b[i]! * (1 - wa)) as RGB
+  const HUES = { green: 'green', amber: 'amber', blue: 'blue', lilac: 'purple' } as const
+  for (const theme of ['light', 'dark'] as Theme[]) {
+    it(`the sub line ink is >= 4.5:1 on every part of the tint gradient, dots and light spot included (${theme})`, () => {
+      const t = tokensOf(theme)
+      const card = parse(t['--card']!)[0]
+      const spot: [RGB, number] = [[255, 255, 255], theme === 'light' ? 0.5 : 0.14] // the ::after light spot, strongest value
+      for (const [hue, tint] of Object.entries(HUES)) {
+        const fill = parse(t[`--tint-${tint}`]!)[0]
+        const tk = parse(t[`--tint-${tint}-ink`]!)[0]
+        const ink = mix(tk, parse(t['--ink']!)[0], 0.55) // .fm-tile-s: color-mix(in srgb, var(--tk) 55%, var(--ink))
+        const stops = [fill, mix(fill, card, 0.62)] // linear-gradient(155deg, tint, tint 62% over card)
+        const worst = stops.flatMap((s) => [s, over(spot, s), mix(tk, s, 0.16)]) // plain, under the spot, under a dot at full strength (mask ignored)
+        for (const bg of worst) expect(ratio(ink, bg), `${theme} ${hue}`).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+  }
 })
