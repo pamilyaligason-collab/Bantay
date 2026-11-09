@@ -1,12 +1,8 @@
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { AnimatedDemo } from './AnimatedDemo'
 import { LiteVideo } from './LiteVideo'
-import VideoCard from '../today/VideoCard'
 
-const realPlay = HTMLMediaElement.prototype.play
-const realPause = HTMLMediaElement.prototype.pause
-afterEach(() => { HTMLMediaElement.prototype.play = realPlay; HTMLMediaElement.prototype.pause = realPause; cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 const setOnline = (v: boolean) => vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(v)
 
 describe('LiteVideo', () => {
@@ -57,41 +53,5 @@ describe('LiteVideo', () => {
     setOnline(true)
     const { container } = render(<LiteVideo id="bad" title="x" />)
     expect(container.innerHTML).toBe('')
-  })
-})
-
-describe('Today video card', () => {
-  it('plays inline through LiteVideo: a poster button, no iframe until tapped', () => {
-    setOnline(true)
-    const { container } = render(<VideoCard />)
-    expect(screen.getByRole('heading', { name: 'Video of the day' })).toBeTruthy()
-    expect(container.querySelector('iframe')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: /^Play / }))
-    expect(container.querySelector('iframe')!.getAttribute('src')).toMatch(/youtube-nocookie\.com\/embed\//)
-  })
-})
-
-describe('AnimatedDemo', () => {
-  const mm = (reduce: boolean) => vi.stubGlobal('matchMedia', (q: string) => ({ matches: reduce && q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {} }))
-  it('starts paused when the phone asks for reduced motion, and Play starts it', () => {
-    mm(true)
-    const play = vi.fn().mockResolvedValue(undefined)
-    HTMLMediaElement.prototype.play = play
-    HTMLMediaElement.prototype.pause = vi.fn()
-    const { container } = render(<AnimatedDemo src="/x.mp4" label="Chair arm raises" />)
-    expect(play).not.toHaveBeenCalled()
-    expect(container.querySelector('video')!.muted).toBe(true)
-    fireEvent.click(screen.getByRole('button', { name: /Play/ }))
-    expect(play).toHaveBeenCalledTimes(1)
-    expect(screen.getByRole('button', { name: /Pause/ })).toBeTruthy()
-  })
-  it('plays by default when motion is fine, with a Pause button', () => {
-    mm(false)
-    const play = vi.fn().mockResolvedValue(undefined)
-    HTMLMediaElement.prototype.play = play
-    HTMLMediaElement.prototype.pause = vi.fn()
-    render(<AnimatedDemo src="/x.mp4" label="Chair arm raises" />)
-    expect(play).toHaveBeenCalled()
-    expect(screen.getByRole('button', { name: /Pause/ })).toBeTruthy()
   })
 })

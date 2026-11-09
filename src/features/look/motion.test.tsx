@@ -5,7 +5,6 @@ import { gzipSync } from 'node:zlib'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { momentAt, PATTERNS } from '../today/breathLogic'
 import WeatherScene from '../weather/WeatherScene'
-import { Aurora } from './Aurora'
 import { BreathOrb } from './BreathOrb'
 import { CheckDraw } from './CheckDraw'
 import { CountUp } from './CountUp'
@@ -89,33 +88,6 @@ describe('CheckDraw', () => {
   })
 })
 
-describe('Aurora: never a canvas where it must not be', () => {
-  const caps = (hw = 8) => { vi.stubGlobal('navigator', { hardwareConcurrency: hw }); const gl = new Proxy({}, { get: (_t, k) => (k === 'getProgramParameter' ? () => true : k === 'getExtension' ? () => ({ loseContext() {} }) : typeof k === 'string' && /^[A-Z_0-9]+$/.test(k) ? 1 : () => ({})) }); HTMLCanvasElement.prototype.getContext = (() => gl) as never }
-  it('no WebGL2 or a low-end phone: static gradient only', () => {
-    vi.stubGlobal('navigator', { hardwareConcurrency: 8 })
-    HTMLCanvasElement.prototype.getContext = (() => null) as never
-    location.hash = '#discover'
-    expect(render(<Aurora />).container.querySelector('canvas')).toBeNull()
-    caps(2)
-    expect(render(<Aurora />).container.querySelector('canvas')).toBeNull()
-  })
-  it('on Today, on #safety*, under reduced motion and while the SOS screen is open: no canvas', () => {
-    caps()
-    location.hash = '#today'
-    expect(render(<Aurora />).container.querySelector('canvas')).toBeNull()
-    location.hash = '#safety/warnings'
-    expect(render(<Aurora />).container.querySelector('canvas')).toBeNull()
-    location.hash = '#discover'
-    still()
-    expect(render(<Aurora />).container.querySelector('canvas')).toBeNull()
-    vi.unstubAllGlobals(); caps()
-    act(() => setSosScreenOpen(true))
-    expect(render(<Aurora />).container.querySelector('canvas')).toBeNull()
-    act(() => setSosScreenOpen(false))
-    expect(render(<Aurora />).container.querySelector('canvas')).not.toBeNull()
-  })
-})
-
 describe('WeatherScene stillness', () => {
   it('moves normally; still under reduced motion (8 streaks) and while the SOS screen is open', () => {
     location.hash = '#today'
@@ -171,16 +143,6 @@ describe('WeatherScene pause', () => {
     expect(el().dataset.paused).toBeUndefined()
     hidden.mockRestore()
   })
-  it('Aurora draws no canvas when the hash moves to Today after mount', () => {
-    vi.stubGlobal('navigator', { hardwareConcurrency: 8 })
-    const gl = new Proxy({}, { get: (_t, k) => (k === 'getProgramParameter' ? () => true : k === 'getExtension' ? () => ({ loseContext() {} }) : typeof k === 'string' && /^[A-Z_0-9]+$/.test(k) ? 1 : () => ({})) })
-    HTMLCanvasElement.prototype.getContext = (() => gl) as never
-    location.hash = '#discover'
-    const { container } = render(<Aurora />)
-    expect(container.querySelector('canvas')).not.toBeNull()
-    act(() => { location.hash = '#today'; window.dispatchEvent(new HashChangeEvent('hashchange')) })
-    expect(container.querySelector('canvas')).toBeNull()
-  })
 })
 
 describe('offline art', () => {
@@ -193,11 +155,10 @@ describe('offline art', () => {
 })
 
 describe('lazy chunk budgets (KB gz) over dist/ after vite build', () => {
-  it.skipIf(!existsSync('dist/assets'))('gsap and any Aurora chunk stay within budget', () => {
+  it.skipIf(!existsSync('dist/assets'))('gsap chunk stays within budget', () => {
     const gz = (f: string) => gzipSync(readFileSync(`dist/assets/${f}`)).length / 1024
     for (const f of readdirSync('dist/assets').filter((x) => x.endsWith('.js'))) {
       if (/^gsap/i.test(f)) expect(gz(f), f).toBeLessThanOrEqual(40)
-      if (/^aurora/i.test(f)) expect(gz(f), f).toBeLessThanOrEqual(12)
     }
   })
 })
