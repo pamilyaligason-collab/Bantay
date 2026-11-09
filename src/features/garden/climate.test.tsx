@@ -10,7 +10,7 @@ vi.mock('../safety/unitAt', async (orig) => ({
     await h.gate
     return [
       { code: 'A', name: 'Abra', bbox: [0, 0, 10, 10], polys: box(0) }, // sure, type 1
-      { code: 'B', name: 'Albay', bbox: [20, 20, 30, 30], polys: box(20) } // uncertain, type 2
+      { code: 'B', name: 'Albay', bbox: [20, 20, 30, 30], polys: box(20) } // uncertain, type 4 (PAGASA map 2026-11-09)
     ]
   }
 }))
@@ -53,14 +53,14 @@ describe('useClimate', () => {
     render(<Probe />); await flush()
     expect(text()).toBe('null|false|false|October')
     open(); await flush()
-    expect(text()).toBe('2|true|true|October')
+    expect(text()).toBe('4|true|true|October')
   })
   it('re-resolves when the place moves, with no remount', async () => {
     const { rerender } = render(<Probe />); await flush()
     expect(text()).toBe('1|false|true|October')
     h.loc = { lat: 25, lon: 25 }
     rerender(<Probe />); await flush()
-    expect(text()).toBe('2|true|true|October')
+    expect(text()).toBe('4|true|true|October')
   })
   it('a pick is saved as {type, province}; it holds there, is ignored elsewhere, and counts where no province answers', async () => {
     render(<Probe />); await flush()
@@ -71,7 +71,7 @@ describe('useClimate', () => {
     render(<Probe />); await flush()
     expect(text()).toBe('3|false|true|October')
     cleanup(); h.loc = { lat: 25, lon: 25 }; render(<Probe />); await flush()
-    expect(text()).toBe('2|true|true|October')
+    expect(text()).toBe('4|true|true|October')
     cleanup(); h.loc = { lat: 60, lon: 60 }; render(<Probe />); await flush()
     expect(text()).toBe('3|false|true|October')
   })
