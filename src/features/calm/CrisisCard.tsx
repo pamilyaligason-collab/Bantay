@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import hotlines from '../../data/safety/hotlines.json'
 import { track } from '../admin/events'
+import { Icon } from '../shell/Icon'
 import { crisisLines, telHref, type HotlineRow } from './crisis'
 import './calm.css'
 
@@ -10,7 +11,7 @@ export function TalkCard() {
   useEffect(() => { void track('action', 'card_talk') }, [])
   return (
     <section className="cm-talk" data-testid="today-talk" aria-labelledby="cm-talk-h">
-      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>
+      <Icon name="chat" size={32} />
       <div className="cm-talk-body">
         <h2 id="cm-talk-h" className="cm-talk-t">Need to talk to someone?</h2>
         <p className="cm-talk-s">Hotline numbers and calming tools. In danger now? Call 911.</p>
