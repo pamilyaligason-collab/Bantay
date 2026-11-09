@@ -336,7 +336,7 @@ test.describe('signed in', () => {
       await healthFull(page, FIXED_CLOCKS[1])
       await page.setViewportSize({ width: 195, height: 800 })
       await page.goto('/#health/visits')
-      await expect(page.locator('h1').first()).toHaveText('Visits')
+      await expect(page.locator('h1').first()).toHaveText('Doctors & Lab Appointments')
       await setScheme(page, s)
       await shoot(page, `visits-${s}-195`)
       await assertNoSideways(page)

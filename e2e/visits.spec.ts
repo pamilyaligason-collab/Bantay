@@ -54,7 +54,7 @@ test('visits: next visit, follow-up due, Bring checklist stays ticked, summary p
     await expect(next).toContainText('Check-up, internal medicine')
     await expect(next).toContainText('9:00 AM')
     await expect(page.getByTestId('follow-ups')).toContainText('Follow-up due')
-    await expect(page.getByRole('heading', { name: 'Past visits' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Past appointments' })).toBeVisible()
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/visits-${scheme}.png` })
     expect((await new AxeBuilder({ page }).include('main').analyze()).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(' | ')}`)).toEqual([])
   }

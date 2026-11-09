@@ -77,7 +77,19 @@ describe('rowsOn', () => {
       masked: (id) => id !== 'j'
     })
     const r = rowsOn(FRI, s, FRI)
-    expect(r.map((x) => [x.title, x.sub])).toEqual([['Metformin', expect.stringMatching(/^Ate · 8:00/)], ['Medicine time', 'Mama'], ['Appointment', 'Mama']])
+    expect(r.map((x) => [x.title, x.sub])).toEqual([['Metformin', expect.stringMatching(/^Ate · 8:00/)], ['Medicine time', 'Mama'], ['Doctors & Lab Appointments', 'Mama']])
+  })
+  it('masked events (D-109): an event of another person keeps its row, time and given name but loses title, place and notes; own, whole-family and unmasked stay', () => {
+    const ev = (clientId: string, title: string, personId: string | null, h: number) => ({ clientId, title, startsAt: at(FRI, h), endsAt: null, allDay: false, personId, location: 'Secret Clinic', notes: 'Private note' })
+    const s = src({
+      events: [ev('e1', 'Dentist', 'm', 9), ev('e2', 'Own checkup', 'j', 10), ev('e3', 'Family lunch', null, 12)] as CalSource['events'],
+      masked: (id) => id !== 'j'
+    })
+    const r = rowsOn(FRI, s, FRI)
+    expect(r.map((x) => [x.key, x.title, x.masked])).toEqual([['event|e1', 'Doctors & Lab Appointments', true], ['event|e2', 'Own checkup', undefined], ['event|e3', 'Family lunch', undefined]])
+    expect(r[0]!.sub).toMatch(/^Mama · /) // given name and time only
+    expect(JSON.stringify(r[0])).not.toMatch(/Dentist|Secret|Private/)
+    expect(rowsOn(FRI, { ...s, masked: undefined }, FRI)[0]!.title).toBe('Dentist') // left out of the Family root, the whole record shows
   })
   it('kindsOn gives each kind once, in fixed order; an empty day gives none', () => {
     const s = src({ tasks: [{ clientId: 'a', title: 'a', due: FRI, assigneePersonId: null, done: false }, { clientId: 'b', title: 'b', due: FRI, assigneePersonId: null, done: true }] })

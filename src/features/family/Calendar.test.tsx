@@ -97,6 +97,38 @@ describe('Calendar rows by person', () => {
 })
 
 // D-168: Plan folded into the Calendar. Everything the old Plan list held stays visible, and the same add / tick / edit flows work.
+// D-109: on the Family root only the shown person's events keep their title; an event of a link reads as an appointment and cannot be opened.
+describe('Calendar masks events of other people (D-109)', () => {
+  const seed = () => fdb.events.bulkPut([
+    { clientId: 'e1', title: 'Own checkup', startsAt: new Date().toISOString(), endsAt: null, allDay: true, personId: 'p1' },
+    { clientId: 'e2', title: 'Dentist for Ma', startsAt: new Date().toISOString(), endsAt: null, allDay: true, personId: 'p2' },
+    { clientId: 'e3', title: 'Family lunch', startsAt: new Date().toISOString(), endsAt: null, allDay: true, personId: null }
+  ])
+  const row = (list: HTMLElement, text: string) => within(list).getAllByRole('listitem').find((r) => r.textContent?.includes(text))!
+
+  it('the shown person sees the real title of their own event; the event of another person reads Doctors & Lab Appointments with only the name, and is not openable', async () => {
+    await seed()
+    render(<Calendar detailFor="p1" />)
+    const list = screen.getByRole('list', { name: 'Today' })
+    await waitFor(() => expect(list.textContent).toContain('Family lunch'))
+    expect(list.textContent).toContain('Own checkup')
+    expect(list.textContent).not.toContain('Dentist for Ma')
+    const masked = row(list, 'Doctors & Lab Appointments')
+    expect(masked.textContent).toContain('Ma')
+    expect(masked.querySelector('button.fm-item')).toBeNull()
+    expect(row(list, 'Own checkup').querySelector('button.fm-item')).not.toBeNull()
+    expect(document.body.textContent).not.toContain('Dentist for Ma')
+  })
+
+  it('without detailFor (the Calendar page) every readable event shows in full', async () => {
+    await seed()
+    render(<Calendar />)
+    const list = screen.getByRole('list', { name: 'Today' })
+    await waitFor(() => expect(list.textContent).toContain('Dentist for Ma'))
+    expect(list.textContent).not.toContain('Doctors & Lab Appointments')
+  })
+})
+
 describe('Calendar holds the old Plan (D-168)', () => {
   const add = () => fireEvent.click(screen.getByRole('button', { name: 'Add event, reminder or note' }))
 

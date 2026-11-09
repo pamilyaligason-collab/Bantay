@@ -17,7 +17,9 @@ export const KIND_ORDER: CalKind[] = ['dose', 'visit', 'event', 'task', 'note']
 
 export interface CalDose { personId: string; name: string; dose: string | null; slot: string }
 export interface CalAppt { personId: string; startsAt?: string; dueOn?: string; provider?: string; facility?: string; purpose?: string; apptStatus?: string }
-export interface CalRow { key: string; kind: CalKind; title: string; sub: string; sort: string; done: boolean }
+export interface CalRow { key: string; kind: CalKind; title: string; sub: string; sort: string; done: boolean; /** True for a row that hides its details (D-109): the screen must not open an editor for it. */ masked?: boolean }
+/** The title a masked visit or event shows to everyone but its own person (D-109). */
+export const MASKED_APPT = 'Doctors & Lab Appointments'
 export interface CalSource {
   events: FamilyEvent[]
   tasks: FamilyTask[]
@@ -26,7 +28,7 @@ export interface CalSource {
   /** Doses due on one day for the people this viewer may read (D-82). */
   doses: (day: string) => CalDose[]
   nameOf: (personId: string | null | undefined) => string
-  /** True for a person whose doses and visits may show only that they exist (the Family root, D-109): no medicine, dose, doctor, clinic or time. */
+  /** True for a person whose doses and visits may show only that they exist (the Family root, D-109): no medicine, dose, doctor, clinic, or event title; a visit shows no time, an event keeps its time. */
   masked?: (personId: string) => boolean
 }
 
@@ -69,13 +71,14 @@ export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Dat
     const at = a.startsAt ? new Date(a.startsAt) : null
     const aDay = at && !Number.isNaN(at.getTime()) ? dayKey(at) : a.dueOn ?? null
     if (aDay !== day) return
-    if (s.masked?.(a.personId)) { out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: 'Appointment', sub: given(s.nameOf(a.personId)), sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' }); return }
+    if (s.masked?.(a.personId)) { out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: MASKED_APPT, sub: given(s.nameOf(a.personId)), sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done', masked: true }); return }
     const time = at && !Number.isNaN(at.getTime()) ? ` · ${clock(hhmm(a.startsAt!))}` : ''
     const where = a.facility || a.provider || given(s.nameOf(a.personId))
     out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: a.purpose || a.provider || 'Doctor visit', sub: `${where}${time}`, sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' })
   })
   for (const e of s.events) {
     if (eventDay(e) !== day) continue
+    if (e.personId && s.masked?.(e.personId)) { out.push({ key: `event|${e.clientId}`, kind: 'event', title: MASKED_APPT, sub: `${given(s.nameOf(e.personId))} · ${timeLabel(e)}`, sort: e.allDay ? '00:00' : hhmm(e.startsAt), done: false, masked: true }); continue } // title, place and notes stay with their person (D-109)
     const who = e.personId ? given(s.nameOf(e.personId)) : 'Whole family'
     out.push({ key: `event|${e.clientId}`, kind: 'event', title: e.title, sub: `${who} · ${timeLabel(e)}`, sort: e.allDay ? '00:00' : hhmm(e.startsAt), done: false })
   }

@@ -57,7 +57,7 @@ export default function VisitSummary() {
 
   return (
     <>
-      <SubHeader title="Summary for the doctor" backHref="#health/visits" backLabel="Back to Doctor visits" />
+      <SubHeader title="Summary for the doctor" backHref="#health/visits" backLabel="Back to Doctors & Lab Appointments" />
       <WhoLine />
       <article className="card vsum" aria-label="Summary page" data-testid="summary">
         <h2 className="vsum-n">{s.who}</h2>

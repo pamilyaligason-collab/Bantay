@@ -68,7 +68,7 @@ export default function Visits() {
 
   return (
     <>
-      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Visits" tone="purple" />
+      <LargeTitle back={{ href: '#health', label: 'Health' }} title="Doctors & Lab Appointments" tone="purple" />
       <WhoLine />
 
       <section className="card vs-hero" data-hero data-tint="purple" data-testid="vs-hero" aria-label="Next visit">
@@ -81,14 +81,14 @@ export default function Visits() {
           <div data-testid="no-visit" className="vs-nextrow">
             <span className="vs-ic" aria-hidden="true"><Icon name="calendar" size={24} /></span>
             <span className="grow">
-              <b>No visit booked</b>
-              <span className="sub">Pick a date in Plan and Bantay will remind you. Visits from your doctor&apos;s papers show here too.</span>
+              <b>No appointment booked</b>
+              <span className="sub">Pick a date in Plan and Bantay will remind you. Appointments from your doctor&apos;s papers show here too.</span>
             </span>
           </div>
         )}
         {(ready || !next) && (
           <div className="vs-actrow">
-            {!next && <a className="btn" href="#family/plan">Plan a visit</a>}
+            {!next && <a className="btn" href="#family/plan">Add an appointment</a>}
             {ready && <span className="vs-chip">{ready}</span>}
           </div>
         )}
@@ -145,12 +145,12 @@ export default function Visits() {
       <Section title="Coming up">
         {list.upcoming.length > 1
           ? <ul className="grp">{list.upcoming.slice(1).map((v) => <VisitRow key={v.key} v={v} />)}</ul>
-          : <div className="card rf-hero"><b>Nothing booked</b><span className="sub">Planned visits and follow-ups show here.</span></div>}
+          : <div className="card rf-hero"><b>Nothing booked</b><span className="sub">Planned appointments and follow-ups show here.</span></div>}
       </Section>
-      <Section title="Past visits">
+      <Section title="Past appointments">
         {list.past.length > 0
           ? <ul className="grp">{list.past.map((v) => <VisitRow key={v.key} v={v} />)}</ul>
-          : <div className="card rf-hero"><b>No past visits yet</b><span className="sub">Finished visits and what you asked are kept here.</span></div>}
+          : <div className="card rf-hero"><b>No past appointments yet</b><span className="sub">Finished appointments and what you asked are kept here.</span></div>}
       </Section>
     </>
   )

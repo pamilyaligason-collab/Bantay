@@ -78,8 +78,8 @@ test('sub-screens: Readings, Labs, Medicines, Visits, Move and food, Body wiki',
   expect(zones).toMatch(/Normal/)
   await expect(page.getByTestId('labs-list')).toContainText(/Above|Below|In range|Normal|Within/i) // a plain word, not colour alone
   await at(page, '#health/meds', 'Medicines')
-  await at(page, '#health/visits', 'Visits')
-  await expect(page.getByRole('link', { name: 'Plan a visit' })).toHaveAttribute('href', '#family/plan')
+  await at(page, '#health/visits', 'Doctors & Lab Appointments')
+  await expect(page.getByRole('link', { name: 'Add an appointment' })).toHaveAttribute('href', '#family/plan')
   await at(page, '#health/move', 'Move and food')
   await at(page, '#health/body', 'Body wiki')
   await expect(page.getByTestId('body-systems').getByRole('button')).not.toHaveCount(0) // system chips
@@ -269,7 +269,7 @@ test('H13: empty Medicines holds both buttons inside the card', async ({ page })
 
 test('H14: Visits sections are in order', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
-  await at(page, '#health/visits', 'Visits')
+  await at(page, '#health/visits', 'Doctors & Lab Appointments')
   await expect(page.getByTestId('vs-summary')).toBeVisible()
   await assertOrder(page, ['vs-hero', 'vs-bring', 'vs-questions', 'vs-asked', 'vs-summary'])
 })

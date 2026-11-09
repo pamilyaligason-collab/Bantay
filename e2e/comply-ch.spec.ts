@@ -59,7 +59,7 @@ test('shots (CH_SHOTS)', async ({ page }) => {
 
 test('Visits: Prepare visit summary is a solid full-width 56 px button; Bring rows carry real sublines', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
-  await at(page, '#health/visits', 'Visits')
+  await at(page, '#health/visits', 'Doctors & Lab Appointments')
   const b = (await page.getByRole('link', { name: 'Prepare visit summary' }).boundingBox())!
   expect(b.height).toBeGreaterThanOrEqual(56)
   expect(b.width).toBeGreaterThanOrEqual(340)
@@ -129,7 +129,7 @@ test('Labs: board order, board labels, bar with a You bubble, tick numbers clear
 
 test('Labs and Visits and Move back links take their board colours; Papers is red on Labs', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
-  const tones: [string, string, string][] = [['#health/labs', 'Labs', 'red'], ['#health/visits', 'Visits', 'purple'], ['#health/move', 'Move and food', 'teal']]
+  const tones: [string, string, string][] = [['#health/labs', 'Labs', 'red'], ['#health/visits', 'Doctors & Lab Appointments', 'purple'], ['#health/move', 'Move and food', 'teal']]
   for (const [hash, h1, tone] of tones) {
     await at(page, hash, h1)
     await expect(page.locator('.lt-back')).toHaveAttribute('data-tone', tone)
