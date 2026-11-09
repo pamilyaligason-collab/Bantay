@@ -3,6 +3,8 @@
  *  Nothing here diagnoses or changes treatment. FOR CLINICIAN REVIEW (docs/session-8/CLINICAL-REVIEW.md). Keys are the codes in scripts/import/test-catalog.json. */
 export interface LabEntry {
   code: string
+  loinc?: string // LOINC code: MedlinePlus Connect finds a lab by code only (checked live 2026-11-09)
+  topic?: string // id of the closest curated topic (src/data/medlib/topics.json): the "related condition"
   name: string
   aliases: string[] // other spellings a paper or import may use (matched case-blind, letters and digits only)
   organ: string // what it reflects, 2 to 4 words: the first half of the Health "needs attention" line
@@ -20,7 +22,7 @@ const NOT_ALARM = 'A result outside the range does not mean you have a condition
 
 export const LAB_GLOSSARY: LabEntry[] = [
   {
-    code: 'alt', name: 'ALT (SGPT)', aliases: ['sgpt', 'alt/sgpt', 'alanine aminotransferase'], organ: 'Liver enzyme', short: 'An enzyme that mostly sits inside liver cells',
+    code: 'alt', loinc: '1742-6', topic: 'fattyliver', name: 'ALT (SGPT)', aliases: ['sgpt', 'alt/sgpt', 'alanine aminotransferase'], organ: 'Liver enzyme', short: 'An enzyme that mostly sits inside liver cells',
     what: 'ALT is an enzyme found mostly in the liver. A small amount is normally in the blood. It is often checked with other liver tests.',
     high: 'It can rise when liver cells are irritated or damaged, for example by some medicines or supplements, a liver infection or disease, or poor blood flow to the liver. A mild rise is common and often not serious. ' + NOT_ALARM,
     low: 'A low ALT is uncommon and is usually not a concern on its own.',
@@ -29,7 +31,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}alt-blood-test/`
   },
   {
-    code: 'ast', name: 'AST (SGOT)', aliases: ['sgot', 'ast/sgot', 'aspartate aminotransferase'], organ: 'Liver and muscle enzyme', short: 'An enzyme in the liver, heart and muscles',
+    code: 'ast', loinc: '1920-8', topic: 'fattyliver', name: 'AST (SGOT)', aliases: ['sgot', 'ast/sgot', 'aspartate aminotransferase'], organ: 'Liver and muscle enzyme', short: 'An enzyme in the liver, heart and muscles',
     what: 'AST is an enzyme found mostly in the liver, and also in the heart, muscles and other tissues. It is usually read together with other liver tests.',
     high: 'It can rise when the liver or another tissue that holds AST is irritated or damaged, for example by some medicines, alcohol, a liver illness or a muscle or heart problem. ' + NOT_ALARM,
     low: 'A low AST is usually considered normal.',
@@ -38,7 +40,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}ast-test/`
   },
   {
-    code: 'creatinine', name: 'Creatinine', aliases: ['crea', 'createnine', 'serum creatinine'], organ: 'Kidney waste product', short: 'A waste product the kidneys remove',
+    code: 'creatinine', loinc: '2160-0', topic: 'ckd', name: 'Creatinine', aliases: ['crea', 'createnine', 'serum creatinine'], organ: 'Kidney waste product', short: 'A waste product the kidneys remove',
     what: 'Creatinine is a waste product from normal muscle use. Healthy kidneys filter it out of the blood, so it helps show how well the kidneys are working.',
     high: 'It can be high when the kidneys are filtering less well. Dehydration, a very hard workout, a muscle injury or a lot of meat in the diet can also push it up for a while. ' + NOT_ALARM,
     low: 'A low creatinine is uncommon. It can go with low muscle mass or poor nutrition.',
@@ -47,7 +49,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}creatinine-test/`
   },
   {
-    code: 'egfr', name: 'eGFR', aliases: ['gfr', 'estimated gfr'], organ: 'Kidney filtering score', short: 'How well the kidneys filter your blood',
+    code: 'egfr', loinc: '33914-3', topic: 'ckd', name: 'eGFR', aliases: ['gfr', 'estimated gfr'], organ: 'Kidney filtering score', short: 'How well the kidneys filter your blood',
     what: 'eGFR is an estimate of how well your kidneys filter waste from your blood. It is worked out from your creatinine, age and sex, so a higher number is better.',
     high: 'A high eGFR is usually not a concern.',
     low: 'A lower eGFR means the kidneys may be filtering less well. Doctors usually repeat it and look at other results before deciding what it means. ' + NOT_ALARM,
@@ -56,7 +58,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}glomerular-filtration-rate-gfr-test/`
   },
   {
-    code: 'bun', name: 'Blood urea nitrogen', aliases: ['blood urea nitrogen', 'urea nitrogen', 'urea'], organ: 'Kidney waste product', short: 'A waste product from breaking down protein',
+    code: 'bun', loinc: '3094-0', topic: 'ckd', name: 'Blood urea nitrogen', aliases: ['blood urea nitrogen', 'urea nitrogen', 'urea'], organ: 'Kidney waste product', short: 'A waste product from breaking down protein',
     what: 'BUN is the urea nitrogen in your blood, a waste product from breaking down protein. Healthy kidneys remove it in urine.',
     high: 'It can be high when the kidneys are filtering less well, but also with dehydration, a high-protein diet or some medicines. ' + NOT_ALARM,
     low: 'It can be low with a low-protein diet, poor nutrition or, less often, a liver problem.',
@@ -65,7 +67,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}bun-blood-urea-nitrogen/`
   },
   {
-    code: 'uric_acid', name: 'Uric acid', aliases: ['uricacid', 'bua'], organ: 'Waste product, joints', short: 'A waste product that can collect in joints',
+    code: 'uric_acid', loinc: '3084-1', topic: 'gout', name: 'Uric acid', aliases: ['uricacid', 'bua'], organ: 'Waste product, joints', short: 'A waste product that can collect in joints',
     what: 'Uric acid is a waste product made when the body breaks down purines, found in some foods. The kidneys remove most of it. Too much can collect in joints.',
     high: 'It can be high with gout, with kidneys that clear it slowly, or after a diet rich in purines such as red meat, some seafood and alcohol. ' + NOT_ALARM,
     low: 'A low blood uric acid is uncommon and is usually harmless.',
@@ -74,7 +76,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}uric-acid-test/`
   },
   {
-    code: 'fasting_glucose', name: 'Fasting glucose', aliases: ['fbs', 'fasting blood sugar', 'glucose fasting'], organ: 'Blood sugar', short: 'Blood sugar after not eating for hours',
+    code: 'fasting_glucose', loinc: '1558-6', topic: 'diabetes2', name: 'Fasting glucose', aliases: ['fbs', 'fasting blood sugar', 'glucose fasting'], organ: 'Blood sugar', short: 'Blood sugar after not eating for hours',
     what: 'Fasting glucose is the sugar in your blood after at least 8 hours without food. It shows how well the body handles sugar.',
     high: 'It can be high with prediabetes or diabetes. Illness, stress and some medicines such as steroids can also raise it for a while. ' + NOT_ALARM,
     low: 'It can be low with diabetes medicines, not eating enough or extra activity. Some other conditions and alcohol can also lower it.',
@@ -83,7 +85,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}blood-glucose-test/`
   },
   {
-    code: 'random_glucose', name: 'Random glucose', aliases: ['rbs', 'random blood sugar', 'glucose random', 'glucose'], organ: 'Blood sugar', short: 'Blood sugar at any time of day',
+    code: 'random_glucose', loinc: '2345-7', topic: 'diabetes2', name: 'Random glucose', aliases: ['rbs', 'random blood sugar', 'glucose random', 'glucose'], organ: 'Blood sugar', short: 'Blood sugar at any time of day',
     what: 'Random glucose is the sugar in your blood at any time, even soon after eating, so it is usually higher than a fasting result.',
     high: 'It can be high with prediabetes or diabetes, or after a recent meal. Illness, stress and some medicines can also raise it. ' + NOT_ALARM,
     low: 'It can be low with diabetes medicines, not eating enough or extra activity.',
@@ -92,7 +94,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}blood-glucose-test/`
   },
   {
-    code: 'hba1c', name: 'HbA1c', aliases: ['hba1c ngsp', 'glycated hemoglobin', 'glycosylated hemoglobin', 'a1c'], organ: 'Average blood sugar', short: 'Average sugar over about 3 months',
+    code: 'hba1c', loinc: '4548-4', topic: 'diabetes2', name: 'HbA1c', aliases: ['hba1c ngsp', 'glycated hemoglobin', 'glycosylated hemoglobin', 'a1c'], organ: 'Average blood sugar', short: 'Average sugar over about 3 months',
     what: 'HbA1c shows your average blood sugar over about the last 2 to 3 months, as the share of your hemoglobin that is coated with sugar. You do not need to fast for it.',
     high: 'A higher result means your blood sugar has been higher on average. Doctors compare it with set cut-offs and often repeat it to be sure, so ask your doctor what yours means. ' + NOT_ALARM,
     low: 'MedlinePlus does not say what a low value means, so ask your doctor if yours is low.',
@@ -101,7 +103,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}hemoglobin-a1c-hba1c-test/`
   },
   {
-    code: 'total_cholesterol', name: 'Total cholesterol', aliases: ['cholesterol', 'totalcholesterol'], organ: 'Blood fat (cholesterol)', short: 'All the cholesterol in your blood',
+    code: 'total_cholesterol', loinc: '2093-3', topic: 'cholesterol', name: 'Total cholesterol', aliases: ['cholesterol', 'totalcholesterol'], organ: 'Blood fat (cholesterol)', short: 'All the cholesterol in your blood',
     what: 'Total cholesterol adds up the different kinds of cholesterol in your blood, including LDL and HDL.',
     high: 'A higher number can raise the long-term chance of heart and blood vessel problems. Food, weight, activity, smoking and family history all play a part. ' + NOT_ALARM,
     low: 'A low total cholesterol is usually not a concern on its own.',
@@ -110,7 +112,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}cholesterol-levels/`
   },
   {
-    code: 'ldl', name: 'LDL cholesterol', aliases: ['ldl cholesterol', 'ldl-c', 'ldlcholesterol'], organ: 'Blood fat (cholesterol)', short: 'Cholesterol that can build up in blood vessels',
+    code: 'ldl', loinc: '13457-7', topic: 'cholesterol', name: 'LDL cholesterol', aliases: ['ldl cholesterol', 'ldl-c', 'ldlcholesterol'], organ: 'Blood fat (cholesterol)', short: 'Cholesterol that can build up in blood vessels',
     what: 'LDL is the cholesterol that can build up in the walls of blood vessels. It is often called the "bad" cholesterol. Some labs calculate it from other results.',
     high: 'A higher LDL can raise the long-term chance of heart attack and stroke. Food, weight, activity, smoking and family history all play a part. ' + NOT_ALARM,
     low: 'A low LDL is usually not a concern.',
@@ -119,7 +121,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}cholesterol-levels/`
   },
   {
-    code: 'hdl', name: 'HDL cholesterol', aliases: ['hdl cholesterol', 'hdl-c', 'hdlcholesterol'], organ: 'Blood fat (cholesterol)', short: 'Cholesterol that carries other cholesterol away',
+    code: 'hdl', loinc: '2085-9', topic: 'cholesterol', name: 'HDL cholesterol', aliases: ['hdl cholesterol', 'hdl-c', 'hdlcholesterol'], organ: 'Blood fat (cholesterol)', short: 'Cholesterol that carries other cholesterol away',
     what: 'HDL is the cholesterol that helps carry other cholesterol away from the blood. It is often called the "good" cholesterol, so for HDL a higher number is better.',
     high: 'A high HDL is usually not a concern.',
     low: 'A low HDL means less cholesterol is being carried away, which can raise the long-term chance of heart problems. ' + NOT_ALARM,
@@ -128,7 +130,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}cholesterol-levels/`
   },
   {
-    code: 'triglycerides', name: 'Triglycerides', aliases: ['trigly', 'tg', 'triglyceride'], organ: 'Blood fat', short: 'A type of fat in the blood',
+    code: 'triglycerides', loinc: '2571-8', topic: 'cholesterol', name: 'Triglycerides', aliases: ['trigly', 'tg', 'triglyceride'], organ: 'Blood fat', short: 'A type of fat in the blood',
     what: 'Triglycerides are a type of fat in the blood. They are usually checked with cholesterol as part of a lipid profile.',
     high: 'A high result can go with a diet rich in fat, sugar or refined carbs, too little exercise, being overweight, diabetes or some other conditions. Very high levels can irritate the pancreas. ' + NOT_ALARM,
     low: 'A low result is usually not a concern.',
@@ -137,7 +139,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}triglycerides-test/`
   },
   {
-    code: 'hemoglobin', name: 'Hemoglobin', aliases: ['hgb', 'hb', 'haemoglobin'], organ: 'Blood oxygen carrier', short: 'Carries oxygen in red blood cells',
+    code: 'hemoglobin', loinc: '718-7', topic: 'anemia', name: 'Hemoglobin', aliases: ['hgb', 'hb', 'haemoglobin'], organ: 'Blood oxygen carrier', short: 'Carries oxygen in red blood cells',
     what: 'Hemoglobin is the iron-rich part of red blood cells that carries oxygen around the body. It is usually part of a complete blood count (CBC) and is often used to look for anemia.',
     high: 'It can be high with dehydration, smoking, living at high altitude, or lung, heart or sleep problems. ' + NOT_ALARM,
     low: 'It can be low with anemia, for example from low iron or vitamin B12, blood loss such as heavy periods, or a long-term illness. A low result can go with feeling tired. ' + NOT_ALARM,
@@ -146,7 +148,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}hemoglobin-test/`
   },
   {
-    code: 'hematocrit', name: 'Hematocrit', aliases: ['hct', 'haematocrit', 'pcv'], organ: 'Red cell share of blood', short: 'The share of your blood that is red cells',
+    code: 'hematocrit', loinc: '4544-3', topic: 'anemia', name: 'Hematocrit', aliases: ['hct', 'haematocrit', 'pcv'], organ: 'Red cell share of blood', short: 'The share of your blood that is red cells',
     what: 'Hematocrit is the percentage of your blood made up of red blood cells. It is usually part of a complete blood count (CBC).',
     high: 'It is most often high from dehydration. Lung or heart problems and too many red blood cells can also raise it. ' + NOT_ALARM,
     low: 'It can be low with anemia, recent or long-term blood loss, or a bone marrow problem. Pregnancy often lowers it a little. ' + NOT_ALARM,
@@ -155,7 +157,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}hematocrit-test/`
   },
   {
-    code: 'rbc', name: 'Red blood cells', aliases: ['red blood cells', 'red blood cell count', 'rbc count'], organ: 'Red blood cell count', short: 'How many red blood cells you have',
+    code: 'rbc', loinc: '789-8', topic: 'anemia', name: 'Red blood cells', aliases: ['red blood cells', 'red blood cell count', 'rbc count'], organ: 'Red blood cell count', short: 'How many red blood cells you have',
     what: 'The red blood cell count is the number of red blood cells in a blood sample. They carry oxygen around the body. It is usually part of a complete blood count (CBC).',
     high: 'It can be high with dehydration, smoking, living at high altitude, or lung or heart problems. ' + NOT_ALARM,
     low: 'It can be low with anemia, blood loss, poor nutrition, kidney problems or pregnancy.',
@@ -164,7 +166,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}red-blood-cell-rbc-count/`
   },
   {
-    code: 'wbc', name: 'White blood cells', aliases: ['white blood cells', 'white blood cell count', 'wbc count'], organ: 'Infection-fighting cells', short: 'Cells that help fight infection',
+    code: 'wbc', loinc: '6690-2', name: 'White blood cells', aliases: ['white blood cells', 'white blood cell count', 'wbc count'], organ: 'Infection-fighting cells', short: 'Cells that help fight infection',
     what: 'White blood cells help the body fight infection. The count is the total number in a blood sample. It does not show the different types.',
     high: 'It is often high with an infection or inflammation, and can also rise with stress, smoking, allergies, some medicines or an injury. ' + NOT_ALARM,
     low: 'It can be low after some infections, with some medicines or treatments, or with conditions that affect the bone marrow or immune system. ' + NOT_ALARM,
@@ -173,7 +175,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}white-blood-count-wbc/`
   },
   {
-    code: 'platelets', name: 'Platelets', aliases: ['plt', 'platelet count', 'platelet'], organ: 'Blood clotting cells', short: 'Small cells that help blood clot',
+    code: 'platelets', loinc: '777-3', name: 'Platelets', aliases: ['plt', 'platelet count', 'platelet'], organ: 'Blood clotting cells', short: 'Small cells that help blood clot',
     what: 'Platelets are small blood cells that help the blood to clot. The count is how many are in a blood sample.',
     high: 'A high count can happen after infection, inflammation, blood loss or iron-poor blood, and sometimes with other conditions. ' + NOT_ALARM,
     low: 'A low count can make bruising or bleeding easier. It can go with viral infections, some medicines, liver or bone marrow problems, or low vitamin B12. It is usually checked again. ' + NOT_ALARM,
@@ -182,7 +184,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}platelet-tests/`
   },
   {
-    code: 'tsh', name: 'TSH', aliases: ['thyroid stimulating hormone'], organ: 'Thyroid control hormone', short: 'The hormone that tells the thyroid how hard to work',
+    code: 'tsh', loinc: '3016-3', topic: 'thyroid', name: 'TSH', aliases: ['thyroid stimulating hormone'], organ: 'Thyroid control hormone', short: 'The hormone that tells the thyroid how hard to work',
     what: 'TSH is made by the pituitary gland and tells the thyroid how much hormone to make. It is the usual first test of how the thyroid is doing.',
     high: 'A high TSH can mean the thyroid is underactive, so the body is asking it to work harder. The test does not show the cause, so doctors often add other thyroid tests. ' + NOT_ALARM,
     low: 'A low TSH can mean the thyroid is overactive. Some other illnesses and early pregnancy can also lower it for a while.',
