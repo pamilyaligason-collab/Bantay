@@ -37,7 +37,7 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
     } catch (e) {
       const code = e instanceof FullLibraryError ? e.code : ''
       if (code === 'needs-confirm') { if (!byConsent) setAsk('wifi') }
-      else if (code === 'paused') setNote('Paused. It carries on when Bantay is open on Wi-Fi.')
+      else if (code === 'paused') setNote(live.current.consent === 'yes' ? 'Paused. It carries on when Bantay is open on Wi-Fi.' : 'Paused on mobile data. Tap Resume when you are on Wi-Fi.')
       else if (code === 'busy') { /* another start is already running */ }
       else if (code === 'aborted') setNote('Download cancelled.')
       else setNote(e instanceof Error ? e.message : 'Download failed.')

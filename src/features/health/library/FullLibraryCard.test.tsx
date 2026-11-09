@@ -256,7 +256,7 @@ describe('FullLibraryCard automatic download (D-167)', () => {
     await screen.findByRole('progressbar')
     c.type = 'cellular'
     act(() => { c.dispatchEvent(new Event('change')) })
-    expect(await screen.findByText(/Paused\. It carries on when Bantay is open on Wi-Fi\./)).toBeTruthy()
+    expect(await screen.findByText(/Paused on mobile data\. Tap Resume when you are on Wi-Fi\./)).toBeTruthy()
     expect(screen.queryByRole('progressbar')).toBeNull()
   })
 
@@ -284,7 +284,7 @@ describe('FullLibraryCard automatic download (D-167)', () => {
     expect(missing).toHaveBeenCalledTimes(1)
   })
 
-  it('a manual cellular download is not paused by a network change', async () => {
+  it('a confirmed mobile-data download is not paused by a real network change (cellular -> wifi -> cellular)', async () => {
     const c = conn('cellular')
     setConn(c)
     const f = gatedFetch()
@@ -294,7 +294,8 @@ describe('FullLibraryCard automatic download (D-167)', () => {
     await u.click(await screen.findByRole('button', { name: 'Get' }))
     await u.click(await screen.findByRole('button', { name: 'Download' }))
     await screen.findByRole('progressbar')
-    act(() => { c.dispatchEvent(new Event('change')) })
+    act(() => { c.type = 'wifi'; c.dispatchEvent(new Event('change')) })
+    act(() => { c.type = 'cellular'; c.dispatchEvent(new Event('change')) })
     expect(screen.getByRole('progressbar')).toBeTruthy()
     f.release()
     await screen.findByRole('button', { name: 'Delete' })
