@@ -35,7 +35,7 @@ function useRows<T>(query: () => Promise<T[]>, none: T[], key: string): T[] {
 
 /** Calendar on the Family tab (P-4, F-12): the week strip is the default at every width, the month grid sits behind a Month toggle. The picked day lists doses, visits, events, tasks and notes, each tagged with an icon and a word.
  *  Readable members only (D-82): while acting as someone, only who they may see.
- *  detailFor (the Family root, D-109): only this person's doses and visits keep their details; anyone else's read "Medicine time · Ma". Left out (#family/calendar), every readable person's rows show in full (D-109 3.1 and Q4: a link shows the whole record). */
+ *  detailFor (the Family root, D-109): only this person's doses, visits and events keep their details; anyone else's read "Medicine time · Ma". Left out (#family/calendar), every readable person's rows show in full (D-109 3.1 and Q4: a link shows the whole record). */
 export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
   const { tasks, events, notes } = usePlan()
   const people = useLinkedPeople() // you and the people you are linked to (D-109), or while viewing as someone, who they can see
@@ -54,7 +54,7 @@ export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
   const [month, setMonth] = useState(false)
   const [open, setOpen] = useState<Open | null>(null)
   const src: CalSource = useMemo(() => ({
-    events, // every Plan task, event and note shows as it did before the merge (D-168); only doses and visits follow the readable people (D-109)
+    events, // every Plan task, event and note shows as it did before the merge (D-168); doses, visits and other people's events are masked (D-109)
     tasks,
     notes,
     appts,
@@ -78,7 +78,7 @@ export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
     else if (r.kind === 'event') { const e = events.find((x) => x.clientId === id); if (e) setOpen({ t: 'item', item: { kind: 'event', item: e } }) }
     else if (r.kind === 'note') { const n = notes.find((x) => x.clientId === id); if (n) setOpen({ t: 'note', note: n }) }
   }
-  const editable = (r: CalRow) => !locked && (r.kind === 'task' || r.kind === 'event' || r.kind === 'note')
+  const editable = (r: CalRow) => !locked && !r.masked && (r.kind === 'task' || r.kind === 'event' || r.kind === 'note')
   const line = (r: CalRow) => (
     <li key={r.key} data-kind={r.kind}>
       {r.kind === 'task' && !locked && <button type="button" className="fm-chk" role="checkbox" aria-checked={r.done} aria-label={r.title} onClick={() => { const t = tasks.find((x) => `task|${x.clientId}` === r.key); if (t) void toggleTask(t) }} />}

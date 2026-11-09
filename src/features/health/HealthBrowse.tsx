@@ -88,7 +88,7 @@ export function HealthBrowse({ personId, readings, thresholds }: { personId: str
       <div className="hb-grid">
         {card('labs', 0, 'red', 'Labs', labsLine(readings, thresholds), '#health/labs', counts ? <Bars c={counts} /> : <span className="hb-none">--</span>)}
         {card('meds', 1, 'green', 'Medicines', medSub, '#health/meds', pills.length ? <span className="hb-pills">{pills.map((p, i) => <span key={i} className="hb-pill" data-done={p.done ? '' : undefined}>{p.text}</span>)}</span> : <span className="hb-none">--</span>)}
-        {card('visits', 2, 'blue', 'Visits', (visit?.sub && visit.sub !== 'No visit booked yet' ? visit.sub : undefined) ?? (asks ? `${asks} ${asks === 1 ? 'question' : 'questions'} ready to ask` : visit ? undefined : 'Tap to add one'), '#health/visits', <span className="hb-date" data-empty={visit ? undefined : ''}>{visit ? visit.text.replace(/^(Next visit|Follow-up due): /, '') : 'Not booked'}</span>)}
+        {card('visits', 2, 'blue', 'Doctors & Lab Appointments', (visit?.sub && visit.sub !== 'No visit booked yet' ? visit.sub : undefined) ?? (asks ? `${asks} ${asks === 1 ? 'question' : 'questions'} ready to ask` : visit ? undefined : 'Tap to add one'), '#health/visits', <span className="hb-date" data-empty={visit ? undefined : ''}>{visit ? visit.text.replace(/^(Next visit|Follow-up due): /, '') : 'Not booked'}</span>)}
         {card('move', 3, 'amber', 'Move and food', moveLine(acts), '#health/move', <Ring value={wk.pct / 100} size={40} hue="amber" stroke={5} />)}
         {card('library', 4, 'green', 'Health library', 'Plain words about your health', '#health/library', null)}
         {card('body', 5, 'purple', 'Body wiki', 'How each part works', '#health/body', null)}

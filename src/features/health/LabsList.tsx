@@ -123,7 +123,7 @@ function LabQuestions({ personId, rows, canAdd }: { personId: string; rows: LabR
           : <button type="button" className="btn2 lb-add" disabled={!loaded} aria-label={`Add to visit questions: ${q}`} onClick={() => void add(q)}>Add</button>} />
       ))}</GroupedList>
       {err && <p className="sub" role="alert">{err}</p>}
-      <p className="sub" style={{ margin: '8px 4px 0' }}>Added questions are shared with Visits. <a className="lb-lnk" href="#health/visits">Open Visits</a></p>
+      <p className="sub" style={{ margin: '8px 4px 0' }}>Added questions are shared with Doctors &amp; Lab Appointments. <a className="lb-lnk" href="#health/visits">Open Doctors &amp; Lab Appointments</a></p>
     </Section>
   )
 }

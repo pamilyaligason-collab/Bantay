@@ -3,8 +3,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ClimateType } from '../../data/provinceClimate'
 import type { DaPrices, DaRow } from './daPrices'
-const h = vi.hoisted(() => ({ type: 4 as number | null, suggested: null as number | null, ready: true, pick: vi.fn(), d: null as DaPrices | null | undefined }))
-vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: h.type, suggested: h.suggested, ready: h.ready, pick: h.pick, picked: null }) }))
+const h = vi.hoisted(() => ({ type: 4 as number | null, guess: false, ready: true, pick: vi.fn(), d: null as DaPrices | null | undefined }))
+vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: h.type, guess: h.guess, ready: h.ready, pick: h.pick, picked: null }) }))
 vi.mock('./daPrices', async (orig) => ({ ...(await orig<typeof import('./daPrices')>()), useDaPrices: () => h.d }))
 import { resolveClimate, cropsFor, provinceNameAt } from './climate'
 import { PlantCard, PlantPoster, PLANT_FOOTER, plantList } from './Plant'
@@ -14,14 +14,19 @@ const r = (commodity: string, price_php: number, specification = ''): DaRow => (
 const PRICES: DaPrices = { date: '2026-11-08', saved: false, rows: [r('Pole Sitao', 109.3), r('Bitter Gourd (Ampalaya)', 109.77, '4-5 pcs/kg'), r('Cucumber, Native/Local', 111.23), r('Cabbage (Rare Ball), Local', 168.75), r('Bottle Gourd (Upo)', 57.28), r('Chayote, Local', 49.46)] }
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 10, 9, 12, 0, 0)) }) // local midday, 9 Nov 2026 (ML-38)
-afterEach(() => { vi.useRealTimers(); cleanup(); h.type = 4; h.suggested = null; h.ready = true; h.d = null; h.pick.mockClear() })
+afterEach(() => { vi.useRealTimers(); cleanup(); h.type = 4; h.guess = false; h.ready = true; h.d = null; h.pick.mockClear() })
 
 describe('climate rule', () => {
-  it('a picked type wins; a sure province answers; an unsure or unknown one asks (and offers the unsure type as a suggestion only)', () => {
-    expect(resolveClimate({ type: 2, uncertain: true }, 3)).toEqual({ type: 3, suggested: null })
-    expect(resolveClimate({ type: 4, uncertain: false }, null)).toEqual({ type: 4, suggested: null })
-    expect(resolveClimate({ type: 1, uncertain: true }, null)).toEqual({ type: null, suggested: 1 })
-    expect(resolveClimate(null, null)).toEqual({ type: null, suggested: null })
+  it('the province decides, uncertain ones too; a pick counts only where no province answers or in the province it was made in', () => {
+    const sure = { type: 4 as const, uncertain: false }, unsure = { type: 2 as const, uncertain: true }
+    expect(resolveClimate(sure, null, 'A')).toEqual({ type: 4, guess: false })
+    expect(resolveClimate(unsure, null, 'A')).toEqual({ type: 2, guess: true })
+    expect(resolveClimate(sure, { type: 3, province: 'A' }, 'A').type).toBe(3) // pick made here
+    expect(resolveClimate(sure, { type: 3, province: 'A' }, 'B').type).toBe(4) // moved: automatic again
+    expect(resolveClimate(null, { type: 3, province: 'A' }, null).type).toBe(3) // province unknown: latest pick
+    expect(resolveClimate(sure, 3, 'A').type).toBe(4) // legacy bare number: ignored once a province resolves
+    expect(resolveClimate(null, 3, null).type).toBe(3)
+    expect(resolveClimate(null, null, null)).toEqual({ type: null, guess: false })
   })
   it('cropsFor reads the bulletin: type 4 in November lists sitaw, ampalaya, pipino, repolyo, upo and sayote (calendar names)', () => {
     const names = cropsFor(4, 11).map((c) => c.name)
@@ -79,10 +84,10 @@ describe('Plant this month card', () => {
     fireEvent.click(screen.getByRole('button', { name: /Type 2/ }))
     expect(h.pick).toHaveBeenCalledWith(2)
   })
-  it('uncertain province: asks too, and names the guess as a guess', () => {
-    h.type = null; h.suggested = 3
-    render(<PlantCard />)
-    expect(screen.getByText(/Our best guess is type 3/)).toBeTruthy()
+  it('uncertain province: the type is used and the sub line says it comes from the province', () => {
+    h.guess = true
+    const { container } = render(<PlantCard />)
+    expect(container.textContent).toContain('November, climate type 4 (from your province)')
   })
   it('renders nothing until the climate is settled (no picker flash)', () => {
     h.ready = false

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Section } from '../look'
 import { SubHeader } from '../shell/SubHeader'
 import type { ClimateType } from '../../data/provinceClimate'
-import { CLIMATE_TYPES, cropsFor, MONTH_NAMES, useClimate } from './climate'
+import { CLIMATE_TYPES, cropsFor, MONTH_NAMES, useClimate, useMonth } from './climate'
 import { priceDay, priceFor, priceText, useDaPrices, type DaPrices, type DaRow } from './daPrices'
 import { guideFor, LICENCE_URL, VEG_GUIDE, type VegGuide } from './vegGuide'
 import './garden.css'
@@ -20,11 +20,10 @@ export function plantList(type: ClimateType, month: number): { guided: VegGuide[
 const priceOf = (g: VegGuide, d: DaPrices | null | undefined): DaRow | null => (d ? priceFor(d.rows, g.price) : null)
 
 /** The "Pick your area's climate type" choice (types 1-4, one line each). The pick is saved on the phone. */
-export function ClimatePicker({ suggested, current, onPick }: { suggested?: ClimateType | null; current?: ClimateType | null; onPick: (t: ClimateType) => void }) {
+export function ClimatePicker({ current, onPick }: { current?: ClimateType | null; onPick: (t: ClimateType) => void }) {
   return (
     <fieldset className="gpl-pick" data-testid="climate-picker">
       <legend>Pick your area's climate type</legend>
-      {suggested && <p className="gpl-sub">We are not sure for your area. Our best guess is type {suggested}.</p>}
       {CLIMATE_TYPES.map((c) => (
         <button key={c.type} type="button" className="gpl-type" aria-pressed={current === c.type} onClick={() => onPick(c.type)}>
           <b>Type {c.type}</b><span>{c.line}</span>
@@ -38,9 +37,9 @@ export function ClimatePicker({ suggested, current, onPick }: { suggested?: Clim
 export function PlantCard() {
   const c = useClimate()
   const d = useDaPrices()
-  const month = new Date().getMonth() + 1
+  const month = useMonth()
   if (!c.ready) return null
-  if (!c.type) return <Section title="Plant this month" testId="today-plant"><div className="card gpl-card"><ClimatePicker suggested={c.suggested} onPick={c.pick} /></div></Section>
+  if (!c.type) return <Section title="Plant this month" testId="today-plant"><div className="card gpl-card"><ClimatePicker onPick={c.pick} /></div></Section>
   const { guided, others } = plantList(c.type, month)
   const tiles: ({ g: VegGuide } | { name: string })[] = [...guided.map((g) => ({ g })), ...others.map((o) => ({ name: o.name }))].slice(0, 3)
   const total = guided.length + others.length
@@ -50,7 +49,7 @@ export function PlantCard() {
   return (
     <Section title="Plant this month" link={{ href: '#garden/plant', label: total > 3 ? `See all ${total}` : 'See more' }} testId="today-plant">
       <a className="card gpl-card" href="#garden/plant" data-testid="plant-card">
-        <span className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
+        <span className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
         <span className="gpl-tiles">
           {tiles.map((t) => 'g' in t ? (
             <span key={t.g.name} className="gpl-tile"><img src={t.g.img} alt={t.g.alt} loading="lazy" /><span className="gpl-tn">{t.g.name}{priceOf(t.g, d) && <small>{priceText(priceOf(t.g, d)!)}</small>}</span></span>
@@ -92,7 +91,7 @@ export function PlantPoster() {
   const c = useClimate()
   const d = useDaPrices()
   const [change, setChange] = useState(false)
-  const month = new Date().getMonth() + 1
+  const month = useMonth()
   const head = <SubHeader title="Plant this month" backHref="#today" backLabel="Today" />
   if (!c.ready) return <section className="gpl-page">{head}</section>
   const picker = !c.type || change
@@ -101,8 +100,8 @@ export function PlantPoster() {
   return (
     <section className="gpl-page" data-testid="plant-page">
       {head}
-      {c.type && <p className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}.{priced && d ? ` Prices: Metro Manila markets, DA, ${priceDay(d.date)}.` : ''}</p>}
-      {picker && <div className="card gpl-card"><ClimatePicker suggested={c.suggested} current={c.type} onPick={(t) => { c.pick(t); setChange(false) }} /></div>}
+      {c.type && <p className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}.{priced && d ? ` Prices: Metro Manila markets, DA, ${priceDay(d.date)}.` : ''}</p>}
+      {picker && <div className="card gpl-card"><ClimatePicker current={c.type} onPick={(t) => { c.pick(t); setChange(false) }} /></div>}
       {list && list.guided.map((g, i) => <Poster key={g.name} g={g} price={priceOf(g, d)} date={d ? d.date : null} hero={i === 0} />)}
       {list && list.others.length > 0 && (
         <div className="card gpl-more" data-testid="plant-others">

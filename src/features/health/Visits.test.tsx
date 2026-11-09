@@ -22,16 +22,16 @@ afterEach(cleanup)
 describe('Visits (v13)', () => {
   it('has a large title with a Health back link', async () => {
     render(<Visits />)
-    expect((await screen.findByRole('heading', { level: 1, name: 'Visits' })).textContent).toBe('Visits')
+    expect((await screen.findByRole('heading', { level: 1, name: 'Doctors & Lab Appointments' })).textContent).toBe('Doctors & Lab Appointments')
     expect(screen.getByRole('link', { name: 'Back to Health' }).getAttribute('href')).toBe('#health')
   })
 
-  it('no visit: a card with Plan a visit to Family plan, and a question chip only when one is saved', async () => {
+  it('no visit: a card with Add an appointment to Family plan, and a question chip only when one is saved', async () => {
     render(<Visits />)
     const card = await screen.findByTestId('no-visit')
-    expect(card.textContent).toContain('No visit booked')
+    expect(card.textContent).toContain('No appointment booked')
     expect(screen.getByTestId('vs-hero').querySelector('a.btn')!.getAttribute('href')).toBe('#family/plan')
-    expect(screen.getByTestId('vs-hero').textContent).toContain('Plan a visit')
+    expect(screen.getByTestId('vs-hero').textContent).toContain('Add an appointment')
     expect(screen.getByTestId('vs-hero').querySelector('.vs-chip')).toBeNull()
     await db.kv.put({ key: 'visits.questions.p1', value: ['Why is my sugar up?', 'Dose?'] })
     cleanup()
@@ -43,7 +43,7 @@ describe('Visits (v13)', () => {
     render(<Visits />)
     await screen.findByTestId('no-visit')
     expect(screen.getByText('Nothing booked')).toBeTruthy()
-    expect(screen.getByText('No past visits yet')).toBeTruthy()
+    expect(screen.getByText('No past appointments yet')).toBeTruthy()
     expect(screen.getByTestId('vs-summary').querySelector('a')!.getAttribute('href')).toBe('#health/summary')
     expect(screen.getByLabelText('A question for the doctor')).toBeTruthy()
   })

@@ -10,6 +10,7 @@ vi.mock('../features/today/WarningCard', () => ({ default: () => <div data-testi
 vi.mock('../features/today/setupRow', () => ({ useSetupSteps: () => [] }))
 vi.mock('../features/setup/steps', () => ({ useSetupLeft: () => ({ left: [] }), turnOnReminders: async () => undefined, notifyState: async () => ({}), notifyDone: () => false }))
 vi.mock('../features/notify/AlertCardToday', () => ({ AlertCardToday: () => <div data-testid="alertcard" /> }))
+vi.mock('../features/safety/PagasaCard', () => stub('pagasa'))
 vi.mock('../features/phonecheck/AlarmFixedToast', () => ({ AlarmFixedToast: () => null }))
 vi.mock('../features/today/useDueMeds', () => ({ useDueMeds: () => ({ due: !meds.due ? [] : [{ personId: 'me', name: 'Rey', isMe: true, at: 480, status: 'upcoming', slots: [{ name: 'Losartan', slot: '08:00', at: 480, medicationId: 'm1', key: 'm1', personId: 'me', dose: null }] }], review: meds.review, tick: new Date() }), markDue: async () => true }))
 vi.mock('../features/today/useStorm', () => ({ useStorm: () => storm.v }))
@@ -73,11 +74,11 @@ describe('Today simple mode', () => {
     expect((await screen.findByRole('link', { name: 'Medicines' })).getAttribute('href')).toBe('#health/meds')
     expect(screen.getByRole('button', { name: 'Check my blood pressure' })).toBeTruthy()
   })
-  it('full page order: weather, warning, family alert card, Talk, My day, Calm, Your numbers, then More', async () => {
+  it('full page order: weather, warning, family alert card, PAGASA, My day, Calm, Talk, Your numbers, then More', async () => {
     const { container } = render(<Today />)
     await screen.findByTestId('myday')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).filter((id) => !id!.startsWith('head-')) // the bell and avatar in the title row
-    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'today-talk', 'myday', 'calm', 'numbers', 'alerts', 'nearby'])
+    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'pagasa', 'myday', 'calm', 'today-talk', 'numbers', 'alerts', 'nearby'])
   })
   it('the weather hero is always expanded and My day carries the medicines count', async () => {
     meds.due = false; meds.review = 3

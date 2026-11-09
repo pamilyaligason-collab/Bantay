@@ -9,6 +9,7 @@ import { useNow } from './AlertCard'
 import { FLAGS } from './flags'
 import LazyMap from './LazyMap'
 import NewsTop5 from './NewsTop5'
+import { PagasaCard } from './PagasaCard'
 import PhoneWarnings from './PhoneWarnings'
 import SafetyBrief from './SafetyBrief'
 import { NONE_A, type Place } from './SafetyPages'
@@ -109,6 +110,7 @@ export default function Warnings({ place }: { place: Place }) {
           </GroupedList>
         </Section>
       )}
+      <PagasaCard place={place} />
       <GroupedList icons label="Shaking">
         <ShakeRow steps={(top?.kind === 'quake' && top.doNow) || SHAKE} />
       </GroupedList>

@@ -52,11 +52,15 @@ describe('Family root (D-109)', () => {
     expect(needs.textContent).toContain('Ma: missed a medicine')
     expect(needs.textContent).not.toMatch(/Quillon|Brandel|Zorbex|\d doses|\d medicines/)
     const cal = screen.getByTestId('calendar')
-    await waitFor(() => expect(cal.textContent).toContain('Checkup')) // Plan rows for Papa and Tita still show, but under "Family", not by name
+    await waitFor(() => expect(cal.textContent).toContain('Fetch pills')) // Plan rows for Papa and Tita still show, but under "Family", not by name
     const rows = within(within(cal).getByRole('list', { name: 'Today' })).getAllByRole('listitem')
-    expect(rows.find((r) => r.textContent?.includes('Checkup'))!.textContent).toContain('Family')
     expect(rows.find((r) => r.textContent?.includes('Fetch pills'))!.textContent).toContain('Family')
-    expect(rows.find((r) => r.textContent?.includes('Dentist'))!.textContent).toContain('Ma')
+    const events = rows.filter((r) => r.getAttribute('data-kind') === 'event').map((r) => r.textContent ?? '')
+    expect(events).toHaveLength(3) // other people's events still show that something is on, but only as an appointment: no title (D-109)
+    for (const e of events) expect(e).toContain('Doctors & Lab Appointments')
+    expect(events.filter((e) => e.includes('Ma'))).toHaveLength(1) // Ma is named by her given name; Papa and Tita, whom Rey cannot read, read as Family member
+    expect(events.filter((e) => e.includes('Family member'))).toHaveLength(2)
+    expect(cal.textContent).not.toMatch(/Checkup|Clinic|Dentist/)
     const doses = rows.filter((r) => r.getAttribute('data-kind') === 'dose').map((r) => r.querySelector('.grow')!.textContent)
     expect(doses).toHaveLength(2) // Rey's own dose keeps its name; Ma's says only that one is due; Papa's is not there at all
     expect(doses.find((t) => t?.includes('Zorbex'))).toBeTruthy()

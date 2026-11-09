@@ -97,6 +97,65 @@ describe('Calendar rows by person', () => {
 })
 
 // D-168: Plan folded into the Calendar. Everything the old Plan list held stays visible, and the same add / tick / edit flows work.
+// D-109: on the Family root only the shown person's events keep their title; an event of a link reads as an appointment and cannot be opened.
+describe('Calendar masks events of other people (D-109)', () => {
+  const seed = () => fdb.events.bulkPut([
+    { clientId: 'e1', title: 'Own checkup', startsAt: new Date().toISOString(), endsAt: null, allDay: true, personId: 'p1' },
+    { clientId: 'e2', title: 'Dentist for Ma', startsAt: new Date().toISOString(), endsAt: null, allDay: true, personId: 'p2' },
+    { clientId: 'e3', title: 'Family lunch', startsAt: new Date().toISOString(), endsAt: null, allDay: true, personId: null }
+  ])
+  const row = (list: HTMLElement, text: string) => within(list).getAllByRole('listitem').find((r) => r.textContent?.includes(text))!
+
+  it('the shown person sees the real title of their own event; the event of another person reads Doctors & Lab Appointments with only the name, and is not openable', async () => {
+    await seed()
+    render(<Calendar detailFor="p1" />)
+    const list = screen.getByRole('list', { name: 'Today' })
+    await waitFor(() => expect(list.textContent).toContain('Family lunch'))
+    expect(list.textContent).toContain('Own checkup')
+    expect(list.textContent).not.toContain('Dentist for Ma')
+    const masked = row(list, 'Doctors & Lab Appointments')
+    expect(masked.textContent).toContain('Ma')
+    expect(masked.querySelector('button.fm-item')).toBeNull()
+    expect(row(list, 'Own checkup').querySelector('button.fm-item')).not.toBeNull()
+    expect(document.body.textContent).not.toContain('Dentist for Ma')
+  })
+
+  it('the Later list masks too: next week and next month for another person never show the real title; whole-family keeps its title; unreadable people read Family member', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
+    const on = (d: number, m = 10) => new Date(2026, m, d, 9, 0).toISOString()
+    await fdb.events.bulkPut([
+      { clientId: 'w1', title: 'Ma cardiology', startsAt: on(3), endsAt: null, allDay: false, personId: 'p2' },
+      { clientId: 'm1', title: 'Ma MRI scan', startsAt: on(5, 11), endsAt: null, allDay: false, personId: 'p2' },
+      { clientId: 'u1', title: 'Hidden biopsy', startsAt: on(4), endsAt: null, allDay: false, personId: 'zz' },
+      { clientId: 'f1', title: 'Family reunion', startsAt: on(6), endsAt: null, allDay: false, personId: null }
+    ])
+    render(<Calendar detailFor="p1" />)
+    const later = await screen.findByTestId('cal-later')
+    const check = () => {
+      const t = screen.getByTestId('cal-later').textContent ?? ''
+      expect(t).toContain('Family reunion')
+      expect(t).toContain('Whole family')
+      expect(t).toContain('Family member')
+      expect(t).toContain('Doctors & Lab Appointments')
+      expect(document.body.textContent).not.toMatch(/Ma cardiology|Ma MRI scan|Hidden biopsy/)
+    }
+    expect(later.textContent).toContain('2026-11-03')
+    check()
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
+    await waitFor(() => expect(screen.getByTestId('cal-later').textContent).toContain('2026-12-05'))
+    check()
+  })
+
+  it('without detailFor (the Calendar page) every readable event shows in full', async () => {
+    await seed()
+    render(<Calendar />)
+    const list = screen.getByRole('list', { name: 'Today' })
+    await waitFor(() => expect(list.textContent).toContain('Dentist for Ma'))
+    expect(list.textContent).not.toContain('Doctors & Lab Appointments')
+  })
+})
+
 describe('Calendar holds the old Plan (D-168)', () => {
   const add = () => fireEvent.click(screen.getByRole('button', { name: 'Add event, reminder or note' }))
 

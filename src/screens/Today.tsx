@@ -15,6 +15,7 @@ import TodayNews from '../features/today/TodayNews'
 import Lotto from '../features/today/Lotto'
 import FxCard from '../features/today/FxCard'
 import PricesCard from '../features/today/PricesCard'
+import PagasaToday from '../features/safety/PagasaCard'
 import { PlantCard } from '../features/garden/Plant'
 import { useGardenPage } from '../features/garden/pages'
 import { TalkCard } from '../features/calm/CrisisCard'
@@ -80,10 +81,11 @@ export default function Today() {
       <WarningCard notify={notify} />
       <AlertCardToday />
       <PlaceNotice />
-      <TalkCard />
+      <PagasaToday />
       <MyDay notify={notify} />
       <BatteryCard />
       <CalmCard />
+      <TalkCard />
       <YourNumbers />
       <TodayNews /><PricesCard /><PlantCard /><FxCard /><Lotto />
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
