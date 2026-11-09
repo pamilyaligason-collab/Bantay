@@ -5,6 +5,7 @@ import { deviceMaker, isNativeAndroid, nativeStatus } from '../safety/settingsOp
 import { ALARM_SHELL, shellVersionNow, versionAtLeast } from './appInfo'
 import { callOk } from './callState'
 import { ensureAlarmChannel } from './channel'
+import { probeProblems } from './health'
 import { ALARM_CHANNEL, KEY_ALARM_HEALTH, KEY_CALL_SEEN, KEY_PHONE_CHECK, type AlarmHealth } from './keys'
 
 /** null = unknown (never false): web, an old shell, a plugin that could not answer. */
@@ -42,19 +43,7 @@ export async function probe(): Promise<ProbeResult> {
   return r
 }
 
-export type Problem = 'notif' | 'exact' | 'battery' | 'alarms' | 'call'
-
-/** What is wrong, most important first. Only an explicit false counts; unknown is not a problem. `alarms` is listed only when nothing more specific explains it.
- *  `battery` is a warning, not a problem, while exact alarms and notifications are both OK: those alarms still ring in Doze (D-162). */
-export function probeProblems(r: ProbeResult): Problem[] {
-  const p: Problem[] = []
-  if (r.notif_ok === false) p.push('notif')
-  if (r.exact_ok === false) p.push('exact')
-  if (r.battery_ok === false && !(r.exact_ok === true && r.notif_ok === true)) p.push('battery')
-  if (r.alarms_ok === false && !p.length) p.push('alarms')
-  if (r.call_ok === false) p.push('call')
-  return p
-}
+export { probeProblems, type Problem } from './health' // the shared rule lives in health.ts so the Safety hub can use it without Capacitor
 
 export type TestAlarm = 'web' | 'no-permission' | 'scheduled' | 'failed'
 const TEST_ID = 1_999_999_999 // top of the id space, outside the snooze range

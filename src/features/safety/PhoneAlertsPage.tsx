@@ -1,10 +1,11 @@
+import { BATTERY_WARNING_TEXT } from '../phonecheck/health'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
 import PhoneWarnings, { PW_KEY, type Rec } from './PhoneWarnings'
 import { alarmsHealth, callHealth, type Health, type PhoneCheck } from './stormMode'
 import { useKv } from './store'
 import './safety.css'
 
-const STATE: Record<Health, [string, string]> = { ok: ['On', 'sf-chip'], fix: ['Needs fixing', 'sf-chip warn'], unknown: ['Not checked', 'sf-chip'] }
+const STATE: Record<Health, [string, string]> = { ok: ['On', 'sf-chip'], warn: ['Check', 'sf-chip warn'], fix: ['Needs fixing', 'sf-chip warn'], unknown: ['Not checked', 'sf-chip'] }
 
 function Row({ title, sub, h }: { title: string; sub: string; h: Health }) {
   return (
@@ -26,7 +27,7 @@ export default function PhoneAlertsPage() {
       <div className="sf-pcard">
         <Row title="Emergency alerts" sub="Government alerts sound even on silent" h={told('android-wea')} />
         <Row title="Earthquake alerts" sub="Needs turning on in your phone settings" h={told('android-eq')} />
-        <Row title="Medicine alarms" sub="Ring on time on this phone" h={alarmsHealth(check)} />
+        <Row title="Medicine alarms" sub={alarmsHealth(check) === 'warn' ? BATTERY_WARNING_TEXT : 'Ring on time on this phone'} h={alarmsHealth(check)} />
         <Row title="Bantay can open the phone and text apps" sub="Needed for Hold for help" h={callHealth(check)} />
       </div>
       <PhoneWarnings level={2} />

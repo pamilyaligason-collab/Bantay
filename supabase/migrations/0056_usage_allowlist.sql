@@ -1,5 +1,6 @@
 -- S26 L4 (D-160): the usage-event allowlist lives in one SQL function; a BEFORE INSERT trigger drops any (kind, name) not on it.
--- Returning NULL skips the row without an error, so an old app build that sends a name this list lacks never gets a sync error.
+-- Returning NULL skips a well-formed row that is not on the list without an error, so an old app build that sends a name this list lacks never gets a sync error.
+-- Rows that break the 0004 format rules (kind, name pattern) are passed on so the CHECK constraints still raise.
 -- The list must equal EVENT_NAMES in src/features/admin/events.ts (a vitest compares them). Existing RLS and grants on usage_events stay as they are.
 -- Written only; never applied from this lane.
 
@@ -25,8 +26,10 @@ revoke all on function public.usage_event_allowed(text, text) from public, anon,
 create or replace function public.usage_events_filter() returns trigger
   language plpgsql security definer set search_path = '' as
 $$ begin
+  -- a kind or name that breaks the 0004 format rules goes on to the CHECK constraints, which still raise (a digit-bearing name like a reading must fail loudly)
+  if new.kind is null or new.name is null or new.kind not in ('screen', 'action', 'error') or new.name !~ '^[a-z_]{1,40}$' then return new; end if;
   if public.usage_event_allowed(new.kind, new.name) then return new; end if;
-  return null; -- drop silently
+  return null; -- well-formed but not on the list: drop silently
 end $$;
 revoke all on function public.usage_events_filter() from public, anon, authenticated;
 
