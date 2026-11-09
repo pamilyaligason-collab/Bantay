@@ -13,7 +13,6 @@ import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 import { toggleTask } from './tasks'
 import { useLinkedPeople } from './useFamilyScope'
 import { useFamilyPeople } from './roster'
-import { syncTaskReminders } from './taskReminders'
 import { usePlan } from './usePlan'
 import './family.css'
 import './plan.css'
@@ -67,7 +66,6 @@ export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
     masked: detailFor === undefined ? undefined : (id) => id !== detailFor
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [events, tasks, notes, appts, meds, readable, key, visible, detailFor])
-  useEffect(() => { void syncTaskReminders(tasks) }, [tasks]) // arms this phone's task reminders where the alarm rules allow (native only; web does nothing)
   const selDate = new Date(`${sel}T00:00:00`)
   const rows = rowsOn(sel, src, today)
   const other = otherRows(src)

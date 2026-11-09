@@ -230,7 +230,7 @@ async function push(token: string, waiting: Set<string>, skip: Set<number>, forc
     if (!isSyncable(r.table)) return false
     const h = held[r.id!]
     // A stuck SOS is not hammered (never on a forced run), but it is still tried on its own slow schedule (backoff caps at 30 min): a server fixed later delivers it by itself (Opus S28 release review).
-    if (waiting.has(r.table) || skip.has(r.id!) || (r.stuck && (force || !h || now < h.nextAt)) || heldThisFlight.has(r.id!) || (h && !force && now < h.nextAt)) {
+    if (waiting.has(r.table) || skip.has(r.id!) || (r.stuck && (force || (h && now < h.nextAt))) || heldThisFlight.has(r.id!) || (h && !force && now < h.nextAt)) {
       skip.add(r.id!)
       if (r.op === 'insert') { const k = rowKey(r); if (k) blocked.add(k) }
       return false
