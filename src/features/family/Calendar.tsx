@@ -12,6 +12,7 @@ import { ItemSheet, NoteSheet } from './PlanSheets'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 import { toggleTask } from './tasks'
 import { useLinkedPeople } from './useFamilyScope'
+import { useFamilyPeople } from './roster'
 import { usePlan } from './usePlan'
 import './family.css'
 import './plan.css'
@@ -37,6 +38,7 @@ function useRows<T>(query: () => Promise<T[]>, none: T[], key: string): T[] {
 export default function Calendar() {
   const { tasks, events, notes } = usePlan()
   const people = useLinkedPeople() // you and the people you are linked to (D-109), or while viewing as someone, who they can see
+  const { people: family } = useFamilyPeople() // Plan rows name and assign anyone in the family, as the old Plan page did (D-168)
   const visible = useViewedVisibleIds()
   const { acting } = useActing()
   const can = useActingCan()
@@ -56,9 +58,9 @@ export default function Calendar() {
     notes,
     appts,
     doses: (day) => ids.flatMap((id) => slotsFor(meds, id, day).map((s) => ({ personId: id, name: s.name, dose: s.dose, slot: s.slot }))),
-    nameOf: (id) => people.find((p) => p.id === id)?.name ?? 'Family'
+    nameOf: (id) => family.find((p) => p.id === id)?.name ?? 'Family'
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [events, tasks, notes, appts, meds, people, key, visible])
+  }), [events, tasks, notes, appts, meds, family, key, visible])
   const selDate = new Date(`${sel}T00:00:00`)
   const rows = rowsOn(sel, src, today)
   const other = otherRows(src)
@@ -141,7 +143,7 @@ export default function Calendar() {
       {locked
         ? <button type="button" className="btn2 fm2-add" disabled aria-label="Add, view only"><Icon name="lock" size={20} />View only</button>
         : <button type="button" className="btn2 fm2-add" onClick={() => setOpen({ t: 'item', item: { kind: 'task' } })}><Icon name="plus" size={20} />Add event, reminder or note</button>}
-      {open?.t === 'item' && <ItemSheet start={open.item} day={addDay(sel, today)} people={readable} onClose={() => setOpen(null)} onNote={() => setOpen({ t: 'note' })} />}
+      {open?.t === 'item' && <ItemSheet start={open.item} day={addDay(sel, today)} people={family} onClose={() => setOpen(null)} onNote={() => setOpen({ t: 'note' })} />}
       {open?.t === 'note' && <NoteSheet note={open.note} onClose={() => setOpen(null)} />}
     </section>
   )
