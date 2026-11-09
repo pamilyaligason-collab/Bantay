@@ -20,6 +20,7 @@ import { useProfiles } from '../setup/useProfile'
 import { ageOf } from '../family/roster'
 import { SleepHero, SleepStagesRow } from './detail/SleepDetail'
 import { ActivityHero, FamilyToday } from './detail/ActivityDetail'
+import { ActivityCompare } from './detail/ActivityCompare'
 import { YearBars } from './detail/YearBars'
 import { sleepBand } from './detail/sleepLogic'
 import { useNow } from './detail/useNow'
@@ -28,6 +29,8 @@ import BpCheckButton from './bpcheck/BpCheckButton'
 import BpWords from './bpcheck/BpWords'
 import { BpWord } from './bpcheck/BpCheck'
 import { bpDoctorOf, kindOf, type BpArg } from './verdict'
+import { dailyMean, vitalSummary } from './trendLogic'
+import { WaterDetail } from './detail/WaterDetail'
 
 const HIDDEN = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' } as const
 const ACT_LABEL: Record<string, { label: string; unit: string }> = { steps: { label: 'Steps', unit: 'steps' }, sleep: { label: 'Sleep', unit: 'hours' }, mood: { label: 'Mood', unit: '' } }
@@ -44,7 +47,12 @@ export function yearBand(band: { low?: number | null; high?: number | null; who?
   return band && band.low != null && band.high != null ? { low: band.low, high: band.high, who: band.who } : null
 }
 
+/** Water has no readings table: its own page (hero, chart, tip) sits at the same route family. */
 export default function MetricScreen({ code }: { code: string }) {
+  return code === 'water' ? <WaterDetail /> : <MetricBody code={code} />
+}
+
+function MetricBody({ code }: { code: string }) {
   const { ready, people, personId, readings, thresholds, canMark, reload } = useHealthPerson()
   const profiles = useProfiles()
   const [period, setPeriod] = useState<Period | 'year'>('month')
@@ -82,6 +90,9 @@ export default function MetricScreen({ code }: { code: string }) {
   }
   const bpPairs = bpCode ? readings.filter((r) => r.test === 'bp_systolic').map((r) => ({ at: r.takenAt, top: r.value, bottom: bottomFor(r.takenAt) }))
     .filter((p) => !part || partOf(p.at) === part).sort((a, b) => Date.parse(b.at) - Date.parse(a.at)) : []
+  const heroKind = bpCode ? 'bp' : code === 'heart_rate' ? 'pulse' : null // S28: BP and pulse get the same hero card as Sleep and Steps
+  const allCanon = heroKind ? readings.map(toCanonicalReading).filter((r): r is NonNullable<typeof r> => !!r) : []
+  const summary = heroKind && latest ? (heroKind === 'bp' ? vitalSummary('bp', dailyMean(allCanon, 'bp_systolic', now), dailyMean(allCanon, 'bp_diastolic', now)) : vitalSummary('pulse', dailyMean(allCanon, 'heart_rate', now))) : null
   const dp = (n: number) => (activity && code === 'sleep' ? `${hoursMinutes(n * 60)}` : formatNumber(n))
 
   return (
@@ -103,7 +114,7 @@ export default function MetricScreen({ code }: { code: string }) {
         <>
           {code === 'sleep' && <SleepHero acts={acts} age={age} now={now} />}
           {code === 'steps' && <ActivityHero acts={acts} now={now} />}
-          {!lab && !detail && <div className="grp hv-latest" style={{ marginTop: 12 }}>
+          {!lab && !detail && <div className={`grp hv-latest${heroKind ? ' sd-hero' : ''}`} style={{ marginTop: 12 }} data-testid={heroKind ? 'vital-hero' : undefined}>
             <div className="row">
               <span className="grow">
                 <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
@@ -114,6 +125,7 @@ export default function MetricScreen({ code }: { code: string }) {
               </span>
               {v && !activity && (() => { const st = rangeState(v.headline, kindOf(code), bpCode && latest ? bpHeadlineArg(readings, code, latest, bpDoctor) : undefined); return <span className={`hv-state ${CHIP[st.kind]}`}>{st.word}{st.hidden && <span className="hv-sr">. {st.hidden}</span>}</span> })()}
             </div>
+            {summary && <div className="row sd-col"><p className="sd-line" data-testid="vital-summary">{summary}</p></div>}
           </div>}
 
           {lab && latest && <LabDetail code={code} readings={readings} family={family} personId={personId} />}
@@ -137,6 +149,7 @@ export default function MetricScreen({ code }: { code: string }) {
           </div>}
           {code === 'sleep' && <SleepStagesRow />}
           {code === 'steps' && <FamilyToday now={now} />}
+          {code === 'steps' && <ActivityCompare acts={acts} now={now} />}
           {!lab && <section aria-labelledby="hv-ma">
             <h2 className="hd" id="hv-ma">Monthly averages</h2>
             {months.length === 0 ? (

@@ -78,7 +78,7 @@ describe('Health overview (v13)', () => {
     expect(hero.textContent).toContain('No readings yet')
     const bpTile = await screen.findByTestId('tk-bp')
     expect(bpTile.textContent).toContain('--')
-    expect(bpTile.textContent).toContain('No reading today')
+    expect(bpTile.textContent).toContain('No reading yet')
     expect(screen.getByTestId('rc-value').textContent).toBe('--')
     expect(screen.queryByTestId('nudge')).toBeNull()
     expect((await screen.findByRole('link', { name: 'Scan' })).getAttribute('href')).toBe('#scan')

@@ -13,3 +13,6 @@
 .ft tbody th { font-weight: 600; }
 .ft tbody tr + tr > * { border-top: 1px solid var(--sep); }
 .ft-note { margin: 8px 4px 0; }
+.sd-ringrow { display: inline-flex; align-items: center; gap: var(--sp-3, 12px); }
+.ac-pick { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2, 8px); margin: var(--sp-2, 8px) 4px; font-size: var(--fs-body, 17px); }
+.ac-pick select { min-height: 44px; font-size: var(--fs-body, 17px); }
