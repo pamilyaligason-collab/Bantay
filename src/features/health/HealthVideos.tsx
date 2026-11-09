@@ -21,7 +21,7 @@ export function VideoCard({ video, open, onOpen, testId, variant = 'row', big }:
           <p className="sub">{meta}</p>
         </div>
       ) : (
-        <MediaCard variant={variant} id={video.id} title={video.title} channel={video.source} minutes={video.minutes} tag={video.ph ? 'Philippines' : undefined} onClick={onOpen} />
+        <MediaCard variant={variant} id={video.id} title={video.title} channel={video.source} minutes={video.minutes} tag={video.ph ? 'Philippines' : undefined} tagShort={variant === 'row' ? 'PH' : undefined} onClick={onOpen} />
       )}
     </div>
   )

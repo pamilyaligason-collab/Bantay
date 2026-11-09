@@ -1,14 +1,15 @@
 /* S26 boards S26Planting + S26TodayData: Plant this month card, the poster page and All prices. Class prefix gpl- (global CSS). One hero shadow per screen: the first poster. */
 .gpl-page { display: grid; gap: 16px; min-width: 0; padding-bottom: 24px; }
 .gpl-sub { margin: 0; font-size: 16px; line-height: 22px; color: var(--muted); }
-.gpl-card { display: grid; gap: 12px; min-width: 0; padding: 16px; color: var(--ink); text-decoration: none; box-shadow: var(--shadow-raised); }
+.card.gpl-card { display: grid; gap: 12px; min-width: 0; padding: 16px; color: var(--ink); text-decoration: none; box-shadow: var(--shadow-raised); }
 a.gpl-card:active { box-shadow: var(--shadow-press); transform: scale(.98); }
 .gpl-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 300px) { .gpl-tiles { grid-template-columns: minmax(0, 1fr); } .gpl-tiles .gpl-tile { height: 96px; } }
 .gpl-tile { position: relative; display: block; height: 120px; min-width: 0; border-radius: 14px; overflow: hidden; background: var(--tint-green); }
 .gpl-tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .gpl-tile:not(.gpl-tile--bare)::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0, 0, 0, 0) 40%, rgba(10, 25, 15, .88)); }
 .gpl-tn { position: absolute; left: 8px; right: 6px; bottom: 6px; z-index: 1; color: #fff; font-weight: 800; font-size: 16px; line-height: 19px; overflow-wrap: anywhere; }
-.gpl-tn small { display: block; font-weight: 600; font-size: 14px; line-height: 18px; }
+.gpl-tn small { display: block; font-weight: 600; font-size: 15px; line-height: 18px; }
 .gpl-tile--bare { display: flex; align-items: flex-end; }
 .gpl-tile--bare .gpl-tn { color: var(--tint-green-ink); }
 .gpl-line { font-size: 17px; line-height: 24px; color: var(--ink); }

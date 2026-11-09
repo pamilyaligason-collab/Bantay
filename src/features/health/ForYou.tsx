@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Icon } from '../shell/Icon'
+import { MediaCard } from '../look/media/MediaCard'
 import { MoreGrid, Section } from '../look'
 import { videoOfTheDay } from '../today/videos'
 import type { Attention } from './attention'
@@ -44,23 +44,11 @@ export function forYouClips(list: Video[], reasons: ClipReason[], now = new Date
   return out
 }
 
-/** One video card: its YouTube still (i.ytimg.com, no cookies, no referrer), its length when known and the reason it is here. If the still cannot load, a plain tile with the play mark stands in. A tap opens it in place: the Health videos card and player (LiteVideo) take over the row. */
+/** One video card (D-180 MediaCard, half): the still from i.ytimg.com (no cookies, no referrer), its length when known and the reason it is here. A tap opens it in place: the Health videos card and player (LiteVideo) take over the row. */
 function Clip({ video, reason, testId }: { video: Video; reason: string; testId: string }) {
-  const [bad, setBad] = useState(false)
   const [open, setOpen] = useState(false)
   if (open) return <VideoCard video={video} open onOpen={() => setOpen(true)} testId={testId} />
-  return (
-    <button type="button" className="card fy-video press" data-testid={testId} onClick={() => setOpen(true)}>
-      <span className="fy-poster" data-still={bad ? 'off' : 'on'}>
-        {!bad && <img className="fy-img" src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setBad(true)} />}
-        <span className="fy-play" aria-hidden="true"><Icon name="play" size={24} /></span>
-        {video.minutes != null && <span className="fy-len">{video.minutes} min</span>}
-      </span>
-      <span className="pt-k">{reason}</span>
-      <b>{video.title}</b>
-      <span className="sub">{video.source}</span>
-    </button>
-  )
+  return <MediaCard variant="half" id={video.id} title={video.title} channel={video.source} minutes={video.minutes} note={reason} testId={testId} onClick={() => setOpen(true)} />
 }
 
 /** "More" scrolls to the Health videos section lower on this screen (id health-videos). */

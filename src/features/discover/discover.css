@@ -119,6 +119,9 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 /* S28 fix 2: the Play tiles and the guided Listen poster have no Jack allowance, so they end 72 px short of the screen gutter too (the tiles drop to one column when two would be under 150 px). */
 .dc-panel [data-testid="dc-play"] .pt-grid { padding-right: var(--jack-clear, 72px); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .dc-panel .card.dc-guided, .dc-panel .card.dc-fact { margin-right: var(--jack-clear, 72px); }
+/* the guided poster runs to the card's edges so, 72 px short of the gutter, it is still 150 px tall at 390 (e2e v13-discover D3) */
+.dc-panel .card.dc-guided { padding: 0 0 12px; overflow: hidden; }
+.dc-panel .card.dc-guided > :not(.lv) { margin: 0 12px; }
 .dc-panel [data-testid="dc-recipes"] .dc-rgrid { padding-right: var(--jack-clear, 72px); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .dc-stack { display: flex; flex-direction: column; gap: var(--card-gap, 12px); }
 /* S26 Discover (D-166..): Learn cards raised, the Channel menu. */
@@ -129,3 +132,5 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-select { width: 100%; min-height: 48px; padding: 0 16px; border: 1.5px solid var(--muted); border-radius: 14px; background: var(--card); color: var(--ink); font: inherit; font-size: 16px; } /* --muted on --card and --ground is >= 4.5:1 in both themes, so the border clears 3:1 */
 .dc-select:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 @media (prefers-reduced-motion: no-preference) { .card.dc-lc:active { transform: scale(.98); } }
+/* Listen: the video cards end 72 px short of the gutter so none lies under the Jack button at rest (e2e v13-foundation, no allowance) */
+[data-testid="listen"] .md-listwrap, [data-testid="listen"] > .hv-vc { padding-right: var(--jack-clear, 72px); }

@@ -14,6 +14,8 @@ export interface MediaCardProps {
   age?: string
   /** A label only when it adds meaning (for example "Most watched"). */
   tag?: string
+  /** What the badge shows when the full word will not fit a small still (for example "PH"); the name keeps the full tag. */
+  tagShort?: string
   /** One short line under the meta (for example a salt reminder). */
   note?: string
   /** A link card when given, else a button card. */
@@ -23,9 +25,9 @@ export interface MediaCardProps {
   testId?: string
 }
 
-/** D-180 name: "Video, [tag,] title, channel, length" (length left out when not recorded; the visible tag is part of the name, so a screen reader hears it too). */
-export const mediaName = (title: string, channel: string, minutes?: number | null, tag?: string) =>
-  ['Video', tag, title, channel, minutes != null && minutes > 0 ? `${minutes} minutes` : null].filter(Boolean).join(', ')
+/** D-180 name: "Video, [tag,] title, channel, [age,] [note,] length". It starts with the words and then carries every visible word in the order they show (WCAG 2.5.3 label in name); the length is left out when not recorded. */
+export const mediaName = (title: string, channel: string, minutes?: number | null, tag?: string, age?: string, note?: string) =>
+  ['Video', tag, title, channel, age, note, minutes != null && minutes > 0 ? `${minutes} minutes` : null].filter(Boolean).join(', ')
 
 /** One video preview card (contract "Media card"): 16:9 still with a same-size placeholder, play circle, length badge, a 2-line title, channel and age. The whole card is one link or button. */
 export function MediaCard(p: MediaCardProps) {
@@ -37,7 +39,7 @@ export function MediaCard(p: MediaCardProps) {
       <span className="md-pic">
         {!off && <img src={`https://i.ytimg.com/vi/${p.id}/mqdefault.jpg`} alt="" width={320} height={180} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
         <span className="md-play" aria-hidden="true"><Icon name="play" size={p.variant === 'hero' ? 28 : 18} /></span>
-        {p.tag && <span className="md-flag" aria-hidden="true">{p.tag}</span>}
+        {p.tag && <span className="md-flag" aria-hidden="true">{p.tagShort ?? p.tag}</span>}
         {len && <span className="md-len" aria-hidden="true">{len}</span>}
       </span>
       <span className="md-body">
@@ -47,7 +49,7 @@ export function MediaCard(p: MediaCardProps) {
       </span>
     </>
   )
-  const name = mediaName(p.title, p.channel, p.minutes, p.tag)
+  const name = mediaName(p.title, p.channel, p.minutes, p.tag, p.age, p.note)
   const hero = p.variant === 'hero' ? true : undefined // one per section (screens count them)
   return p.href !== undefined
     ? <a className={cls} href={p.href} aria-label={name} data-hero={hero} data-testid={p.testId} onClick={p.onClick}>{body}</a>

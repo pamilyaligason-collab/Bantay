@@ -15,7 +15,7 @@ describe('Health videos (S25)', () => {
     expect(chips.map((c) => c.textContent)).toEqual(['Heart and BP', 'Diabetes', 'Infections', 'First aid', 'Mind and sleep', 'Food', 'Kids'])
     expect(chips.every((c) => c.getAttribute('aria-pressed') === 'false')).toBe(true)
     expect(cards()).toHaveLength(4)
-    expect(cards().every((c) => c.querySelector('.md-flag')!.textContent === 'Philippines')).toBe(true) // 40 clips, Philippine ones lead
+    expect(cards().every((c) => c.querySelector('.md-flag')!.textContent === 'PH')).toBe(true) // 40 clips, Philippine ones lead
     fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
     expect(cards()).toHaveLength(8)
   })

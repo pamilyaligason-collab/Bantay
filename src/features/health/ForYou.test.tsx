@@ -64,21 +64,21 @@ describe('For you videos show their still, length and reason', () => {
     show(r)
     for (const id of ['foryou-video', 'foryou-video-2']) {
       const card = screen.getByTestId(id)
-      const img = card.querySelector('img.fy-img')!
-      expect(img.getAttribute('src')).toMatch(/^https:\/\/i\.ytimg\.com\/vi\/[A-Za-z0-9_-]{11}\/hqdefault\.jpg$/)
+      const img = card.querySelector('img')!
+      expect(img.getAttribute('src')).toMatch(/^https:\/\/i\.ytimg\.com\/vi\/[A-Za-z0-9_-]{11}\/mqdefault\.jpg$/)
       expect(img.getAttribute('referrerpolicy')).toBe('no-referrer')
-      expect(card.querySelector('.fy-len')!.textContent).toMatch(/^\d+ min$/)
-      expect(card.querySelector('.pt-k')!.textContent).toBeTruthy()
+      expect(card.querySelector('.md-len')!.textContent).toMatch(/^\d+ min$/)
+      expect(card.querySelector('.md-line')!.textContent).toBeTruthy()
     }
   })
   it('a still that cannot load falls back to the plain tile with the play mark (no broken image)', () => {
     show(r)
     const card = screen.getByTestId('foryou-video')
-    fireEvent.error(card.querySelector('img.fy-img')!)
+    fireEvent.error(card.querySelector('img')!)
     expect(card.querySelector('img')).toBeNull()
-    expect(card.querySelector('.fy-poster')!.getAttribute('data-still')).toBe('off')
-    expect(card.querySelector('.fy-play')).toBeTruthy()
-    expect(card.querySelector('.fy-len')).toBeTruthy()
+    expect(card.querySelector('.md-pic')).toBeTruthy()
+    expect(card.querySelector('.md-play')).toBeTruthy()
+    expect(card.querySelector('.md-len')).toBeTruthy()
   })
   it('reasons come from loaded data: BP readings and an out-of-range blood sugar lead; no data, no reason', () => {
     const t = new Date().toISOString()
@@ -113,7 +113,7 @@ describe('For you reads (S24)', () => {
     show(r)
     const cards = Array.from(within(screen.getByRole('group', { name: 'Videos for you' })).getAllByRole('button'))
     expect(cards).toHaveLength(4)
-    for (const c of cards) expect(c.querySelector('.pt-k')!.textContent).toBeTruthy()
+    for (const c of cards) expect(c.querySelector('.md-line')!.textContent).toBeTruthy()
   })
   it('visit questions read link appears only with a booked next visit and goes to #health/visits', async () => {
     await Promise.all([db.kv.clear(), vdb.appointments.clear(), vdb.followUps.clear()])

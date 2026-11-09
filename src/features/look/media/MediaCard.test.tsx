@@ -31,7 +31,7 @@ describe('MediaCard', () => {
   it('without an href it is one button that says whether it is picked', () => {
     const onClick = vi.fn()
     render(<MediaCard {...base} variant="row" age="40 min ago" pressed onClick={onClick} testId="c" />)
-    const b = screen.getByRole('button', { name: 'Video, Plant a small garden, Garden Channel' })
+    const b = screen.getByRole('button', { name: 'Video, Plant a small garden, Garden Channel, 40 min ago' })
     expect(b.getAttribute('aria-pressed')).toBe('true')
     expect(b.querySelector('.md-meta')!.textContent).toBe('Garden Channel · 40 min ago')
     fireEvent.click(b)
@@ -48,6 +48,11 @@ describe('MediaCard', () => {
     expect(t.container.querySelector('.md-flag')!.textContent).toBe('Most watched')
     expect(t.container.querySelector('a')!.getAttribute('aria-label')).toMatch(/^Video, Most watched, /) // the tag is hidden from the tree, so it is part of the name
     expect(t.container.querySelector('.md-line')!.textContent).toBe('Use less salt')
+    expect(t.container.querySelector('a')!.getAttribute('aria-label')).toMatch(/, Use less salt$/) // WCAG 2.5.3: every visible word, in the order shown
+    cleanup()
+    const s = render(<MediaCard {...base} variant="row" href="#x" tag="Philippines" tagShort="PH" />)
+    expect(s.container.querySelector('.md-flag')!.textContent).toBe('PH') // fits a 128 px still at 200% text
+    expect(s.container.querySelector('a')!.getAttribute('aria-label')).toBe('Video, Philippines, Plant a small garden, Garden Channel') // the full word stays in the name
   })
 })
 

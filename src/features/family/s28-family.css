@@ -40,3 +40,7 @@
 
 /* Memories: one tap share, under the picture, next to the caption */
 .bt .mem-share { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 0; border-radius: 22px; background: var(--card2, var(--card)); color: var(--ink); font-size: var(--fs-meta, 15px); font-weight: 600; box-shadow: inset 0 0 0 1.5px var(--line); }
+
+/* Integration: a day is 44 px wide at 360 (7 columns in a 328 px card need 8 px side padding), and the Together tiles end 72 px short of the gutter so neither lies under Jack at rest (e2e comply-ct-family, no allowance) */
+@media (max-width: 375px) { .fm2-cal { padding-left: 8px; padding-right: 8px; } }
+.fm-tiles { padding-right: var(--jack-clear, 72px); }
