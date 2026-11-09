@@ -84,8 +84,10 @@ test('the season row left Discover Today in S24 (D-152); the season page itself 
 
 test('Listen: one at a time, and leaving the sub stops the voice', async ({ page }) => {
   await page.goto('/#discover/listen')
-  await expect(page.getByTestId('listen-shelf').getByRole('button', { name: /^Play / })).toHaveCount(7) // the 7 listen-shelf videos (ready.json Listen, S25) come first; same count as listen.test.tsx
-  await expect(page.getByTestId('listen-guided').getByRole('button', { name: /^Play / })).toHaveCount(1) // the Calm guided video sits below them, above the read-aloud rows
+  await expect(page.getByTestId('listen-shelf').getByRole('button', { name: /^Video, / })).toHaveCount(4) // the listen-shelf video cards (ready.json Listen) come first, 4 then Show 3 more; same as listen.test.tsx
+  await page.getByTestId('listen-shelf').getByRole('button', { name: 'Show 3 more' }).click()
+  await expect(page.getByTestId('listen-shelf').getByRole('button', { name: /^Video, / })).toHaveCount(7)
+  await expect(page.getByTestId('listen-guided').getByRole('button', { name: /^Video, / })).toHaveCount(1) // the Calm guided video sits below them, above the read-aloud rows
   const rows = page.getByTestId('listen').locator('.dc-item') // read-aloud rows only: the guided row's own Play button is not one of them
   const plays = rows.getByRole('button', { name: /^Play / })
   await expect(plays).toHaveCount(20)

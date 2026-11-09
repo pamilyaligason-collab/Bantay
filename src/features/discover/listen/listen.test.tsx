@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../../db'
 
@@ -102,9 +102,10 @@ describe('Listen screen', () => {
     noWeb()
     render(<Listen />)
     expect(screen.getByText('Reading aloud is not on this phone')).toBeTruthy()
-    const btns = screen.queryAllByRole('button') // only video posters (the listen shelf's 7 (4 before S25) and the guided one); no read-aloud buttons
-    expect(btns.length).toBe(8)
+    const btns = screen.queryAllByRole('button') // only video cards (the listen shelf's first 4 and a Show 3 more button, and the guided one); no read-aloud buttons
+    expect(btns.length).toBe(6)
     btns.forEach((b) => expect(b.closest('[data-testid="listen-guided"], [data-testid="listen-shelf"]')).toBeTruthy())
+    expect(screen.getAllByRole('button', { name: /^Video, / })).toHaveLength(5)
   })
   it('the listen shelf (the videos Discover Today lists) comes first, then the Calm guided row, above every read-aloud row, with a 56 px play disc', async () => {
     withWeb()
@@ -112,10 +113,14 @@ describe('Listen screen', () => {
     const g = screen.getByTestId('listen-guided')
     const first = await readBtns()
     expect(g.textContent).toContain(CALM_VIDEOS[0]!.title)
-    expect(g.querySelector('button')!.getAttribute('aria-label')).toContain(`Play ${CALM_VIDEOS[0]!.title}`)
+    expect(g.querySelector('button')!.getAttribute('aria-label')).toBe(`Video, ${CALM_VIDEOS[0]!.title}, ${CALM_VIDEOS[0]!.channel}`)
     expect(g.compareDocumentPosition(first.find((b) => !g.contains(b))!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     const shelf = screen.getByTestId('listen-shelf')
-    expect(shelf.querySelectorAll('button').length).toBe(7)
+    expect(shelf.querySelectorAll('button.md').length).toBe(4) // 4 shown, then Show 3 more
+    fireEvent.click(within(shelf).getByRole('button', { name: 'Show 3 more' }))
+    expect(shelf.querySelectorAll('button.md').length).toBe(7)
+    expect(shelf.querySelectorAll('[data-hero]').length).toBe(1)
+    expect(shelf.querySelector('iframe')).toBeNull() // nothing from YouTube before a tap
     expect(shelf.textContent).toContain('Jason Stephenson')
     expect(screen.getByTestId('listen').firstElementChild).toBe(shelf)
     expect(shelf.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

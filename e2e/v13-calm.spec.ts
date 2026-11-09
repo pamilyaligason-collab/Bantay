@@ -137,23 +137,23 @@ test('radio sections then the video posters; no stream or iframe before the tap'
   await assertOrder(page, ['calm-hero', 'calm-mood', 'calm-media', 'calm-crisis'])
   await expect(page.getByTestId('calm-media').getByRole('heading', { level: 3 })).toHaveText(['Music & Light Rock', 'Pop & Mass', 'News & Talk'])
   await expect(page.locator('[data-testid="calm-media"] li.rd-st')).toHaveCount(5)
-  await expect(page.getByRole('button', { name: /Play Steps for Stress/ })).toBeVisible() // the 4 videos sit under the radio, no Show more
-  await expect(page.getByTestId('calm-row').getByRole('button', { name: /^Play / })).toHaveCount(4)
+  await expect(page.getByRole('button', { name: /^Video, Steps for Stress/ })).toBeVisible() // the 4 video cards sit under the radio, no Show more
+  await expect(page.getByTestId('calm-row').getByRole('button', { name: /^Video, / })).toHaveCount(4)
   await expect(page.locator('[data-testid="calm-media"] iframe')).toHaveCount(0)
   await expect(page.locator('audio')).toHaveCount(0)
 })
 
 for (const [w, h] of [[390, 844], [450, 949]] as const) {
-  test(`${w}: layout: radio cards fill the width, 4 videos in a 2-column grid, crisis card after them`, async ({ page }) => {
+  test(`${w}: layout: radio cards fill the width, 4 video cards in one column, crisis card after them`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h })
     const m = await page.evaluate(() => {
       const box = (s: string) => document.querySelector(s)!.getBoundingClientRect()
       const cards = [...document.querySelectorAll('[data-testid="calm-media"] li.rd-st')].map((c) => c.getBoundingClientRect())
-      const vids = [...document.querySelectorAll('[data-testid="calm-row"] .more-grid > *')].map((c) => c.getBoundingClientRect())
+      const vids = [...document.querySelectorAll('[data-testid="calm-row"] .md-list > *')].map((c) => c.getBoundingClientRect())
       return { cardW: new Set(cards.map((c) => Math.round(c.width))).size, vidW: new Set(vids.map((c) => Math.round(c.width))).size, vids: vids.length, vidTops: new Set(vids.map((c) => Math.round(c.top))).size, rowTop: box('[data-testid="calm-row"]').top, lastRadio: Math.max(...cards.map((c) => c.bottom)), crisisTop: box('[data-testid="calm-crisis"]').top, rowBottom: box('[data-testid="calm-row"]').bottom }
     })
     expect(m.cardW).toBe(1)
-    expect(m.vids).toBe(4); expect(m.vidW).toBe(1); expect(m.vidTops).toBe(2)
+    expect(m.vids).toBe(4); expect(m.vidW).toBe(1); expect(m.vidTops).toBe(4)
     expect(m.lastRadio).toBeLessThanOrEqual(m.rowTop) // videos come after every station
     expect(m.crisisTop).toBeGreaterThanOrEqual(m.rowBottom)
     for (const sz of await page.locator('[data-testid="calm-media"] .rd-play').evaluateAll((els) => els.map((e) => Math.min(e.getBoundingClientRect().width, e.getBoundingClientRect().height)))) expect(sz).toBeGreaterThanOrEqual(44)
@@ -272,7 +272,7 @@ test('nothing from YouTube or a station loads before a tap; only the video poste
   const hosts: string[] = []
   page.on('request', (r) => hosts.push(new URL(r.url()).hostname))
   await page.reload()
-  await expect(page.getByTestId('calm-row').getByRole('button', { name: /^Play / })).toHaveCount(4)
+  await expect(page.getByTestId('calm-row').getByRole('button', { name: /^Video, / })).toHaveCount(4)
   await page.getByTestId('calm-media').scrollIntoViewIfNeeded()
   await page.waitForLoadState('networkidle')
   const POSTER_HOST = 'i.ytimg.com' // the one allowed outside host: still pictures, no cookies

@@ -53,15 +53,6 @@
 .cm-call { flex-direction: column; }
 .cm-call .cm-net { color: #2B3A5E; }
 .cm-src { display: inline-flex; align-items: center; min-height: 44px; color: var(--green); }
-.cm-video { position: relative; padding: 0; overflow: hidden; width: auto; box-sizing: border-box; }
-.cm-video .lv-poster, .cm-video .lv-frame { border-radius: 0; }
-.cm-video .lv-yt { padding-inline: 14px; }
-/* a 240 px poster is 135 px tall: the 64 px play disc and a two-line caption overlap, so a smaller disc sits above a solid caption band that also covers words burned into a poster */
-.cm-video .lv-play { justify-content: flex-start; padding-top: 12px; }
-.cm-video .lv-btn { width: 44px; height: 44px; }
-.cm-video .lv-play b { font-size: 15px; line-height: 18px; }
-.cm-video .lv-play[data-thumb='on'] .lv-cap { padding: 8px 12px; background: rgb(0 0 0 / .72); }
-.cm-chan { display: block; padding: 0 14px 12px; }
 .bt:has(.cm-root) .tabbar.sh-tabs { background: var(--card); } /* the glass bar was see-through over the navy page: labels fell under 4.5:1 in light */
 
 /* compliance CD: the board's dashed "coming" pill, and the done-today pill */
