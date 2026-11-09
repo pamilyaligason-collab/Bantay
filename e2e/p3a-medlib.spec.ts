@@ -31,7 +31,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(card.getByText(/on Wi-Fi automatically\?/)).toBeVisible()
     await card.screenshot({ path: `${SHOTS}/ask-${scheme}.png` })
     await card.getByRole('button', { name: 'Yes' }).click()
-    await expect(card.getByText('It will download when your phone is on Wi-Fi.')).toBeVisible()
+    await expect(card.getByText('It will download while Bantay is open on Wi-Fi.')).toBeVisible()
     await page.waitForTimeout(300)
     expect(hits).toEqual([])
     await page.reload()

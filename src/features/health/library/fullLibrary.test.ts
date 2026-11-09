@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { FULL_LIBRARY_URL, _resetFullLibrary, download, getStatus, readArticle, remove, searchFullLibrary, FullLibraryError } from './fullLibrary'
+import { FULL_LIBRARY_URL, _resetFullLibrary, autoRetryOk, startDownload, download, getStatus, readArticle, remove, searchFullLibrary, FullLibraryError } from './fullLibrary'
 
 // Built by scripts/medlib/test_mdwiki_pack.py (Hypertension, Diabetes mellitus). The specifier is a variable so tsc does not need @types/node.
 const nodeFs = 'node:fs'
@@ -215,5 +215,44 @@ describe('full library pack', () => {
     expect(createWritable.mock.calls[1][0]).toEqual({ keepExistingData: true })
     expect(Array.from(data)).toEqual(Array.from(PACK))
     expect((await getStatus()).state).toBe('ready')
+  })
+})
+
+describe('automatic retry guard', () => {
+  const notFound = () => vi.fn(async () => ({ ok: false, status: 404, headers: { get: () => null }, body: null }))
+
+  it('a 404 is permanent: no auto retry until a tap or a new app version', async () => {
+    vi.stubGlobal('fetch', notFound())
+    expect(autoRetryOk()).toBe(true)
+    await expect(startDownload({ auto: true })).rejects.toMatchObject({ code: 'unavailable' })
+    expect(autoRetryOk()).toBe(false)
+    const now = vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 24 * 3600 * 1000)
+    expect(autoRetryOk()).toBe(false) // time does not help a permanent failure
+    now.mockRestore()
+    vi.stubEnv('VITE_APP_VERSION', 'next')
+    expect(autoRetryOk()).toBe(true)
+    vi.unstubAllEnvs()
+  })
+
+  it('a damaged pack is permanent, a tap clears the record and a good download keeps it clear', async () => {
+    vi.stubGlobal('fetch', fakeFetch({ pack: new TextEncoder().encode('not a pack at all, just filler bytes') }).fn)
+    await expect(startDownload({ auto: true })).rejects.toMatchObject({ code: 'bad-pack' })
+    expect(autoRetryOk()).toBe(false)
+    vi.stubGlobal('fetch', fakeFetch().fn)
+    await startDownload() // the person tapped
+    expect(autoRetryOk()).toBe(true)
+  })
+
+  it('a dropped connection waits 30 minutes before an automatic retry', async () => {
+    vi.stubGlobal('fetch', fakeFetch({ dropAfter: 300 }).fn)
+    await expect(startDownload({ auto: true })).rejects.toMatchObject({ code: 'network' })
+    expect(autoRetryOk()).toBe(false)
+    const t0 = Date.now()
+    const now = vi.spyOn(Date, 'now')
+    now.mockReturnValue(t0 + 29 * 60 * 1000)
+    expect(autoRetryOk()).toBe(false)
+    now.mockReturnValue(t0 + 31 * 60 * 1000)
+    expect(autoRetryOk()).toBe(true)
+    now.mockRestore()
   })
 })

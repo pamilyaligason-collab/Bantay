@@ -2,7 +2,7 @@ import { Fragment, type ReactNode, useCallback, useEffect, useRef, useState } fr
 import { SubHeader } from '../../shell/SubHeader'
 import { db } from '../../../db'
 import {
-  autoOk, connection, download, getStatus, readArticle, remove, searchFullLibrary, FullLibraryError, FULL_LIBRARY_MB, MDWIKI_CREDIT, MDWIKI_LICENCE_URL,
+  autoOk, autoRetryOk, cancelDownload, currentRun, getStatus, onNetwork, onRun, startDownload, readArticle, remove, searchFullLibrary, FullLibraryError, FULL_LIBRARY_MB, MDWIKI_CREDIT, MDWIKI_LICENCE_URL,
   type FullArticleData, type FullLibraryStatus,
 } from './fullLibrary'
 import './fullLibrary.css'
@@ -20,8 +20,6 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
   const [ask, setAsk] = useState<'wifi' | 'delete' | null>(null)
   const [note, setNote] = useState('')
   const [consent, setConsent] = useState<'yes' | 'no' | null | undefined>(undefined) // undefined = still loading
-  const ctl = useRef<AbortController | null>(null)
-  const auto = useRef(false) // the running download was started by the consent, so leaving Wi-Fi pauses it
   const alive = useRef(true)
   const live = useRef({ st, consent })
   live.current = { st, consent }
@@ -31,24 +29,19 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
 
   const start = async (confirmed: boolean, byConsent = false) => {
     setAsk(null); setNote('')
-    const c = new AbortController()
-    ctl.current = c
-    auto.current = byConsent
     setSt((s) => ({ ...s, state: 'downloading' }))
     setProg({ bytes: live.current.st.bytes, total: live.current.st.total })
     try {
-      await download({ confirmed, signal: c.signal, onProgress: (p) => { if (alive.current) setProg(p) } })
+      await startDownload({ confirmed, auto: byConsent })
       setNote('The full medical library is ready.')
-      onChange?.()
     } catch (e) {
       const code = e instanceof FullLibraryError ? e.code : ''
       if (code === 'needs-confirm') { if (!byConsent) setAsk('wifi') }
-      else if (code === 'paused') setNote('Paused. It carries on when you are back on Wi-Fi.')
+      else if (code === 'paused') setNote('Paused. It carries on when Bantay is open on Wi-Fi.')
       else if (code === 'busy') { /* another start is already running */ }
       else if (code === 'aborted') setNote('Download cancelled.')
       else setNote(e instanceof Error ? e.message : 'Download failed.')
     } finally {
-      ctl.current = null
       if (alive.current) setProg(null)
       await refresh()
     }
@@ -59,7 +52,7 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
   startRef.current = start
   const tryAuto = useCallback(() => {
     const { st: s, consent: c } = live.current
-    if (c === 'yes' && (s.state === 'none' || s.state === 'error') && !ctl.current && autoOk()) void startRef.current(false, true)
+    if (c === 'yes' && (s.state === 'none' || s.state === 'error') && !currentRun() && autoOk() && autoRetryOk()) void startRef.current(false, true)
   }, [])
 
   useEffect(() => {
@@ -70,20 +63,27 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
       if (!alive.current) return
       const c = row?.value === 'yes' || row?.value === 'no' ? row.value : null
       live.current = { st: s, consent: c }
+      const r = currentRun() // a download started before this card mounted: attach to it
+      if (r) setProg(r.prog ?? { bytes: s.bytes, total: s.total })
       setConsent(c)
       tryAuto()
     })()
-    const conn = connection()
-    const onNet = () => { if (!autoOk()) { if (auto.current) ctl.current?.abort('pause') } else tryAuto() }
-    conn?.addEventListener?.('change', onNet)
-    return () => { alive.current = false; conn?.removeEventListener?.('change', onNet) }
-  }, [refresh, tryAuto])
+    const offRun = onRun((p) => {
+      if (!alive.current) return
+      if (p) { setProg(p); return }
+      setProg(null)
+      void refresh().then((r) => { if (r.state === 'ready') onChange?.() })
+    })
+    // fullLibrary.ts pauses a consent download on mobile data; the card only carries on when Wi-Fi is back
+    const offNet = onNetwork(() => { if (autoOk()) tryAuto() })
+    return () => { alive.current = false; offRun(); offNet() }
+  }, [refresh, tryAuto, onChange])
 
   const answer = (yes: boolean) => {
     saveConsent(yes ? 'yes' : 'no')
     if (!yes) return
     if (autoOk()) void start(false, true)
-    else setNote('It will download when your phone is on Wi-Fi.')
+    else setNote('It will download while Bantay is open on Wi-Fi.')
   }
   const del = async () => { setAsk(null); await remove(); saveConsent('no'); setNote('Deleted.'); await refresh(); onChange?.() }
   const size = mb(st.total || FULL_LIBRARY_MB * 1048576)
@@ -124,7 +124,7 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
           <div className="fl-bar" role="progressbar" aria-label="Download progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}><i style={{ width: `${pct}%` }} /></div>
           <div className="fl-row">
             <span className="fl-pct">{pct}%</span>
-            <button type="button" className="btn2" onClick={() => ctl.current?.abort()}>Cancel</button>
+            <button type="button" className="btn2" onClick={cancelDownload}>Cancel</button>
           </div>
         </>
       )}
