@@ -41,14 +41,14 @@ export function WaterDetail() {
         <div className="grp sd-hero"><div className="row"><span className="grow">No water goal for this age<span className="sub">Bantay does not set a water goal for a baby under 1 year.</span></span></div></div>
       ) : (
         <>
-          <div className="grp sd-hero" data-testid="water-hero">
+          <div className="card tint sd-hero" data-hue="blue" data-testid="water-hero">
             <div className="row sd-col">
-              <span className="sub">Today</span>
+              <span className="sub cd-kicker">Today</span>
               <span className="sd-ringrow">
                 {today != null && <Ring value={Math.min(1, today / goalGl)} size={40} hue="blue" />}
-                <strong className="hv-big">{today == null ? '--' : `${today}/${goalGl}`}</strong>
+                <strong className="hv-big cd-value">{today == null ? '--' : `${today}/${goalGl}`}</strong>
               </span>
-              <span className="sub">{today == null ? 'Nothing logged today yet.' : today === 1 ? 'glass today' : 'glasses today'}</span>
+              <span className="sub cd-meta">{today == null ? 'Nothing logged today yet.' : today === 1 ? 'glass today' : 'glasses today'}</span>
               {summary && <p className="sd-line" data-testid="water-summary">{summary}</p>}
             </div>
           </div>
@@ -63,7 +63,7 @@ export function WaterDetail() {
               </div>
               <div className="grp hv-advice" style={{ marginTop: 16 }} data-testid="water-tip">
                 <div className="row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 6 }}>
-                  <strong>General tips</strong>
+                  <strong className="cd-title">General tips</strong>
                   <span>{WATER_TIP}</span>
                   <span className="sub">General information, not medical advice. Your doctor sets your own target.</span>
                 </div>

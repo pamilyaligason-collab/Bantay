@@ -41,9 +41,9 @@ describe('plain summaries only when data exists', () => {
     expect(s).toContain('Average over the last 7 days: 130/82 mmHg, from 2 days with a reading.')
     expect(s).toContain('under 120 on top, under 80 on the bottom (AHA, 2025)')
   })
-  it('BP with no bottom number still reads; pulse says 72 bpm from 1 day with the MedlinePlus guide', () => {
+  it('BP with no bottom number still reads; pulse says 72 beats a minute from 1 day with the MedlinePlus guide', () => {
     expect(vitalSummary('bp', [null, 140, null], [])).toContain('140 mmHg, from 1 day with a reading.')
-    expect(vitalSummary('pulse', [null, 72, null])).toContain('72 bpm, from 1 day with a reading. General guide for a resting pulse in adults: 60 to 100 (MedlinePlus, 2024).')
+    expect(vitalSummary('pulse', [null, 72, null])).toContain('72 beats a minute, from 1 day with a reading. General guide for a resting pulse in adults: 60 to 100 (MedlinePlus, 2024).')
   })
   it('no data: no summary at all (null, not a line saying 0)', () => {
     expect(vitalSummary('bp', [null, null], [null])).toBeNull()
@@ -73,5 +73,22 @@ describe('family rings: masking and null', () => {
   it('steps over the goal cap the ring at 1; a real 0 is kept as 0', () => {
     expect(memberRings({ canSeeDetail: true, stepsToday: 9000, doses: null, checkedIn: true }).steps!.ring).toBe(1)
     expect(memberRings({ canSeeDetail: true, stepsToday: 0, doses: null, checkedIn: true }).steps).toEqual({ n: 0, ring: 0 })
+  })
+})
+
+describe('day bucketing at 23:30 and 00:30 local (a reading near midnight lands on its local day, never the UTC one)', () => {
+  const late = new Date(2026, 10, 9, 23, 30), early = new Date(2026, 10, 9, 0, 30)
+  const stamp = (d: number, h: number, mi: number) => new Date(2026, 10, d, h, mi).toISOString()
+  for (const [label, now] of [['23:30', late], ['00:30', early]] as const) {
+    it(`dailyMean / dailyCount / dailyActivity at ${label}: today is the 9th, 23:30 and 00:30 readings both sit on the 9th`, () => {
+      const r = (v: number, d: number, h: number, mi: number): Reading => ({ personId: 'p1', test: 'heart_rate', value: v, unit: '', takenAt: stamp(d, h, mi) })
+      expect(dailyMean([r(60, 9, 0, 30), r(80, 9, 23, 30), r(70, 8, 23, 30)], 'heart_rate', now)).toEqual([null, null, null, null, null, 70, 70])
+      expect(dailyCount([stamp(9, 0, 30), stamp(9, 23, 30), stamp(8, 23, 30)], now)).toEqual([null, null, null, null, null, 1, 2])
+      const acts = [{ kind: 'steps', minutes: null, steps: 100, startedAt: stamp(9, 0, 30) }, { kind: 'steps', minutes: null, steps: 200, startedAt: stamp(9, 23, 30) }, { kind: 'steps', minutes: null, steps: 50, startedAt: stamp(8, 23, 30) }]
+      expect(dailyActivity(acts, 'steps', now)).toEqual([null, null, null, null, null, 50, 300])
+    })
+  }
+  it('a reading at 00:30 tomorrow is outside a window ending today', () => {
+    expect(dailyCount([stamp(10, 0, 30)], late).every((v) => v === null)).toBe(true)
   })
 })

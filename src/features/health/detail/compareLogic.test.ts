@@ -52,3 +52,25 @@ describe('compareRows: hidden under 7 days', () => {
     expect(compareRows({ me: td(0, 10), member: null, others: [], goal: 6000 })).toEqual([])
   })
 })
+
+describe('compareRows names whose steps they are', () => {
+  it('viewing someone else: given name, never "Your"; the viewer as a pick reads "yours"', () => {
+    const rows = compareRows({ me: td(8000, 10), who: { viewer: false, name: 'Ben' }, member: { name: 'Ana', isYou: true, t: td(4000, 10) }, others: [td(4000, 10), td(6000, 10)], goal: 6000 })
+    expect(rows.map((r) => r.title)).toEqual(['Bantay goal', 'You', 'Family average'])
+    expect(rows[0]!.line).toMatch(/^Ben's average of 8,000 steps a day is higher than the Bantay goal of 6,000\./)
+    expect(rows[1]!.line).toBe("Ben's average is higher than yours (4,000 a day).")
+    expect(rows[2]!.line).toBe("Ben's average is higher than the family average (6,000 a day, from 3 people).")
+    expect(rows.map((r) => r.line).join(' ')).not.toContain('Your')
+  })
+  it('no name known: "Their"', () => {
+    expect(compareRows({ me: td(8000, 10), who: { viewer: false }, others: [], goal: 6000 })[0]!.line).toMatch(/^Their average of 8,000/)
+  })
+  it('day bucketing at 23:30 and 00:30 local: steps land on the local day, and the window ends on the clock\'s own day', () => {
+    const at = (d: number, h: number, mi: number) => ({ kind: 'steps', minutes: null, steps: 1000, startedAt: new Date(2026, 10, d, h, mi).toISOString(), source: 'manual' })
+    for (const now of [new Date(2026, 10, 9, 23, 30), new Date(2026, 10, 9, 0, 30)]) {
+      expect(thirtyDay([at(9, 0, 30), at(9, 23, 30)], now)).toEqual({ avg: 2000, days: 1 }) // both on the 9th, whatever the UTC day says
+      expect(thirtyDay([at(10, 0, 30)], now).days).toBe(0) // tomorrow 00:30 is not today
+      expect(thirtyDay([at(8, 23, 30)], now).days).toBe(1)
+    }
+  })
+})

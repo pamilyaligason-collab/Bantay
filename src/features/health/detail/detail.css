@@ -16,3 +16,12 @@
 .sd-ringrow { display: inline-flex; align-items: center; gap: var(--sp-3, 12px); }
 .ac-pick { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2, 8px); margin: var(--sp-2, 8px) 4px; font-size: var(--fs-body, 17px); }
 .ac-pick select { min-height: 44px; font-size: var(--fs-body, 17px); }
+/* S28 C1: the card system on these pages. The contract classes (.card.tint, .cd-*) come from look/cards.css; the px fallbacks below match the contract values so the page reads at the senior floor either way. */
+.card.sd-hero { padding: 0; overflow: hidden; box-shadow: var(--shadow-hero); }
+.sd-hero .hv-big { font-size: var(--fs-display, 30px); line-height: var(--lh-tight, 1.2); }
+.sd-hero .cd-kicker, .ac-card .cd-kicker { font-size: var(--fs-meta, 15px); font-weight: 600; }
+.ac-card .cd-value { font-size: var(--fs-value, 24px); font-weight: 700; line-height: var(--lh-tight, 1.2); }
+.sd-hero .cd-meta, .ac-card .cd-meta { font-size: var(--fs-meta, 15px); }
+.hv-advice .cd-title { font-size: var(--fs-title, 20px); font-weight: 700; }
+.ac-list { display: grid; gap: var(--card-gap, 12px); margin-top: var(--sp-2, 8px); }
+.card.ac-card { display: grid; gap: var(--sp-1, 4px); }

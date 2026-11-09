@@ -114,11 +114,11 @@ function MetricBody({ code }: { code: string }) {
         <>
           {code === 'sleep' && <SleepHero acts={acts} age={age} now={now} />}
           {code === 'steps' && <ActivityHero acts={acts} now={now} />}
-          {!lab && !detail && <div className={`grp hv-latest${heroKind ? ' sd-hero' : ''}`} style={{ marginTop: 12 }} data-testid={heroKind ? 'vital-hero' : undefined}>
+          {!lab && !detail && <div className={heroKind ? `card tint hv-latest sd-hero` : `grp hv-latest`} data-hue={heroKind === "bp" ? "blue" : heroKind === "pulse" ? "terra" : undefined} style={{ marginTop: 12 }} data-testid={heroKind ? "vital-hero" : undefined}>
             <div className="row">
               <span className="grow">
-                <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
-                <strong className="hv-big">
+                <span className={`sub${heroKind ? " cd-kicker" : ""}`}>Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
+                <strong className={`hv-big${heroKind ? " cd-value" : ""}`}>
                   {code === 'mood' && last ? (MOOD_WORD[last.value >= 2.5 ? 'mood-good' : last.value >= 1.5 ? 'mood-ok' : 'mood-low'] ?? '') : bpPairs[0]?.bottom != null ? `${bpPairs[0].top}/${bpPairs[0].bottom}` : latest ? formatNumber(latest.value) : last ? dp(last.value) : '--'}
                   {code !== 'mood' && unit ? <small className="sub"> {unit}</small> : null}
                 </strong>
@@ -149,7 +149,7 @@ function MetricBody({ code }: { code: string }) {
           </div>}
           {code === 'sleep' && <SleepStagesRow />}
           {code === 'steps' && <FamilyToday now={now} />}
-          {code === 'steps' && <ActivityCompare acts={acts} now={now} />}
+          {code === 'steps' && <ActivityCompare acts={acts} now={now} personId={personId} />}
           {!lab && <section aria-labelledby="hv-ma">
             <h2 className="hd" id="hv-ma">Monthly averages</h2>
             {months.length === 0 ? (

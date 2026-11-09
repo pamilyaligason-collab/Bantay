@@ -235,8 +235,8 @@
 /* S22-D Today row: six tinted stat tiles. S28 C1: senior type floor (label and sub 15, value 24), two columns on a phone, a small 7-day visual per tile */
 .tk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 12px); }
 @media (min-width: 720px) { .tk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.tk { --tint-fill: var(--card2); --tint-ink: var(--ink); position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1, 4px); min-height: 112px; padding: var(--card-pad, 16px); border-radius: 18px; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; box-sizing: border-box; min-width: 0; box-shadow: var(--shadow-raised, none); }
-.tk:active { box-shadow: var(--shadow-press, none); }
+a.tk { --tint-fill: var(--card2); --tint-ink: var(--ink); position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1, 4px); min-height: 112px; padding: var(--card-pad, 16px); border-radius: 18px; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; box-sizing: border-box; min-width: 0; box-shadow: var(--shadow-raised, none); }
+a.tk:active { box-shadow: var(--shadow-press, none); }
 .tk[data-tint="blue"] { --tint-fill: var(--tint-blue); --tint-ink: var(--tint-blue-ink); }
 .tk[data-tint="red"] { --tint-fill: var(--tint-red); --tint-ink: var(--tint-red-ink); }
 .tk[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
@@ -440,3 +440,10 @@
 .fh-rt { display: grid; min-width: 0; }
 .fh-rt b { font-size: var(--fs-body, 17px); font-variant-numeric: tabular-nums; }
 .fh-rt small { font-size: var(--fs-meta, 15px); color: var(--ink2); }
+
+/* S28 C1: px fallbacks for the contract classes on the Today tiles and family rows; the tile ink stays the one colour tested on its tint (not the muted meta ink) */
+.tk .cd-kicker { font-size: var(--fs-meta, 15px); font-weight: 600; }
+.tk .cd-value { font-size: var(--fs-value, 24px); font-weight: 700; line-height: var(--lh-tight, 1.2); }
+.tk .cd-meta { font-size: var(--fs-meta, 15px); }
+.tk .cd-kicker, .tk .cd-value, .tk .cd-meta { color: inherit; }
+.fh-m .cd-title { font-size: var(--fs-body, 17px); font-weight: 700; }

@@ -54,7 +54,7 @@ export function vitalSummary(code: 'bp' | 'pulse', top: Series, bottom: Series =
     return `Average over the last 7 days: ${Math.round(t)}${b != null ? `/${Math.round(b)}` : ''} mmHg, from ${days(n)} with a reading.${guide}`
   }
   const g = GUIDE.heart_rate
-  return `Average over the last 7 days: ${Math.round(t)} bpm, from ${days(n)} with a reading.${g ? ` General guide for a resting pulse in adults: ${g.text} (${org(g.source)}, ${g.year}).` : ''}`
+  return `Average over the last 7 days: ${Math.round(t)} beats a minute, from ${days(n)} with a reading.${g ? ` General guide for a resting pulse in adults: ${g.text} (${org(g.source)}, ${g.year}).` : ''}`
 }
 
 /** Water: the 7-day average on the days something was logged, against the goal when there is one. */

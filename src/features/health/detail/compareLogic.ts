@@ -26,13 +26,19 @@ export function familyAverage(all: ThirtyDay[]): { avg: number | null; people: n
 export interface CompareRow { id: 'goal' | 'member' | 'family'; title: string; value: string; line: string }
 const n = (v: number) => v.toLocaleString('en-US')
 
-/** The comparisons for the steps page. Every row needs 7 or more days of the viewer's steps and, for the others, of theirs; a row that cannot be backed by data is left out.
- *  `member` and `others` are only people the viewer may already see (D-109). The goal is Bantay's own default (STEP_GOAL): no outside recommendation is quoted because none was verified. */
-export function compareRows(i: { me: ThirtyDay; member?: { name: string; t: ThirtyDay } | null; others: ThirtyDay[]; goal: number }): CompareRow[] {
+/** Whose steps `me` holds: the signed-in viewer ("Your average") or the person they are looking at (given name, "Their" when unknown). */
+export interface Subject { viewer: boolean; name?: string }
+const poss = (s: Subject) => (s.viewer ? 'Your' : s.name ? `${s.name}'s` : 'Their')
+
+/** The comparisons for the steps page. `me` is the VIEWED person's 30-day steps (the viewer's own only when they look at themself). Every row needs 7 or more days of theirs and, for the others, of the other person's; a row that cannot be backed by data is left out.
+ *  `member` and `others` are only people the viewer may already see (D-109); `others` never holds the viewed person (no double count) and holds the viewer when visible.
+ *  The goal is Bantay's own default (STEP_GOAL): no outside recommendation is quoted because none was verified. */
+export function compareRows(i: { me: ThirtyDay; who?: Subject; member?: { name: string; isYou?: boolean; t: ThirtyDay } | null; others: ThirtyDay[]; goal: number }): CompareRow[] {
   if (!ok(i.me)) return []
-  const out: CompareRow[] = [{ id: 'goal', title: 'Bantay goal', value: n(i.goal), line: `Your average of ${n(i.me.avg)} steps a day is ${relTo(i.me.avg, i.goal)} the Bantay goal of ${n(i.goal)}. That is Bantay's own default, not a medical target.` }]
-  if (i.member && ok(i.member.t)) out.push({ id: 'member', title: i.member.name, value: n(i.member.t.avg), line: `Your average is ${relTo(i.me.avg, i.member.t.avg)} ${i.member.name}'s (${n(i.member.t.avg)} a day).` })
+  const w = poss(i.who ?? { viewer: true })
+  const out: CompareRow[] = [{ id: 'goal', title: 'Bantay goal', value: n(i.goal), line: `${w} average of ${n(i.me.avg)} steps a day is ${relTo(i.me.avg, i.goal)} the Bantay goal of ${n(i.goal)}. That is Bantay's own default, not a medical target.` }]
+  if (i.member && ok(i.member.t)) out.push({ id: 'member', title: i.member.isYou ? 'You' : i.member.name, value: n(i.member.t.avg), line: `${w} average is ${relTo(i.me.avg, i.member.t.avg)} ${i.member.isYou ? 'yours' : `${i.member.name}'s`} (${n(i.member.t.avg)} a day).` })
   const fam = familyAverage([i.me, ...i.others])
-  if (fam.avg != null && fam.people >= 2) out.push({ id: 'family', title: 'Family average', value: n(fam.avg), line: `Your average is ${relTo(i.me.avg, fam.avg)} the family average (${n(fam.avg)} a day, from ${fam.people} people).` })
+  if (fam.avg != null && fam.people >= 2) out.push({ id: 'family', title: 'Family average', value: n(fam.avg), line: `${w} average is ${relTo(i.me.avg, fam.avg)} the family average (${n(fam.avg)} a day, from ${fam.people} people).` })
   return out
 }
