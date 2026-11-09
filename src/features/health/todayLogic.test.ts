@@ -30,7 +30,7 @@ describe('Today row: null is not 0', () => {
     expect(t.map((x) => x.code)).toEqual(['bp', 'pulse', 'water', 'steps', 'sleep', 'meds'])
     expect(t.map((x) => x.value)).toEqual(['--', '--', '--', '--', '--', '--'])
     expect(t.every((x) => x.empty)).toBe(true)
-    expect(t.map((x) => x.sub)).toEqual(['No reading today', 'No reading today', 'Nothing logged today', 'No reading today', 'No reading today', 'None due today'])
+    expect(t.map((x) => x.sub)).toEqual(['No reading yet', 'No reading yet', 'Nothing logged today', 'No reading yet', 'No reading yet', 'None due today'])
   })
   it('no water goal (a baby under 1 year): no Water tile', () => {
     expect(todayTiles({ personId: 'p1', readings: [], activity: [], doses: [], water: [], goalMl: null, now: at(23, 30) }).map((x) => x.code)).toEqual(['bp', 'pulse', 'steps', 'sleep', 'meds'])
@@ -71,8 +71,8 @@ describe('Today row: null is not 0', () => {
     const u = run({ now, readings: [rd('heart_rate', 80, 'bpm', at(23, 50, -1)), rd('heart_rate', 66, 'bpm', at(0, 10))] })
     expect(u.pulse!.value).toBe('66')
   })
-  it('each tile opens its existing page', () => {
-    expect(Object.values(run()).map((x) => x.href)).toEqual(['#health/metric/bp_systolic', '#health/metric/heart_rate', '#health/nutrition', '#health/metric/steps', '#health/metric/sleep', '#health/meds'])
+  it('each tile opens its page (Water has its own, S28)', () => {
+    expect(Object.values(run()).map((x) => x.href)).toEqual(['#health/metric/bp_systolic', '#health/metric/heart_rate', '#health/metric/water', '#health/metric/steps', '#health/metric/sleep', '#health/meds'])
   })
 })
 
@@ -80,5 +80,43 @@ describe('S22-D styles', () => {
   it('Browse rise-in and the staggered delay are switched off under reduced motion', () => {
     expect(css).toContain('animation-delay: calc(var(--i, 0) * 80ms)')
     expect(/@media \(prefers-reduced-motion: reduce\) \{ \.card\.hb \{ animation: none; \} \}/.test(css)).toBe(true)
+  })
+})
+
+describe('S28 C1: Today tiles at the senior floor, with a 7-day visual', () => {
+  const px = (re: RegExp) => Number(re.exec(css.slice(css.indexOf('.tk-grid')))?.[1])
+  it('label and sub are at least 15 px, value at least 24 px, two columns on a phone (tokens with px fallbacks)', () => {
+    const block = css.slice(css.indexOf('.tk-grid'), css.indexOf('S22-D Readings card'))
+    expect(block).toMatch(/\.tk-l \{ font-size: var\(--fs-meta, 15px\)/)
+    expect(block).toMatch(/\.tk-s \{ font-size: var\(--fs-meta, 15px\)/)
+    expect(block).toMatch(/\.tk-v \{ font-size: var\(--fs-value, 24px\)/)
+    expect(block).toMatch(/\.tk-grid \{ display: grid; grid-template-columns: repeat\(2,/)
+    expect(px(/\.tk-l \{ font-size: var\(--fs-meta, (\d+)px/)).toBeGreaterThanOrEqual(15)
+    expect(px(/\.tk-v \{ font-size: var\(--fs-value, (\d+)px/)).toBeGreaterThanOrEqual(24)
+  })
+  it('a tile with no data has no ring and an all-null spark: nothing invented, never 0', () => {
+    const t = run()
+    for (const x of Object.values(t)) { expect(x.ring).toBeNull(); expect(x.spark.every((v) => v == null)).toBe(true) }
+  })
+  it('7-day sparks: BP per day, steps per day, null on a day with nothing; today is the last slot', () => {
+    const t = run({
+      now: at(12),
+      readings: [rd('bp_systolic', 120, 'mmHg', at(8, 0, -2)), rd('bp_systolic', 130, 'mmHg', at(9, 0, -2)), rd('bp_systolic', 140, 'mmHg', at(8))],
+      activity: [{ kind: 'steps', minutes: null, steps: 3000, startedAt: at(9, 0, -1).toISOString() }, { kind: 'steps', minutes: null, steps: 1500, startedAt: at(10, 0, -1).toISOString() }, { kind: 'steps', minutes: null, steps: 6000, startedAt: at(9).toISOString() }]
+    })
+    expect(t.bp!.spark).toEqual([null, null, null, null, 125, null, 140])
+    expect(t.steps!.spark).toEqual([null, null, null, null, null, 4500, 6000])
+    expect(t.steps!.ring).toBe(1) // 6,000 of the 6,000 goal
+  })
+  it('rings: steps against the goal, glasses against the goal, medicines taken; a ring is capped at 1', () => {
+    const t = run({ activity: [{ kind: 'steps', minutes: null, steps: 3000, startedAt: at(9).toISOString() }], water: [at(8), at(9), at(10)].map(water), doses: [dose('taken'), dose('pending'), dose('taken'), dose('pending')] })
+    expect(t.steps!.ring).toBe(0.5)
+    expect(t.water!.ring).toBe(0.5) // 3 of 6
+    expect(t.meds!.ring).toBe(0.5)
+    expect(run({ activity: [{ kind: 'steps', minutes: null, steps: 12000, startedAt: at(9).toISOString() }] }).steps!.ring).toBe(1)
+  })
+  it('no medicines due and nothing logged: no ring (a zero-of-zero is not a ring)', () => {
+    expect(run({ doses: [], hasMeds: true }).meds!.ring).toBeNull()
+    expect(run({ water: [] }).water!.ring).toBeNull()
   })
 })
