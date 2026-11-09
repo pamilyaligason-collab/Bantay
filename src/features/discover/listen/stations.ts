@@ -1,6 +1,6 @@
 /** Live radio (S26 D-166): five Manila stations with a checked HTTPS stream (probe 2026-11-09). Colours are from the S26Listen board; white text on every stop is >= 4.5:1. */
 export type Section = 'music' | 'pop' | 'news'
-export type Station = { id: string; section: Section; site: string; freq: string; name: string; sub: string; url: string; grad: [string, string, string]; ink: string; secs: number }
+export type Station = { id: string; section: Section; site: string; freq: string; name: string; sub: string; url: string; alt?: string; grad: [string, string, string]; ink: string; secs: number }
 
 export const STATIONS: Station[] = [
   { id: 'love', section: 'pop', site: 'https://www.loveradio.com.ph/', freq: 'FM 90.7 · MANILA', name: 'Love Radio', sub: 'Pop and love songs', url: 'https://azura.loveradio.com.ph/listen/love_radio_manila/radio.mp3', grad: ['#C92A2A', '#A61E4D', '#B8460B'], ink: '#C2255C', secs: 14 },

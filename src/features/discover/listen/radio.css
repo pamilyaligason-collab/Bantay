@@ -14,6 +14,7 @@
 .rd-err { display: inline-block; background: #fff; color: #8E1F31; font-size: 16px; line-height: 22px; font-weight: 600; border-radius: 8px; padding: 4px 10px; margin-top: 6px; }
 .rd-play { position: relative; z-index: 1; width: 60px; height: 60px; border-radius: 50%; border: 0; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,.25); transition: transform var(--dur-1, 120ms) var(--ease-out); }
 .rd-play:active { transform: scale(.94); }
+.rd-play:disabled { opacity: .5; }
 .rd-eq { display: flex; gap: 3px; align-items: flex-end; height: 18px; margin-top: 8px; }
 .rd-eq i { width: 4px; background: #fff; border-radius: 2px; animation: rd-eq 1s ease-in-out infinite alternate; }
 .rd-eq i:nth-child(1) { height: 8px; } .rd-eq i:nth-child(2) { height: 16px; animation-delay: .2s; } .rd-eq i:nth-child(3) { height: 11px; animation-delay: .4s; } .rd-eq i:nth-child(4) { height: 14px; animation-delay: .1s; }
