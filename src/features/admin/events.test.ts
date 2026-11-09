@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
-import { EVENT_NAMES, track } from './events'
+import { EVENT_NAMES, WATCH_CH_NAMES, track } from './events'
 import { pinError } from './pin'
 
 const st = vi.hoisted(() => ({ client: true, token: 'tok' as string | null }))
@@ -82,8 +82,8 @@ describe('pinError', () => {
   })
 })
 
-describe('0056 server allowlist (D-160)', () => {
-  const sql = readFileSync('supabase/migrations/0056_usage_allowlist.sql', 'utf8')
+describe('server allowlist (D-160 0056, D-180 0060)', () => {
+  const sql = readFileSync('supabase/migrations/0060_watch_channels.sql', 'utf8') // the latest migration that restates the list; it must equal EVENT_NAMES
   const listFor = (kind: string): string[] => {
     const seg = (sql.split(`when '${kind}' then`)[1] ?? '').split('])')[0] ?? ''
     return [...seg.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]!)
@@ -93,7 +93,13 @@ describe('0056 server allowlist (D-160)', () => {
       expect(listFor(kind).sort(), kind).toEqual([...EVENT_NAMES[kind]].sort())
     }
   })
-  it('has the S26 names and a down file', () => {
+  it('0060 adds the watch_ch_ names, the family counts function, and a down file that restores the 0056 list', () => {
+    expect(WATCH_CH_NAMES.length).toBe(22)
+    expect(sql).toMatch(/function public\.family_watch_counts\(\)[\s\S]*security definer set search_path = ''/)
+    expect(sql).toMatch(/revoke all on function public\.family_watch_counts\(\) from public, anon, authenticated, service_role/)
+    expect(readFileSync('supabase/migrations/0060_watch_channels.down.sql', 'utf8')).toMatch(/drop function if exists public\.family_watch_counts/)
+  })
+  it('has the S26 names and a 0056 down file', () => {
     expect(EVENT_NAMES.screen).toEqual(expect.arrayContaining(['weather', 'calm']))
     expect(EVENT_NAMES.action).toEqual(expect.arrayContaining(['card_talk', 'phone_check_fail_call']))
     expect(readFileSync('supabase/migrations/0056_usage_allowlist.down.sql', 'utf8')).toMatch(/drop trigger/)

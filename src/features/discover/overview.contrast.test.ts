@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { over, pair, parse, ratio, tokensOf, type Theme } from '../look/contrastMath'
 import css from './discover.css?raw'
+import mediaCss from '../look/media/media.css?raw'
 
 const TINTS = ['blue', 'teal', 'purple', 'amber', 'red', 'green'] as const
 
@@ -22,7 +23,7 @@ describe.each<Theme>(['light', 'dark'])('Channel menu border (%s)', (theme) => {
     expect(pair(t, '--muted', '--ground')).toBeGreaterThanOrEqual(3)
   })
   it('the label and select use --ink on --card', () => expect(pair(t, '--ink', '--card')).toBeGreaterThanOrEqual(4.5))
-  it('the length badge: white on a 72% black scrim over white is at least 4.5:1', () => expect(ratio(parse('#ffffff')[0], over([parse('rgb(0 0 0 / .72)')[0], 0.72], parse('#ffffff')[0]))).toBeGreaterThanOrEqual(4.5))
+  it('the length badge: white on a 75% black scrim over white is at least 4.5:1', () => expect(ratio(parse('#ffffff')[0], over([parse('rgb(0 0 0 / .75)')[0], 0.75], parse('#ffffff')[0]))).toBeGreaterThanOrEqual(4.5))
 })
 describe('Channel menu css', () => {
   it('a 1.5px --muted border, 48px tall, and no leftover chip group', () => {
@@ -39,5 +40,8 @@ describe('season row icon', () => {
 })
 
 describe('thumbnail', () => {
-  it('fills with the tile tint, else --card2', () => expect(css).toMatch(/\.dc-still\s*\{[^}]*background:\s*var\(--tint-fill, var\(--card2\)\)/))
+  it('the same-size placeholder is --tint-slate, else --card2, and the badge scrim is the one tested above', () => {
+    expect(mediaCss).toMatch(/\.md-pic \{[^}]*background: var\(--tint-slate, var\(--card2\)\)/)
+    expect(mediaCss).toMatch(/\.md-len \{[^}]*background: rgb\(0 0 0 \/ \.75\)/)
+  })
 })

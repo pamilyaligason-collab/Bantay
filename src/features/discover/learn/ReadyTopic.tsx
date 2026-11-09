@@ -2,6 +2,7 @@ import { Icon } from '../../shell/Icon'
 import { SubHeader } from '../../shell/SubHeader'
 import { LiteVideo } from '../../media/LiteVideo'
 import { playable } from '../../health/library/videosLogic'
+import { trackWatch } from '../channels'
 import { READY_READS, READY_TOPICS, READY_VIDEOS } from './ready'
 import './learn.css'
 
@@ -16,7 +17,7 @@ export default function Ready({ id }: { id: string }) {
       <SubHeader title={t.title} backHref="#discover/learn" backLabel="Back to Learn" />
       <h2 className="sh-h2">Videos</h2>
       {videos.map((v) => (
-        <div key={v.id} className="card ry-video">
+        <div key={v.id} className="card ry-video" onClickCapture={(e) => { if ((e.target as Element).closest('.lv-play')) trackWatch(v.source) }}>
           <LiteVideo id={v.id} title={v.title} minutes={v.minutes} />
           <span className="sub">{v.source}</span>
         </div>

@@ -8,7 +8,7 @@ import Watch, { WATCH_PICK } from './Screen'
 afterEach(cleanup)
 
 describe('Watch', () => {
-  it('shows 4 posters at a time in a grid (no player, no side-swipe row) and one row per topic plus Live TV; health topics are gone', () => {
+  it('shows 4 video cards at a time in one column (no player, no side-swipe row) and one row per topic plus Live TV; health topics are gone', () => {
     const { container } = render(<Watch />)
     expect(DISCOVER_VIDEOS.filter(playable).length).toBe(55) // counted by hand in src/data/discover/ready.json: Be prepared 20, Farming and DIY 23, Listen 7, Recipe videos 5, none a placeholder
     expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(4)
@@ -25,7 +25,7 @@ describe('Watch', () => {
     expect(screen.getByText(/or opens in YouTube/)).toBeTruthy()
     expect(screen.getByTestId('watch-health-link').getAttribute('href')).toBe('#health')
   })
-  it('Show more adds four posters at a time', () => {
+  it('Show more adds four cards at a time', () => {
     render(<Watch />)
     fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
     expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(8)
@@ -54,8 +54,8 @@ describe('Watch', () => {
   it('a picture that cannot load falls back to the title on a drawn tile', () => {
     const { container } = render(<Watch />)
     fireEvent.error(container.querySelector('img')!)
-    expect(container.querySelector('.dc-poster[data-thumb="off"]')).toBeTruthy()
-    expect(container.querySelectorAll('img').length).toBe(3)
+    expect(container.querySelectorAll('img').length).toBe(3) // the card keeps its same-size placeholder, title and name
+    expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(4)
   })
 })
 
