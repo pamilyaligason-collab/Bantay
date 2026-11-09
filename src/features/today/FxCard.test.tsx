@@ -12,7 +12,7 @@ vi.mock('../shell/useKv', () => ({
 }))
 const tr = vi.hoisted(() => vi.fn(async () => true))
 vi.mock('../admin/events', () => ({ track: tr }))
-import FxCard, { nextSaved } from './FxCard'
+import FxCard, { fetchPhp, nextSaved } from './FxCard'
 
 const NOON = new Date(2026, 10, 9, 12, 0, 0).getTime() // Mon 9 Nov 2026, local noon
 const at = (d: number, hh: number, mm = 0) => new Date(2026, 10, d, hh, mm).getTime()
@@ -90,5 +90,11 @@ describe('FxCard', () => {
   })
   it('nextSaved moves the old value to prev', () => {
     expect(nextSaved({ php: 1, at: 5, prev: null, prevAt: null }, 2, 9)).toEqual({ php: 2, at: 9, prev: 1, prevAt: 5 })
+  })
+  it('an old WebView without AbortSignal.timeout still fetches, with no signal', async () => {
+    vi.stubGlobal('AbortSignal', class {}) // no static timeout, as before Chrome 103
+    stub(ok(63.1))
+    expect(await fetchPhp()).toBe(63.1)
+    expect((fetchMock.mock.calls[0]![1] as RequestInit).signal).toBeUndefined()
   })
 })

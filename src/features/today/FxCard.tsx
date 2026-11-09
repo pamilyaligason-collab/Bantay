@@ -18,7 +18,7 @@ export const nextSaved = (saved: FxSaved | undefined, php: number, now: number):
 /** One GET. Null on any failure or a rate that is not a positive number. */
 export async function fetchPhp(): Promise<number | null> {
   try {
-    const r = await fetch(FX_URL, { signal: AbortSignal.timeout(8000) })
+    const r = await fetch(FX_URL, { signal: 'timeout' in AbortSignal ? AbortSignal.timeout(8000) : undefined })
     if (!r.ok) return null
     const j = (await r.json()) as { result?: string; rates?: { PHP?: unknown } }
     const v = j.rates?.PHP
