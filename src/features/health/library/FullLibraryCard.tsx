@@ -14,7 +14,8 @@ const mb = (n: number) => Math.max(1, Math.round(n / 1048576))
 const CONSENT = 'medlib.auto' // kv: 'yes' | 'no'; absent = never asked (D-167)
 
 /** The card on the library home. Asks once about automatic Wi-Fi download; Get, progress, then one small Ready row with Delete. */
-export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
+/** part: 'all' = card and ready row together; 'top' = the card, gone once ready; 'bottom' = only the small delete row, shown once ready (Library page). */
+export function FullLibraryCard({ onChange, part = 'all' }: { onChange?: () => void; part?: 'all' | 'top' | 'bottom' } = {}) {
   const [st, setSt] = useState<FullLibraryStatus>({ state: 'none', bytes: 0, total: 0 })
   const [prog, setProg] = useState<{ bytes: number; total: number } | null>(null)
   const [ask, setAsk] = useState<'wifi' | 'delete' | null>(null)
@@ -52,8 +53,8 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
   startRef.current = start
   const tryAuto = useCallback(() => {
     const { st: s, consent: c } = live.current
-    if (c === 'yes' && (s.state === 'none' || s.state === 'error') && !currentRun() && autoOk() && autoRetryOk()) void startRef.current(false, true)
-  }, [])
+    if (part !== 'bottom' && c === 'yes' && (s.state === 'none' || s.state === 'error') && !currentRun() && autoOk() && autoRetryOk()) void startRef.current(false, true)
+  }, [part])
 
   useEffect(() => {
     alive.current = true
@@ -89,6 +90,23 @@ export function FullLibraryCard({ onChange }: { onChange?: () => void } = {}) {
   const size = mb(st.total || FULL_LIBRARY_MB * 1048576)
   const pct = prog && prog.total ? Math.min(100, Math.floor((prog.bytes / prog.total) * 100)) : 0
 
+  if (st.state === 'ready' && part === 'top') return null
+  if (st.state === 'ready' && part === 'bottom') {
+    return (
+      <section className="fl-foot" aria-label="Full medical library storage" data-testid="full-library-foot">
+        {ask === 'delete' ? (
+          <div className="fl-row">
+            <span>Delete {mb(st.bytes)} MB? It will not download again by itself.</span>
+            <button type="button" className="btn fl-del" onClick={() => void del()}>Yes, delete</button>
+            <button type="button" className="btn2" onClick={() => setAsk(null)}>Keep</button>
+          </div>
+        ) : (
+          <button type="button" className="btn2 fl-del" onClick={() => setAsk('delete')}>Delete the full library ({mb(st.bytes)} MB)</button>
+        )}
+      </section>
+    )
+  }
+  if (part === 'bottom') return null
   if (st.state === 'ready') {
     return (
       <section className="card fl-card fl-mini" aria-label="Full medical library" data-testid="full-library">

@@ -55,7 +55,7 @@ export function parseTopic(body: unknown): Topic | null {
   return title && summary && url ? { title, summary, url } : null
 }
 
-const key = (kind: TopicKind, text: string) => `lib.v2.${kind}.${normKey(text)}`
+const key = (kind: TopicKind, text: string) => `lib.v3.${kind}.${normKey(text)}`
 async function readCache(k: string): Promise<Cached | null> { try { return ((await db.kv.get(k))?.value as Cached | undefined) ?? null } catch { return null } }
 
 export type TopicResult = { state: 'ok'; topic: Topic; from: 'cache' | 'network' | 'old-cache' } | { state: 'none' } | { state: 'offline' }
