@@ -7,7 +7,7 @@ import { miniSlots, miniSummary } from './RainMini'
 import WeatherCard from './WeatherCard'
 
 const m = vi.hoisted(() => ({ place: { weather: { lat: 9.6, lon: 123.8 }, zone: 'dampas', source: 'zone', settled: true, picked: false } as unknown, wx: null as unknown }))
-vi.mock('../location/useLocation', () => ({ usePlace: () => m.place }))
+vi.mock('../weather/weatherPlace', () => ({ useWeatherPlace: () => ({ place: m.place, point: (m.place as { weather?: unknown } | null)?.weather ?? null }) }))
 vi.mock('../safety/store', () => ({ useKv: () => [] }))
 vi.mock('./weather', () => ({ useWeather: () => m.wx }))
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-20T12:20:00Z')) }) // 8:20 PM at the place (UTC+8)

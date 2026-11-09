@@ -5,7 +5,7 @@ import Cpr from '../features/safety/Cpr'
 import SafetySub, { subOf } from '../features/safety/SafetyPages'
 import GoBag from '../features/gobag/GoBag'
 import MedicalId from '../features/medid/MedicalId'
-import { useLocation, usePlaceFrom } from '../features/location/useLocation'
+import { useWeatherPlace } from '../features/weather/weatherPlace'
 import '../features/safety/safety.css'
 
 /** #medid and #gobag are sub-screens of this tab (routes.ts keeps the Safety tab lit); #safety/<page> are the hub pages (D-68). */
@@ -25,8 +25,7 @@ export default function Safety() {
 }
 
 function SafetyRoute({ hash }: { hash: string }) {
-  const l = useLocation()
-  const place = usePlaceFrom(l)
+  const { l, place } = useWeatherPlace() // D-163: the Weather screen's place rule (6 h fix drop, zone pick wins), so Safety forecasts where Today and Weather do
   const sub = subOf(hash)
   const fa = topicOf(hash)
   if (hash === '#safety/firstaid/cpr') return <Cpr />

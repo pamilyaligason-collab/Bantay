@@ -100,4 +100,4 @@
 .wx-remind b { font-size: 15px; font-weight: 600; }
 
 .wx-fnote a { color: inherit; text-decoration: underline; }
-.wx-fnote { display: block; margin-top: 6px; }
+.wx-fnote { display: block; margin-top: 6px; font-size: 15px; }

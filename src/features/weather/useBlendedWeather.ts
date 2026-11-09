@@ -25,7 +25,7 @@ export function loadBlended(p: LatLon, invoke: Invoke = invokeBlend): Promise<Lo
   const k = forecastKey(p) // Today, Safety and Weather open together share one request (D-163)
   const hit = pending.get(k)
   if (hit && hit.invoke === invoke) return hit.run
-  const run = loadBlendedOnce(p, invoke).finally(() => pending.delete(k))
+  const run: Promise<Loaded> = loadBlendedOnce(p, invoke).finally(() => { if (pending.get(k)?.run === run) pending.delete(k) }) // only this run clears its entry
   pending.set(k, { invoke, run })
   return run
 }

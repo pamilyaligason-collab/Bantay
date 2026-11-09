@@ -19,6 +19,7 @@ export interface Wx {
   high?: number | null; low?: number | null // today's range
   utcOffset?: number // seconds; absent in old caches and fixtures = Manila
   tz?: string // IANA zone the forecast service reported
+  sources?: string[] // blended forecast only: the providers that answered (ids), for the credit line
   humidity?: number | null
   feels?: number | null // Open-Meteo apparent temperature, the same 'Feels like' the Weather screen shows
   uvMax?: number | null

@@ -20,6 +20,7 @@ import { Icon, type IconName } from '../shell/Icon'
 import { useAutoBasemap } from './autoMaps'
 import { GroupedList, Row, Section, type Tint } from '../look'
 import { ForecastNote } from '../weather/ForecastNote'
+import { useWeatherPlace } from '../weather/weatherPlace'
 import { placeNameOf } from '../today/placeName'
 import { HOME_ZONES, pickLocalSet } from '../location/geo'
 import { type useLocation } from '../location/useLocation'
@@ -133,18 +134,19 @@ const hazardLine = (place: Place) => {
   return hazardSub(coversHere(place) ? word(home) : null, home ? { zone: (HOME_ZONES.find((z) => z.id === place.zone)?.name ?? place.zone).split(',')[0]!, reading: word(home) } : null)
 }
 
-function RightNow({ place }: { place: Place }) {
+export function RightNow({ place }: { place: Place }) {
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
   const overrides = useKv<Overrides>(OVERRIDES_KEY, NONE_O)
   const savedCheck = useKv<unknown>(CHECKED_KEY, null)
   const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
-  const wx = useWeather(place.weather)
+  const wp = useWeatherPlace() // the same point and place name as Today and the Weather screen (D-163)
+  const wx = useWeather(wp.point)
   const pins = withOverrides(forZone(places as Entry[], place.zone), overrides).filter(hasPoint).length
   const rows = rightNowRows({ alerts, here: alertRef(place), place, wx, storms: cyclones(alerts), hazard: hazardLine(place), pins, stale: feedStale(alerts, savedCheck, down) })
   return (
     <Section title="Right now" link={{ href: '#safety/sources', label: 'Sources' }}>
       <GroupedList icons label="Right now" testId="right-now">{rows.map(asRow)}</GroupedList>
-      {wx && wx.temp != null && <p className="sf-wxnote"><ForecastNote place={placeNameOf(place)} /></p>}
+      {wx && wx.temp != null && <p className="sf-wxnote"><ForecastNote place={placeNameOf(wp.place ?? place)} sources={wx.sources} /></p>}
     </Section>
   )
 }
