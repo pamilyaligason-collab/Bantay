@@ -16,3 +16,8 @@
 .fl-credit { margin: 12px 4px 0; font-size: 14px; color: var(--ink2); }
 .fl-credit a { color: var(--green); min-height: 44px; display: inline-flex; align-items: center; }
 @media (prefers-reduced-motion: reduce) { .fl-bar > i { transition: none; } }
+.fl-mini { gap: 6px; padding-block: 10px; }
+.fl-line { flex-wrap: nowrap; justify-content: space-between; min-height: 44px; }
+.fl-line .fl-ok { flex: 1; min-width: 0; }
+.fl-line .btn2 { flex: none; }
+.fl-line .fl-ok { font-size: 16px; }

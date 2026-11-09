@@ -18,9 +18,9 @@ export interface FullHit { title: string; snippet: string; key: string }
 export interface FullArticleData { key: string; title: string; text: string; url: string; image?: string }
 export interface DownloadOpts { onProgress?: (p: { bytes: number; total: number }) => void; signal?: AbortSignal; confirmed?: boolean; url?: string; flushBytes?: number }
 
-/** code 'needs-confirm' = not on Wi-Fi, ask first; 'low-space' = not enough room; others are plain failures. */
+/** code 'paused' = stopped with abort('pause'): the partial file is kept for a later resume; 'needs-confirm' = not on Wi-Fi, ask first; 'low-space' = not enough room; others are plain failures. */
 export class FullLibraryError extends Error {
-  code: 'needs-confirm' | 'low-space' | 'network' | 'bad-pack' | 'busy' | 'aborted'
+  code: 'needs-confirm' | 'low-space' | 'network' | 'bad-pack' | 'busy' | 'aborted' | 'paused'
   constructor(code: FullLibraryError['code'], message: string) { super(message); this.code = code }
 }
 
@@ -130,10 +130,15 @@ export async function getStatus(): Promise<FullLibraryStatus> {
   return { state: 'none', bytes, total }
 }
 
-function wifiOk(): boolean {
-  const t = (navigator as Navigator & { connection?: { type?: string } }).connection?.type
+type Conn = EventTarget & { type?: string; saveData?: boolean }
+/** navigator.connection (Chrome and the Android WebView); undefined elsewhere. */
+export const connection = (): Conn | undefined => (typeof navigator === 'undefined' ? undefined : (navigator as Navigator & { connection?: Conn }).connection)
+export function wifiOk(): boolean {
+  const t = connection()?.type
   return t === 'wifi' || t === 'ethernet' // unknown counts as not confirmed: the card then asks before spending the person's data
 }
+/** Automatic downloads need a confirmed unmetered link and no data-saver; anything unknown waits for a tap. */
+export const autoOk = (): boolean => wifiOk() && !connection()?.saveData
 
 /** Starts or resumes the download. Throws FullLibraryError. Cancel with opts.signal (a cancelled download is erased).
  *  A partial file is resumed (Range + If-Range) only when it came from the same URL and the server still has the same file; otherwise it is thrown away. */
@@ -150,8 +155,9 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
     const meta = getMeta()
     if (have && (meta.url !== url || !meta.total)) { await store.clear(); have = 0; setMeta(null) } // a partial from another file, or one we cannot vouch for
     // always a Range (bytes=0- too), so the size comes from Content-Range even if the edge drops Content-Length
+    const stopped = () => (opts.signal?.reason === 'pause' ? new FullLibraryError('paused', 'Paused until Wi-Fi.') : new FullLibraryError('aborted', 'Cancelled.'))
     const get = (from: number) => fetch(url, { headers: { Range: `bytes=${from}-`, ...(from && meta.validator ? { 'If-Range': meta.validator } : {}) }, signal: opts.signal }).catch((e) => {
-      if (opts.signal?.aborted) throw new FullLibraryError('aborted', 'Cancelled.')
+      if (opts.signal?.aborted) throw stopped()
       throw new FullLibraryError('network', `Could not reach the download (${e instanceof Error ? e.message : 'network'}).`)
     })
     const tag = (r: Response) => r.headers.get('etag') || r.headers.get('last-modified') || ''
@@ -205,7 +211,7 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
         }
       } catch (e) {
         await flush().catch(() => undefined) // keep what arrived so the next try resumes
-        if (opts.signal?.aborted) throw new FullLibraryError('aborted', 'Cancelled.')
+        if (opts.signal?.aborted) throw stopped()
         throw new FullLibraryError('network', `The download stopped (${e instanceof Error ? e.message : 'network'}). Tap Get to carry on.`)
       }
       await flush()
@@ -216,7 +222,7 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
     await verify(store, total)
   } catch (e) {
     if (e instanceof FullLibraryError && e.code === 'aborted') { await store.clear(); setMeta(null) }
-    else lastError = e instanceof Error ? e.message : 'Download failed.'
+    else if (!(e instanceof FullLibraryError && e.code === 'paused')) lastError = e instanceof Error ? e.message : 'Download failed.'
     throw e
   } finally {
     active = false
