@@ -1,12 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { LottoRow } from './lottoApi'
-const h = vi.hoisted(() => ({ rows: null as unknown as LottoRow[] | null }))
-vi.mock('./lottoApi', async (orig) => ({ ...(await orig<typeof import('./lottoApi')>()), useLotto: () => ({ rows: h.rows }) }))
+import { nextJackpotFor, type LottoRow, type NextJackpot } from './lottoApi'
+const h = vi.hoisted(() => ({ rows: null as unknown as LottoRow[] | null, next: null as unknown as NextJackpot[] | null }))
+vi.mock('./lottoApi', async (orig) => ({ ...(await orig<typeof import('./lottoApi')>()), useLotto: () => ({ rows: h.rows, next: h.next }) }))
 const tr = vi.hoisted(() => vi.fn(async () => true))
 vi.mock('../admin/events', () => ({ track: tr }))
-import Lotto, { drawDay, LOTTO_NOTE } from './Lotto'
+import Lotto, { drawDay, jackpotWords, LOTTO_NOTE, nextRowFor } from './Lotto'
 
 const r = (game: string, draw_date: string, combination: string, winners: number | null = 0): LottoRow => ({ game, draw_date, combination, jackpot_php: 1_000_000, winners })
 const ALL = [
@@ -18,7 +18,7 @@ const ALL = [
   r('3D Lotto 9PM', '2026-11-07', '4-4-7', 12),
   r('Lotto 6/42', '2026-11-03', '01-02-03-04-05-06') // an older draw of the same game
 ]
-afterEach(() => { cleanup(); h.rows = null })
+afterEach(() => { cleanup(); h.rows = null; h.next = null })
 
 describe('Lotto card', () => {
   it('is hidden with no rows, with an empty table and with only games it does not show', () => {
@@ -102,5 +102,56 @@ describe('Lotto card', () => {
       if (path.endsWith('/lotto.css')) continue
       for (const c of own) expect(css.includes(`${c} `) || css.includes(`${c},`) || css.includes(`${c}{`) || css.includes(`${c}:`), `${c} also in ${path}`).toBe(false)
     }
+  })
+  describe('jackpot (D-164)', () => {
+    const FUTURE = '2099-01-10' // always today or later
+    const nj = (game: string, jackpot_php: number, draw_date = FUTURE): NextJackpot => ({ game, draw_date, jackpot_php })
+    it('jackpotWords: peso sign, millions to one decimal, billions; anything under a million, null or NaN is no text (never P0)', () => {
+      expect(jackpotWords(486_000_000)).toBe('₱486 million')
+      expect(jackpotWords(489_846_673.65)).toBe('₱489.8 million')
+      expect(jackpotWords(1_250_000_000)).toBe('₱1.3 billion')
+      expect(jackpotWords(5_000_000)).toBe('₱5 million')
+      for (const bad of [0, 999_999, -5, NaN, null, undefined]) expect(jackpotWords(bad as number | null)).toBeNull()
+    })
+    it('the biggest next jackpot leads the card with amount, game and next draw day; each six-number game shows its own under the balls', () => {
+      h.rows = ALL
+      h.next = [nj('Ultra Lotto 6/58', 486_000_000), nj('Grand Lotto 6/55', 120_000_000), nj('Lotto 6/42', 24_500_000)]
+      const { container } = render(<Lotto />)
+      const big = screen.getByTestId('lotto-big')
+      expect(big.textContent).toBe('Biggest jackpot now₱486 millionUltra Lotto 6/58 · next draw Sat 10 Jan')
+      expect(container.querySelector('.lotto')!.firstElementChild).toBe(big)
+      fireEvent.click(screen.getByRole('button', { name: 'More games' }))
+      const rows = Array.from(container.querySelectorAll('.lotto-row'))
+      const line = (name: string) => rows.find((x) => x.querySelector('.lotto-name')!.textContent === name)!.querySelector('.lotto-next')?.textContent ?? null
+      expect(line('Ultra Lotto 6/58')).toBe('Next jackpot ₱486 million')
+      expect(line('Grand Lotto 6/55')).toBe('Next jackpot ₱120 million')
+      expect(line('Lotto 6/42')).toBe('Next jackpot ₱24.5 million')
+      expect(line('Super Lotto 6/49')).toBeNull() // no next row: no line, never P0
+      expect(line('3D Lotto 9PM')).toBeNull()
+    })
+    it('no next jackpot at all (null, empty, a past draw or the result already out): no banner and no line', () => {
+      h.rows = ALL
+      for (const next of [null, [], [nj('Ultra Lotto 6/58', 486_000_000, '2020-01-01')], [nj('Ultra Lotto 6/58', 486_000_000, '2026-11-06')]]) {
+        h.next = next
+        const { container } = render(<Lotto />)
+        expect(screen.queryByTestId('lotto-big')).toBeNull()
+        expect(container.querySelector('.lotto-next')).toBeNull()
+        expect(container.textContent).not.toMatch(/₱0|P0/)
+        cleanup()
+      }
+    })
+    it('nextRowFor gives the same amount as lottoApi.nextJackpotFor (one rule), and the earliest upcoming draw of the game', () => {
+      const latest = ALL[0]!
+      const next = [nj('Ultra Lotto 6/58', 300_000_000, '2099-02-01'), nj('Ultra Lotto 6/58', 486_000_000, '2099-01-10'), nj('Grand Lotto 6/55', 1_000_000_00, '2099-01-01')]
+      expect(nextRowFor(next, latest)).toEqual(next[1])
+      expect(nextRowFor(next, latest)!.jackpot_php).toBe(nextJackpotFor(next, latest))
+      expect(nextRowFor(null, latest)).toBeNull()
+    })
+    it('the banner colours are the ball chip tokens and every size is a seniors size', () => {
+      const css = readFileSync('src/features/today/lotto.css', 'utf8')
+      expect(css).toMatch(/\.lotto-big \{[^}]*background: var\(--warn-bg\)/)
+      expect(css).toMatch(/\.lotto-big-v \{[^}]*font-size: 30px/)
+      expect(css).toMatch(/\.lotto-next \{[^}]*font-size: 16px/)
+    })
   })
 })

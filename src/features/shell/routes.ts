@@ -23,6 +23,7 @@ export function parseHash(h: string): { tab: Tab | null; view: string | null } {
   if (k.startsWith('family/')) return { tab: 'family', view: k.split('/')[1] || null } // #family/plan, #family/papers, #family/people/<id>
   if (k === 'weather' || k.startsWith('weather?')) return { tab: 'today', view: 'weather' } // #weather, #weather?from=action
   if (k === 'calm' || k === 'calm/listen') return { tab: 'today', view: 'calm' } // #calm: the Calm page under Today (lane C)
+  if (k.startsWith('garden/')) return { tab: 'today', view: null } // #garden/plant, #garden/prices: Today draws these pages itself
   if (k === 'docs' || k.startsWith('docs/')) return { tab: 'safety', view: 'docs' }
   // sub-screens of Safety, drawn by Safety itself; #medid/<personId> comes from a member page
   if (k === 'medid' || k === 'gobag') return { tab: 'safety', view: k }
