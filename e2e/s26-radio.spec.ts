@@ -35,7 +35,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.getByRole('button', { name: 'Play DZRH' }).click()
     await expect(page.getByTestId('radio-dzrh')).toHaveAttribute('data-state', 'error')
     await expect(page.getByTestId('radio-love')).toHaveAttribute('data-state', 'idle')
-    await expect(page.getByText('Could not play. Check data or Wi-Fi.')).toBeVisible()
+    await expect(page.getByText('Could not connect, try again.')).toBeVisible()
     await page.getByRole('button', { name: 'Play Easy Rock' }).click()
     await expect(page.getByTestId('radio-easyrock')).toHaveAttribute('data-state', 'playing')
     const small = await page.locator('.rd-play').evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().width < 44 || e.getBoundingClientRect().height < 44).length)
