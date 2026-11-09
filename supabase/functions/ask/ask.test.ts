@@ -17,6 +17,8 @@ function port(over: Partial<Port> = {}): Port & { chat: ReturnType<typeof vi.fn>
     own: async () => none,
     medline: async () => null,
     chat: vi.fn(async () => ok('Drink water and rest.')),
+    spendUsd: async () => 0,
+    addSpend: vi.fn(async () => {}),
     now: () => 1000,
     ...over
   } as never

@@ -1,13 +1,15 @@
 // Ask (Jack): the assistant chat, replacing the n8n webhook on the Alfred VPS. Contract and rollout: docs/ASSISTANT.md.
 // Deploy with --no-verify-jwt: the JWT is checked here (auth.getUser), the same way records-extract does it.
 // Function secrets (set by Lloyd): OPENROUTER_CHAT_KEY (NOT OPENROUTER_API_KEY, which is the scan key), ALLOWED_ORIGIN;
-// optional OPENROUTER_CHAT_MODEL (default anthropic/claude-haiku-5.5), OPENROUTER_CHAT_FALLBACK (default google/gemini-3.5-flash-lite).
-// SUPABASE_URL and SUPABASE_ANON_KEY are provided by the platform. No service role is used: every read runs as the caller.
+// optional OPENROUTER_FAST_MODEL (default anthropic/claude-haiku-5.5; OPENROUTER_CHAT_MODEL still works as its old name), OPENROUTER_STRONG_MODEL (default anthropic/claude-sonnet-5.5),
+// OPENROUTER_CHAT_FALLBACK (default google/gemini-3.5-flash-lite), ASSISTANT_MONTHLY_CAP_USD (default 10; the router steps down at 70% and 90% of it, router.ts).
+// SUPABASE_URL, SUPABASE_ANON_KEY and SUPABASE_SERVICE_ROLE_KEY are provided by the platform. Every read of the person's data runs as the caller;
+// the service role is used only for the monthly spend counter (assistant_spend, migration 0062). Without it the router uses the fast model only.
 // B-7: the log line holds counts, latency, model id and cost. Never a message, a reply, a record value, a name or a snippet.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { corsHeaders, json } from '../_shared/http.ts'
 import { assembleOwn, makeMedline, medsQuery, type Reader } from './context.ts'
-import { DEFAULT_FALLBACK, DEFAULT_MODEL, handleAsk, parseCompletion, type Knowledge, type Port } from './logic.ts'
+import { DEFAULT_CAP_USD, DEFAULT_FALLBACK, DEFAULT_MODEL, DEFAULT_STRONG, handleAsk, parseCompletion, type Knowledge, type Port } from './logic.ts'
 
 declare const Deno: { env: { get(k: string): string | undefined }; serve(h: (r: Request) => Response | Promise<Response>): void }
 
@@ -44,7 +46,16 @@ function makePort(req: Request, key: string): Port {
       return (data ?? []).map((r: { substance: string }) => r.substance).filter((s: string) => s && s !== 'none')
     }
   }
+  const url = env('SUPABASE_URL')
+  const admin = env('SUPABASE_SERVICE_ROLE_KEY') ? createClient(url, env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false, autoRefreshToken: false } }) : null
   return {
+    async spendUsd() {
+      if (!admin) return null
+      const { data, error } = await admin.rpc('assistant_spend_get')
+      const n = Number(data)
+      return error || data === null || !Number.isFinite(n) ? null : n
+    },
+    async addSpend(usd) { if (admin) await admin.rpc('assistant_spend_add', { p_usd: usd }) },
     async user() { const { data } = await sb.auth.getUser(); return data.user?.id ?? null },
     async takeSlot(limit) {
       const { data, error } = await sb.rpc('assistant_take', { p_limit: limit })
@@ -78,14 +89,16 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return json({ error: 'bad_input' }, 405, cors)
 
   const key = env('OPENROUTER_CHAT_KEY').trim() // a pasted key often carries a space or line break
-  const model = env('OPENROUTER_CHAT_MODEL') || DEFAULT_MODEL
+  const model = env('OPENROUTER_FAST_MODEL') || env('OPENROUTER_CHAT_MODEL') || DEFAULT_MODEL
+  const strong = env('OPENROUTER_STRONG_MODEL') || DEFAULT_STRONG
   const fallback = env('OPENROUTER_CHAT_FALLBACK') || DEFAULT_FALLBACK
-  if (!key || [model, fallback].some((m) => /:free$/i.test(m))) return json({ error: 'unavailable' }, 503, cors)
+  const capUsd = Number(env('ASSISTANT_MONTHLY_CAP_USD')) > 0 ? Number(env('ASSISTANT_MONTHLY_CAP_USD')) : DEFAULT_CAP_USD
+  if (!key || [model, strong, fallback].some((m) => /:free$/i.test(m))) return json({ error: 'unavailable' }, 503, cors)
 
   try {
-    const out = await handleAsk(makePort(req, key), { model, fallback }, await req.text())
+    const out = await handleAsk(makePort(req, key), { model, strong, fallback, capUsd }, await req.text())
     const m = out.meta
-    console.log(JSON.stringify({ fn: 'ask', status: m.status, emergency: m.emergency ?? null, lang: m.lang ?? null, model: m.model ?? null, fallback: m.fallback ?? false, ms: m.latencyMs ?? null, hits: m.hits ?? 0, tokens_in: m.usage?.tokensIn ?? null, tokens_out: m.usage?.tokensOut ?? null, cost: m.usage?.cost ?? null }))
+    console.log(JSON.stringify({ fn: 'ask', status: m.status, emergency: m.emergency ?? null, lang: m.lang ?? null, model: m.model ?? null, tier: m.tier ?? null, fallback: m.fallback ?? false, ms: m.latencyMs ?? null, hits: m.hits ?? 0, tokens_in: m.usage?.tokensIn ?? null, tokens_out: m.usage?.tokensOut ?? null, cost: m.usage?.cost ?? null }))
     // Proves the gate path never reached a model (scripts/jack-gate-live.mjs). meta.model is set only after a model call.
     return json(out.body, out.status, { ...cors, 'x-bantay-model-called': m.model ? '1' : '0', 'Access-Control-Expose-Headers': 'x-bantay-model-called' })
   } catch {
