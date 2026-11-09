@@ -12,11 +12,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.emulateMedia({ colorScheme: scheme, reducedMotion: 'reduce' })
     })
 
-    test('gutter: the person card on Today sits at x 16 (D-109: one full-width card, no carousel)', async ({ page }) => {
+    test('gutter: the first People card sits at x 16 (S26 D-168: the Today list is gone)', async ({ page }) => {
       await openFamily(page)
       await setScheme(page, scheme)
       await settled(page)
-      const left = () => page.evaluate(() => document.querySelector<HTMLElement>('.pc-one .pc')!.getBoundingClientRect().left)
+      const left = () => page.evaluate(() => document.querySelector<HTMLElement>('[data-testid="people-row"]')!.getBoundingClientRect().left)
       await expect.poll(async () => Math.abs((await left()) - 16) <= 1, { message: 'card left edge settles on 16' }).toBe(true)
     })
 

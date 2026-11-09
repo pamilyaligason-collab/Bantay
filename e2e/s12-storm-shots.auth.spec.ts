@@ -108,7 +108,7 @@ for (const scheme of ['light', 'dark'] as const) {
     const list = page.getByRole('list', { name: 'Storm check-ins' })
     await expect(list.getByText('Needs help')).toBeVisible()
     await expect(page.getByText('1 of 3 safe')).toBeVisible()
-    await expect(page.getByRole('checkbox')).toHaveCount(4)
+    await expect(page.getByRole('region', { name: 'Storm roll call' }).getByRole('checkbox')).toHaveCount(4) // scoped: the Calendar card has checkboxes of its own (S28 lane E)
     await toTop(page, page.getByRole('region', { name: 'Storm roll call' }))
     await shot(page, 'family-home-storm', scheme)
   })

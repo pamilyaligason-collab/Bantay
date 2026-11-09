@@ -13,8 +13,8 @@ describe('MediaCard', () => {
     const a = screen.getByTestId('c')
     expect(a.tagName).toBe('A')
     expect(a.getAttribute('href')).toBe('#discover/watch')
-    expect(a.getAttribute('aria-label')).toBe('Video, Plant a small garden, Garden Channel, 7 minutes')
-    expect(screen.getByRole('link', { name: 'Video, Plant a small garden, Garden Channel, 7 minutes' })).toBe(a)
+    expect(a.getAttribute('aria-label')).toBe('Video, Plant a small garden, Garden Channel, 7 min')
+    expect(screen.getByRole('link', { name: 'Video, Plant a small garden, Garden Channel, 7 min' })).toBe(a)
     const img = a.querySelector('img')!
     expect(img.getAttribute('src')).toBe('https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg')
     expect([img.getAttribute('alt'), img.getAttribute('loading'), img.getAttribute('decoding'), img.getAttribute('referrerpolicy'), img.getAttribute('width'), img.getAttribute('height')]).toEqual(['', 'lazy', 'async', 'no-referrer', '320', '180'])
@@ -31,7 +31,7 @@ describe('MediaCard', () => {
   it('without an href it is one button that says whether it is picked', () => {
     const onClick = vi.fn()
     render(<MediaCard {...base} variant="row" age="40 min ago" pressed onClick={onClick} testId="c" />)
-    const b = screen.getByRole('button', { name: 'Video, Plant a small garden, Garden Channel' })
+    const b = screen.getByRole('button', { name: 'Video, Plant a small garden, Garden Channel, 40 min ago' })
     expect(b.getAttribute('aria-pressed')).toBe('true')
     expect(b.querySelector('.md-meta')!.textContent).toBe('Garden Channel · 40 min ago')
     fireEvent.click(b)
@@ -46,8 +46,9 @@ describe('MediaCard', () => {
     cleanup()
     const t = render(<MediaCard {...base} variant="row" href="#x" tag="Most watched" note="Use less salt" />)
     expect(t.container.querySelector('.md-flag')!.textContent).toBe('Most watched')
-    expect(t.container.querySelector('a')!.getAttribute('aria-label')).toMatch(/^Video, Most watched, /) // the tag is hidden from the tree, so it is part of the name
+    expect(t.container.querySelector('a')!.getAttribute('aria-label')).toBe('Video, Plant a small garden, Garden Channel, Use less salt, Most watched')
     expect(t.container.querySelector('.md-line')!.textContent).toBe('Use less salt')
+    expect(t.container.querySelector('a')!.textContent!.trim()).toBe('Plant a small garden Garden Channel Use less salt Most watched') // WCAG 2.5.3: the name holds every visible word, in this order
   })
 })
 

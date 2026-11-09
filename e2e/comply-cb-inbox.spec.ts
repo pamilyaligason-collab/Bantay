@@ -77,7 +77,7 @@ for (const scheme of ['light', 'dark'] as const) {
       for (const c of g.chip) expect(c).toBe(32)
       expect(g.radius).toBe('16px')
       expect(g.weights[0]!.every((x) => x === '700')).toBe(true) // board: unread titles bold, seen titles regular
-      expect(g.weights[1]!.every((x) => x === '500')).toBe(true)
+      expect(g.weights[1]!.every((x) => x === '600')).toBe(true) // S28 tokens (L0): .rw-title is 600 for every row
       expect(g.dupTime).toBe(0) // the time is on the right once, not also in the sub line
       expect(g.h).toBe(34)
       expect(g.sec.map((s) => s.upper)).toEqual(['uppercase', 'uppercase']) // board: 13 px caps section labels

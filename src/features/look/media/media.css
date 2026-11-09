@@ -4,7 +4,7 @@
 .md:active { box-shadow: var(--shadow-press, var(--shadow)); }
 .md:focus-visible { outline: 2px solid var(--act, var(--ink)); outline-offset: 2px; }
 .md.is-on { box-shadow: 0 0 0 3px var(--tab-accent, var(--green2)); }
-.md-pic { position: relative; display: flex; align-items: center; justify-content: center; flex: none; aspect-ratio: 16 / 9; overflow: hidden; background: var(--tint-slate, var(--card2)); }
+.md-pic { order: -1; position: relative; display: flex; align-items: center; justify-content: center; flex: none; aspect-ratio: 16 / 9; overflow: hidden; background: var(--tint-slate, var(--card2)); }
 .md-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .md-play { position: relative; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: rgb(0 0 0 / .55); color: #fff; }
 .md-play .sh-ic { fill: currentColor; }
@@ -17,7 +17,8 @@
 /* hero: the still runs to the card's top edge and takes the rounded corners from overflow hidden */
 .md-hero .md-play { width: 56px; height: 56px; }
 .md-hero .md-title { font-size: var(--fs-title, 20px); }
-/* row: 128 px still on the left, text on the right */
+/* row: 128 px still on the left, text on the right; the tag wraps inside the still at 200% text instead of being cut off */
+.md-row .md-flag { max-width: calc(100% - 12px); box-sizing: border-box; white-space: normal; overflow-wrap: anywhere; }
 .md-row { flex-direction: row; align-items: stretch; min-height: 88px; }
 .md-row .md-pic { width: 128px; align-self: flex-start; }
 .md-row .md-body { flex: 1; justify-content: center; padding: var(--sp-3, 12px); }
@@ -32,3 +33,9 @@
 .md-list { display: flex; flex-direction: column; gap: var(--card-gap, 12px); }
 .md-listwrap { display: flex; flex-direction: column; }
 @media (prefers-reduced-motion: no-preference) { .md { transition: box-shadow var(--dur-fast, 120ms) var(--ease-out, ease-out); } }
+/* 200% text (about 195 px wide): a 128 px still would leave no room for words, so row and half stack like the hero */
+@media (max-width: 299px) {
+  .md-row, .md-half { flex-direction: column; min-height: 0; }
+  .md-row .md-pic, .md-half .md-pic { width: auto; align-self: stretch; }
+  .md-row .md-body, .md-half .md-body { flex: none; padding: var(--card-pad, 16px); }
+}

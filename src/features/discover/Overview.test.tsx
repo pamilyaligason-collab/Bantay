@@ -188,8 +188,10 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
     cards.forEach((c) => {
       expect(c.querySelector('.md-play')).toBeTruthy()
       const len = c.querySelector('.md-len')?.textContent
-      const base = `Video, ${c.querySelector('.md-title')!.textContent}, ${c.querySelector('.md-meta')!.textContent}`
-      expect(c.getAttribute('aria-label')).toBe(len ? `${base}, ${len.replace(' min', '')} minutes` : base)
+      const base = `Video, ${c.querySelector('.md-title')!.textContent}, ${c.querySelector('.md-meta')!.textContent!.replace(' · ', ', ')}`
+      const note = c.querySelector('.md-line')?.textContent
+      const tag = c.querySelector('.md-flag')?.textContent
+      expect(c.getAttribute('aria-label')).toBe(`${base}${note ? `, ${note}` : ''}${tag ? `, ${tag}` : ''}${len ? `, ${len}` : ''}`) // every visible word, in order (WCAG 2.5.3)
     })
   })
   it('sections are not cards and the cards are separated: a section gap, a card gap, shadow and no border', async () => {
@@ -246,7 +248,7 @@ describe('Health pointer and Farming and DIY shelf', () => {
     const row = screen.getByTestId('dc-farm-row')
     expect(pics(row).map(idOf)[0]).toBe('rgQyZX1sg38') // This Old House leads Top stories with zMH61Yabdj0 (its first in today's turn), so its other tapped video is first on this shelf
     expect(row.querySelector('.md-flag')!.textContent).toBe('Most watched')
-    expect(row.querySelector('a.md')!.getAttribute('aria-label')).toMatch(/^Video, Most watched, /) // the tag is in the accessible name
+    expect(row.querySelector('a.md')!.getAttribute('aria-label')).toMatch(/, Most watched(, \d+ min)?$/) // the tag is in the accessible name
     fireEvent.click(row.querySelector('a.md')!)
     expect(JSON.parse(localStorage.getItem('dc.watchcounts')!).rgQyZX1sg38).toBe(6)
   })

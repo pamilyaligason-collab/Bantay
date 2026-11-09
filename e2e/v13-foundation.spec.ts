@@ -67,8 +67,8 @@ const ROOTS = ['today', 'health', 'discover', 'family', 'safety'] as const
 // S24: Family's Together list is a 2x2 grid of whole-card tiles (a.fm-tile, board S24Family); they and the rows keep the named FAMILY_ALLOW whole-card allowance, hit-tested (more than half stays tappable)
 // D-135 Discover (Today view): the whole-card links (hero card, video cards, Learn cards, recipe card) may lose part of their box to Jack, hit-tested by assertJackHit (more than half stays tappable, measured 4 to 10 %); every small control still has no allowance.
 const DISCOVER_CARDS: JackAllow[] = [{ name: 'Video link card', sel: 'a.md' }, { name: 'Video button card', sel: 'button.md' }, { name: 'Learn card', sel: 'a.dc-lc' }, { name: 'Recipe card', sel: 'a.dc-rcard-t' }]
-// S24: Listen stacks the listen shelf and the Calm guided video above the read-aloud rows; a whole-card video button (D-180, the same allowance Discover has) may lose part of its box to Jack (more than half stays tappable)
-const LISTEN_POSTERS: JackAllow[] = [{ name: 'Video button card', sel: 'button.md' }]
+// S24: Listen stacks the listen shelf and the Calm guided video above the read-aloud rows; the opened big player poster may lose part of its box to Jack (more than half stays tappable). The media cards clear Jack by layout (--jack-clear), no allowance.
+const LISTEN_POSTERS: JackAllow[] = [{ name: 'Video poster', sel: '.dc-bigrow button.lv-play' }]
 const jackRest = (page: import('@playwright/test').Page, route: string) => route === '#discover' ? assertJackHit(page, DISCOVER_CARDS, 'discover at rest') : route === '#discover/listen' ? assertJackHit(page, LISTEN_POSTERS, 'listen at rest') : route === '#family' ? assertJackHit(page, FAMILY_ALLOW, 'family at rest') : assertJackClear(page, { at: 'rest' })
 const JACK_REST_KNOWN: Record<string, string> = {
 }
@@ -140,7 +140,7 @@ for (const [width, gutter, scheme] of [[390, 16, 'light'], [390, 16, 'dark'], [3
       await expect(page.locator('h1').first()).toBeVisible()
       await setScheme(page, scheme)
       await settled(page)
-      const lefts = () => page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.carousel, [role=group][aria-label="Your numbers"]')).map((c) => ({ scroll: c.scrollLeft, left: (c.firstElementChild as HTMLElement).getBoundingClientRect().left })))
+      const lefts = () => page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.carousel, [data-testid="move-carousel"], [role=group][aria-label="Your numbers"]')).map((c) => ({ scroll: c.scrollLeft, left: (c.firstElementChild as HTMLElement).getBoundingClientRect().left })))
       expect((await lefts()).length, `${route} has a carousel`).toBeGreaterThan(0)
       // the reveal tween moves a tile by a pixel or two on arrival: wait until the measured edge settles on the gutter
       await expect.poll(async () => (await lefts()).every((l) => Math.abs(l.left - gutter) <= 1), { message: `${route}: first tile left edge settles on ${gutter}` }).toBe(true)
@@ -246,7 +246,7 @@ for (const [name, withFix] of [['home area', false], ['last known', true]] as co
       }
       await expect.poll(async () => (await titleRow(page)).chipText, { message: 'the chip shows its words' }).toMatch(withFix ? /last known/ : /your home area/)
       const m = await titleRow(page)
-      expect(m.chipH, 'chip is one line (48 px)').toBeLessThanOrEqual(48)
+      expect(m.chipH, 'chip is at most three lines (64 px) at 320; one or two lines wider').toBeLessThanOrEqual(64) // S28: long-form ages ("3 hours ago") and barangay names make the words longer
       expect(m.rowH, 'title row stays one line').toBeLessThanOrEqual(56)
       expect(m.rowOverflow, 'row does not overflow sideways').toBeLessThanOrEqual(0)
       expect(m.docOverflow, 'page does not overflow sideways').toBeLessThanOrEqual(0)
@@ -261,20 +261,21 @@ test('the bell opens the inbox and the avatar opens Me', async ({ page }) => {
 })
 
 // S4 / X7: one place wording; no home-zone frame before the first fix.
+const DAVAO_NAME = 'Barangay 29-C, Davao City'
 const DAVAO = { latitude: 7.0731, longitude: 125.6128 } // an invented reading inside the Davao area
 test.describe('place words', () => {
   test.use({ permissions: ['geolocation'], geolocation: DAVAO })
   test('Today kicker, Safety chip and World chip say the same place and never "Near you"', async ({ page }) => {
     await page.goto('/#today')
     const kicker = page.getByTestId('weather-hero').locator('.sc-kicker')
-    await expect(kicker).toContainText('Davao')
+    await expect(kicker).toContainText(DAVAO_NAME) // the offline pack answers a moment after the area name
     const hero = (await kicker.innerText()).split(' · as of')[0]!.trim()
     await page.goto('/#safety')
     const chip = page.locator('.sf-chip').first()
-    await expect(chip).toHaveText('Davao')
+    await expect(chip).toHaveText(DAVAO_NAME) // D-181: the offline OSM pack names the barangay and city, the same words on every screen
     await page.goto('/#safety/world')
-    await expect(page.locator('.sf-chip').first()).toHaveText('Davao')
-    expect([hero, await chip.innerText()]).toEqual(['Davao', 'Davao'])
+    await expect(page.locator('.sf-chip').first()).toHaveText(DAVAO_NAME)
+    expect([hero, await chip.innerText()]).toEqual([DAVAO_NAME, DAVAO_NAME])
     expect([hero, ...(await page.locator('.sf-chip').allInnerTexts())].join('|')).not.toContain('Near you')
   })
   test('the Safety chip never names a home zone before the GPS area arrives', async ({ page }) => {
@@ -286,9 +287,9 @@ test.describe('place words', () => {
         setInterval(() => { const c = document.querySelector('.sf-chip'); if (c) seen.push((c as HTMLElement).innerText) }, 20)
       }, delay)
       await page.goto('/#safety')
-      await expect(page.locator('.sf-chip').first()).toHaveText('Davao')
+      await expect(page.locator('.sf-chip').first()).toHaveText(DAVAO_NAME)
       const seen = await page.evaluate(() => (window as unknown as { __chips: string[] }).__chips)
-      expect(seen.filter((x) => x !== 'Davao' && x !== 'where you are'), `delay ${delay}: chip frames that are not the area or "where you are"`).toEqual([])
+      expect(seen.filter((x) => x !== DAVAO_NAME && x !== 'Davao' && x !== 'where you are'), `delay ${delay}: chip frames that are not the area or "where you are"`).toEqual([])
     }
   })
   test('the hero never shows a home zone before the GPS area arrives', async ({ page }) => {

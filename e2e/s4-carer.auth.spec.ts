@@ -97,8 +97,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByText('Needs you now')).toBeVisible()
     // D-109: Family opens on Me. A writer carer keeps one line per missed dose in Needs (no medicine name, no number); Open puts that person on show.
     await expect(page.getByTestId('person-card')).toHaveCount(0) // S26 (D-168): no separate Today list, the status is on the People cards
-    const line = page.getByTestId('need-row').filter({ hasText: 'Mama: missed a medicine' })
-    await expect(line).toBeVisible()
+    await expect(page.getByTestId('need-row').filter({ hasText: 'Mama: missed a medicine' })).toHaveCount(0) // S28 lane E (Today merge): her People card says it, Needs does not repeat it
     await expect(page.getByTestId('needs')).not.toContainText('Losartan')
     const papa = page.getByTestId('need-row').filter({ hasText: 'Papa: 1 question' }) // Papa's card is not on show, so his question is in the Needs list
     await expect(papa).toBeVisible()

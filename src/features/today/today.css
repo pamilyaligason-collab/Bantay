@@ -559,7 +559,7 @@
 .td-wxs .td-act-box b { font-size: 15px; }
 .td-wxs .td-act-box { padding: 6px 16px; }
 /* T17 / S3: Jack sits bottom right at scroll 0; the row controls keep a lane clear of him so none is ever under his button or tip */
-.bt[data-jack] .td-day .td-todo-go, .bt[data-jack] .td-day .td-todo-done { margin-right: 52px; }
+.bt[data-jack] .td-day .td-todo-go, .bt[data-jack] .td-day .td-todo-done { margin-right: max(0px, calc(var(--jack-clear, 72px) - 6px)); }
 .bt[data-jack] .td-day .td-todo-more { padding-right: 52px; }
 .bt[data-jack] .td-day .td-nu-acts { padding-right: 52px; } /* R11: with the card's own padding the late-dose row Skip sat under Jack at rest */
 @media (max-width: 389px) { .bt[data-jack] .td-day .td-nu-acts:not(.td-nu-lock) { grid-template-columns: 1fr 1fr; } } /* R12: at 360 the three actions (262 px) overran the 244 px lane and Skip ended 9 px under Jack; Skip drops to a second row under Take */
@@ -589,7 +589,7 @@
 .td-wxs .td-wxh-sd { grid-area: d; font-size: 15px; font-weight: 600; }
 .td-wxs .td-wxh-sp { grid-area: p; font-size: 13px; font-weight: 400; }
 .td-wxs .td-act-box { border-radius: 14px; padding: 8px 12px; }
-.td-wxs .wxs-cloud { max-width: 52px; margin-top: 0; } /* S22: the taller hero (D-139 strip and rain line) put the cloud's foot 5 px into the condition line */ /* plan T6 keeps them small: no cloud crosses the words (e2e T6); the board's 180 px clouds would run through the condition line */
+.td-wxs .wxs-cloud { max-width: 52px; margin-top: 10px; } /* S28: the kicker is two lines with a barangay name (D-181), so the clouds start 10 px lower, below it */ /* S22: the taller hero (D-139 strip and rain line) put the cloud's foot 5 px into the condition line */ /* plan T6 keeps them small: no cloud crosses the words (e2e T6); the board's 180 px clouds would run through the condition line */
 /* My day: a sub line is two lines at most (the blood pressure sub took three at 360) */
 .td-todo .rw-sub { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
@@ -609,7 +609,7 @@
 
 /* S22-B: My day rewards (fixed order with number badges, tick and burst, Done today fold, congratulations card) */
 .td-pri { display: inline-block; margin-right: 6px; padding: 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; line-height: 16px; background: var(--tint-green); color: var(--tint-green-ink); }
-.td-row { display: grid; grid-template-rows: 1fr; }
+.td-row { display: grid; grid-template-rows: 1fr; grid-template-columns: minmax(0, 1fr); } /* the column may shrink, so the Jack margin on the button squeezes the words, not the card */
 .td-row-in { min-height: 0; }
 .td-row[data-phase="out"] { grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows .24s ease-in-out .2s, opacity .2s ease-in; }
 .td-row[data-phase="out"] .td-row-in { overflow: hidden; transform: translateX(30px); transition: transform .2s ease-in; }
@@ -650,3 +650,6 @@
 
 .td-wxh-credit { display: block; margin-top: 6px; font-size: 15px; line-height: 1.3; color: #fff; }
 .sf-wxnote { margin: 8px 16px 0; font-size: 15px; color: var(--muted); }
+.td-wxh-credit a { display: inline-block; padding: 12px 0; margin: -12px 0; color: inherit; text-decoration: underline; } /* 44 px to tap, 20 px of layout */
+/* Integration (S28): the Turn on button and the Details link end 72 px short of the gutter so neither lies under Jack when the cards above them are short (e2e s16-today, no allowance) */
+.card.td-ao, .card.td-arow { padding-right: var(--jack-clear, 72px); }

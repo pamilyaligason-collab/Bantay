@@ -108,7 +108,7 @@ for (const mode of ['out', 'in'] as const) {
           if (name === 'needs') { await expect(page.getByTestId('need-row').first()).toBeVisible() }
           await page.waitForTimeout(400)
           // from the card's visible bottom (D-124), not the section box
-          const gap = () => sec.evaluate((e) => e.nextElementSibling!.getBoundingClientRect().top - e.querySelector('.card.ac')!.getBoundingClientRect().bottom)
+          const gap = () => sec.evaluate((e) => (e.nextElementSibling?.getBoundingClientRect().top ?? e.getBoundingClientRect().bottom) - e.querySelector('.card.ac')!.getBoundingClientRect().bottom)
           expect(await gap(), 'gap between the Activity card and the next section').toBeLessThan(40)
           const card = sec.locator('.card.ac')
           const h0 = (await card.boundingBox())!.height

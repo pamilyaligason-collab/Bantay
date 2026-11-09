@@ -88,6 +88,7 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 
 /* S25 MoreGrid (D-156): 4 cards in 2 columns, then Show more. Cards fill their cell. */
 .more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 299px) { .more-grid { grid-template-columns: minmax(0, 1fr); } } /* 200% text: two columns would leave about 75 px for a card */
 .more-grid > * { min-width: 0; width: auto; }
 .more-grid-btn { width: 100%; min-height: 48px; margin-top: 10px; border: 1.5px solid var(--tab-accent, var(--green)); background: transparent; color: var(--tab-accent, var(--green)); border-radius: 999px; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 

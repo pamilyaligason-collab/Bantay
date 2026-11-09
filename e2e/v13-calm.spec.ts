@@ -89,8 +89,9 @@ test('the Jack sheet closes when the user leaves #calm', async ({ page }) => {
 test('arriving from a scrolled Today starts Calm at the top', async ({ page }) => {
   await page.evaluate(() => { location.hash = '#today' })
   await expect(page.getByRole('heading', { level: 1, name: 'Calm' })).toHaveCount(0)
+  await expect(page.getByTestId('myday')).toBeVisible() // Today has drawn, so it is tall enough to scroll (ML-25)
   await page.evaluate(() => { const s = document.querySelector('.bt .scroll')!; s.scrollTo(0, 4000) })
-  expect(await page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTop)).toBeGreaterThan(0)
+  await expect.poll(() => page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTop)).toBeGreaterThan(0)
   await page.evaluate(() => { location.hash = '#calm' })
   await expect(page.getByTestId('calm-hero')).toBeVisible()
   await expect.poll(() => page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTop)).toBe(0)

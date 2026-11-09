@@ -52,7 +52,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: NOW, temp: 25, humidity: 80, feels: 31, code: 2, hourlyProb: (h) => (h >= 10 && h <= 17 ? 80 : 10) }) }))
     await page.emulateMedia({ colorScheme: scheme })
     await page.goto('/#today')
-    await expect(page.getByRole('region', { name: 'Weather' })).toBeVisible()
+    await expect(page.getByRole('region', { name: 'Weather', exact: true })).toBeVisible()
     await expect(page.locator('.td-act-box')).toBeVisible()
     const found: string[] = []
     for (const r of ROUTES) {

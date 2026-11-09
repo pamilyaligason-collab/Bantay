@@ -65,7 +65,7 @@ describe('Health videos (S25)', () => {
     const btn = first.querySelector('button.md')!
     expect(btn.querySelector('.md-play svg')).toBeTruthy()
     expect(btn.getAttribute('aria-label')).toBe(mediaName(v.title, v.source, v.minutes, v.ph ? 'Philippines' : undefined))
-    expect(btn.getAttribute('aria-label')).toBe(`Video, ${v.ph ? 'Philippines, ' : ''}${v.title}, ${v.source}${v.minutes != null ? `, ${v.minutes} minutes` : ''}`)
+    expect(btn.getAttribute('aria-label')).toBe(`Video, ${v.title}, ${v.source}${v.ph ? ', Philippines' : ''}${v.minutes != null ? `, ${v.minutes} min` : ''}`)
     fireEvent.click(btn)
     const box = screen.getByTestId(`hv-${id}`).querySelector('.hv-opened')!
     await waitFor(() => expect(box.contains(document.activeElement)).toBe(true))

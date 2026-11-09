@@ -87,3 +87,6 @@
     color-scheme: dark;
   }
 }
+
+/* 200% text (about 195 px wide): no room to keep 72 px free for Jack, so the clearance shrinks to nothing instead of squeezing cards to a few letters per line. The extra attribute selectors out-rank the theme blocks above. */
+@media (max-width: 299px) { :root:root:root { --jack-clear: 0px; } }

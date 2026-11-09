@@ -134,9 +134,9 @@ test.describe('Today', () => {
         await expect(movers(page)).toHaveCount(1)
         await assertTextContrast(page)
         await assertNoSideways(page)
-        // the pill sits on the title's line: title block no taller than two lines, row no taller than the 80 px floor plus one line
+        // the pill sits on the title's line: title block no taller than two lines, row no taller than the 80 px floor plus one line (S28: the 15 px sub line makes it 108)
         const rows = await page.getByTestId('myday').locator('.td-todo').evaluateAll((els) => els.filter((e) => e.querySelector('.nd-due')).map((e) => ({ id: e.getAttribute('data-testid'), h: e.getBoundingClientRect().height, title: (e.querySelector('.rw-title') as HTMLElement).getBoundingClientRect().height })))
-        for (const r of rows) { expect(r.title, `${r.id} title`).toBeLessThanOrEqual(44); expect(r.h, `${r.id} row`).toBeLessThanOrEqual(104) }
+        for (const r of rows) { expect(r.title, `${r.id} title`).toBeLessThanOrEqual(44); expect(r.h, `${r.id} row`).toBeLessThanOrEqual(108) }
         await page.locator('main.scroll').evaluate((el) => { el.scrollTop = 0 })
         await page.screenshot({ path: `${SHOTS}/today-${w}-${scheme}.png` })
       })

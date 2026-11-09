@@ -34,3 +34,6 @@
 .ax-credits > summary { font-size: 14px; font-weight: 600; }
 .ax-credits > p { margin: 0 14px 8px; }
 @media (prefers-reduced-motion: reduce) { .lx-tile, .lx-card, .lx-chip { transition: none; } }
+/* 200% text: the tag drops under the words instead of squeezing them to a few letters per line */
+@media (max-width: 299px) { .hl-row { flex-wrap: wrap; } .hl-row .grow { flex: 1 1 100%; } }
+@media (max-width: 299px) { .lx-body { grid-template-columns: minmax(0, 1fr); } } /* 200% text: three 52 px tiles cannot hold a word */

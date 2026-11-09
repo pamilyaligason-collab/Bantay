@@ -221,19 +221,10 @@
 
 /* v13 for you */
 .fy-stack { display: grid; gap: 12px; }
-.card.fy-video { display: flex; flex-direction: column; gap: 4px; padding: 0 0 12px; color: var(--ink); text-decoration: none; overflow: hidden; border: 0; width: 100%; text-align: left; cursor: pointer; } /* a button since S25: reset the browser border and centring */
-.fy-video > :not(.fy-poster) { padding: 0 12px; }
-.more-grid > .card.fy-video { height: 100%; } /* S25 (D-156): the video cards sit in a MoreGrid, four then Show more */
 .fy-reads { display: grid; gap: 10px; }
-.fy-poster { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; margin-bottom: 8px; overflow: hidden; background: var(--tint-purple); color: var(--tint-purple-ink); }
-.fy-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.fy-play { position: relative; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .92); color: #1C1B19; }
-.fy-poster[data-still="off"] .fy-play { background: none; color: inherit; }
-.fy-len { position: absolute; right: 6px; bottom: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.fy-video b { font-size: 15px; line-height: 1.3; overflow-wrap: anywhere; }
 
 /* S22-D Today row: six tinted stat tiles. S28 C1: senior type floor (label and sub 15, value 24), two columns on a phone, a small 7-day visual per tile */
-.tk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 12px); }
+.tk-grid { padding-right: var(--jack-clear, 72px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 12px); }
 @media (min-width: 720px) { .tk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 a.tk { --tint-fill: var(--card2); --tint-ink: var(--ink); position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1, 4px); min-height: 112px; padding: var(--card-pad, 16px); border-radius: 18px; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; box-sizing: border-box; min-width: 0; box-shadow: var(--shadow-raised, none); }
 a.tk:active { box-shadow: var(--shadow-press, none); }
@@ -269,7 +260,7 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .rc-add { width: 100%; min-height: 48px; }
 
 /* S22-D Browse: two-column animated cards */
-.hb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hb-grid { padding-right: var(--jack-clear, 72px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .card.hb { --tint-fill: var(--card2); --tint-ink: var(--ink); display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 150px; padding: 14px; box-sizing: border-box; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; animation: hb-rise .6s ease-out both; animation-delay: calc(var(--i, 0) * 80ms); }
 .card.hb[data-wide] { grid-column: span 2; min-height: 96px; }
 @media (max-width: 300px) { .hb-grid { grid-template-columns: minmax(0, 1fr); } .card.hb[data-wide] { grid-column: auto; } } /* 200% text zoom: one column, as the old grid did */
@@ -412,7 +403,7 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .hb-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* S25 Health videos: chips that wrap (no side scroll), then a MediaList of media cards */
-.hv-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.hv-chips { padding-right: var(--jack-clear, 72px); display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .hv-chip { min-height: 44px; padding: 0 14px; border: 1.5px solid var(--tab-accent, #9C2A3A); border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .hv-chip[aria-pressed="true"] { background: var(--tint-amber); color: var(--tint-amber-ink); } /* a tested tint pair: 4.5:1 in light and dark */
 .hv-chip:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
@@ -438,3 +429,6 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .tk .cd-meta { font-size: var(--fs-meta, 15px); }
 .tk .cd-kicker, .tk .cd-value, .tk .cd-meta { color: inherit; }
 .fh-m .cd-title { font-size: var(--fs-body, 17px); font-weight: 700; }
+
+/* Health videos: the cards end 72 px short of the gutter so none lies under the Jack button at rest (e2e v13-foundation, no allowance) */
+[data-testid="health-videos"] .md-listwrap { padding-right: var(--jack-clear, 72px); }
