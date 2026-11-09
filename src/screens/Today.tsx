@@ -77,11 +77,15 @@ export default function Today() {
       <AlarmFixedToast />
       <IncomingSos placement="today" />
       <WeatherCard hero expanded review={0} noJack storm={!!warn.storm} />
-      <PagasaToday />
       <AlertsOffCard />
       <WarningCard notify={notify} />
       <AlertCardToday />
       <PlaceNotice />
+<<<<<<< HEAD
+=======
+      <PagasaToday />
+      <TalkCard />
+>>>>>>> c02b7fd8 (S27 PAGASA card: audit fixes)
       <MyDay notify={notify} />
       <BatteryCard />
       <CalmCard />

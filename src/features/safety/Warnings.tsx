@@ -110,7 +110,7 @@ export default function Warnings({ place }: { place: Place }) {
           </GroupedList>
         </Section>
       )}
-      <PagasaCard zone={place.zone} />
+      <PagasaCard place={place} />
       <GroupedList icons label="Shaking">
         <ShakeRow steps={(top?.kind === 'quake' && top.doNow) || SHAKE} />
       </GroupedList>

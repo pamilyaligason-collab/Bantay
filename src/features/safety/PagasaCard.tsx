@@ -1,17 +1,17 @@
 import { Section } from '../look'
 import { usePlace } from '../location/useLocation'
-import { cut, manilaTime, PAGASA_HOME, PLACE_NAMES, shownRows, signalLines, tone, usePagasa } from './pagasa'
+import { cut, manilaTime, PAGASA_HOME, shownRows, signalLines, tone, usePagasa, usePlaceNames, type PagasaPlace } from './pagasa'
 import './pagasa.css'
 
 export const PAGASA_NONE = 'No PAGASA bulletin read in the last 2 hours. Check PAGASA directly.'
 export const PAGASA_AUTH = 'PAGASA is the official word.'
 
-/** S27: points at the PAGASA bulletin and says what it says. Always renders; never says a place is safe. `zone` picks the place names looked for in the signal areas. */
-export function PagasaCard({ zone }: { zone?: string }) {
+/** S27: points at the PAGASA bulletin and says what it says. Always renders; never says a place is safe. `place` picks the names looked for in the signal areas. */
+export function PagasaCard({ place }: { place: PagasaPlace | null }) {
   const d = usePagasa()
+  const names = usePlaceNames(place)
   if (d === undefined) return null
   const rows = shownRows(d)
-  const names = PLACE_NAMES[zone ?? ''] ?? []
   return (
     <Section title="PAGASA" testId="pagasa-section">
       <div className="card pg" data-testid="pagasa-card" data-tone={tone(rows)}>
@@ -25,7 +25,7 @@ export function PagasaCard({ zone }: { zone?: string }) {
           </div>
         ))}
         <p className="pg-note">{PAGASA_AUTH}</p>
-        <a className="pg-link" href={rows[0]?.source_url ?? PAGASA_HOME} target="_blank" rel="noopener noreferrer">Open the PAGASA bulletin ›</a>
+        <a className="pg-link" href={rows[0]?.source_url ?? PAGASA_HOME} target="_blank" rel="noopener noreferrer">Open the PAGASA bulletin ›<span className="pg-vh"> (opens in browser)</span></a>
       </div>
     </Section>
   )
@@ -33,5 +33,5 @@ export function PagasaCard({ zone }: { zone?: string }) {
 
 /** Today's copy: finds the zone itself. */
 export default function PagasaToday() {
-  return <PagasaCard zone={usePlace()?.zone} />
+  return <PagasaCard place={usePlace()} />
 }

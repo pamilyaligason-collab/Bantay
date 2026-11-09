@@ -1,6 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { db } from '../../db'
 import { supabase } from '../auth/client'
+import { provinceNameAt } from '../garden/climate'
+import type { PlaceLike } from '../location/placeWords'
+import { loadUnits, unitAt, type Unit } from './unitAt'
 
 /** A public.pagasa_warnings row (migration 0059), filled every 30 min by the pagasa-warnings function. */
 export interface PagasaRow {
@@ -34,13 +37,14 @@ export function loadPagasa(now: number = Date.now()): Promise<PagasaData | null>
   const p = (async (): Promise<PagasaData | null> => {
     try {
       if (!supabase) throw new Error('not_connected')
-      const { data, error } = await supabase.from('pagasa_warnings').select('dedupe_key,kind,title,issued_at,areas,signals,source_url,fetched_at').order('issued_at', { ascending: false, nullsFirst: false }).limit(10)
+      const { data, error } = await supabase.from('pagasa_warnings').select('dedupe_key,kind,title,issued_at,areas,signals,source_url,fetched_at').gte('fetched_at', new Date(now - 14 * 86_400_000).toISOString()).order('issued_at', { ascending: false, nullsFirst: false }).limit(30)
       if (error) {
         if (/does not exist|schema cache|42P01|PGRST205/i.test(`${error.message} ${error.code ?? ''}`)) return null
         throw new Error('read')
       }
       const out: PagasaData = { rows: ((data ?? []) as unknown[]).filter(valid).map(clean), saved: false, readAt: now }
-      await db.kv.put({ key: CACHE, value: out }).catch(() => undefined)
+      // only rows that were current when read may be kept: a saved copy never shows a row that was already stale
+      await db.kv.put({ key: CACHE, value: { ...out, rows: out.rows.filter((r) => now - Date.parse(r.fetched_at) <= CURRENT_MS) } }).catch(() => undefined)
       return out
     } catch {
       const s = (await db.kv.get(CACHE).catch(() => undefined))?.value as PagasaData | undefined
@@ -56,11 +60,17 @@ export function usePagasa(): PagasaData | null | undefined {
   const [d, setD] = useState<PagasaData | null | undefined>(undefined)
   useEffect(() => {
     let live = true
-    void loadPagasa().then((r) => { if (live) setD(r) }, () => { if (live) setD(null) })
-    return () => { live = false }
+    const read = () => { void loadPagasa().then((r) => { if (live) setD(r && { ...r }) }, () => { if (live) setD(null) }) }
+    const vis = () => { if (document.visibilityState === 'visible') read() }
+    read()
+    window.addEventListener('online', read)
+    document.addEventListener('visibilitychange', vis)
+    return () => { live = false; window.removeEventListener('online', read); document.removeEventListener('visibilitychange', vis) }
   }, [])
   return d
 }
+
+const cyclone = (t: string) => t.replace(/\s*[-–]?\s*(Tropical Cyclone )?Bulletin\s*#?\d+.*$/i, '').trim().toLowerCase()
 
 /** Rows to show: a live read keeps rows fetched in the last 2 h; a saved copy shows as saved (nothing once older than 24 h). At most 3, cyclones first, then newest bulletin. */
 export function shownRows(d: PagasaData | null, now: number = Date.now()): PagasaRow[] {
@@ -68,7 +78,8 @@ export function shownRows(d: PagasaData | null, now: number = Date.now()): Pagas
   if (d.saved && now - d.readAt > SAVED_MS) return []
   const t = (r: PagasaRow) => (r.issued_at ? Date.parse(r.issued_at) || 0 : 0)
   return d.rows
-    .filter((r) => d.saved || now - Date.parse(r.fetched_at) <= CURRENT_MS)
+    .filter((r) => (d.saved ? d.readAt : now) - Date.parse(r.fetched_at) <= CURRENT_MS)
+    .filter((r, _i, all) => r.kind !== 'tropical_cyclone' || !all.some((o) => o !== r && o.kind === r.kind && cyclone(o.title) === cyclone(r.title) && t(o) > t(r))) // newest bulletin per cyclone only
     .sort((a, b) => Number(b.kind === 'tropical_cyclone') - Number(a.kind === 'tropical_cyclone') || t(b) - t(a))
     .slice(0, 3)
 }
@@ -76,6 +87,7 @@ export function shownRows(d: PagasaData | null, now: number = Date.now()): Pagas
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const hasWord = (text: string, name: string) => new RegExp(`(^|[^\\p{L}\\p{N}])${esc(name)}(?![\\p{L}\\p{N}])`, 'iu').test(text)
 
+export type PagasaPlace = Pick<PlaceLike, 'source' | 'zone' | 'weather'>
 /** The place names a bulletin may list for a home zone (the app knows zones, not provinces). */
 export const PLACE_NAMES: Record<string, string[]> = { dampas: ['Bohol'], conel: ['South Cotabato', 'General Santos'] }
 
@@ -96,3 +108,27 @@ export const tone = (rows: readonly PagasaRow[]): 'red' | 'amber' | undefined =>
 }
 export const cut = (s: string, n = 160): string => (s.length > n ? `${s.slice(0, n).trimEnd()}…` : s)
 export const manilaTime = (iso: string | number): string => new Date(iso).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
+
+/** Names a bulletin may use for the place. A phone fix: the province there plus the city unit's own name; the saved zone: the zone map (only the home fallback); abroad: none. */
+export function placeNames(place: PagasaPlace | null, units: readonly Unit[] | null): string[] {
+  if (!place) return []
+  if (place.source === 'zone') return PLACE_NAMES[place.zone] ?? []
+  if ((place.source !== 'gps' && place.source !== 'last') || !place.weather || !units) return []
+  const u = units.find((x) => x.code === unitAt(place.weather!, units))
+  const prov = provinceNameAt(place.weather, units)
+  return [...new Set([prov, u?.name].filter((n): n is string => !!n))]
+}
+
+/** placeNames, with the province units loaded for a phone fix (none until they are, so nothing is claimed early). */
+export function usePlaceNames(place: PagasaPlace | null): string[] {
+  const [units, setUnits] = useState<Unit[] | null>(null)
+  const fix = place?.source === 'gps' || place?.source === 'last'
+  useEffect(() => {
+    if (!fix) return
+    let live = true
+    void loadUnits().then((u) => { if (live) setUnits(u) }, () => undefined)
+    return () => { live = false }
+  }, [fix])
+  const source = place?.source, zone = place?.zone, lat = place?.weather?.lat, lon = place?.weather?.lon
+  return useMemo(() => placeNames(source ? { source, zone: zone ?? '', weather: lat != null && lon != null ? { lat, lon } : undefined } : null, units), [source, zone, lat, lon, units])
+}
