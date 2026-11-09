@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import calendar from './cropCalendar.json'
 import climate from './provinceClimate.json'
+import { climateTypeFor } from './provinceClimate'
 
 type Crop = { name: string; tagalog: string | null; months: number[] }
 const types = calendar.types as Record<string, { crops: Crop[] }>
@@ -68,13 +69,34 @@ describe('cropCalendar.json', () => {
 
 describe('provinceClimate.json', () => {
   const provinces = climate.provinces as Record<string, { type: number; uncertain?: boolean }>
-  it('maps every province to a type 1-4 and defaults to a bulletin type', () => {
+  it('maps every province to a type 1-4 with no default', () => {
     expect(Object.values(provinces).every((p) => [1, 2, 3, 4].includes(p.type))).toBe(true)
-    expect(climate.default).toBe(4)
+    expect(Object.keys(climate.provinces)).not.toContain('default')
+    expect((climate as Record<string, unknown>).default).toBeUndefined()
     expect(climate.sources.length).toBeGreaterThan(2)
   })
   it('puts Bohol and South Cotabato in type 4', () => {
     expect(provinces['Bohol'].type).toBe(4)
     expect(provinces['South Cotabato'].type).toBe(4)
+  })
+  it('flags the provinces whose bulletin text splits or contradicts', () => {
+    for (const n of ['Marinduque', 'Camarines Norte', 'Camarines Sur']) expect(provinces[n].uncertain).toBe(true)
+  })
+})
+
+describe('climateTypeFor', () => {
+  it('returns null for unknown, empty or missing names', () => {
+    expect(climateTypeFor('Atlantis')).toBeNull()
+    expect(climateTypeFor('')).toBeNull()
+    expect(climateTypeFor(undefined)).toBeNull()
+  })
+  it('matches case and spacing insensitively', () => {
+    expect(climateTypeFor('  SOUTH   cotabato ')).toEqual({ type: 4, uncertain: false })
+    expect(climateTypeFor('marinduque')).toEqual({ type: 3, uncertain: true })
+  })
+  it('resolves old names', () => {
+    expect(climateTypeFor('Compostela Valley')).toEqual({ type: 4, uncertain: true })
+    expect(climateTypeFor('Western Samar')).toEqual({ type: 2, uncertain: false })
+    expect(climateTypeFor('Maguindanao')).toEqual({ type: 3, uncertain: true })
   })
 })

@@ -1,6 +1,5 @@
 {
- "note": "Province to PAGASA climate type (Modified Coronas, types 1-4). A province whose territory spans two types, or where the sources disagree, carries uncertain:true: confirm it on the PAGASA climate map. A province not listed falls back to default.",
- "default": 4,
+ "note": "Province to PAGASA climate type (Modified Coronas, types 1-4). A province whose territory spans two types, or where the sources disagree, carries uncertain:true: confirm it on the PAGASA climate map. A province not listed resolves to unknown (null): the app asks the person to pick a climate type.",
  "sources": [
   "https://www.pagasa.dost.gov.ph/information/climate-philippines (the four types are a map image with no text list; checked 2026-11-09)",
   "PCAARRD Information Bulletin 200/2000, area text above each table (fallback)",
@@ -27,8 +26,8 @@
   "Bukidnon": { "type": 3 },
   "Bulacan": { "type": 1 },
   "Cagayan": { "type": 3, "uncertain": true },
-  "Camarines Norte": { "type": 2 },
-  "Camarines Sur": { "type": 2 },
+  "Camarines Norte": { "type": 2, "uncertain": true },
+  "Camarines Sur": { "type": 2, "uncertain": true },
   "Camiguin": { "type": 4 },
   "Capiz": { "type": 3 },
   "Catanduanes": { "type": 2 },
@@ -56,7 +55,7 @@
   "Leyte": { "type": 2, "uncertain": true },
   "Maguindanao del Norte": { "type": 3, "uncertain": true },
   "Maguindanao del Sur": { "type": 3, "uncertain": true },
-  "Marinduque": { "type": 3 },
+  "Marinduque": { "type": 3, "uncertain": true },
   "Masbate": { "type": 3, "uncertain": true },
   "Metro Manila": { "type": 1 },
   "Misamis Occidental": { "type": 4 },
