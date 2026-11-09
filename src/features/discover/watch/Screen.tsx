@@ -15,7 +15,7 @@ const readPick = () => { try { return sessionStorage.getItem(WATCH_PICK) } catch
 function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
   const [off, setOff] = useState(false)
   return (
-    <button type="button" className="dc-poster" aria-pressed={on} aria-label={`Choose ${v.title}${v.minutes ? `, ${v.minutes} min` : ''}`} data-thumb={off ? 'off' : 'on'} onClick={pick}>
+    <button type="button" className="dc-poster" aria-pressed={on} aria-label={["Video", v.title, v.source, v.minutes != null ? `${v.minutes} minutes` : null].filter(Boolean).join(", ")} data-thumb={off ? 'off' : 'on'} onClick={pick}>
       {!off && <img src={`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
       <span className="dc-poster-cap" data-contrast-bg={off ? undefined : '#555555'}><b>{v.title}</b>{v.minutes ? <> <span>{v.minutes} min</span></> : null}</span>
     </button>

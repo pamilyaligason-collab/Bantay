@@ -76,7 +76,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await assertNoWrappedButtons(page)
       await expect(page.getByRole('group', { name: 'Checked videos' })).toBeVisible() // a MoreGrid now, not a scrolling row
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-      const p = (await page.getByRole('button', { name: /^Choose / }).first().boundingBox())!
+      const p = (await page.getByRole('button', { name: /^Video, / }).first().boundingBox())!
       expect(p.width).toBeGreaterThanOrEqual(160); expect(p.height).toBeGreaterThanOrEqual(90) // grid posters, 16:9
     })
   })

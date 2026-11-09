@@ -108,6 +108,6 @@ test('shots: Discover top to bottom, then a chip selected', async ({ page }) => 
   await page.goto('/#discover/watch')
   await expect(page.getByRole('heading', { name: 'Checked videos' })).toBeVisible()
   await take('watch')
-  await page.getByRole('button', { name: /^Choose / }).first().click()
+  await page.getByRole('button', { name: /^Video, / }).first().click()
   await take('watch-picked')
 })
