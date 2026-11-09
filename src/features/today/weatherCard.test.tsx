@@ -35,7 +35,7 @@ describe('Today weather card', () => {
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText(/^Dampas · your home area · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas, Tagbilaran · your home area · as of\s/)).toBeTruthy()
     expect(screen.getByText(/^Feels 3\d° · Extreme caution$/)).toBeTruthy()
     expect(screen.getByText('Drink water')).toBeTruthy()
     expect(container.querySelector('.td-wx-chev svg')).toBeTruthy()
@@ -83,6 +83,21 @@ describe('Today weather card', () => {
   })
 })
 
+describe('Today weather card, stale location (S28)', () => {
+  it('a fix 3 days 9 minutes old reads in words, with an upper-case clock: "last known, 3 days ago · as of 9:09 PM"', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    const now = Date.parse('2026-11-09T13:30:00Z')
+    vi.setSystemTime(now)
+    m.place = { weather: { lat: 9.65, lon: 123.85 }, zone: 'dampas', source: 'last', settled: true, picked: true, fixAt: now - (3 * 1440 + 9) * 60_000 }
+    m.wx = { ...base, at: '2026-11-09T13:09:00Z' } // 13:09 UTC = 9:09 PM in Manila
+    const { container } = render(<WeatherCard />)
+    const kicker = container.textContent!.replace(/ /g, ' ')
+    expect(kicker).toContain('Tagbilaran · last known, 3 days ago · as of 9:09 PM')
+    expect(kicker).not.toMatch(/\d\s?(d|m|h)\b|\d\s?(am|pm)\b/)
+    vi.useRealTimers()
+  })
+})
+
 describe('Today weather card, expanded', () => {
   const hours = (n: number) => {
     const t0 = new Date(`${wxLocal(base, new Date()).slice(0, 13)}:00:00Z`).getTime()
@@ -93,7 +108,7 @@ describe('Today weather card, expanded', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
-    expect(screen.getByText(/^Dampas · your home area · as of /)).toBeTruthy()
+    expect(screen.getByText(/^Dampas, Tagbilaran · your home area · as of\s/)).toBeTruthy()
     expect(container.querySelector('.td-wxh-t')!.textContent).toBe('33°')
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()

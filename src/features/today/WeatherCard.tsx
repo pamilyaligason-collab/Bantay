@@ -10,6 +10,7 @@ import WeatherScene from '../weather/WeatherScene'
 import { rainOutlook, skyOf, weatherActionLine, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
 import { placeLineOf, placeNameOf } from './placeName'
+import { noBreak } from './timeWords'
 import { heroRainLine } from './heroRain'
 import { stormSlots, type Slot } from './stormView'
 import HourlyStrip, { hourlySlots } from './HourlyStrip'
@@ -115,7 +116,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const clock = clockIn(wx.at, placeTimezone(place.weather, wx.tz))
   const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(wx.code)} hot={!storm && isHot(wx.temp, wx.humidity)} lite />
   const next = storm ? stormSlots(slots(wx, now)) : slots(wx, now) // T16: under a storm the slots agree with the title // both sizes: 56 px expanded, 40 px compact (PLAN 1.1 row 2)
-  const kicker = `${whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`
+  const kicker = noBreak(`${whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`)
   const range = expanded ? [wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ') : '' // live parity: today's range (V11 section B)
   const pills = (feels || drink) && (
     <span className="td-wxh-pills">{feels && <span className="td-wxh-pill">{feels}</span>}{drink && <span className="td-wxh-pill">Drink water</span>}</span>

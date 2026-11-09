@@ -239,10 +239,10 @@ describe('plain words and copy', () => {
   it('sources line names only what the ingest reads and the place label matches the Safety chip', () => {
     expect(SOURCES_LINE).toBe('From PAGASA, USGS, GDACS. Checked every 10 min.')
     expect(SOURCES_FULL).toContain('Open-Meteo') // CC BY 4.0 credit stays on the Sources disclosure
-    expect(placeLabel({ source: 'zone', zone: 'conel' })).toBe('Conel')
+    expect(placeLabel({ source: 'zone', zone: 'conel' })).toBe('Conel, General Santos')
     expect(placeLabel({ source: 'gps', zone: 'dampas', weather: { lat: 6.11, lon: 125.17 } })).toBe('General Santos')
-    expect(placeLabel({ source: 'zone', zone: 'dampas', picked: false })).toBe('Dampas · your home area')
-    expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel')
+    expect(placeLabel({ source: 'zone', zone: 'dampas', picked: false })).toBe('Dampas, Tagbilaran · your home area')
+    expect(placeLabel({ source: 'gps-abroad', zone: 'conel' })).toBe('Away · Conel, General Santos')
   })
 })
 

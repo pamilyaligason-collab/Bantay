@@ -78,7 +78,7 @@ describe('Today simple mode', () => {
     const { container } = render(<Today />)
     await screen.findByTestId('myday')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).filter((id) => !id!.startsWith('head-')) // the bell and avatar in the title row
-    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'pagasa', 'myday', 'calm', 'today-talk', 'numbers', 'alerts', 'nearby'])
+    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'pagasa', 'myday', 'calm', 'today-talk', 'numbers', 'pagasa-map-section', 'pagasa-map-card', 'alerts', 'nearby'])
   })
   it('the weather hero is always expanded and My day carries the medicines count', async () => {
     meds.due = false; meds.review = 3
@@ -105,6 +105,13 @@ describe('Today simple mode', () => {
     unmount()
     expect(bt.hasAttribute('data-simple')).toBe(false)
     bt.remove()
+  })
+  it('S28 (D-179): the Talk card sits at the bottom of Simple mode, directly above Exit simple mode', async () => {
+    await db.kv.put({ key: 'mode.simple', value: true })
+    render(<Today />)
+    const exit = (await screen.findAllByRole('button', { name: /^Exit/ }))[1]!
+    const talk = screen.getByTestId('today-talk')
+    expect(talk.nextElementSibling).toBe(exit)
   })
   it('on: Exit (top) and Exit simple mode (bottom) both turn it off through the same switch as Me', async () => {
     await db.kv.put({ key: 'mode.simple', value: true })

@@ -81,10 +81,10 @@ describe('pickNext', () => {
   })
   it('when line: time, minutes away, dose text; parts that are missing are left out', () => {
     const withDose = nextDoses([me], [med({ personId: 'me', name: 'Losartan', times: ['20:00'], dose: '1 tablet' })], [], at(19, 20))
-    expect(whenLine(withDose[0]!, at(19, 20))).toBe('8:00 PM · in 40 min · 1 tablet')
-    expect(whenLine(withDose[0]!, at(20, 25))).toBe('8:00 PM · 25 min ago · 1 tablet')
+    expect(whenLine(withDose[0]!, at(19, 20))).toBe('8:00 PM · in 40 minutes · 1 tablet')
+    expect(whenLine(withDose[0]!, at(20, 25))).toBe('8:00 PM · 25 minutes ago · 1 tablet')
     const bare = nextDoses([me], [med({ personId: 'me', name: 'Losartan', times: ['20:00'] })], [], at(17, 55))
-    expect(whenLine(bare[0]!, at(17, 55))).toBe('8:00 PM · in 2 h 5 min')
+    expect(whenLine(bare[0]!, at(17, 55))).toBe('8:00 PM · in 2 hours 5 minutes')
   })
   it('names who is also waiting in a note', () => {
     expect(pickNext({ ...none, due: nextDoses([me, ma], meds, [], at(9, 30)) }, at(9, 30)).note).toContain('Also waiting: Ma.')

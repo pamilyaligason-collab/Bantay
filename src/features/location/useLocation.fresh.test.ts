@@ -76,7 +76,7 @@ describe('S22 G: place line accuracy wording', () => {
   })
   it('a last-known rough fix keeps the last-known tail', () => {
     const w = placeWords({ ...base, source: 'last', accuracy: 2000, fixAt: 0 }, 3 * 3_600_000)
-    expect(placeLine(w)).toMatch(/^around .* · last known, 3 h ago$/)
+    expect(placeLine(w)).toMatch(/^around .* · last known, 3 hours ago$/)
   })
   it('a rough fix: sentences use the plain title (the "near around" screens are rendered in weather/roughNear and today/roughAria tests)', () => {
     const rough = { ...base, accuracy: 1500 }

@@ -11,10 +11,10 @@ describe('placeNameOf', () => {
   })
   it('PH outside any area says where you are; abroad says Away plus the zone (S4, one wording)', () => {
     expect(at(17.6, 121.7)).toBe('where you are')
-    expect(at(35.68, 139.76)).toBe('Away · Dampas')
+    expect(at(35.68, 139.76)).toBe('Away · Dampas, Tagbilaran')
   })
   it('zone source keeps the zone short name', () => {
-    expect(placeNameOf(resolvePlace({ gps: null, lastZone: 'conel' }) as never)).toBe('Conel')
+    expect(placeNameOf(resolvePlace({ gps: null, lastZone: 'conel' }) as never)).toBe('Conel, General Santos')
   })
   it('a last known fix says so', () => {
     expect(placeNameOf(resolvePlace({ gps: { lat: 9.65, lon: 123.85, stale: true }, lastZone: 'dampas' }) as never)).toBe('Tagbilaran · last known')

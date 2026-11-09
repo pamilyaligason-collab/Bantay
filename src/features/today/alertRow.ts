@@ -1,9 +1,8 @@
+import { agoWords } from './timeWords'
 import { placeOnly, quakeFeltKm, quakeMag, type Affects, type Alert } from '../safety/alerts'
 
-export const agoShort = (at: number, now: number) => {
-  const m = Math.max(0, Math.round((now - at) / 60_000))
-  return m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`
-}
+/** '5 minutes ago', '1 day ago': whole words, never 'min', 'h' or 'd'. */
+export const agoShort = (at: number, now: number) => agoWords((now - at) / 60_000)
 
 const STRONG_MAG = 6
 
