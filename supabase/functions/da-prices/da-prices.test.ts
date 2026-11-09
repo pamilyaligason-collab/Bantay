@@ -1,5 +1,5 @@
 // @vitest-environment node
-// The fixture is the text items (str, x, y, page) of pages 9-10 of the public DA Daily Price Index for 8 Nov 2026, plus its page-1 title line (public government data, no personal data).
+// The fixture is the text items (str, x, y, page) of pages 4, 6 (beef and pork offals, with names and specifications wrapped over 2-4 lines) and 9-10 of the public DA Daily Price Index for 8 Nov 2026, plus its page-1 title line (public government data, no personal data).
 // Expected values are hand-read from the PDF page, not copied from the parser.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
@@ -30,11 +30,25 @@ describe('parseRows', () => {
   it('keeps one row per commodity and specification; the same commodity with another specification is its own row', () => {
     expect(find('White Onion, Imported').map((r) => [r.specification, r.price_php])).toEqual([['Medium (13-15 pcs/kg)', 152.59], ['Large', 142.94]])
   })
-  it('skips n/a rows, section headers, the table header and the page footer; 44 priced rows on the two pages (23 + 21, counted by hand)', () => {
+  it('keeps the whole name and specification of rows wrapped over 3-4 lines, and gives each line to its own row (pages 4 and 6)', () => {
+    expect(find('Honeycomb Tripe (Reticulum)/Tuwalya, Local')[0]).toMatchObject({ price_php: 294.24, specification: 'Fresh or Chilled; Honeycomb pattern' })
+    expect(find('Honeycomb Tripe (Reticulum)/Tuwalya, Imported')[0]).toMatchObject({ price_php: 200, specification: 'Frozen; Honeycomb pattern' })
+    expect(find('Leaf Tripe (Omasum), Imported')[0]).toMatchObject({ price_php: 300, specification: 'Frozen; Folded and leaf-like layers' })
+    expect(find('Flat Tripe (Rumen), Local')[0]!.specification).toBe('Fresh or Chilled; Smoothest, thickest part, and forming a large, flat lining')
+    expect(find('Head Mask, Local')[0]).toMatchObject({ price_php: 265, specification: 'Fresh or Chilled; the head cut of a pig — including the skin, cheeks, ears, and snout' })
+    expect(find('Head Mask, Imported')[0]).toMatchObject({ price_php: 166.67, specification: 'Frozen; the head cut of a pig — including the skin, cheeks, ears, and snout' })
+    expect(rows.filter((r) => /^[(a-z]/.test(r.commodity))).toEqual([]) // no row starts with a name fragment
+  })
+  it('an n/a row keeps its own wrapped lines: they never join the priced row above or below', () => {
+    expect(find('Flat Tripe (Rumen), Imported')).toEqual([])
+    expect(find('Flat Tripe (Rumen), Local')[0]!.specification).not.toMatch(/Frozen/)
+    expect(find('Leaf Tripe (Omasum), Local')[0]!.specification).not.toMatch(/Frozen/)
+  })
+  it('skips n/a rows, section headers, the table header and the page footer; 69 priced rows on the four pages (16 + 9 + 23 + 21, counted by hand)', () => {
     expect(find('Bell Pepper (Green), Imported')).toEqual([])
     expect(find('Red Onion, Imported')).toEqual([])
     expect(rows.some((r) => /^(LOWLAND|HIGHLAND) VEGETABLES$|^SPICES$|^FRUITS$|^COMMODITY$|^Page$/.test(r.commodity))).toBe(false)
-    expect(rows).toHaveLength(44)
+    expect(rows).toHaveLength(69)
     expect(rows.every((r) => r.price_php >= 1 && r.price_php <= 5000 && r.commodity)).toBe(true)
   })
   it('rejects a price outside 1..5000 and a cell that is not a number', () => {
@@ -53,6 +67,12 @@ describe('parseRows', () => {
     const hdr = [t('COMMODITY', 115, 741), t('SPECIFICATION', 269, 741), t('PREVAILING RETAIL PRICE PER', 402, 747)]
     const two = [...hdr, t('IMPORTED COMMERCIAL', 77, 700), t('RICE', 77, 688), t('Glutinous', 77, 670), t('61.03', 462, 670), t('LOCAL COMMERCIAL RICE', 77, 640), t('Glutinous', 77, 620), t('70.29', 462, 620), t('Basmati', 77, 600), t('170.00', 459, 600)]
     expect(parseRows(two, 'd', 'u').map((r) => [r.commodity, r.price_php])).toEqual([['Glutinous (Imported Commercial Rice)', 61.03], ['Glutinous (Local Commercial Rice)', 70.29], ['Basmati', 170]])
+  })
+  it('wrapped text never crosses a section header, and the notes under the last row are not part of it', () => {
+    const t = (str: string, x: number, y: number): Item => ({ str, x, y, page: 1 })
+    const hdr = [t('COMMODITY', 115, 741), t('SPECIFICATION', 269, 741), t('PREVAILING RETAIL PRICE PER', 402, 747)]
+    const two = [...hdr, t('Alpha', 77.7, 700), t('10.00', 459, 700), t('FRUITS', 77.7, 676), t('Beta', 77.7, 660), t('beta line two', 77.7, 648), t('20.00', 459, 654), t('Note(s):', 72, 630), t('a) Prevailing price', 72, 618)]
+    expect(parseRows(two, 'd', 'u').map((r) => [r.commodity, r.specification, r.price_php])).toEqual([['Alpha', '', 10], ['Beta beta line two', '', 20]])
   })
   it('units follow the PDF note: eggs per piece, cooking oil per liter', () => {
     const hdr: Item[] = [{ str: 'COMMODITY', x: 115, y: 741, page: 1 }, { str: 'SPECIFICATION', x: 269, y: 741, page: 1 }, { str: 'PREVAILING RETAIL PRICE PER', x: 402, y: 747, page: 1 },
@@ -96,9 +116,9 @@ describe('runDaPrices', () => {
   it('upserts every row and purges 60 days back (2026-09-10)', async () => {
     const p = port()
     const r = await runDaPrices(p, async (u) => (u === SOURCE_URL ? page : ''), async (u) => (u === URL8 ? items : []), NOW)
-    expect(r).toEqual({ ok: true, rows: 44 })
+    expect(r).toEqual({ ok: true, rows: 69 })
     expect(p.upsert).toHaveBeenCalledTimes(1)
-    expect((p.upsert.mock.calls[0] as unknown as [{ fetched_at: string }[]])[0]).toHaveLength(44)
+    expect((p.upsert.mock.calls[0] as unknown as [{ fetched_at: string }[]])[0]).toHaveLength(69)
     expect(p.purge).toHaveBeenCalledWith('2026-09-10')
   })
   it('writes and purges nothing when the listing has no link, the file name and title disagree, or no row parses', async () => {

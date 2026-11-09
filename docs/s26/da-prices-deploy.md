@@ -64,5 +64,6 @@ Expected: `200 {"ok":true,"rows":N}` with N about 200-250 (238 on 8 Nov 2026), a
 ## 5. Behaviour to know
 - Newest PDF is chosen by the date in the file name; the title line inside the PDF must agree, else nothing is written.
 - Rows for the same commodity and specification under two sections (imported and local rice) are stored with the section in the commodity name, e.g. `Glutinous (Imported Commercial Rice)`.
+- Wrapped names and specifications (up to 4 lines, e.g. `Honeycomb Tripe (Reticulum)/Tuwalya, Imported`, `Head Mask`) are read in full: every text line goes to the nearest price line of its section, never across a section header. Notes under the last table are ignored. Checked on the 8 Nov 2026 PDF: 238 rows, none starting with `(` or a lowercase fragment. A name or specification longer than 120 / 160 characters is cut at that length, not repaired.
 - "n/a" rows (not available in the market) are not stored: unknown stays absent, never 0.
 - Keeps 60 days (`price_date` older than today minus 60 days is deleted after each good run). Weekend files exist (8 Nov 2026 was a Sunday), so the daily run is enough.

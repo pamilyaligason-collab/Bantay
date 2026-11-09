@@ -1,7 +1,8 @@
 // da-prices core (S26, D-164): the DA Daily Price Index PDF (Metro Manila / NCR wet markets) -> da_prices rows.
 // Source: https://www.da.gov.ph/price-monitoring/ (public government data, no key). The PDF is read by text-item position, never by a text dump:
 // a plain dump (pdftotext -layout) shifts the price column onto the wrong rows. A row is a price cell; its commodity and specification are the
-// items of the other two columns that sit on (or, for a wrapped name, vertically around) the same line. Anything unreadable is skipped, never repaired.
+// items of the other two columns that belong to that price line: each text item goes to the nearest price line of its table block (the stretch between two section headers),
+// so a name or specification wrapped over any number of lines joins its row. Anything unreadable is skipped, never repaired.
 export const SOURCE_URL = 'https://www.da.gov.ph/price-monitoring/'
 export const KEEP_DAYS = 60
 export const MARKET_AREA = 'NCR'
@@ -9,7 +10,7 @@ export interface Item { str: string; x: number; y: number; page: number }
 export interface PriceRow { price_date: string; commodity: string; specification: string; unit: string; price_php: number; market_area: string; source_url: string }
 
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
-const ROW_BAND = 9 // pt: a wrapped two-line name sits about 6 pt above and below its price line; a section header sits 16+ pt away
+const HEADER_GAP = 9 // pt: an all-caps line with no price line this close is a section header (a wrapped name line is never all caps)
 const PRICE = /^\d{1,3}(,\d{3})*\.\d{2}$/
 
 /** "November 8, 2026" parts to yyyy-mm-dd; null when it is not a real calendar day. */
@@ -61,27 +62,38 @@ export function parseRows(items: Item[], priceDate: string, sourceUrl: string): 
     const specMin = (com.x + spec.x) / 2 // commodity text starts left of this, specification text right of it
     const priceMin = price.x // price cells start right of the price header's left edge
     const top = Math.min(com.y, spec.y, price.y) - 1
-    const body = its.filter((i) => i.y < top && i.y > 60).sort((a, b) => b.y - a.y || a.x - b.x) // under the header row, above the page footer
-    const cells = body.filter((i) => i.x >= priceMin && PRICE.test(i.str.trim()))
-    const owner = (i: Item) => { // the nearest price line within the band owns the item
+    const under = its.filter((i) => i.y < top && i.y > 60) // under the header row, above the page footer
+    const cells = under.filter((i) => i.x >= priceMin) // every price-column item is a row's line, an "n/a" too: the names around it must not drift to a priced neighbour
+    // The notes under the last table (page 12) start left of the name column and would otherwise be taken as wrapped text of the last row: the table ends above the first such line.
+    const nameX = Math.min(...under.filter((i) => i.x < specMin && cells.some((c) => Math.abs(i.y - c.y) < 1)).map((i) => i.x))
+    const notesY = Math.max(-1, ...under.filter((i) => i.x < nameX - 2).map((i) => i.y))
+    const body = under.filter((i) => i.y > notesY).sort((a, b) => b.y - a.y || a.x - b.x)
+    const isHeader = (i: Item) => i.x < specMin && HEADER.test(i.str.trim()) && !cells.some((c) => Math.abs(i.y - c.y) <= HEADER_GAP)
+    const headerYs = body.filter(isHeader).map((h) => h.y)
+    // nearest price line (by y) with no section header between it and the item = the row the item is wrapped text of; a tie goes to the line above
+    const owner = (i: Item) => {
       let best: Item | undefined
-      for (const c of cells) if (Math.abs(i.y - c.y) <= ROW_BAND && (!best || Math.abs(i.y - c.y) < Math.abs(i.y - best.y))) best = c
+      for (const c of cells) {
+        if (headerYs.some((y) => y < Math.max(i.y, c.y) && y > Math.min(i.y, c.y))) continue
+        if (!best || Math.abs(i.y - c.y) < Math.abs(i.y - best.y)) best = c
+      }
       return best
     }
+    const ownerOf = new Map<Item, Item | undefined>(body.map((i) => [i, isHeader(i) ? undefined : owner(i)]))
     let inHeader = false
     for (const i of body) {
-      const own = owner(i)
+      const own = ownerOf.get(i)
       if (own && i !== own) { inHeader = false; continue } // a name or specification line of a priced row; the row is built when its price cell comes
       if (!own) {
         const t = i.str.trim()
-        if (i.x < specMin && HEADER.test(t)) { section = inHeader ? `${section} ${t}` : t; inHeader = true } // a two-line section name is joined
+        if (isHeader(i)) { section = inHeader ? `${section} ${t}` : t; inHeader = true } // a two-line section name is joined
         else inHeader = false
         continue
       }
       inHeader = false
-      const commodity = join(body.filter((o) => o.x < specMin && owner(o) === own))
-      const specification = join(body.filter((o) => o.x >= specMin && o.x < priceMin && owner(o) === own))
-      const price_php = Number(own.str.trim().replace(/,/g, ''))
+      const commodity = join(body.filter((o) => o.x < specMin && ownerOf.get(o) === own))
+      const specification = join(body.filter((o) => o.x >= specMin && o.x < priceMin && ownerOf.get(o) === own))
+      const price_php = PRICE.test(own.str.trim()) ? Number(own.str.trim().replace(/,/g, '')) : NaN // "n/a" and any other cell: no row
       if (!commodity || !Number.isFinite(price_php) || price_php < 1 || price_php > 5000) continue
       found.push({ row: { price_date: priceDate, commodity: commodity.slice(0, 120), specification: specification.slice(0, 160), unit: unitOf(commodity), price_php, market_area: MARKET_AREA, source_url: sourceUrl }, section })
     }
