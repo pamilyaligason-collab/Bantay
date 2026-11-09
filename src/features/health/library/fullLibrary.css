@@ -21,3 +21,5 @@
 .fl-line .fl-ok { flex: 1; min-width: 0; }
 .fl-line .btn2 { flex: none; }
 .fl-line .fl-ok { font-size: 16px; }
+.fl-foot { margin: 12px 0 4px; }
+.fl-foot .fl-del { min-height: 44px; font-size: var(--fs-meta, 15px); }

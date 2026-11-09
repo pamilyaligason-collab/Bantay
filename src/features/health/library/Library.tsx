@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { WhoLine } from '../WhoLine'
 import { SubHeader } from '../../shell/SubHeader'
 import { MoreGrid } from '../../look'
@@ -43,7 +43,9 @@ function LibraryHome() {
   const profile = useProfile(personId)
   const meds = useMedications(personId)
   const [q, setQ] = useState('')
+  const [lib2, setLib2] = useState(0) // bumps when the full library turns ready or is deleted, so the card and the delete row re-read
   const [more, setMore] = useState<{ title: string; snippet: string; key: string }[]>([])
+  const bump = useCallback(() => setLib2((n) => n + 1), [])
   const g = useLabGlossary()
   const { lib, error } = useMedlib()
   const topics = lib?.topics ?? []
@@ -130,7 +132,7 @@ function LibraryHome() {
               ))}
             </MoreGrid>
           )}
-          {FULL_LIBRARY_HOSTED && <FullLibraryCard />}
+          {FULL_LIBRARY_HOSTED && <FullLibraryCard key={`t${lib2}`} part="top" onChange={bump} />}
           <h2 className="hd" id="lib-labs">Lab tests</h2>
           {!g && <p className="sub" role="status">Loading...</p>}
           <ul className="grp lb-list" aria-labelledby="lib-labs" data-testid="library-labs">
@@ -138,6 +140,7 @@ function LibraryHome() {
           </ul>
         </>
       )}
+      {FULL_LIBRARY_HOSTED && !searching && <FullLibraryCard key={`b${lib2}`} part="bottom" onChange={bump} />}
       <p className="sub lb-src lx-src">{SOURCE_LINE}. Plain words in English; the search knows many Tagalog words.</p>
     </>
   )

@@ -689,15 +689,16 @@ describe('push', () => {
     expect(await db.outbox.count()).toBe(2)
   })
 
-  it('rows outside the allowlist stay queued, are counted and never sent', async () => {
+  it('rows outside the allowlist are never sent and become dead letters at once (S28)', async () => {
     mockFetch(() => new Response(null, { status: 201 }))
     await enqueue('people', 'insert', { name: 'x' })
     await enqueue('readings', 'insert', reading)
     startSync(cfg())()
     await syncNow()
     expect(posts()).toHaveLength(1)
-    expect(await db.outbox.count()).toBe(1)
-    expect(await syncCounts()).toEqual({ waiting: 0, unknown: 1, dead: 0 })
+    expect(await db.outbox.count()).toBe(0)
+    expect(await syncCounts()).toEqual({ waiting: 0, unknown: 0, dead: 1 })
+    expect(((await db.kv.get('sync.dead'))?.value as { table: string; code: string }[]).map((d) => [d.table, d.code])).toEqual([['people', 'unknown-table']])
   })
 
   it('single flight: concurrent calls share one run', async () => {

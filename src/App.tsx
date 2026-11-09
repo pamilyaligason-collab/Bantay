@@ -8,6 +8,7 @@ import Safety from './screens/Safety'
 import Today from './screens/Today'
 import Assistant from './features/assistant/Assistant'
 import { startSync } from './features/sync/sync'
+import { startLibraryAuto } from './features/health/library/autoStart'
 import { startSensorSync } from './features/sensors/health'
 import { watchAlertsForSession } from './features/notify/alertsLive'
 import { watchDoseReminders } from './features/health/reminders'
@@ -102,6 +103,7 @@ export default function App() {
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out
   useEffect(() => watchPushForSession(), []) // FCM push to the APK (E): registers the token, polls alerts on a foreground push; stops on sign-out
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
+  useEffect(() => startLibraryAuto(), []) // full medical library downloads on Wi-Fi by saved consent, not only while the Library page is open
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
   const title = view === 'me' ? 'Settings' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'calm' ? 'Calm' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])

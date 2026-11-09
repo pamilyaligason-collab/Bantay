@@ -24,6 +24,10 @@ const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
 /** Tables from a migration that may not be applied yet (0024). A push to a missing table waits in the outbox and local rows stay; it is not a dead letter and not a sync failure. */
 const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages', 'sos_events', 'sos_events_update', 'sos_acks', 'phone_health', 'family_feed'])
 const NO_TABLE = /^(PGRST205|42P01)$/
+/** A row waiting for a table the server lacks gives up after a day and becomes a dead letter the person can see. */
+export const WAIT_LIMIT_MS = 24 * 3600_000
+/** Answers that are the same every time. An urgent row is never parked for them, but after MAX_TRIES it stops retrying by itself (`stuck`). */
+const PERM_4XX = new Set([400, 403, 404, 422])
 /** family_feed is a function, so a database without 0050 answers PGRST202 or 42883 (or 404). */
 const NO_FEED = /^(PGRST202|PGRST205|42883|42P01)$/
 export const SYNC_EVERY_MS = 5 * 60_000
@@ -59,10 +63,11 @@ export const subscribeSync = (l: () => void) => (listeners.add(l), () => void li
 export async function syncCounts() {
   const rows = await db.outbox.toArray()
   // usage_events (screen tracking) still sync, but a new row on every tab switch must not make the header count climb
-  const waiting = rows.filter((r) => isSyncable(r.table) && r.table !== 'usage_events').length
+  const stuck = rows.filter((r) => r.stuck && isSyncable(r.table)).length // an SOS that could not be sent: counted with the ones that could not be sent, not the waiting
+  const waiting = rows.filter((r) => isSyncable(r.table) && r.table !== 'usage_events' && !r.stuck).length
   const hidden = rows.filter((r) => r.table === 'usage_events').length
   const dead = (((await db.kv.get(DEAD_KEY))?.value as DeadLetter[] | undefined) ?? []).filter((d) => d.table !== 'usage_events').length
-  return { waiting, unknown: rows.length - waiting - hidden, dead }
+  return { waiting, unknown: rows.length - waiting - hidden - stuck, dead: dead + stuck }
 }
 
 // ---- config
@@ -179,8 +184,17 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   }
   if (res.status === 403 && row.table === 'push_subscriptions') { void track('error', 'push_failed'); return void (await db.outbox.delete(row.id!)) } // not allowed to subscribe (e.g. disabled): drop, no dead letter, visible in admin usage
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code, res.status) }
+  // An SOS is never dropped, but the server saying no (400/403/404/422) five times is not a reason to keep hammering: the row stays, marked stuck, until the person taps Try again.
+  if (spec.urgent && PERM_4XX.has(res.status)) {
+    const n = (row.permFails ?? 0) + 1
+    await db.outbox.update(row.id!, { permFails: n, ...(n >= MAX_TRIES ? { stuck: true } : {}) })
+    failed.row = row; throw new SyncError('transient', code, res.status)
+  }
   // A missing table waits as a whole. An urgent row's bare 404 (no table code) may be about this row only, so it is held below, row by row.
-  if (WAIT_FOR_TABLE.has(row.table) && (NO_TABLE.test(code) || (res.status === 404 && !spec.urgent))) { failed.row = row; throw new SyncError('soft', code, res.status) }
+  if (WAIT_FOR_TABLE.has(row.table) && (NO_TABLE.test(code) || (res.status === 404 && !spec.urgent))) {
+    if (Date.now() - row.createdAt >= WAIT_LIMIT_MS) return deadLetter({ ...row, payload }, 'wait-limit', res.status) // waited a day for a table that never came: now visible as a dead letter
+    failed.row = row; throw new SyncError('soft', code, res.status)
+  }
   // Urgent rows (SOS) are never dead-lettered, whatever the answer, and every answer (4xx, 5xx, 408, 429) is held as this row's own: push() skips only this row with its own next-try time, so an older stuck row never blocks a newer SOS. backoffMinutes caps at 30 min, so the retry is forever by design.
   if (spec.urgent) { failed.row = row; throw new SyncError('transient', code, res.status) }
   if (res.status === 408 || res.status === 429 || res.status >= 500) { failed.row = row; throw new SyncError('transient', code, res.status) }
@@ -188,6 +202,12 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   if (row.table === 'usage_events' && (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES)) return void (await db.outbox.delete(row.id!)) // tracking is never worth a banner: drop silently
   if (DETERMINISTIC.has(res.status) || row.tries + 1 >= MAX_TRIES) return deadLetter({ ...row, payload }, code, res.status)
   throw new SyncError('perm', code)
+}
+
+/** Try again on a row that got stuck (or all of them): clears the count so the next sync sends it. */
+export async function retryStuck(id?: number): Promise<void> {
+  for (const k of await db.outbox.filter((r) => !!r.stuck && (id == null || r.id === id)).primaryKeys()) await db.outbox.update(k, { stuck: false, permFails: 0 })
+  void syncNow(true)
 }
 
 /** Held urgent rows by outbox id: each waits out its own next-try time (1, 2, 4 ... 30 min), so one old held SOS never puts the rest of sync into backoff. */
@@ -199,6 +219,7 @@ let heldThisFlight = new Set<number>()
 /** `waiting` collects the tables the server does not have yet, `skip` the rows this run will not send (held, not due, or behind an insert that is not going): left queued, the other rows go on. `force` tries held rows before their next-try time. */
 async function push(token: string, waiting: Set<string>, skip: Set<number>, force = false): Promise<SyncError | null> {
   let last: SyncError | null = null
+  for (const r of await db.outbox.filter((x) => !isSyncable(x.table)).toArray()) await deadLetter(r, 'unknown-table') // no table of that name in this version: it can never be sent, so it is visible at once
   const ids = new Set(await db.outbox.toCollection().primaryKeys())
   const stored = ((await db.kv.get(HELD_KEY))?.value as Held | undefined) ?? {}
   const held: Held = Object.fromEntries(Object.entries(stored).filter(([id]) => ids.has(Number(id)))) // a sent or discarded row forgets its wait
@@ -208,7 +229,7 @@ async function push(token: string, waiting: Set<string>, skip: Set<number>, forc
   const sendable = (r: OutboxRow) => {
     if (!isSyncable(r.table)) return false
     const h = held[r.id!]
-    if (waiting.has(r.table) || skip.has(r.id!) || heldThisFlight.has(r.id!) || (h && !force && now < h.nextAt)) {
+    if (waiting.has(r.table) || skip.has(r.id!) || r.stuck || heldThisFlight.has(r.id!) || (h && !force && now < h.nextAt)) {
       skip.add(r.id!)
       if (r.op === 'insert') { const k = rowKey(r); if (k) blocked.add(k) }
       return false

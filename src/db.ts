@@ -12,6 +12,10 @@ export interface OutboxRow {
   /** HTTP status of the last failed send (0 or absent for a network failure); the sheet words a row by this, never by the code text. */
   lastStatus?: number
   lastAt?: number
+  /** Urgent rows (SOS) only: how many times the server gave a permanent 4xx answer (400/403/404/422). */
+  permFails?: number
+  /** An urgent row that got MAX_TRIES permanent answers: kept, no longer retried by itself, the sheet says to call instead. Cleared by Try again. */
+  stuck?: boolean
 }
 export interface KvRow {
   key: string

@@ -69,7 +69,7 @@ describe('queued section (D-142)', () => {
     render(<DeadSheet onClose={() => undefined} />)
     expect(await screen.findAllByTestId('queued-group')).toHaveLength(2)
     expect(document.body.textContent).toMatch(/readings \(2\)/)
-    expect(document.body.textContent).toMatch(/water entries \(1\)/)
+    expect(document.body.textContent).toMatch(/water \(1\)/)
     expect(document.body.textContent).toMatch(/Tried 3 times\. The server had a problem/)
     expect(document.body.textContent).toMatch(/Tried 1 time\. Waiting for a connection/)
     expect(document.body.textContent).not.toMatch(/987654/)
@@ -80,11 +80,11 @@ describe('queued section (D-142)', () => {
       { table: 'consults', op: 'insert', payload: {}, createdAt: 2, tries: 0 }
     ])
     render(<DeadSheet onClose={() => undefined} />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Discard queued readings insert' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard queued health readings insert' }))
     expect(await db.outbox.count()).toBe(2) // nothing deleted by the first press
     fireEvent.click(await screen.findByRole('button', { name: 'Keep it' }))
     expect(await db.outbox.count()).toBe(2)
-    fireEvent.click(await screen.findByRole('button', { name: 'Discard queued readings insert' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Discard queued health readings insert' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Yes, discard' }))
     await waitFor(async () => expect((await db.outbox.toArray()).map((r) => r.table)).toEqual(['consults']))
   })
