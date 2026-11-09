@@ -30,6 +30,14 @@ Deno.serve(async (req) => {
     async purge(beforeDate) {
       const { error } = await sb.from('lotto_results').delete().lt('draw_date', beforeDate)
       if (error) throw new Error('write')
+    },
+    async upsertNext(rows) {
+      const { error } = await sb.from('lotto_next_jackpot').upsert(rows, { onConflict: 'game,draw_date' })
+      if (error) throw new Error('write')
+    },
+    async purgeNext(beforeDate) {
+      const { error } = await sb.from('lotto_next_jackpot').delete().lt('draw_date', beforeDate)
+      if (error) throw new Error('write')
     }
   }
   const fetchText = async (url: string) => {
