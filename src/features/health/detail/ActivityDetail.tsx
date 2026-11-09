@@ -13,7 +13,7 @@ const n = (v: number) => v.toLocaleString('en-US')
 /** Activity detail hero (the one hero card on the page). The phone gives Bantay steps only, so there are no Move, Exercise or Stand rings: a ring appears only for a value the data has. */
 export function ActivityHero({ acts, now }: { acts: Activity[]; now: Date }) {
   const s = stepsSummary(acts, now)
-  const cmp = monthVsYear(s.month, s.year)
+  const cmp = monthVsYear(s.month, s.year, s.monthDays)
   return (
     <div className="grp sd-hero" data-testid="activity-hero">
       <div className="row sd-col">

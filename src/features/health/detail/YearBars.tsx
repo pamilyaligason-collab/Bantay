@@ -7,7 +7,7 @@ import { hm, yearBars } from './sleepLogic'
 const W = 320, H = 170, L = 38, R = 18, T = 12, B = 26
 
 /** Year view: twelve months of daily averages as bars from 0, a dashed recommended band when given, a solid line at the average, month labels and a one-line aria summary. A month with no data is a gap. */
-export function YearBars({ pts, now, unit, label, band }: { pts: Point[]; now: Date; unit: 'hours' | 'steps'; label: string; band?: { low: number; high: number } | null }) {
+export function YearBars({ pts, now, unit, label, band }: { pts: Point[]; now: Date; unit: 'hours' | 'steps'; label: string; band?: { low: number; high: number; who?: string } | null }) {
   const bars = yearBars(pts, now)
   const have = bars.filter((b) => b.avg != null)
   const vals = have.map((b) => b.avg!)
@@ -33,7 +33,7 @@ export function YearBars({ pts, now, unit, label, band }: { pts: Point[]; now: D
         {bars.map((b, i) => b.avg == null ? null : <rect key={b.month} className="mc-bar" data-testid="year-bar" x={L + (i + 0.5) * slot - bw / 2} width={bw} y={y(b.avg)} height={Math.max(1, H - B - y(b.avg))} rx={Math.min(bw / 2, 6)} />)}
         {avg != null && <line className="mc-avgline" data-testid="avg-line" x1={L} x2={W - R} y1={y(avg)} y2={y(avg)} />}
       </svg>
-      {band && <p className="sub" style={{ margin: '4px 0 0' }}>Dashed band: {band.low} to {band.high} hours, recommended for adults. Solid line: your average over the last 12 months.</p>}
+      {band && <p className="sub" style={{ margin: '4px 0 0' }}>Dashed band: {band.low} to {band.high} hours, recommended for {band.who ?? 'adults'}. Solid line: your average over the last 12 months.</p>}
     </div>
   )
 }

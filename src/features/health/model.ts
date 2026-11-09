@@ -141,12 +141,12 @@ export interface Activity { kind: string; minutes: number | null; steps: number 
 
 /** Only a watch or the phone's health store gives a real sleep start. A 'manual' row (QuickLog) stores the time it was logged, so it has no bed time and is never read as one. */
 export const hasRealStart = (a: { source?: string }): boolean => a.source === 'health-connect' || a.source === 'healthkit'
-/** The wake day a sleep row counts for. A manual row counts for the night that ended on the day it was logged. A row with a real start between 9:00 and 17:59 is a nap on its own day;
+/** The wake day a sleep row counts for. A manual row counts for the night that ended on the day it was logged. A row with a real start between 9:00 and 17:59 and under 3 hours is a nap on its own day (a longer one is a night worker's main sleep);
  *  any other starts a night that ends on the day 6 hours after it starts (23:00 and 01:54 starts both land on the morning they woke), so a split night is one day. */
 export function sleepWakeDay(a: Activity): { day: string; nap: boolean } {
   if (!hasRealStart(a)) return { day: localDay(a.startedAt), nap: false }
   const t = Date.parse(a.startedAt), h = new Date(t).getHours()
-  if (h >= 9 && h < 18) return { day: localDay(a.startedAt), nap: true }
+  if (h >= 9 && h < 18 && (a.minutes ?? 0) < 180) return { day: localDay(a.startedAt), nap: true }
   return { day: localDay(new Date(t + 6 * 3_600_000).toISOString()), nap: false }
 }
 export interface NodeView { id: NodeId; label: string; value: string; note: string; state: Position; code: string; empty: boolean }

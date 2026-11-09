@@ -4,10 +4,10 @@ import { SubHeader } from '../shell/SubHeader'
 import type { ClimateType } from '../../data/provinceClimate'
 import { CLIMATE_TYPES, cropsFor, MONTH_NAMES, useClimate } from './climate'
 import { priceDay, priceFor, priceText, useDaPrices, type DaPrices, type DaRow } from './daPrices'
-import { guideFor, VEG_GUIDE, type VegGuide } from './vegGuide'
+import { guideFor, LICENCE_URL, VEG_GUIDE, type VegGuide } from './vegGuide'
 import './garden.css'
 
-export const PLANT_FOOTER = 'General guide from the Bureau of Plant Industry planting calendar (PCAARRD bulletin 200, 2000).'
+export const PLANT_FOOTER = 'General guide from the planting calendar of PCARRD, now PCAARRD (bulletin 200, 2000), with data from the Bureau of Plant Industry.'
 export const PRICE_NOTE = 'Prices are Metro Manila; local prices may differ.'
 const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
 
@@ -60,6 +60,7 @@ export function PlantCard() {
         </span>
         <span className="gpl-line">{first ? <><b>{first.name}</b>: first harvest in {lower(first.harvest)}. Tap for variety, land prep and price.</> : <>Tap to see what to plant in {MONTH_NAMES[month - 1]}.</>}</span>
       </a>
+      {guided.length > 0 && <p className="gpl-credit"><a href="#garden/plant" data-testid="plant-photos">Photos: Wikimedia Commons, see credits</a></p>}
     </Section>
   )
 }
@@ -69,18 +70,18 @@ function Poster({ g, price, date, hero }: { g: VegGuide; price: DaRow | null; da
     <article className={hero ? 'gpl-poster gpl-hero' : 'gpl-poster'} data-testid={`poster-${g.calendar}`}>
       <div className="gpl-pic">
         <img src={g.img} alt={g.alt} loading={hero ? 'eager' : 'lazy'} />
-        <span className="gpl-tag">PLANT NOW</span>
+        <span className="gpl-tag">PLANT THIS MONTH</span>
         {price && <span className="gpl-price"><b>{priceText(price)}</b><span>{date ? `DA, ${priceDay(date)}` : 'DA'}</span></span>}
         <div className="gpl-cap"><h2>{g.name}</h2><span>{g.english}</span></div>
       </div>
       {g.warn && <p className="gpl-warn" role="note">{g.warn}</p>}
       <dl className="gpl-facts">
-        <div><dt>Variety</dt><dd>{g.variety}</dd></div>
+        <div><dt>Common varieties</dt><dd>{g.variety}</dd></div>
         <div><dt>First harvest</dt><dd>{g.harvest}</dd></div>
       </dl>
       <p className="gpl-prep"><b>Land prep:</b> {g.prep}</p>
       <p className="gpl-credit">
-        Photo: {g.photo.author}, {g.photo.licence} (<a href={g.photo.page} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>). Guide: {g.guide}.
+        Photo: {g.photo.author}, {LICENCE_URL[g.photo.licence] ? <a href={LICENCE_URL[g.photo.licence]} target="_blank" rel="noopener noreferrer">{g.photo.licence}</a> : g.photo.licence}{LICENCE_URL[g.photo.licence] ? ', cropped' : ''} (<a href={g.photo.page} target="_blank" rel="noopener noreferrer">Wikimedia Commons</a>). Guide: {g.guide}.
       </p>
     </article>
   )

@@ -23,12 +23,14 @@ foreach ($f in 'supabase\migrations\0059_pagasa_warnings.sql', 'ops\sql\pagasa_c
 Step 2 'Supabase CLI: link the project if it is not linked yet'
 if (-not (Test-Path 'supabase\.temp\project-ref')) { npx -y $Sb link --project-ref $Ref; Check 2 }
 
-Step 3 'Live migrations must end at 0058'
+Step 3 'Live migrations must end at 0058 (or 0059 when a first run already recorded it)'
 $r = Q 3 @("select 'last=' || max(version) as v from supabase_migrations.schema_migrations;")
-if ($r.out -notmatch 'last=0058') { throw 'step 3 failed: expected the last recorded migration to be 0058' }
+if ($r.out -notmatch 'last=005[89]') { throw 'step 3 failed: expected the last recorded migration to be 0058 or 0059' }
+$Have59 = $r.out -match 'last=0059'
 
 Step 4 'Migration 0059 (PAGASA warnings table) and record it'
-$r = Q 4 @('-f', 'supabase\migrations\0059_pagasa_warnings.sql'); if ($r.code -ne 0) { throw 'step 4 failed: 0059 did not apply' }
+if ($Have59) { Write-Host '  0059 is already recorded; not applying it again.' }
+else { $r = Q 4 @('-f', 'supabase\migrations\0059_pagasa_warnings.sql'); if ($r.code -ne 0) { throw 'step 4 failed: 0059 did not apply' } }
 $r = Q 4 @("insert into supabase_migrations.schema_migrations (version, name) values ('0059','pagasa_warnings') on conflict do nothing;"); if ($r.code -ne 0) { throw 'step 4 failed: 0059 not recorded' }
 
 Step 5 'Function secret PAGASA_CRON_SECRET, then deploy pagasa-warnings'
@@ -43,8 +45,9 @@ try {
 npx -y $Sb functions deploy pagasa-warnings --no-verify-jwt --use-api --project-ref $Ref; Check 5
 
 Step 6 'Store the same secret in Vault (SQL editor)'
-Set-Clipboard -Value "select vault.create_secret('$Secret', 'pagasa_cron_secret');"
-Write-Host 'Supabase > SQL Editor > New query. Paste (Ctrl+V) and Run. Expect one uuid back. Then delete that query tab so the secret is not kept as a snippet.'
+# A re-run makes a new secret, so the stored one is updated when the name exists (the cron keeps working), else created.
+Set-Clipboard -Value "select vault.update_secret((select id from vault.secrets where name = 'pagasa_cron_secret'), '$Secret') where exists (select 1 from vault.secrets where name = 'pagasa_cron_secret'); select vault.create_secret('$Secret', 'pagasa_cron_secret') where not exists (select 1 from vault.secrets where name = 'pagasa_cron_secret');"
+Write-Host 'Supabase > SQL Editor > New query. Paste (Ctrl+V) and Run. Expect one row (a uuid when created, an empty value when updated). Then delete that query tab so the secret is not kept as a snippet.'
 Pause-For 'The Vault line is on your clipboard. Paste it, Run it.'
 Clear-Clip
 
@@ -62,7 +65,8 @@ Pause-For 'ops/sql/pagasa_cron.sql is on your clipboard. Paste it, Run it.'
 Clear-Clip
 
 Step 9 'Verify'
-Q 9 @("select (select count(*) from supabase_migrations.schema_migrations where version = '0059') as recorded, (select count(*) from public.pagasa_warnings) as warnings, (select count(*) from cron.job where jobname = 'pagasa-warnings') as job;") | Out-Null
+$r = Q 9 @("select 'recorded=' || (select count(*) from supabase_migrations.schema_migrations where version = '0059') || ' warnings=' || (select count(*) from public.pagasa_warnings) || ' job=' || (select count(*) from cron.job where jobname = 'pagasa-warnings') as v;")
 $Secret = $null; $bytes = $null
+if ($r.code -ne 0 -or $r.out -notmatch 'recorded=1\b' -or $r.out -notmatch 'job=1\b') { throw 'step 9 failed: expected recorded=1 and job=1' }
 Pause-For 'Press Win+V and confirm the clipboard history is empty.'
 Write-Host "`nDone. Expect recorded 1, job 1; warnings can be 0 on a quiet day." -ForegroundColor Green

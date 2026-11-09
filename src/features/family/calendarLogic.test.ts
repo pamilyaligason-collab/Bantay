@@ -77,7 +77,7 @@ describe('rowsOn', () => {
       masked: (id) => id !== 'j'
     })
     const r = rowsOn(FRI, s, FRI)
-    expect(r.map((x) => [x.title, x.sub])).toEqual([['Metformin', expect.stringMatching(/^Ate · 8:00/)], ['Medicine time', 'Mama'], ['Check-up', 'Mama']])
+    expect(r.map((x) => [x.title, x.sub])).toEqual([['Metformin', expect.stringMatching(/^Ate · 8:00/)], ['Medicine time', 'Mama'], ['Appointment', 'Mama']])
   })
   it('kindsOn gives each kind once, in fixed order; an empty day gives none', () => {
     const s = src({ tasks: [{ clientId: 'a', title: 'a', due: FRI, assigneePersonId: null, done: false }, { clientId: 'b', title: 'b', due: FRI, assigneePersonId: null, done: true }] })

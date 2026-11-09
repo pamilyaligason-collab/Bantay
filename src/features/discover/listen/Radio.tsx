@@ -37,7 +37,7 @@ export default function Radio() {
     <div data-testid="radio">
       <a className="rd-back" href="#discover/listen"><Icon name="back" size={20} />Back to Listen</a>
       <h2 className="sh-h2 rd-h">Live radio</h2>
-      <p className="sub rd-lead">One station plays at a time. Uses mobile data: about 60 MB an hour.</p>
+      <p className="sub rd-lead">One station plays at a time. Uses mobile data: up to about 60 MB an hour.</p>
       <ul className="rd-list" role="list">{STATIONS.map((s) => <Card key={s.id} s={s} />)}</ul>
       <p className="sub rd-fine">Streams belong to each station; for personal listening.</p>
     </div>

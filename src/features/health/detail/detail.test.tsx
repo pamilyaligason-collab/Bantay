@@ -24,11 +24,21 @@ const manual = (startedAt: string, minutes: number) => sleep(startedAt, minutes,
 const steps = (startedAt: string, n: number) => ({ kind: 'steps', minutes: null, steps: n, startedAt, source: 'manual' })
 
 describe('sleep sentence', () => {
-  it('under, within and over 7 to 9 hours for an adult', () => {
-    expect(sleepSentence(4.3, 40)).toBe('Shorter than the 7 to 9 hours recommended for adults.')
-    expect(sleepSentence(7, 40)).toBe('Within the 7 to 9 hours recommended for adults.')
-    expect(sleepSentence(9, 40)).toBe('Within the 7 to 9 hours recommended for adults.')
-    expect(sleepSentence(9.5, 40)).toBe('Longer than the 7 to 9 hours recommended for adults.')
+  it('under, within and over 7 to 9 hours for an adult aged 18 to 64', () => {
+    for (const age of [18, 40, 64]) {
+      expect(sleepSentence(4.3, age)).toBe('Shorter than the 7 to 9 hours recommended for adults.')
+      expect(sleepSentence(7, age)).toBe('Within the 7 to 9 hours recommended for adults.')
+      expect(sleepSentence(9, age)).toBe('Within the 7 to 9 hours recommended for adults.')
+      expect(sleepSentence(9.5, age)).toBe('Longer than the 7 to 9 hours recommended for adults.')
+    }
+  })
+  it('under, within and over 7 to 8 hours for 65 and older', () => {
+    for (const age of [65, 70, 95]) {
+      expect(sleepSentence(6.5, age)).toBe('Shorter than the 7 to 8 hours recommended for adults 65 and older.')
+      expect(sleepSentence(7.5, age)).toBe('Within the 7 to 8 hours recommended for adults 65 and older.')
+      expect(sleepSentence(8, age)).toBe('Within the 7 to 8 hours recommended for adults 65 and older.')
+      expect(sleepSentence(8.75, age)).toBe('Longer than the 7 to 8 hours recommended for adults 65 and older.')
+    }
   })
   it('says nothing for a child, an unknown age or no sleep', () => {
     expect(sleepSentence(5, 10)).toBeNull()
@@ -37,7 +47,9 @@ describe('sleep sentence', () => {
     expect(sleepSentence(null, 40)).toBeNull()
     expect(sleepBand(12)).toBeNull()
     expect(sleepBand(null)).toBeNull()
-    expect(sleepBand(18)).toEqual({ low: 7, high: 9 })
+    expect(sleepBand(18)).toEqual({ low: 7, high: 9, who: 'adults' })
+    expect(sleepBand(64)).toEqual({ low: 7, high: 9, who: 'adults' })
+    expect(sleepBand(65)).toEqual({ low: 7, high: 8, who: 'adults 65 and older' })
   })
 })
 
@@ -45,6 +57,10 @@ describe('last night', () => {
   it('joins a 23:00 and a 01:54 start into one night, with a nap on the wake day and the earliest bed time', () => {
     const n = lastNight([sleep(at(10, 8, 23), 120), sleep(at(10, 9, 1, 54), 139), sleep(at(10, 9, 14), 60), sleep(at(10, 7, 23), 400)], NOW)!
     expect(n).toMatchObject({ day: '2026-11-09', minutes: 259, napMinutes: 60, bedAt: at(10, 8, 23) })
+  })
+  it('a daytime sleep is a nap only under 3 hours; a longer one is the main sleep (night worker)', () => {
+    expect(lastNight([sleep(at(10, 9, 9, 30), 179)], NOW)).toBeNull()
+    expect(lastNight([sleep(at(10, 9, 9, 30), 180)], NOW)).toMatchObject({ day: '2026-11-09', minutes: 180, napMinutes: 0 })
   })
   it('ignores other kinds, zero minutes and a night that ends tomorrow', () => {
     expect(lastNight([steps(at(10, 9, 1), 500), sleep(at(10, 9, 2), 0), sleep(at(10, 9, 23), 300)], NOW)).toBeNull()
@@ -138,6 +154,10 @@ describe('recommended band and average line', () => {
     const c2 = render(<MetricChart pts={pts} days={7} now={now} unit="hours" label="Sleep this week" band={sleepBand(9)} />)
     expect(c2.container.querySelectorAll('rect.mc-band')).toHaveLength(0)
   })
+  it('year view caption and aria say who the band is for', () => {
+    const { container } = render(<YearBars pts={[{ takenAt: at(10, 3, 12), value: 6 }]} now={NOW} unit="hours" label="Sleep" band={sleepBand(70)} />)
+    expect(container.textContent).toContain('Dashed band: 7 to 8 hours, recommended for adults 65 and older.')
+  })
   it('year view: 12 slots, bars only for months with data, band, average line, axis from 0', () => {
     const p = [{ takenAt: at(10, 3, 12), value: 6 }, { takenAt: at(8, 3, 12), value: 8 }]
     expect(yearBars(p, NOW)).toHaveLength(12)
@@ -154,13 +174,15 @@ describe('recommended band and average line', () => {
 describe('steps summary', () => {
   it('today, 30-day, month and year means over days with data; null with none', () => {
     const acts = [steps(at(10, 9, 8), 1000), steps(at(10, 9, 9), 500), steps(at(10, 8, 9), 3000), steps(at(0, 5, 9), 9000), steps(at(9, 20, 9), 5000)]
-    expect(stepsSummary(acts, NOW)).toEqual({ today: 1500, avg30: 3167, month: 2250, year: 4625 }) // days: 1500, 3000, 5000 (30 d), 9000 -> year 18500 over 4
-    expect(stepsSummary([], NOW)).toEqual({ today: null, avg30: null, month: null, year: null })
+    expect(stepsSummary(acts, NOW)).toEqual({ today: 1500, avg30: 3167, month: 2250, year: 4625, monthDays: 2 }) // days: 1500, 3000, 5000 (30 d), 9000 -> year 18500 over 4
+    expect(stepsSummary([], NOW)).toEqual({ today: null, avg30: null, month: null, year: null, monthDays: 0 })
   })
   it('month against year wording names its subject', () => {
-    expect(monthVsYear(2740, 9544)).toBe('This month: 2,740 steps a day, down from this year (9,544).')
-    expect(monthVsYear(12000, 9544)).toBe('This month: 12,000 steps a day, up from this year (9,544).')
-    expect(monthVsYear(5410, 5415)).toBe('This month: 5,410 steps a day, about the same as this year (5,415).')
+    expect(monthVsYear(2740, 9544, 9)).toBe('This month: 2,740 steps a day, lower than your average this year (9,544).')
+    expect(monthVsYear(12000, 9544, 9)).toBe('This month: 12,000 steps a day, higher than your average this year (9,544).')
+    expect(monthVsYear(5410, 5415, 9)).toBe('This month: 5,410 steps a day, about the same as your average this year (5,415).')
+    expect(monthVsYear(2740, 9544, 6)).toBeNull() // fewer than 7 days of data
+    expect(monthVsYear(2740, 9544, 7)).not.toBeNull()
     expect(monthVsYear(null, 9544)).toBeNull()
   })
   it('hero says plainly when nothing was shared', () => {

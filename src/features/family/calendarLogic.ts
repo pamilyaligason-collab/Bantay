@@ -69,7 +69,7 @@ export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Dat
     const at = a.startsAt ? new Date(a.startsAt) : null
     const aDay = at && !Number.isNaN(at.getTime()) ? dayKey(at) : a.dueOn ?? null
     if (aDay !== day) return
-    if (s.masked?.(a.personId)) { out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: 'Check-up', sub: given(s.nameOf(a.personId)), sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' }); return }
+    if (s.masked?.(a.personId)) { out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: 'Appointment', sub: given(s.nameOf(a.personId)), sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' }); return }
     const time = at && !Number.isNaN(at.getTime()) ? ` · ${clock(hhmm(a.startsAt!))}` : ''
     const where = a.facility || a.provider || given(s.nameOf(a.personId))
     out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: a.purpose || a.provider || 'Doctor visit', sub: `${where}${time}`, sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' })

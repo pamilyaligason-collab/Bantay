@@ -3,19 +3,20 @@ import { hasRealStart, localDay, monthlyAverages, sleepWakeDay, type Activity, t
 /** Minutes as the hero prints them: "45 min", "6 h 02 min". The one formatter for every sleep figure on the page. */
 export const hm = (min: number) => (min < 60 ? `${Math.round(min)} min` : `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')} min`)
 
-/** Hours of sleep the adult guidance names (the same 7 to 9 the page prints). Children get no comparison. */
-export const REC = { low: 7, high: 9 } as const
-export const isAdult = (age: number | null): boolean => age != null && age >= 18
+/** Recommended sleep by age (CDC, National Sleep Foundation): 18 to 64 years 7 to 9 hours, 65 and older 7 to 8. Under 18 or an unknown age: no comparison (an unknown age is not assumed adult).
+ *  The one source for the sentence, the chart band and the YearBars caption. */
+export interface SleepBand { low: number; high: number; who: string }
+export function sleepBand(age: number | null): SleepBand | null {
+  if (age == null || !Number.isFinite(age) || age < 18) return null
+  return age >= 65 ? { low: 7, high: 8, who: 'adults 65 and older' } : { low: 7, high: 9, who: 'adults' }
+}
 
-/** The recommended band for the chart: adults only. An unknown age is not assumed adult. */
-export const sleepBand = (age: number | null): { low: number; high: number } | null => (isAdult(age) ? { low: REC.low, high: REC.high } : null)
-
-/** One plain sentence against the 7 to 9 hours, or null (children, unknown age, no sleep recorded: nothing is said). */
+/** One plain sentence against the band for this age, or null (children, unknown age, no sleep recorded: nothing is said). */
 export function sleepSentence(hours: number | null, age: number | null): string | null {
-  if (hours == null || !Number.isFinite(hours) || !isAdult(age)) return null
-  if (hours < REC.low) return `Shorter than the ${REC.low} to ${REC.high} hours recommended for adults.`
-  if (hours > REC.high) return `Longer than the ${REC.low} to ${REC.high} hours recommended for adults.`
-  return `Within the ${REC.low} to ${REC.high} hours recommended for adults.`
+  const b = sleepBand(age)
+  if (hours == null || !Number.isFinite(hours) || !b) return null
+  const rec = `the ${b.low} to ${b.high} hours recommended for ${b.who}.`
+  return hours < b.low ? `Shorter than ${rec}` : hours > b.high ? `Longer than ${rec}` : `Within ${rec}`
 }
 
 export interface Night { day: string; minutes: number; napMinutes: number; bedAt: string | null }

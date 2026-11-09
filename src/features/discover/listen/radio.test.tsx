@@ -37,7 +37,7 @@ describe('Live radio', () => {
     expect(STATIONS).toHaveLength(5)
     expect(STATIONS.every((s) => s.url.startsWith('https://'))).toBe(true)
     expect(screen.getAllByRole('button')).toHaveLength(5)
-    expect(screen.getByText(/about 60 MB an hour/)).toBeTruthy()
+    expect(screen.getByText(/up to about 60 MB an hour/)).toBeTruthy()
     expect(screen.getByText(/for personal listening/)).toBeTruthy()
   })
 
