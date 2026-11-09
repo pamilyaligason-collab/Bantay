@@ -149,7 +149,8 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
     let have = await store.size()
     const meta = getMeta()
     if (have && (meta.url !== url || !meta.total)) { await store.clear(); have = 0; setMeta(null) } // a partial from another file, or one we cannot vouch for
-    const get = (from: number) => fetch(url, { headers: from ? { Range: `bytes=${from}-`, ...(meta.validator ? { 'If-Range': meta.validator } : {}) } : {}, signal: opts.signal }).catch((e) => {
+    // always a Range (bytes=0- too), so the size comes from Content-Range even if the edge drops Content-Length
+    const get = (from: number) => fetch(url, { headers: { Range: `bytes=${from}-`, ...(from && meta.validator ? { 'If-Range': meta.validator } : {}) }, signal: opts.signal }).catch((e) => {
       if (opts.signal?.aborted) throw new FullLibraryError('aborted', 'Cancelled.')
       throw new FullLibraryError('network', `Could not reach the download (${e instanceof Error ? e.message : 'network'}).`)
     })

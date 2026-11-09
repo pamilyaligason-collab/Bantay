@@ -1,6 +1,7 @@
 /** Cloudflare Pages Function: same-origin download path for the optional mdwiki pack (D-158).
  *  GitHub release downloads send no CORS headers, so the app fetches bantay.pages.dev/medlib/<file> and this forwards the
- *  request (with Range / If-Range) to the GitHub release asset and streams the answer back. Only dated pack names pass. */
+ *  request (Range; If-Range is passed but GitHub's storage ignores it, so the client checks ETag and total itself) to the GitHub
+ *  release asset and streams the answer back. Only dated pack names pass. Pages does not apply _headers to Function responses. */
 const RELEASE = 'https://github.com/pamilyaligason-collab/Bantay/releases/download/medlib-v1/'
 export const PACK_NAME = /^medlib-mdwiki-\d{4}-\d{2}-\d{2}\.pack$/
 const PASS_UP = ['range', 'if-range']
@@ -12,7 +13,7 @@ export async function onRequestGet({ request, params }: { request: Request; para
   const headers = new Headers()
   for (const h of PASS_UP) { const v = request.headers.get(h); if (v) headers.set(h, v) }
   const up = await fetch(RELEASE + file, { headers, redirect: 'follow' })
-  const out = new Headers({ 'content-type': 'application/octet-stream', 'cache-control': 'no-store' })
+  const out = new Headers({ 'content-type': 'application/octet-stream', 'cache-control': 'no-store', 'x-content-type-options': 'nosniff' })
   for (const h of PASS_DOWN) { const v = up.headers.get(h); if (v) out.set(h, v) }
   return new Response(up.body, { status: up.status, headers: out })
 }
