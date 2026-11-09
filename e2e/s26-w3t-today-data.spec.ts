@@ -91,7 +91,7 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
     await expect(pg.locator('article.gpl-poster')).toHaveCount(6)
     await expect(pg.getByTestId('poster-Chayote')).toContainText('Grows best in cool upland areas')
     await expect(pg.getByTestId('poster-Yardlong bean')).toContainText('45 to 50 days')
-    await expect(pg).toContainText('General guide from the Bureau of Plant Industry planting calendar (PCAARRD bulletin 200, 2000).')
+    await expect(pg).toContainText('General guide from the planting calendar of PCARRD, now PCAARRD (bulletin 200, 2000), with data from the Bureau of Plant Industry.')
     expect(await overflow(page, '[data-testid="plant-page"] *')).toEqual([])
     for (const a of await pg.locator('.gpl-credit a').all()) expect((await a.boundingBox())!.height, 'credit link target').toBeGreaterThanOrEqual(43.5)
     if (dir) { await page.screenshot({ path: `${dir}/poster-top-${w}-${scheme}.png` }); await pg.getByTestId('poster-Chayote').scrollIntoViewIfNeeded(); await page.screenshot({ path: `${dir}/poster-sayote-${w}-${scheme}.png` }) }

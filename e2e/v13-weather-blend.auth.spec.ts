@@ -78,6 +78,6 @@ test('flag off: the function is never called and the screen has no blend cards',
   await expect(page.locator('.wx-temp')).toHaveText('26°', { timeout: 20_000 })
   await expect(page.getByTestId('wx-next2h')).toHaveCount(0)
   await expect(page.getByTestId('wx-air')).toHaveCount(0)
-  await expect(page.getByText('Forecast for your area from Open-Meteo (global models, about 9 km). Official warnings: PAGASA.')).toBeVisible()
+  await expect(page.getByText('Forecast for your spot (rounded to about 1 km) from Open-Meteo. Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeVisible()
   expect(calls).toHaveLength(0)
 })

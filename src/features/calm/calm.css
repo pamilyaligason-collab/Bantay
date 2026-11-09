@@ -14,7 +14,7 @@
 .cm-root .card { border: .5px solid rgba(160,190,255,.22); }
 .cm-root .more-grid-btn { border-color: var(--calm-mint); color: var(--calm-mint); } /* S25: not the tab accent, which is dark amber and ~2.4:1 on the navy */
 .cm { display: flex; flex-direction: column; gap: 14px; min-width: 0; padding-bottom: 8px; }
-.cm-hero { background: none; color: var(--ink); min-width: 0; text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
+.card.cm-hero { background: none; color: var(--ink); min-width: 0; text-align: center; padding: 18px 16px 20px; display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 8px; }
 /* the orb is a dotted sphere (S22-C); the word and count sit on a solid ground disc, and are hidden before Start */
 .cm-hero .bo-label { display: none; } /* board: the idle orb is empty before Start; the words belong to the session sheet */
 .cm-hero .bo-word { font-size: 16px; font-weight: 700; }

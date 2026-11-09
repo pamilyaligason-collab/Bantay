@@ -140,7 +140,7 @@ for (const [width, gutter, scheme] of [[390, 16, 'light'], [390, 16, 'dark'], [3
       await expect(page.locator('h1').first()).toBeVisible()
       await setScheme(page, scheme)
       await settled(page)
-      const lefts = () => page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.carousel, [role=group][aria-label="Your numbers"]')).map((c) => ({ scroll: c.scrollLeft, left: (c.firstElementChild as HTMLElement).getBoundingClientRect().left })))
+      const lefts = () => page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.carousel, [data-testid="move-carousel"], [role=group][aria-label="Your numbers"]')).map((c) => ({ scroll: c.scrollLeft, left: (c.firstElementChild as HTMLElement).getBoundingClientRect().left })))
       expect((await lefts()).length, `${route} has a carousel`).toBeGreaterThan(0)
       // the reveal tween moves a tile by a pixel or two on arrival: wait until the measured edge settles on the gutter
       await expect.poll(async () => (await lefts()).every((l) => Math.abs(l.left - gutter) <= 1), { message: `${route}: first tile left edge settles on ${gutter}` }).toBe(true)
@@ -268,7 +268,7 @@ test.describe('place words', () => {
   test('Today kicker, Safety chip and World chip say the same place and never "Near you"', async ({ page }) => {
     await page.goto('/#today')
     const kicker = page.getByTestId('weather-hero').locator('.sc-kicker')
-    await expect(kicker).toContainText('Davao')
+    await expect(kicker).toContainText(DAVAO_NAME) // the offline pack answers a moment after the area name
     const hero = (await kicker.innerText()).split(' · as of')[0]!.trim()
     await page.goto('/#safety')
     const chip = page.locator('.sf-chip').first()
@@ -289,7 +289,7 @@ test.describe('place words', () => {
       await page.goto('/#safety')
       await expect(page.locator('.sf-chip').first()).toHaveText(DAVAO_NAME)
       const seen = await page.evaluate(() => (window as unknown as { __chips: string[] }).__chips)
-      expect(seen.filter((x) => x !== DAVAO_NAME && x !== 'Davao City' && x !== 'where you are'), `delay ${delay}: chip frames that are not the area or "where you are"`).toEqual([])
+      expect(seen.filter((x) => x !== DAVAO_NAME && x !== 'Davao' && x !== 'where you are'), `delay ${delay}: chip frames that are not the area or "where you are"`).toEqual([])
     }
   })
   test('the hero never shows a home zone before the GPS area arrives', async ({ page }) => {

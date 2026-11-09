@@ -154,7 +154,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test(`S9: People bubbles say the last check-in in words, with no sleep icon (${scheme})`, async ({ page }) => {
       await open(page, 'family')
-      // v13: cards carry the words; the Open link is the way to the person's page, Message is the way to Messages (ML-13).
+      // v13: cards carry the words; the Open link is the way to the person's page, the reach link beside it is Messenger, WhatsApp, Call or Add Messenger name (S28).
       const card = (n: string) => peopleCard(page, n) // S26 (D-168): the People card carries the words now
       await expect(page.getByTestId('people-row').first()).toBeVisible()
       await pickPerson(page, 'Papa Ben')
@@ -163,10 +163,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await pickPerson(page, 'Lola Remy')
       await expect(card('Lola')).toContainText('No check-in yet')
       await pickPerson(page, 'Papa Ben')
-      await card('Papa').getByRole('button', { name: 'Message' }).click()
-      await expect(page).toHaveURL(/#family\/messages$/)
-      await page.goto('/#family')
-      await pickPerson(page, 'Papa Ben')
+      await expect(card('Papa').getByRole('group', { name: 'Message Papa' }).getByRole('link')).toHaveCount(1) // S28 lane E: Messenger / WhatsApp / Call / Add Messenger name replace the Message button
       await card('Papa').locator('a.pp-main').click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await page.goto('/#family')

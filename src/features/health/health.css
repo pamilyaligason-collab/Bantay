@@ -224,7 +224,7 @@
 .fy-reads { display: grid; gap: 10px; }
 
 /* S22-D Today row: six tinted stat tiles. S28 C1: senior type floor (label and sub 15, value 24), two columns on a phone, a small 7-day visual per tile */
-.tk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 12px); }
+.tk-grid { padding-right: var(--jack-clear, 72px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 12px); }
 @media (min-width: 720px) { .tk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 a.tk { --tint-fill: var(--card2); --tint-ink: var(--ink); position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1, 4px); min-height: 112px; padding: var(--card-pad, 16px); border-radius: 18px; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; box-sizing: border-box; min-width: 0; box-shadow: var(--shadow-raised, none); }
 a.tk:active { box-shadow: var(--shadow-press, none); }
