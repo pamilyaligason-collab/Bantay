@@ -12,8 +12,8 @@ export function TalkCard() {
     <section className="cm-talk" data-testid="today-talk" aria-labelledby="cm-talk-h">
       <Icon name="chat" size={24} />
       <div className="cm-talk-body">
-        <h2 id="cm-talk-h" className="cm-talk-t">Here if you need to talk</h2>
-        <p className="cm-talk-s">Hotlines and calming tools, any time. In an emergency, call 911.</p>
+        <h2 id="cm-talk-h" className="cm-talk-t cd-title">Here if you need to talk</h2>
+        <p className="cm-talk-s cd-meta">Hotlines and calming tools, any time. In an emergency, call 911.</p>
       </div>
       <a className="cm-talk-btn" href="#calm" aria-label="See hotlines and calming tools" onClick={() => void track('action', 'card_talk')}>See hotlines</a>
     </section>

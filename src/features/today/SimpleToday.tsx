@@ -24,6 +24,7 @@ import { useWeather } from './weather'
 import WeatherCard from './WeatherCard'
 import { JackArt } from '../look'
 import { IncomingSos } from '../family/IncomingSos'
+import { TalkCard } from '../calm/CrisisCard'
 
 /** S16-L1 (C-5): L6 adds a trailing `personId` to logFeeling; the L0 signature lacks it until that merges, so call through this type (same one-liner as QuickLog). */
 
@@ -133,6 +134,7 @@ export default function SimpleToday({ onExit, notify }: { onExit: () => void; no
         <button type="button" className="td-bigbtn" onClick={() => setBp(true)} disabled={!self}>Check my blood pressure</button>
         {calm && <a className="td-bigbtn" href="#health/meds">Medicines</a>}
       </div>
+      <TalkCard />
       <button type="button" className="td-exit bottom" onClick={onExit}>Exit simple mode</button>
       {bp && self && <BpCheck personId={self} forName="You" onClose={() => setBp(false)} onSaved={(m) => { setBp(false); notify(m) }} />}
     </div>

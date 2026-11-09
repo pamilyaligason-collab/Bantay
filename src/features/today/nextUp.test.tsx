@@ -19,7 +19,7 @@ describe('NextUp', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Next up' }).className).toBe('td-vh')
     expect(screen.getByText('Late · not taken yet')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Ma: Aspirin' })).toBeTruthy()
-    expect(screen.getByText('8:00 AM · 1 h ago · 1 tablet')).toBeTruthy()
+    expect(screen.getByText('8:00 AM · 1 hour ago · 1 tablet')).toBeTruthy()
   })
   it('no medicines to check: no panel', () => {
     run()

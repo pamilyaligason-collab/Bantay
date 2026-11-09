@@ -16,6 +16,7 @@ import Lotto from '../features/today/Lotto'
 import FxCard from '../features/today/FxCard'
 import PricesCard from '../features/today/PricesCard'
 import PagasaToday from '../features/safety/PagasaCard'
+import PagasaMapCard from '../features/safety/PagasaMapCard'
 import { PlantCard } from '../features/garden/Plant'
 import { useGardenPage } from '../features/garden/pages'
 import { TalkCard } from '../features/calm/CrisisCard'
@@ -87,7 +88,8 @@ export default function Today() {
       <CalmCard />
       <TalkCard />
       <YourNumbers />
-      <TodayNews /><PricesCard /><PlantCard /><FxCard /><Lotto />
+      <PagasaMapCard /><PlantCard /><PricesCard />{/* S28: PAGASA map and outlook, with Plant this month and Market prices grouped directly below it; all below every warning (D-50) */}
+      <TodayNews /><FxCard /><Lotto />
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
       <NoticeStack />
       {toast && <div className="toast" role="status">{toast}</div>}

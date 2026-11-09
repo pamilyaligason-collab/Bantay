@@ -202,6 +202,10 @@ describe('lock.css', () => {
     const frost = parse(new RegExp(sel).exec(css)![1]!)
     for (const back of [[255, 255, 255], [232, 228, 216]] as [number, number, number][]) expect(rat([255, 255, 255], over(frost, back))).toBeGreaterThanOrEqual(4.5)
   })
+  it('S28: the fingerprint disc is glass in light and dark (blur + frost, white icon), the prompt chip under it too', () => {
+    const rule = /@supports[^{]*\{[\s\S]*?\.lk2 \.lk2-fp, :root\[data-theme="dark"\] \.lk2 \.lk2-fp, :root:not\(\[data-theme="light"\]\) \.lk2 \.lk2-fp \{([^}]*)\}/.exec(css)![1]!
+    expect(rule).toMatch(/background: var\(--lk-frost\)/); expect(rule).toMatch(/backdrop-filter: blur\(20px\)/); expect(rule).toMatch(/color: #fff/)
+  })
   it('S26: the failed-attempt text is 17 px', () => { expect(css).toMatch(/\.lk2-say \[role="alert"\] \{ font-size: 17px/) })
   it('dark tokens are repeated under prefers-color-scheme dark', () => { expect(media).toContain(tok(dark, 'sky-a')); expect(media).toContain(tok(dark, 'chip')) })
   it('emergency targets keep 60px; the halo and fog are off under reduced motion; dark fingerprint override exists', () => {

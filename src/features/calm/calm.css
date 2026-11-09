@@ -109,14 +109,14 @@
 .cm-ex-m b { font-size: 17px; font-weight: 600; }
 .cm-ex-m span, .cm-ex-d { font-size: 13px; line-height: 18px; color: var(--muted); }
 /* S27: "Here if you need to talk" on Today, below Calm. A quiet card, not a hero: resting shadow, 1px soft teal edge, pale tint, outlined secondary button. Calm teal, never SOS red and not the 911 style. Colours are tokens of this card so the contrast test reads them (calm.contrast.test). */
-.cm-talk { --talk-bg: #EEF6F4; --talk-line: #BCD9D4; --talk-icon: #4A8A83; --talk-ink: #123F3B; --talk-sub: #2C4F4C; --talk-btn: #1F5F59;
+.cm-talk { --talk-bg: #D3ECE7; --talk-line: #7DBBB1; --talk-icon: #1F6B63; --talk-ink: #0C3330; --talk-sub: #1B4641; --talk-btn: #12504A;
   display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin: 0 0 14px; box-sizing: border-box; min-width: 0; border-radius: 20px; border: 1px solid var(--talk-line); background: var(--talk-bg); color: var(--talk-ink); box-shadow: var(--shadow); }
-:root[data-theme="dark"] .cm-talk { --talk-bg: #152B29; --talk-line: #2F5A55; --talk-icon: #7FB5AE; --talk-ink: #E6F4F2; --talk-sub: #BFE0DB; --talk-btn: #8FD3C9; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cm-talk { --talk-bg: #152B29; --talk-line: #2F5A55; --talk-icon: #7FB5AE; --talk-ink: #E6F4F2; --talk-sub: #BFE0DB; --talk-btn: #8FD3C9; } }
+:root[data-theme="dark"] .cm-talk { --talk-bg: #1B413D; --talk-line: #4A8A83; --talk-icon: #8FD3C9; --talk-ink: #EAF7F5; --talk-sub: #C6E6E1; --talk-btn: #A5E0D7; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cm-talk { --talk-bg: #1B413D; --talk-line: #4A8A83; --talk-icon: #8FD3C9; --talk-ink: #EAF7F5; --talk-sub: #C6E6E1; --talk-btn: #A5E0D7; } }
 .cm-talk > svg { flex: none; color: var(--talk-icon); }
 .cm-talk-body { flex: 1; min-width: 0; }
-.cm-talk-t { margin: 0; font-size: 18px; line-height: 24px; font-weight: 600; color: var(--talk-ink); }
-.cm-talk-s { margin: 2px 0 0; font-size: 16px; line-height: 22px; color: var(--talk-sub); }
+.cm-talk .cm-talk-t { margin: 0; font-size: var(--fs-title, 20px); line-height: var(--lh-tight, 1.2); font-weight: 700; color: var(--talk-ink); }
+.cm-talk .cm-talk-s { margin: 2px 0 0; font-size: var(--fs-body, 17px); line-height: var(--lh-body, 1.45); color: var(--talk-sub); }
 .cm-talk-btn { flex: none; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; min-width: 48px; padding: 0 18px; box-sizing: border-box; border-radius: 999px; border: 1.5px solid var(--talk-btn); background: transparent; color: var(--talk-btn); font-size: 16px; font-weight: 600; text-decoration: none; transition: transform var(--dur-2, 220ms) var(--ease-out, ease-out); }
 .cm-talk-btn:active { transform: scale(.98); }
 .cm-talk-btn:focus-visible { outline: 3px solid var(--talk-ink); outline-offset: 3px; }
