@@ -17,7 +17,7 @@
   --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
   /* S28 type, space, card tokens (contract: Design tokens) */
   --fs-display: 30px; --fs-value: 24px; --fs-title: 20px; --fs-body: 17px; --fs-meta: 15px; --fw-title: 700; --fw-value: 700; --fw-body: 400; --fw-meta: 600; --lh-tight: 1.2; --lh-body: 1.45;
-  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px; --jack-clear: 72px;
   --depth-card: 0 1px 2px rgba(40,30,10,.06), 0 12px 26px -14px rgba(40,30,10,.32);
   /* legacy aliases: untouched screens still render; Phase 1 lanes delete their uses */
   --green2: #1E6B4E; --soft: #E3EFE8; --line: rgba(60,55,45,.16); --amber-ink: #8A4B06; --red-soft: var(--tint-red); --ok: #1E6B4E; --warn: #8A4B06;
@@ -46,7 +46,7 @@
   --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
   /* S28 type, space, card tokens (contract: Design tokens) */
   --fs-display: 30px; --fs-value: 24px; --fs-title: 20px; --fs-body: 17px; --fs-meta: 15px; --fw-title: 700; --fw-value: 700; --fw-body: 400; --fw-meta: 600; --lh-tight: 1.2; --lh-body: 1.45;
-  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px; --jack-clear: 72px;
   --depth-card: 0 1px 2px rgba(0,0,0,.4), 0 12px 26px -14px rgba(0,0,0,.7);
   --green2: #4FA37F; --soft: #15302A; --line: rgba(255,255,255,.14); --amber-ink: #E8B04E; --red-soft: var(--tint-red); --ok: #4FA37F; --warn: #E8B04E;
   --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
@@ -75,7 +75,7 @@
     --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
     /* S28 type, space, card tokens (contract: Design tokens) */
     --fs-display: 30px; --fs-value: 24px; --fs-title: 20px; --fs-body: 17px; --fs-meta: 15px; --fw-title: 700; --fw-value: 700; --fw-body: 400; --fw-meta: 600; --lh-tight: 1.2; --lh-body: 1.45;
-    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px; --jack-clear: 72px;
     --depth-card: 0 1px 2px rgba(0,0,0,.4), 0 12px 26px -14px rgba(0,0,0,.7);
     --green2: #4FA37F; --soft: #15302A; --line: rgba(255,255,255,.14); --amber-ink: #E8B04E; --red-soft: var(--tint-red); --ok: #4FA37F; --warn: #E8B04E;
     --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));

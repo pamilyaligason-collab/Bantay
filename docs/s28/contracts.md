@@ -48,3 +48,6 @@ Sources (read 2026-11-09): NN/g "Cards: UI-component definition" (https://www.nn
 - Thumbnail: 16:9 (`aspect-ratio: 16/9; object-fit: cover`), lazy-loaded, decoded async, a neutral `--tint-slate` placeholder of the same size so nothing jumps. Duration badge bottom-right on a dark scrim, >= 15 px, white text >= 4.5:1. Play affordance: house `<Icon name="play" />` in a 56 px translucent circle centred on hero thumbnails.
 - Text: title `.cd-title` at 17-20 px, max 2 lines then ellipsis (`-webkit-line-clamp: 2`); channel + age in `.cd-meta` (15 px) on one line; optional tag chip only when it adds meaning.
 - The whole card is one link/button: accessible name "Video, <title>, <channel>, <length>", visible 2 px focus ring, focus moves to the player on open (S26 rule).
+
+## Jack clearance (added in S28 merge)
+`--jack-clear: 72px` (tokens.css, all three blocks): right padding that keeps header links and the last tappable column clear of the floating Jack button. Any lane whose layout puts a control in the bottom-right 72 x 72 px of the viewport uses it; e2e Jack-overlap allowances are never widened to make a gate pass.
