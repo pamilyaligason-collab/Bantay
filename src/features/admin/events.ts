@@ -6,7 +6,7 @@ import { getAccessToken } from '../auth/session'
 // Usage insights (contract D-16..D-19). PRIVACY: only these fixed names are ever recorded. No health values, no free text.
 // Anything not on the list is dropped, so a reading like "bp_150" or a name with a digit cannot get through.
 export const EVENT_NAMES = {
-  screen: ['today', 'health', 'records', 'family', 'safety', 'admin', 'me', 'notif', 'docs', 'ask', 'discover', 'sharing'],
+  screen: ['today', 'health', 'records', 'family', 'safety', 'admin', 'me', 'notif', 'docs', 'ask', 'discover', 'sharing', 'weather', 'calm'],
   action: ['alerts_on', 'alerts_off', 'sensors_on', 'sensors_off', 'import_started', 'import_done', 'reading_added', 'dose_logged', 'sos_sent',
     // session 6 (docs/session-6/PART-2.md section 4): habit targets H1-H8
     'dose_skipped', 'med_added', 'med_edited', 'med_paused', 'med_deleted', 'reminder_opened', 'checkin_done',
@@ -20,7 +20,10 @@ export const EVENT_NAMES = {
     // session 16 Today (C-4)
     'warn_ack', 'breathe_done',
     // session 16 View as: fixed names, never a person id
-    'acting_enter', 'acting_exit'],
+    'acting_enter', 'acting_exit',
+    // session 26 (D-160): card taps and which phone-check probe failed first
+    'card_talk', 'card_fx', 'card_lotto', 'card_explainer', 'card_top_story', 'card_farm_video', 'card_regional_video', 'card_learn',
+    'phone_check_fail_notif', 'phone_check_fail_exact', 'phone_check_fail_battery', 'phone_check_fail_alarms', 'phone_check_fail_call'],
   error: ['sync_failed', 'import_failed', 'push_failed', 'assistant_failed']
 } as const
 export type EventKind = keyof typeof EVENT_NAMES
