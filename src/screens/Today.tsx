@@ -81,11 +81,7 @@ export default function Today() {
       <WarningCard notify={notify} />
       <AlertCardToday />
       <PlaceNotice />
-<<<<<<< HEAD
-=======
       <PagasaToday />
-      <TalkCard />
->>>>>>> c02b7fd8 (S27 PAGASA card: audit fixes)
       <MyDay notify={notify} />
       <BatteryCard />
       <CalmCard />
