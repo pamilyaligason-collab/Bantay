@@ -29,6 +29,16 @@ describe('parseBulletins', () => {
       { level: 1, areas: 'Luzon: Ilocos Norte, Apayao, Kalinga' }
     ])
   })
+  it('reads only the Wind Signal panel: a later panel with Wind Signal text is ignored', () => {
+    const r = parseBulletins(fx('bulletin-signals-later-panel.html'))!.rows[0]!
+    expect(r.signals.map((x) => x.level)).toEqual([2, 1])
+  })
+  it('merges island groups of one level into one entry, so signals never exceed 5', () => {
+    expect(parseSignals('Wind Signal No. 2 Luzon: Batanes Wind Signal No. 1 Luzon: Apayao Wind Signal No. 2 Visayas: Samar Wind Signal No. 1 Visayas: Leyte Wind Signal No. 2 Mindanao: Surigao Wind Signal No. 1 Mindanao: Dinagat Wind Signal No. 1 Luzon: Apayao')).toEqual([
+      { level: 2, areas: 'Luzon: Batanes Visayas: Samar Mindanao: Surigao' },
+      { level: 1, areas: 'Luzon: Apayao Visayas: Leyte Mindanao: Dinagat' }
+    ])
+  })
   it('drops a bulletin whose signal text cannot be read instead of showing "no signal"', () => {
     const p = parseBulletins(fx('bulletin-unreadable-signal.html'))!
     expect(p.rows).toEqual([])

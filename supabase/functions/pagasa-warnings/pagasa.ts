@@ -49,13 +49,19 @@ const issuedAt = (t: string) => {
 /** Signal levels with their area text from the Wind Signal block, e.g. "Tropical Cyclone Wind Signal No. 2 Luzon: Batanes ...". Null when no level can be read. */
 export function parseSignals(block: string): Signal[] | null {
   const marks = [...block.matchAll(/(?:TCWS|Tropical Cyclone Wind Signals?|Wind Signals?)\s*(?:No\.?|Number|#)?\s*([1-5])\b/gi)]
-  const out: Signal[] = []
+  const byLevel = new Map<number, string[]>() // one entry per level (the 0059 CHECK allows 5): island groups of the same level are merged
+  let read = 0
   marks.forEach((m, i) => {
     const end = i + 1 < marks.length ? marks[i + 1]!.index! : block.length
-    const areas = block.slice(m.index! + m[0].length, end).replace(/^[\s:.\-–]+/, '').trim().slice(0, 1500)
-    if (areas) out.push({ level: Number(m[1]), areas })
+    const areas = block.slice(m.index! + m[0].length, end).replace(/^[\s:.\-–]+/, '').trim()
+    if (!areas) return
+    read++
+    const l = byLevel.get(Number(m[1])) ?? []
+    if (!l.includes(areas)) l.push(areas)
+    byLevel.set(Number(m[1]), l)
   })
-  return out.length && out.length === marks.length ? out.sort((a, b) => b.level - a.level) : null
+  if (!read || read !== marks.length) return null
+  return [...byLevel].map(([level, a]) => ({ level, areas: a.join(' ').slice(0, 1500) })).sort((x, y) => y.level - x.level)
 }
 
 /** The bulletin page: one row per active cyclone tab. Null = the page is not the bulletin page. A page with the shell but no tabs and no signal block is "no active cyclone" (zero rows, zero errors). */
@@ -74,10 +80,10 @@ export function parseBulletins(html: unknown): Parsed | null {
     const header = new RegExp(`href="#tcwb-${h[1]}"[^>]*data-header="([^"]*)"`).exec(html)?.[1]
     const t = text(panel)
     const issued = issuedAt(t)
-    const at = panel.search(/panel-heading">\s*Wind Signals?\s*<\/div>/i)
+    const head = /panel-heading">\s*Wind Signals?\s*<\/div>/i.exec(panel)
     let signals: Signal[] | null = null
-    if (at >= 0) {
-      const block = text(panel.slice(panel.indexOf('>', at) + 1)).replace(/^Wind Signals?\s*/i, '').split(/Considering these developments/i)[0]!.trim()
+    if (head) {
+      const block = text(panelEnd(panel.slice(head.index! + head[0].length))).split(/Considering these developments/i)[0]!.trim()
       signals = /^No Tropical Cyclone Wind Signals?\.?$/i.test(block) ? [] : parseSignals(block)
     }
     if (!name || !issued || !signals) { errors++; return }
@@ -85,6 +91,15 @@ export function parseBulletins(html: unknown): Parsed | null {
     rows.push({ kind: 'tropical_cyclone', title: `${name} - ${decodeHeader(header)}`.slice(0, 200), issued_at: issued, areas: where.slice(0, 400), signals, source_url: BULLETIN_URL })
   })
   return { rows, errors }
+}
+/** The rest of the .panel that holds the heading: up to the div that closes it, so later panels (other warnings, archive) are never read as signals. */
+function panelEnd(rest: string): string {
+  let depth = 1
+  for (const m of rest.matchAll(/<(\/?)div\b/gi)) {
+    depth += m[1] ? -1 : 1
+    if (!depth) return rest.slice(0, m.index!)
+  }
+  return rest
 }
 const decodeHeader = (h: string | undefined) => text(h ?? '') || 'Tropical Cyclone Bulletin'
 
