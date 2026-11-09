@@ -69,13 +69,13 @@ describe('placeWords with the offline barangay lookup (D-181)', () => {
     done({ name: 'Lahug', town: 'Cebu City', km: 0.4 })
     await tick()
     expect(packVersion()).toBe(v0 + 1)
-    expect(placeWords(fix, NOW).title).toBe('Lahug, Cebu')
+    expect(placeWords(fix, NOW).title).toBe('Lahug, Cebu City')
     expect(lookup).toHaveBeenCalledTimes(1)
   })
   it('resolved: last known keeps the same place and the age', async () => {
     lookup.mockResolvedValue({ name: 'Lahug', town: 'Cebu City', km: 0.4 })
     placeWords(fix, NOW); await tick()
-    expect(placeWords({ ...fix, source: 'last', fixAt: NOW - 3 * 3_600_000 }, NOW)).toEqual({ title: 'Lahug, Cebu · last known, 3 hours ago', stale: true })
+    expect(placeWords({ ...fix, source: 'last', fixAt: NOW - 3 * 3_600_000 }, NOW)).toEqual({ title: 'Lahug, Cebu City · last known, 3 hours ago', stale: true })
   })
   it('empty town: the barangay name alone', async () => {
     lookup.mockResolvedValue({ name: 'Barangay 670', town: '', km: 0.1 })
@@ -94,7 +94,7 @@ describe('placeWords with the offline barangay lookup (D-181)', () => {
     lookup.mockResolvedValue({ name: 'Lahug', town: 'Cebu City', km: 0.4 })
     placeWords(fix, NOW + 11 * 60_000); await tick()
     expect(lookup).toHaveBeenCalledTimes(2)
-    expect(placeWords(fix, NOW + 11 * 60_000).title).toBe('Lahug, Cebu')
+    expect(placeWords(fix, NOW + 11 * 60_000).title).toBe('Lahug, Cebu City')
   })
   it('a rough fix is never given a barangay: no lookup, the area line stays', () => {
     expect(placeWords({ ...fix, accuracy: 5000 }, NOW)).toEqual({ title: 'Cebu City', approx: true, stale: false })

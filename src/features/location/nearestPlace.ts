@@ -2,9 +2,8 @@ import { useSyncExternalStore } from 'react'
 import { HOME_ZONES, distanceKm, type LatLon } from './geo'
 import { nearestBarangay } from './barangayPacks'
 
-/** S28: the exact place, offline. No network geocoder: the only barangay centre points the app ships are the home zones (geo.ts HOME_ZONES, barangay + town in the name).
- *  The PSGC tables in the repo list barangay names but carry no coordinates, and public/geo/units.json holds province and city outlines only, so no other barangay can be named yet.
- *  shortcut: two barangays, upgrade by adding rows to BARANGAYS when a coordinate source (PSA or OpenStreetMap extract, with licence) is chosen. */
+/** S28: the exact place, offline. Home zones keep their owner-chosen names (geo.ts HOME_ZONES); anywhere else a good GPS fix is named from the
+ *  OpenStreetMap barangay packs (D-181, barangayPacks.ts), looked up once per fix below. No network geocoder. */
 export interface NamedPlace { barangay: string; town: string }
 /** 'Dampas, Tagbilaran City' -> { barangay: 'Dampas', town: 'Tagbilaran' } ('City' dropped: the label reads '<barangay>, <town>'). */
 const split = (name: string): NamedPlace => { const [b = '', t = ''] = name.split(',').map((s) => s.trim()); return { barangay: b, town: t.replace(/ City$/, '') } }
@@ -33,7 +32,8 @@ const inFlight = new Set<string>()
 const listeners = new Set<() => void>()
 let version = 0
 const keyOf = (p: LatLon) => `${p.lat.toFixed(KEY_DP)},${p.lon.toFixed(KEY_DP)}`
-const clean = (town: string) => town.replace(/\s+City$/, '')
+// Town names stay as OSM writes them: 'Quezon City' is not the province 'Quezon' (Opus S28).
+const clean = (town: string) => town.replace(/\bCIty\b/, 'City')
 
 /** The pack answer for a point if it is known: a place, null (looked, nothing), or undefined (not looked yet / still looking). Starts the lookup when it is not known. */
 export function packPlace(p: LatLon | null | undefined, now: number = Date.now()): NamedPlace | null | undefined {
@@ -46,6 +46,7 @@ export function packPlace(p: LatLon | null | undefined, now: number = Date.now()
     nearestBarangay(p.lat, p.lon).then((r) => r && { barangay: r.name, town: clean(r.town) }, () => null).then((place) => {
       inFlight.delete(k)
       const changed = found.get(k)?.place?.barangay !== place?.barangay || found.get(k)?.place?.town !== place?.town
+      if (found.size > 500) found.clear() // shortcut: bounded per-session cache, a long drive just re-looks up
       found.set(k, { at: now, place })
       if (changed && place) { version++; listeners.forEach((l) => l()) }
     })
