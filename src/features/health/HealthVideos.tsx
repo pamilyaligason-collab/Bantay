@@ -9,17 +9,17 @@ import './health.css'
 export function VideoCard({ video, open, onOpen, testId }: { video: Video; open: boolean; onOpen: () => void; testId?: string }) {
   const [bad, setBad] = useState(false)
   const box = useRef<HTMLDivElement>(null)
-  useEffect(() => { if (open) box.current?.querySelector<HTMLButtonElement>('.lv-play')?.click() }, [open]) // the first tap was the play tap: do not ask for a second
+  useEffect(() => { if (!open) return; box.current?.focus(); box.current?.querySelector<HTMLButtonElement>('.lv-play')?.click() }, [open]) // the first tap was the play tap: do not ask for a second
   const meta = `${video.source}${video.minutes != null ? ` · ${video.minutes} min` : ''}`
   return (
     <div className="card hv-vc" data-open={open ? '' : undefined} data-testid={testId ?? `hv-${video.id}`}>
       {open ? (
-        <div className="hv-opened" ref={box}>
+        <div className="hv-opened" ref={box} tabIndex={-1}>
           <LiteVideo id={video.id} title={video.title} minutes={video.minutes} />
           <p className="sub">{meta}</p>
         </div>
       ) : (
-        <button type="button" className="hv-vbtn" onClick={onOpen}>
+        <button type="button" className="hv-vbtn" onClick={onOpen} aria-label={['Video', video.title, video.source, video.minutes != null ? `${video.minutes} minutes` : null].filter(Boolean).join(', ')}>
           <span className="hv-still" data-still={bad ? 'off' : 'on'}>
             {!bad && <img className="hv-img" src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setBad(true)} />}
             <span className="hv-play" aria-hidden="true"><Icon name="play" size={24} /></span>

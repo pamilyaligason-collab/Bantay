@@ -34,6 +34,7 @@ export default function Watch() {
   useEffect(() => { try { sessionStorage.removeItem(WATCH_PICK) } catch { /* private mode */ } }, [])
   const list = topic ? all.filter((v) => v.topic === topic) : all
   const chosen = list.find((v) => v.id === sel)
+  useEffect(() => { if (chosen) player.current?.querySelector<HTMLElement>('.lv-play, .lv-yt')?.focus() }, [chosen?.id]) // S26: focus moves to the player when it opens
   const pick = (id: string) => { setSel(id); setTimeout(() => player.current?.scrollIntoView?.({ block: 'nearest' }), 0) }
   return (
     <div className="dc-list" data-testid="watch">

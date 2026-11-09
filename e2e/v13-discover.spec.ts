@@ -74,8 +74,8 @@ test('one hero, starting on the first screen', async ({ page }) => {
   expect(r.top, 'the hero poster begins within a screen and a half').toBeLessThanOrEqual(r.view * 1.5)
 })
 
-test('order: Learn, Top story, hero, the Health pointer, Farming and DIY, Listen, Recipes, Play, fact', async ({ page }) => {
-  await assertOrder(page, ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health-link', 'dc-farm', 'dc-listen', 'dc-recipes', 'dc-play', 'dc-fact'])
+test('order: Learn, Top stories, hero, Farming and DIY, Listen, the Health pointer, Recipes, Play, fact', async ({ page }) => {
+  await assertOrder(page, ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-farm', 'dc-listen', 'dc-health-link', 'dc-recipes', 'dc-play', 'dc-fact'])
 })
 
 test('the hero opens Watch and nothing reaches YouTube before a second tap', async ({ page }) => {

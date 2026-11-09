@@ -169,3 +169,29 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-panel .more-grid-btn { display: block; width: calc(100% - 128px); margin-inline: auto; }
 /* S25 fix 1: the channel chips wrap inside the same clear 64 px, so a chip never sits under Jack */
 .dc-panel .dc-wrapchips, .dc-panel .nv-chips { padding-right: 64px; }
+
+/* S26 Discover (D-166..): hero depth, tappable cards raised, wide rows, the Channel menu, the lead card, length and label badges. */
+.card.dc-herocard { box-shadow: var(--shadow-hero); }
+.card.dc-vc, .card.dc-lc, .card.nv-card { box-shadow: var(--shadow-raised); }
+.card.dc-vc:active, .card.dc-lc:active, .card.nv-card:active, .card.dc-herocard:active { box-shadow: var(--shadow-press); }
+.dc-vc-len { position: absolute; right: 8px; bottom: 8px; z-index: 1; padding: 3px 8px; border-radius: 8px; background: rgb(0 0 0 / .72); color: #fff; font-size: 13px; line-height: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.dc-poster-box > .dc-vc-len { top: 14px; right: 14px; bottom: auto; }
+.dc-vc-tag { position: absolute; left: 8px; top: 8px; z-index: 1; padding: 3px 8px; border-radius: 8px; background: var(--card); color: var(--ink); font-size: 13px; line-height: 16px; font-weight: 700; }
+.dc-vrows { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.dc-vgrid { margin-top: 12px; }
+.card.dc-vc.dc-vwide { flex-direction: row; align-items: stretch; }
+.dc-vwide .dc-vc-pic { width: 110px; height: auto; min-height: 92px; }
+.dc-vwide .dc-vc-play { width: 36px; height: 36px; }
+.dc-vwide .dc-vc-len { right: 4px; bottom: 4px; padding: 2px 6px; font-size: 12px; }
+.dc-vwide .dc-vc-body { justify-content: center; flex: 1; }
+:root[data-narrow] .card.dc-vc.dc-vwide { flex-direction: column; }
+:root[data-narrow] .dc-vwide .dc-vc-pic { width: auto; height: 72px; min-height: 0; }
+.dc-vlead .dc-vc-pic { height: 168px; }
+.dc-vlead .dc-vc-play { width: 56px; height: 56px; }
+.dc-vlead .dc-vc-t { font-size: 18px; line-height: 24px; font-weight: 700; -webkit-line-clamp: 2; }
+.card.dc-vlead { margin-bottom: 12px; }
+.dc-chan { display: flex; flex-direction: column; gap: 6px; padding-right: 64px; margin-bottom: 12px; } /* clear of the Jack button, like the old chips */
+.dc-chan-l { font-size: 16px; line-height: 22px; color: var(--ink); }
+.dc-select { width: 100%; min-height: 48px; padding: 0 16px; border: 1.5px solid var(--muted); border-radius: 14px; background: var(--card); color: var(--ink); font: inherit; font-size: 16px; } /* --muted on --card and --ground is >= 4.5:1 in both themes, so the border clears 3:1 */
+.dc-select:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+@media (prefers-reduced-motion: no-preference) { .card.dc-vc:active, .card.dc-lc:active { transform: scale(.98); } }

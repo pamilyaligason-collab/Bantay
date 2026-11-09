@@ -1,6 +1,14 @@
 import { describe, expect, it, vi } from 'vitest'
 
 describe('Discover registration', () => {
+  it('registers at once when the sub file is the first thing imported (cold deep link): no poll, no "soon" card', async () => {
+    vi.resetModules()
+    const { registerWhenReady } = await import('./register')
+    const { subScreen } = await import('../registry')
+    const Screen = () => null
+    registerWhenReady('watch', Screen)
+    expect(subScreen('watch')).toBe(Screen)
+  })
   it('importing the discover index first (as the app does) registers Play and News in the end, without an unhandled TDZ error', async () => {
     vi.resetModules()
     const idx = await import('..')

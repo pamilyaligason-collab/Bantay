@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import benefits from '../../../data/discover/benefits.json'
 import { playable } from '../../health/library/videosLogic'
@@ -67,6 +67,13 @@ describe('Watch opened from the overview', () => {
     expect(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play ' + v.title })).toBeTruthy()
     expect(container.querySelector('iframe')).toBeNull()
     expect(sessionStorage.getItem(WATCH_PICK)).toBeNull()
+  })
+  it('focus moves to the player when it opens from the overview', async () => {
+    const v = DISCOVER_VIDEOS.filter(playable)[3]!
+    sessionStorage.setItem(WATCH_PICK, v.id)
+    render(<Watch />)
+    const play = within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play ' + v.title })
+    await waitFor(() => expect(document.activeElement).toBe(play))
   })
   it('shows no player without the key or with an unknown id', () => {
     render(<Watch />)
