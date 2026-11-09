@@ -56,18 +56,22 @@ describe('Calendar rows by person', () => {
     for (const t of ['Own checkup', 'Ma dentist', 'Fetch Ma', 'Tita clinic', 'Pay for Tita', 'Family lunch']) expect(list.textContent).toContain(t)
   })
 
-  it('names only readable people on a row: Ma by name, Tita (not readable) as Family', async () => {
+  it('names only readable people on a row: Ma by name, p3 (not readable) as Family', async () => {
+    // Titles name nobody, so each sub-text alone shows who is named. The pre-fix nameOf read the whole family list, so p3's row said "Tita":
+    // `toBe('Family')` on that row and `not.toContain('Tita')` on the page both fail there; Ma's row is the control.
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
     await fdb.tasks.bulkPut([
-      { clientId: 't1', title: 'Fetch Ma', due: '2026-10-27', assigneePersonId: 'p2', done: false },
-      { clientId: 't2', title: 'Pay for Tita', due: '2026-10-27', assigneePersonId: 'p3', done: false }
+      { clientId: 't1', title: 'Buy bread', due: '2026-10-27', assigneePersonId: 'p2', done: false },
+      { clientId: 't2', title: 'Pay water bill', due: '2026-10-27', assigneePersonId: 'p3', done: false }
     ])
     render(<Calendar />)
     const list = screen.getByRole('list', { name: 'Today' })
-    await waitFor(() => expect(list.textContent).toContain('Pay for Tita'))
-    expect(list.textContent).toContain('Ma')
-    expect(list.textContent).not.toContain('Tita Villar')
+    await waitFor(() => expect(list.textContent).toContain('Pay water bill'))
+    const sub = (title: string) => within(list).getAllByRole('listitem').find((r) => r.textContent?.includes(title))!.querySelector('.sub')!.textContent
+    expect(sub('Buy bread')).toBe('Ma')
+    expect(sub('Pay water bill')).toBe('Family')
+    expect(document.body.textContent).not.toContain('Tita')
   })
 
   it('keeps an item 3 months ahead under Later and a done task under Done; week and month buttons page the view', async () => {

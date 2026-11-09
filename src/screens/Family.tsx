@@ -76,7 +76,7 @@ function Root() {
       <LargeTitle kicker=" " title="Family" actions={<HeadActions>{pill}<a className="btn-round" href="#me/family" aria-label="Add a family member"><Icon name="plus" size={20} /></a></HeadActions>} />
       <IncomingSos placement="family" />
       <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
-      <Calendar /> {/* the one Calendar card (Plan folded in) leads, as on the S26 board */}
+      <Calendar detailFor={shown.id} /> {/* the one Calendar card (Plan folded in) leads, as on the S26 board; anyone else's doses and visits show no details here (D-109) */}
       <TogetherList />
       <PapersSection />
       <PlaceNotice />

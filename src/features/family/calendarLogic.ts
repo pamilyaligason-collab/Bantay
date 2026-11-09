@@ -26,6 +26,8 @@ export interface CalSource {
   /** Doses due on one day for the people this viewer may read (D-82). */
   doses: (day: string) => CalDose[]
   nameOf: (personId: string | null | undefined) => string
+  /** True for a person whose doses and visits may show only that they exist (the Family root, D-109): no medicine, dose, doctor, clinic or time. */
+  masked?: (personId: string) => boolean
 }
 
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -58,6 +60,7 @@ const given = (n: string) => n.trim().split(/\s+/)[0] || n
 export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Date())): CalRow[] {
   const out: CalRow[] = []
   for (const d of s.doses(day)) {
+    if (s.masked?.(d.personId)) { out.push({ key: `dose|${d.personId}|${d.name}|${d.slot}`, kind: 'dose', title: 'Medicine time', sub: given(s.nameOf(d.personId)), sort: d.slot, done: false }); continue }
     const label = d.dose && !d.name.toLowerCase().includes(d.dose.toLowerCase()) ? `${d.name} ${d.dose}` : d.name
     out.push({ key: `dose|${d.personId}|${d.name}|${d.slot}`, kind: 'dose', title: label, sub: `${given(s.nameOf(d.personId))} · ${clock(d.slot)}`, sort: d.slot, done: false })
   }
@@ -66,6 +69,7 @@ export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Dat
     const at = a.startsAt ? new Date(a.startsAt) : null
     const aDay = at && !Number.isNaN(at.getTime()) ? dayKey(at) : a.dueOn ?? null
     if (aDay !== day) return
+    if (s.masked?.(a.personId)) { out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: 'Check-up', sub: given(s.nameOf(a.personId)), sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' }); return }
     const time = at && !Number.isNaN(at.getTime()) ? ` · ${clock(hhmm(a.startsAt!))}` : ''
     const where = a.facility || a.provider || given(s.nameOf(a.personId))
     out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: a.purpose || a.provider || 'Doctor visit', sub: `${where}${time}`, sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' })

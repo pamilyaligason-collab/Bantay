@@ -57,10 +57,14 @@ describe('Family root (D-109)', () => {
     expect(rows.find((r) => r.textContent?.includes('Checkup'))!.textContent).toContain('Family')
     expect(rows.find((r) => r.textContent?.includes('Fetch pills'))!.textContent).toContain('Family')
     expect(rows.find((r) => r.textContent?.includes('Dentist'))!.textContent).toContain('Ma')
+    const doses = rows.filter((r) => r.getAttribute('data-kind') === 'dose').map((r) => r.querySelector('.grow')!.textContent)
+    expect(doses).toHaveLength(2) // Rey's own dose keeps its name; Ma's says only that one is due; Papa's is not there at all
+    expect(doses.find((t) => t?.includes('Zorbex'))).toBeTruthy()
+    expect(doses).toContain('Medicine timeMa')
     const page = document.body.textContent ?? ''
     expect(page).not.toContain('Papa')
     expect(page).not.toContain('Tita')
-    expect(screen.getByTestId('people-list').textContent).not.toContain('Quillon') // Ma's dose time may sit in the Calendar for her carer, but never her medicine name on her card
+    expect(page).not.toContain('Quillon') // the whole page: no other person's medicine name, Calendar card included (D-109 3.2)
     expect(page).not.toContain('Brandel')
     expect(page).not.toMatch(/\d+ of \d+ checked in/)
     expect(screen.queryByRole('group', { name: 'Family roll call' })).toBeNull() // the old Today list is gone
@@ -104,6 +108,7 @@ describe('Family root (D-109)', () => {
     expect(marks).toHaveLength(1)
     expect(within(marks[0]!.closest('[data-testid="people-row"]') as HTMLElement).getByText('Ma')).toBeTruthy()
     expect(within(list).queryByText(/Papa/)).toBeNull()
+    expect(screen.queryByRole('link', { name: 'Open Papa' })).toBeNull() // that link lived on the old Today card, which the S26 layout removed; Papa is not linked, so no People row offers one either
   })
 
   it('picking Papa (view only, a missed dose) adds no Needs line for him; Ma, whom Rey cares for, keeps hers', async () => {

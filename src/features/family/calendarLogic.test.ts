@@ -70,6 +70,15 @@ describe('rowsOn', () => {
     expect(today.map((x) => x.kind)).toEqual(['task', 'note'])
     expect(today[0]!.sub).toBe('Everyone · Overdue')
   })
+  it('masked people (the Family root, D-109): a dose or visit says only that it exists and whose; unmasked rows keep details', () => {
+    const s = src({
+      doses: () => [{ personId: 'm', name: 'Losartan', dose: '50 mg', slot: '09:00' }, { personId: 'j', name: 'Metformin', dose: null, slot: '08:00' }],
+      appts: [{ personId: 'm', startsAt: at(FRI, 15), provider: 'Dr. Santos', facility: 'Clinic', purpose: 'Blood tests' }],
+      masked: (id) => id !== 'j'
+    })
+    const r = rowsOn(FRI, s, FRI)
+    expect(r.map((x) => [x.title, x.sub])).toEqual([['Metformin', expect.stringMatching(/^Ate · 8:00/)], ['Medicine time', 'Mama'], ['Check-up', 'Mama']])
+  })
   it('kindsOn gives each kind once, in fixed order; an empty day gives none', () => {
     const s = src({ tasks: [{ clientId: 'a', title: 'a', due: FRI, assigneePersonId: null, done: false }, { clientId: 'b', title: 'b', due: FRI, assigneePersonId: null, done: true }] })
     expect(kindsOn(FRI, s, FRI)).toEqual(['task'])

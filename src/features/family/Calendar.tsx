@@ -34,8 +34,9 @@ function useRows<T>(query: () => Promise<T[]>, none: T[], key: string): T[] {
 }
 
 /** Calendar on the Family tab (P-4, F-12): the week strip is the default at every width, the month grid sits behind a Month toggle. The picked day lists doses, visits, events, tasks and notes, each tagged with an icon and a word.
- *  Readable members only (D-82): while acting as someone, only who they may see. */
-export default function Calendar() {
+ *  Readable members only (D-82): while acting as someone, only who they may see.
+ *  detailFor (the Family root, D-109): only this person's doses and visits keep their details; anyone else's read "Medicine time · Ma". Left out (#family/calendar), every readable person's rows show in full (D-109 3.1 and Q4: a link shows the whole record). */
+export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
   const { tasks, events, notes } = usePlan()
   const people = useLinkedPeople() // you and the people you are linked to (D-109), or while viewing as someone, who they can see
   const { people: family } = useFamilyPeople() // the Add sheet can assign anyone in the family, as the old Plan page did (D-168); rows name only readable people
@@ -58,9 +59,10 @@ export default function Calendar() {
     notes,
     appts,
     doses: (day) => ids.flatMap((id) => slotsFor(meds, id, day).map((s) => ({ personId: id, name: s.name, dose: s.dose, slot: s.slot }))),
-    nameOf: (id) => readable.find((p) => p.id === id)?.name ?? 'Family' // a person you may not read is never named (D-109)
+    nameOf: (id) => readable.find((p) => p.id === id)?.name ?? 'Family', // a person you may not read is never named (D-109)
+    masked: detailFor === undefined ? undefined : (id) => id !== detailFor
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [events, tasks, notes, appts, meds, readable, key, visible])
+  }), [events, tasks, notes, appts, meds, readable, key, visible, detailFor])
   const selDate = new Date(`${sel}T00:00:00`)
   const rows = rowsOn(sel, src, today)
   const other = otherRows(src)
