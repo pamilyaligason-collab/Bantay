@@ -25,7 +25,7 @@ export function stepsSummary(acts: Activity[], now: Date): StepsSummary {
 }
 
 /** "This month: 2,740 steps a day, lower than your average this year (9,544)." (within 5% is "about the same as"). null when either is missing or the month has fewer than 7 days of data (one day against a year is noise). */
-export function monthVsYear(month: number | null, year: number | null, monthDays = 7): string | null {
+export function monthVsYear(month: number | null, year: number | null, monthDays = 0): string | null {
   if (month == null || year == null || year <= 0 || monthDays < 7) return null
   const rel = Math.abs(month - year) / year < 0.05 ? 'about the same as' : month < year ? 'lower than' : 'higher than'
   return `This month: ${month.toLocaleString('en-US')} steps a day, ${rel} your average this year (${year.toLocaleString('en-US')}).`

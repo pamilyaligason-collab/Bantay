@@ -47,7 +47,7 @@ npx -y $Sb functions deploy pagasa-warnings --no-verify-jwt --use-api --project-
 Step 6 'Store the same secret in Vault (SQL editor)'
 # A re-run makes a new secret, so the stored one is updated when the name exists (the cron keeps working), else created.
 Set-Clipboard -Value "select vault.update_secret((select id from vault.secrets where name = 'pagasa_cron_secret'), '$Secret') where exists (select 1 from vault.secrets where name = 'pagasa_cron_secret'); select vault.create_secret('$Secret', 'pagasa_cron_secret') where not exists (select 1 from vault.secrets where name = 'pagasa_cron_secret');"
-Write-Host 'Supabase > SQL Editor > New query. Paste (Ctrl+V) and Run. Expect one row (a uuid when created, an empty value when updated). Then delete that query tab so the secret is not kept as a snippet.'
+Write-Host 'Supabase > SQL Editor > New query. Paste (Ctrl+V) and Run. It must run without an error (it may show no rows when the secret already existed and was updated). Then delete that query tab so the secret is not kept as a snippet.'
 Pause-For 'The Vault line is on your clipboard. Paste it, Run it.'
 Clear-Clip
 

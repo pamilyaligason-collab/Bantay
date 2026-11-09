@@ -247,3 +247,15 @@ describe('midnight: lastNight, stepsSummary, FamilyToday and the clock hook', ()
     expect(result.current.getDate()).toBe(10)
   })
 })
+
+describe('yearBand (MetricScreen -> YearBars, S26 clinical S1)', () => {
+  it('keeps the 65+ age group so the year caption names it', async () => {
+    const { yearBand } = await import('../MetricScreen')
+    expect(yearBand(sleepBand(70))).toEqual({ low: 7, high: 8, who: 'adults 65 and older' })
+    expect(yearBand(sleepBand(40))).toEqual({ low: 7, high: 9, who: 'adults' })
+    expect(yearBand(null)).toBeNull()
+    const { container } = render(<YearBars pts={[]} now={NOW} unit="hours" label="Sleep" band={yearBand(sleepBand(70))} />)
+    expect(container.textContent).toContain('recommended for adults 65 and older')
+  })
+})
+

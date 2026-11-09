@@ -39,6 +39,11 @@ export function bpHeadlineArg(readings: Reading[], code: string, latest: Reading
   return code === 'bp_systolic' ? { top: latest.value, bottom: mate, doctor } : { top: mate, bottom: latest.value, doctor }
 }
 
+/** The band YearBars gets: keeps the age group (who) so a 65+ caption reads 'adults 65 and older' (S26 clinical S1). */
+export function yearBand(band: { low?: number | null; high?: number | null; who?: string } | null | undefined): { low: number; high: number; who?: string } | null {
+  return band && band.low != null && band.high != null ? { low: band.low, high: band.high, who: band.who } : null
+}
+
 export default function MetricScreen({ code }: { code: string }) {
   const { ready, people, personId, readings, thresholds, canMark, reload } = useHealthPerson()
   const profiles = useProfiles()
@@ -123,7 +128,7 @@ export default function MetricScreen({ code }: { code: string }) {
           )}
           {!lab && <div className="grp hv-graph">
             {period === 'year' && detail ? (
-              <YearBars pts={pts} now={now} unit={code === 'sleep' ? 'hours' : 'steps'} label={`${label}, last 12 months`} band={band && band.low != null && band.high != null ? { low: band.low, high: band.high } : null} />
+              <YearBars pts={pts} now={now} unit={code === 'sleep' ? 'hours' : 'steps'} label={`${label}, last 12 months`} band={yearBand(band)} />
             ) : shown.length === 0 ? (
               <p className="sub" style={{ margin: 0, padding: 16 }}>Nothing in the last {period === 'week' ? '7' : '30'} days. Newer readings will show here.</p>
             ) : (
