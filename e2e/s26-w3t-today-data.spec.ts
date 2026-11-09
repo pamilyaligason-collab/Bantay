@@ -59,11 +59,8 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
     // lotto
     const lot = page.getByTestId('today-lotto')
     await expect(lot).toBeVisible()
-    const big = lot.getByTestId('lotto-big')
-    await expect(big).toContainText('Biggest jackpot now')
-    await expect(big).toContainText('₱486 million')
-    await expect(big).toContainText('Ultra Lotto 6/58 · next draw Tue 10 Nov')
-    await expect(lot.locator('.lotto-next').first()).toHaveText('Next jackpot ₱486 million')
+    await expect(lot.getByTestId('lotto-big')).toHaveCount(0)
+    await expect(lot.locator('.lotto-next').first()).toHaveText('Next draw estimate: ₱486 million')
     expect(await overflow(page, '[data-testid="today-lotto"] *')).toEqual([])
     if (dir) { await lot.scrollIntoViewIfNeeded(); await page.screenshot({ path: `${dir}/lotto-${w}-${scheme}.png` }) }
 

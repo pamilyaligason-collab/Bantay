@@ -10,9 +10,5 @@
 .lotto-note { margin: 4px 0 0; padding: 10px; font-size: 14px; line-height: 20px; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; }
 .lotto-pcso { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; margin-top: 4px; color: var(--link); font-size: 15px; font-weight: 600; } /* 44 px target, its own line: no trailing full stop */
 /* S26 (D-164): the biggest next jackpot leads the card; each six-number game shows its own under the balls. Amber tint like the balls (contrast tested in lotto.contrast.test.ts). */
-.lotto-big { display: grid; gap: 2px; margin-bottom: 6px; padding: 12px 14px; border-radius: 14px; background: var(--warn-bg); color: var(--ink); }
-.lotto-big-k { font-size: 15px; line-height: 20px; font-weight: 600; color: var(--amber-ink); }
-.lotto-big-v { font-size: 30px; line-height: 36px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.lotto-big-s { font-size: 15px; line-height: 20px; color: var(--ink); }
 .lotto-next { font-size: 16px; line-height: 22px; color: var(--ink); }
 .lotto-next b { font-variant-numeric: tabular-nums; }

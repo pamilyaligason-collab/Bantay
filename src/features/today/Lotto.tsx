@@ -40,18 +40,9 @@ export default function Lotto() {
   const top = new Set(byDate.slice(0, SHOWN))
   const shown = all ? latest : latest.filter((r) => top.has(r))
   const nexts = new Map(latest.map((r) => [r.game, /6\/\d\d/.test(r.game) ? nextRowFor(next ?? null, r) : null] as const))
-  const big = [...nexts].reduce<{ game: string; row: NextJackpot } | null>((b, [game, row]) => (row && (!b || row.jackpot_php > b.row.jackpot_php) ? { game, row } : b), null)
-  const bigWords = big ? jackpotWords(big.row.jackpot_php) : null
   return (
     <Section title="Lotto results" link={latest.length > SHOWN ? { onClick: () => setAll((v) => !v), label: all ? 'Fewer games' : 'More games' } : undefined} testId="today-lotto">
       <div className="card lotto">
-        {big && bigWords && (
-          <div className="lotto-big" data-testid="lotto-big">
-            <span className="lotto-big-k">Biggest jackpot now</span>
-            <b className="lotto-big-v">{bigWords}</b>
-            <span className="lotto-big-s">{big.game} · next draw {drawDay(big.row.draw_date)}</span>
-          </div>
-        )}
         {shown.map((r) => {
           const w = winnerLine(r)
           const nj = jackpotWords(nexts.get(r.game)?.jackpot_php)
@@ -59,7 +50,7 @@ export default function Lotto() {
             <div key={r.game} className="lotto-row">
               <div className="lotto-head"><span className="lotto-name">{r.game}</span><span className="lotto-sub">{drawDay(r.draw_date)}{w ? ` · ${w}` : ''}</span></div>
               <span className="lotto-balls">{balls(r).map((n, i) => <span key={i} className="lotto-ball">{n}</span>)}</span>
-              {nj && <span className="lotto-next">Next jackpot <b>{nj}</b></span>}
+              {nj && <span className="lotto-next">Next draw estimate: <b>{nj}</b></span>}
             </div>
           )
         })}

@@ -113,19 +113,18 @@ describe('Lotto card', () => {
       expect(jackpotWords(5_000_000)).toBe('₱5 million')
       for (const bad of [0, 999_999, -5, NaN, null, undefined]) expect(jackpotWords(bad as number | null)).toBeNull()
     })
-    it('the biggest next jackpot leads the card with amount, game and next draw day; each six-number game shows its own under the balls', () => {
+    it('no jackpot banner (owner 2026-11-10); each six-number game shows its next draw estimate under the balls', () => {
       h.rows = ALL
       h.next = [nj('Ultra Lotto 6/58', 486_000_000), nj('Grand Lotto 6/55', 120_000_000), nj('Lotto 6/42', 24_500_000)]
       const { container } = render(<Lotto />)
-      const big = screen.getByTestId('lotto-big')
-      expect(big.textContent).toBe('Biggest jackpot now₱486 millionUltra Lotto 6/58 · next draw Sat 10 Jan')
-      expect(container.querySelector('.lotto')!.firstElementChild).toBe(big)
+      expect(screen.queryByTestId('lotto-big')).toBeNull()
+      expect(container.textContent).not.toContain('Biggest jackpot')
       fireEvent.click(screen.getByRole('button', { name: 'More games' }))
       const rows = Array.from(container.querySelectorAll('.lotto-row'))
       const line = (name: string) => rows.find((x) => x.querySelector('.lotto-name')!.textContent === name)!.querySelector('.lotto-next')?.textContent ?? null
-      expect(line('Ultra Lotto 6/58')).toBe('Next jackpot ₱486 million')
-      expect(line('Grand Lotto 6/55')).toBe('Next jackpot ₱120 million')
-      expect(line('Lotto 6/42')).toBe('Next jackpot ₱24.5 million')
+      expect(line('Ultra Lotto 6/58')).toBe('Next draw estimate: ₱486 million')
+      expect(line('Grand Lotto 6/55')).toBe('Next draw estimate: ₱120 million')
+      expect(line('Lotto 6/42')).toBe('Next draw estimate: ₱24.5 million')
       expect(line('Super Lotto 6/49')).toBeNull() // no next row: no line, never P0
       expect(line('3D Lotto 9PM')).toBeNull()
     })
