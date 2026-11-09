@@ -6,10 +6,10 @@ Builds the optional "Full medical library" file the app downloads once on Wi-Fi.
 
 1. Download the Kiwix ZIM yourself (about 2.1 GB, not done in CI): `mdwiki_en_all_maxi_YYYY-MM.zim` from https://download.kiwix.org/zim/other/
 2. `pip install libzim` (`Pillow` is only for the optional `--images`)
-3. `python scripts/medlib/mdwiki-pack.py mdwiki_en_all_maxi_YYYY-MM.zim medlib-mdwiki.pack`
+3. `python scripts/medlib/mdwiki-pack.py mdwiki_en_all_maxi_YYYY-MM.zim medlib-mdwiki-YYYY-MM-DD.pack` (YYYY-MM-DD = the pack header's built date; then set FULL_LIBRARY_DATE and FULL_LIBRARY_MB in src/features/health/library/fullLibrary.ts to match and FULL_LIBRARY_HOSTED = true)
    The pack is text-only by default (what the app promises). Optional, documented but untested on the real ZIM: `--images` (at most one webp of 30 KB or less per article, `--max-image-kb N` to change), `--limit N` for a trial run.
    It prints the article count and total size. Set `FULL_LIBRARY_MB` in `src/features/health/library/fullLibrary.ts` to that size.
-4. Upload `medlib-mdwiki.pack` as a release asset of tag `medlib-v1` (the URL in `FULL_LIBRARY_URL`). GitHub release downloads honour HTTP Range, which the app uses to resume.
+4. Upload `medlib-mdwiki-YYYY-MM-DD.pack` as a release asset of tag `medlib-v1`. The app downloads it from its own origin at `/medlib/<file>`: functions/medlib/[file].ts forwards Range and If-Range to the release asset, because GitHub release downloads send no CORS headers.
 
 Test: `python -m unittest scripts/medlib/test_mdwiki_pack.py` builds a tiny synthetic ZIM with libzim's Creator and rewrites `fixtures/mini.pack`, which the client tests read.
 

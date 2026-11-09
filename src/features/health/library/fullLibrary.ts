@@ -3,10 +3,11 @@
 
 // Placeholder date: the orchestrator sets it to the build date of the pack it uploads as the GitHub release asset. Until then the download fails with a clear message.
 export const FULL_LIBRARY_DATE = '2026-11-01'
-export const FULL_LIBRARY_URL = `https://github.com/pamilyaligason-collab/Bantay/releases/download/medlib-v1/medlib-mdwiki-${FULL_LIBRARY_DATE}.pack`
+// Same-origin path: functions/medlib/[file].ts forwards it to the GitHub release asset (tag medlib-v1), because GitHub release downloads send no CORS headers.
+export const FULL_LIBRARY_URL = `/medlib/medlib-mdwiki-${FULL_LIBRARY_DATE}.pack`
 // Shown before the size is known (it is read from the server on the first request). Orchestrator: set to the built pack's size.
 export const FULL_LIBRARY_MB = 400
-/** shortcut: GitHub release downloads send no CORS headers (OPTIONS 404, 302 without Access-Control-Allow-Origin; checked 2026-11-09), so the app cannot fetch the pack from there. Keep the card hidden until the pack sits on a CORS host (e.g. R2) and FULL_LIBRARY_URL points there. */
+/** The card shows only once the pack is uploaded as medlib-mdwiki-<FULL_LIBRARY_DATE>.pack on release medlib-v1. */
 export const FULL_LIBRARY_HOSTED = false
 export const MDWIKI_CREDIT = 'Text from mdwiki.org (WikiProject Med). Licensed CC BY-SA 4.0. Changes: converted to plain text; citations, navigation boxes and edit links removed.'
 export const MDWIKI_LICENCE_URL = 'https://creativecommons.org/licenses/by-sa/4.0/'
