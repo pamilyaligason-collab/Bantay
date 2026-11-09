@@ -9,7 +9,7 @@ export function stepDays(acts: Activity[]): Map<string, number> {
 const mean = (v: number[]) => (v.length ? Math.round(v.reduce((s, n) => s + n, 0) / v.length) : null)
 
 export interface StepsSummary { today: number | null; avg30: number | null; month: number | null; year: number | null }
-/** Today, the 30-day average, this calendar month and this year, each a mean over the days that have data (null = nothing yet, never 0). */
+/** Today, the 30-day average, this calendar month and this calendar year, each a mean over the days that have data (null = nothing yet, never 0). */
 export function stepsSummary(acts: Activity[], now: Date): StepsSummary {
   const days = stepDays(acts)
   const today = localDay(now.toISOString())
@@ -23,12 +23,13 @@ export function stepsSummary(acts: Activity[], now: Date): StepsSummary {
   }
 }
 
-/** "Down from 9,544 a day this year." (month against year; within 5% is "about the same"). null when either is missing. */
+/** "This month: 2,740 steps a day, down from this year (9,544)." (this calendar month against this calendar year; within 5% is "about the same as"). null when either is missing. */
 export function monthVsYear(month: number | null, year: number | null): string | null {
   if (month == null || year == null || year <= 0) return null
-  const n = year.toLocaleString('en-US')
-  if (Math.abs(month - year) / year < 0.05) return `About the same as this year (${n} a day).`
-  return `${month < year ? 'Down' : 'Up'} from ${n} a day this year.`
+  const head = `This month: ${month.toLocaleString('en-US')} steps a day,`
+  const y = `this year (${year.toLocaleString('en-US')})`
+  if (Math.abs(month - year) / year < 0.05) return `${head} about the same as ${y}.`
+  return `${head} ${month < year ? 'down' : 'up'} from ${y}.`
 }
 
 export interface FamilyRow { id: string; name: string; isMe: boolean; steps: number | null }

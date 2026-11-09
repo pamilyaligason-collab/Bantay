@@ -1,4 +1,7 @@
-import { localDay, monthlyAverages, type Activity, type Point } from '../model'
+import { hasRealStart, localDay, monthlyAverages, sleepWakeDay, type Activity, type Point } from '../model'
+
+/** Minutes as the hero prints them: "45 min", "6 h 02 min". The one formatter for every sleep figure on the page. */
+export const hm = (min: number) => (min < 60 ? `${Math.round(min)} min` : `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')} min`)
 
 /** Hours of sleep the adult guidance names (the same 7 to 9 the page prints). Children get no comparison. */
 export const REC = { low: 7, high: 9 } as const
@@ -10,28 +13,27 @@ export const sleepBand = (age: number | null): { low: number; high: number } | n
 /** One plain sentence against the 7 to 9 hours, or null (children, unknown age, no sleep recorded: nothing is said). */
 export function sleepSentence(hours: number | null, age: number | null): string | null {
   if (hours == null || !Number.isFinite(hours) || !isAdult(age)) return null
-  if (hours < REC.low) return `Shorter than the ${REC.low} to ${REC.high} hours adults need.`
-  if (hours > REC.high) return `Longer than the ${REC.low} to ${REC.high} hours adults need.`
-  return `Within the ${REC.low} to ${REC.high} hours adults need.`
+  if (hours < REC.low) return `Shorter than the ${REC.low} to ${REC.high} hours recommended for adults.`
+  if (hours > REC.high) return `Longer than the ${REC.low} to ${REC.high} hours recommended for adults.`
+  return `Within the ${REC.low} to ${REC.high} hours recommended for adults.`
 }
 
-export interface Night { day: string; minutes: number; napMinutes: number; bedAt: string }
-const HOUR = 3_600_000
+export interface Night { day: string; minutes: number; napMinutes: number; bedAt: string | null }
 
-/** The latest night on file (never later than today). A row that starts between 9:00 and 17:59 is a nap; any other row belongs to the night that ends on the day 6 hours after it starts,
- *  so 23:00 and 01:54 starts both land on the morning they woke. Bed time is the earliest start. The phone stores a start and the minutes asleep, not a wake time, so none is shown. */
+/** The latest night on file (never later than today), grouped by wake day (see sleepWakeDay). Bed time is the earliest start among rows that carry a real start; a night made only of manual rows has none (null),
+ *  because those rows store when they were logged. The phone stores a start and the minutes asleep, not a wake time, so none is shown. */
 export function lastNight(acts: Activity[], now: Date): Night | null {
   const today = localDay(now.toISOString())
-  const nights = new Map<string, { minutes: number; bedAt: string }>()
+  const nights = new Map<string, { minutes: number; bedAt: string | null }>()
   const naps = new Map<string, number>()
   for (const a of acts) {
     if (a.kind !== 'sleep' || typeof a.minutes !== 'number' || !(a.minutes > 0) || Number.isNaN(Date.parse(a.startedAt))) continue
-    const t = Date.parse(a.startedAt)
-    const h = new Date(t).getHours()
-    if (h >= 9 && h < 18) { const k = localDay(a.startedAt); naps.set(k, (naps.get(k) ?? 0) + a.minutes); continue }
-    const k = localDay(new Date(t + 6 * HOUR).toISOString())
-    const cur = nights.get(k)
-    nights.set(k, { minutes: (cur?.minutes ?? 0) + a.minutes, bedAt: cur && Date.parse(cur.bedAt) < t ? cur.bedAt : a.startedAt })
+    const { day, nap } = sleepWakeDay(a)
+    if (nap) { naps.set(day, (naps.get(day) ?? 0) + a.minutes); continue }
+    const cur = nights.get(day) ?? { minutes: 0, bedAt: null }
+    cur.minutes += a.minutes
+    if (hasRealStart(a) && (cur.bedAt == null || Date.parse(a.startedAt) < Date.parse(cur.bedAt))) cur.bedAt = a.startedAt
+    nights.set(day, cur)
   }
   const day = [...nights.keys()].filter((k) => k <= today).sort().pop()
   return day ? { day, minutes: nights.get(day)!.minutes, napMinutes: naps.get(day) ?? 0, bedAt: nights.get(day)!.bedAt } : null

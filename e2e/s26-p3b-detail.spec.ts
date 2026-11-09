@@ -19,10 +19,12 @@ test('sleep and activity detail, light + dark, 390 and 195 wide', async ({ page 
   await expect(page.locator('h1')).toHaveText('Health')
   const act: Record<string, unknown>[] = []
   for (let i = 0; i < 40; i++) {
-    act.push({ personId: 'p1', kind: 'sleep', minutes: 300 + ((i * 37) % 200), steps: null, startedAt: at(i + 1, 23), source: 'manual' })
+    // the manual path is shaped like QuickLog: logged on the morning after, so startedAt is the log time and carries no bed time
+    if (i > 0) act.push({ personId: 'p1', kind: 'sleep', minutes: 300 + ((i * 37) % 200), steps: null, startedAt: at(i, 7, 30), source: 'manual' })
     act.push({ personId: 'p1', kind: 'steps', minutes: null, steps: 2000 + ((i * 911) % 7000), startedAt: at(i, 9), source: 'manual' })
   }
-  act.push({ personId: 'p1', kind: 'sleep', minutes: 45, steps: null, startedAt: at(0, 14), source: 'manual' })
+  act.push({ personId: 'p1', kind: 'sleep', minutes: 310, steps: null, startedAt: at(1, 23, 10), source: 'health-connect' }) // last night from a watch: a real start
+  act.push({ personId: 'p1', kind: 'sleep', minutes: 45, steps: null, startedAt: at(0, 14), source: 'health-connect' })
   act.push({ personId: 'p2', kind: 'steps', minutes: null, steps: 5400, startedAt: at(0, 8), source: 'manual' })
   await seed(page, 'bantay-log', { activity: act })
   for (const [w, h] of [[390, 844], [195, 844]] as const) {
@@ -33,7 +35,7 @@ test('sleep and activity detail, light + dark, 390 and 195 wide', async ({ page 
       await page.reload()
       const hero = page.getByTestId('sleep-hero')
       await expect(hero).toContainText('Went to sleep')
-      await expect(page.getByTestId('sleep-sentence')).toContainText('hours adults need')
+      await expect(page.getByTestId('sleep-sentence')).toContainText('hours recommended for adults')
       await expect(page.getByText('Deep, light and REM sleep show only when your watch shares them')).toBeVisible()
       await expect(page.locator('rect.mc-band')).toHaveCount(1)
       await page.screenshot({ path: `${SHOTS}/sleep-week-${w}-${scheme}.png`, fullPage: true })

@@ -137,7 +137,18 @@ export function sparkPath(rs: Reading[], w = 60, h = 22): string {
 
 // ---- body map -----------------------------------------------------------------------------------------------
 export type NodeId = 'sleep' | 'mood' | 'bp' | 'pulse' | 'sugar' | 'weight' | 'steps'
-export interface Activity { kind: string; minutes: number | null; steps: number | null; startedAt: string }
+export interface Activity { kind: string; minutes: number | null; steps: number | null; startedAt: string; source?: string }
+
+/** Only a watch or the phone's health store gives a real sleep start. A 'manual' row (QuickLog) stores the time it was logged, so it has no bed time and is never read as one. */
+export const hasRealStart = (a: { source?: string }): boolean => a.source === 'health-connect' || a.source === 'healthkit'
+/** The wake day a sleep row counts for. A manual row counts for the night that ended on the day it was logged. A row with a real start between 9:00 and 17:59 is a nap on its own day;
+ *  any other starts a night that ends on the day 6 hours after it starts (23:00 and 01:54 starts both land on the morning they woke), so a split night is one day. */
+export function sleepWakeDay(a: Activity): { day: string; nap: boolean } {
+  if (!hasRealStart(a)) return { day: localDay(a.startedAt), nap: false }
+  const t = Date.parse(a.startedAt), h = new Date(t).getHours()
+  if (h >= 9 && h < 18) return { day: localDay(a.startedAt), nap: true }
+  return { day: localDay(new Date(t + 6 * 3_600_000).toISOString()), nap: false }
+}
 export interface NodeView { id: NodeId; label: string; value: string; note: string; state: Position; code: string; empty: boolean }
 export const MOOD_WORD: Record<string, string> = { 'mood-good': 'Good', 'mood-ok': 'OK', 'mood-low': 'Low' }
 const stateNote = (kind: VerdictKind, pos: Position, bp?: BpArg) => verdictFor(kind, pos, bp)?.word ?? ''
@@ -195,7 +206,7 @@ export function activitySeries(acts: Activity[], code: 'steps' | 'sleep' | 'mood
   const byDay = new Map<string, number[]>()
   for (const a of acts) {
     if (!a.startedAt || Number.isNaN(Date.parse(a.startedAt))) continue
-    const day = localDay(a.startedAt)
+    const day = code === 'sleep' && a.kind === 'sleep' ? sleepWakeDay(a).day : localDay(a.startedAt)
     const v = code === 'steps' ? (a.kind === 'steps' ? a.steps : null) : code === 'sleep' ? (a.kind === 'sleep' && isNum(a.minutes) ? Math.round((a.minutes / 60) * 10) / 10 : null) : a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
     if (isNum(v) && a.startedAt) byDay.set(day, [...(byDay.get(day) ?? []), v])
   }

@@ -57,16 +57,16 @@ export function FamilyToday({ now }: { now: Date }) {
   const linked = useLinkedPeople()
   const allowed = useMemo(() => new Set(linked.map((p) => p.id)), [linked])
   const [steps, setSteps] = useState<Record<string, number | null>>({})
+  const today = localDay(now.toISOString())
   const key = [...allowed].sort().join(',')
   useEffect(() => {
     const ids = key ? key.split(',') : []
-    const today = localDay(now.toISOString())
     const sub = liveQuery(() => ldb.activity.where('personId').anyOf(ids).filter((a) => a.kind === 'steps' && typeof a.steps === 'number' && localDay(a.startedAt) === today).toArray()).subscribe({
       next: (rows) => { const m: Record<string, number | null> = {}; for (const r of rows) m[r.personId] = (m[r.personId] ?? 0) + (r.steps ?? 0); setSteps(m) },
       error: () => setSteps({})
     })
     return () => sub.unsubscribe()
-  }, [key, now])
+  }, [key, today])
   const rows = familyRows(people, allowed, steps)
   return rows.length > 1 ? <FamilyTable rows={rows} /> : null
 }

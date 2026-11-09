@@ -1,6 +1,7 @@
 import { useEffect, useId, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { formatNumber } from '../../lib/labFormat'
 import { daysBefore, localDay, type Point } from './model'
+import { hm } from './detail/sleepLogic'
 
 const W = 320
 const H = 170
@@ -124,8 +125,7 @@ export function avgText(values: number[], unit: string): string {
   if (!values.length) return ''
   const avg = values.reduce((a, b) => a + b, 0) / values.length
   if (unit !== 'hours') return `${Math.round(avg).toLocaleString('en-US')} ${unit}`.trim()
-  const min = Math.round(avg * 60)
-  return `${Math.floor(min / 60)}h ${min % 60}m`
+  return hm(Math.round(avg * 60)) // the same "6 h 02 min" the sleep hero prints
 }
 
 const TINT: Record<string, string> = { hours: 'purple', steps: 'amber', mmHg: 'blue' } // the tints Today already gives sleep, steps and blood pressure
@@ -182,7 +182,7 @@ export function MetricChart(s: ChartSpec) {
   return (
     <div className="mcw" tabIndex={0} role="group" aria-label={`${s.label}. Left and right arrow keys read each value.`} onKeyDown={key} data-tint={TINT[s.unit] ?? 'green'}>
       {bars && vals.length > 0 && <p className="mc-avg" data-testid="metric-avg">Avg {s.days === 7 ? 'this week' : 'last 30 days'} <strong>{avgText(vals, s.unit)}</strong></p>}
-      <svg className="mc" viewBox={`0 0 ${W} ${H}`} role="img" onClick={pick} aria-label={pts.length === 0 ? `${s.label}, no readings` : `${s.label}, ${pts.length} ${bars ? (pts.length === 1 ? 'day' : 'days') : 'readings'} from ${tickLabel(Math.min(...vals), s.unit)} to ${tickLabel(Math.max(...vals), s.unit)}${trend(pts)}${band}`} data-testid="metric-chart">
+      <svg className="mc" viewBox={`0 0 ${W} ${H}`} role="img" onClick={pick} aria-label={pts.length === 0 ? `${s.label}, no readings` : `${s.label}, ${pts.length} ${bars ? (pts.length === 1 ? 'day' : 'days') : 'readings'} from ${tickLabel(Math.min(...vals), s.unit)} to ${tickLabel(Math.max(...vals), s.unit)}${trend(pts)}${band}${bars ? `, average ${avgText(vals, s.unit)}` : ''}`} data-testid="metric-chart">
         <defs><linearGradient id={uid} x1="0" y1="0" x2="0" y2="1"><stop offset="0" className="mc-s0" /><stop offset="1" className="mc-s1" /></linearGradient></defs>
         {g.ticks.map((t) => <line key={t} x1={L} x2={W - R} y1={g.y(t)} y2={g.y(t)} className="mc-grid" />)}
         {g.bandRect && <rect className="mc-band" x={L} width={W - L - R} y={g.bandRect.y1} height={Math.max(2, g.bandRect.y2 - g.bandRect.y1)} />}

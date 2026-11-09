@@ -1,8 +1,7 @@
 import { shortDate, type Activity } from '../model'
-import { lastNight, sleepSentence } from './sleepLogic'
+import { hm, lastNight, sleepSentence } from './sleepLogic'
 import './detail.css'
 
-const hm = (min: number) => (min < 60 ? `${Math.round(min)} min` : `${Math.floor(min / 60)} h ${String(Math.round(min % 60)).padStart(2, '0')} min`)
 const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
 
 /** Sleep detail hero (the one hero card on the page): last night's total, a nap when there is one, the time they went to sleep, and one plain sentence for adults. */
@@ -19,7 +18,7 @@ export function SleepHero({ acts, age, now }: { acts: Activity[]; age: number | 
         <span className="sub">{title}</span>
         <strong className="hv-big">{hm(n.minutes)}</strong>
         {n.napMinutes > 0 && <span className="sub">plus {hm(n.napMinutes)} nap</span>}
-        <span className="sd-times"><span className="sub">Went to sleep</span> <strong>{clock(n.bedAt)}</strong></span>
+        {n.bedAt && <span className="sd-times"><span className="sub">Went to sleep</span> <strong>{clock(n.bedAt)}</strong></span>}
         {sentence && <p className="sd-line" data-testid="sleep-sentence">{sentence}</p>}
       </div>
     </div>

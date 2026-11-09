@@ -1,5 +1,5 @@
 import { properName } from './medName'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { formatNumber } from '../../lib/labFormat'
 import { CHIP, GUIDE, latestVsNormal, rangeState, toCanonicalReading, type Reading } from './ranges'
 import { WhoLine } from './WhoLine'
@@ -22,6 +22,7 @@ import { SleepHero, SleepStagesRow } from './detail/SleepDetail'
 import { ActivityHero, FamilyToday } from './detail/ActivityDetail'
 import { YearBars } from './detail/YearBars'
 import { sleepBand } from './detail/sleepLogic'
+import { useNow } from './detail/useNow'
 import { isVital } from './vitals'
 import BpCheckButton from './bpcheck/BpCheckButton'
 import BpWords from './bpcheck/BpWords'
@@ -45,7 +46,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const [part, setPart] = useState<'am' | 'pm' | null>(null)
   const [adding, setAdding] = useState(false)
   const [saved, setSaved] = useState('')
-  const now = useMemo(() => new Date(), [])
+  const now = useNow() // moves on at local midnight, so "today" is never stale
   const activity = isActivityCode(code)
   const acts = useActivity(personId, activity ? 400 : 120) // a year of days for the year view and month-against-year
   const detail = code === 'sleep' || code === 'steps'
@@ -122,7 +123,7 @@ export default function MetricScreen({ code }: { code: string }) {
           )}
           {!lab && <div className="grp hv-graph">
             {period === 'year' && detail ? (
-              <YearBars pts={pts} now={now} unit={code === 'sleep' ? 'hours' : 'steps'} label={`${label} this year`} band={band && band.low != null && band.high != null ? { low: band.low, high: band.high } : null} />
+              <YearBars pts={pts} now={now} unit={code === 'sleep' ? 'hours' : 'steps'} label={`${label}, last 12 months`} band={band && band.low != null && band.high != null ? { low: band.low, high: band.high } : null} />
             ) : shown.length === 0 ? (
               <p className="sub" style={{ margin: 0, padding: 16 }}>Nothing in the last {period === 'week' ? '7' : '30'} days. Newer readings will show here.</p>
             ) : (
