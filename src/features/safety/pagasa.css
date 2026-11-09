@@ -1,0 +1,12 @@
+/* S27: PAGASA pointer card. Amber from one signal, red from signal 3. */
+.pg { display: grid; gap: 8px; min-width: 0; }
+.pg[data-tone="amber"] { border: 1.5px solid var(--tint-amber-ink); }
+.pg[data-tone="red"] { border: 1.5px solid var(--tint-red-ink); }
+.pg-chip { justify-self: start; padding: 4px 12px; border-radius: 999px; background: var(--tint-amber); color: var(--tint-amber-ink); font-size: 15px; line-height: 20px; font-weight: 600; }
+.pg-row { display: grid; gap: 2px; padding: 6px 0; border-bottom: .5px solid var(--hair); font-size: 17px; line-height: 24px; color: var(--ink); overflow-wrap: anywhere; }
+.pg-row:last-of-type { border-bottom: 0; }
+.pg-row b { font-weight: 700; }
+.pg-sub { font-size: 15px; line-height: 20px; color: var(--muted); }
+.pg p { margin: 0; font-size: 17px; line-height: 24px; color: var(--ink); }
+.pg .pg-note { font-size: 15px; line-height: 20px; color: var(--muted); }
+.pg-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 17px; font-weight: 600; color: var(--ink); text-decoration: underline; }

@@ -15,6 +15,7 @@ import TodayNews from '../features/today/TodayNews'
 import Lotto from '../features/today/Lotto'
 import FxCard from '../features/today/FxCard'
 import PricesCard from '../features/today/PricesCard'
+import PagasaToday from '../features/safety/PagasaCard'
 import { PlantCard } from '../features/garden/Plant'
 import { useGardenPage } from '../features/garden/pages'
 import { TalkCard } from '../features/calm/CrisisCard'
@@ -76,6 +77,7 @@ export default function Today() {
       <AlarmFixedToast />
       <IncomingSos placement="today" />
       <WeatherCard hero expanded review={0} noJack storm={!!warn.storm} />
+      <PagasaToday />
       <AlertsOffCard />
       <WarningCard notify={notify} />
       <AlertCardToday />
