@@ -60,7 +60,7 @@ const given = (n: string) => n.trim().split(/\s+/)[0] || n
 export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Date())): CalRow[] {
   const out: CalRow[] = []
   for (const d of s.doses(day)) {
-    if (s.masked?.(d.personId)) { out.push({ key: `dose|${d.personId}|${d.name}|${d.slot}`, kind: 'dose', title: 'Medicine time', sub: given(s.nameOf(d.personId)), sort: d.slot, done: false }); continue }
+    if (s.masked?.(d.personId)) { out.push({ key: `dose|${d.personId}|${d.slot}|${out.length}` /* no medicine name even in the key (D-109) */, kind: 'dose', title: 'Medicine time', sub: given(s.nameOf(d.personId)), sort: d.slot, done: false }); continue }
     const label = d.dose && !d.name.toLowerCase().includes(d.dose.toLowerCase()) ? `${d.name} ${d.dose}` : d.name
     out.push({ key: `dose|${d.personId}|${d.name}|${d.slot}`, kind: 'dose', title: label, sub: `${given(s.nameOf(d.personId))} · ${clock(d.slot)}`, sort: d.slot, done: false })
   }
