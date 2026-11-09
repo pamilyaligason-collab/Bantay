@@ -16,6 +16,12 @@ import {
 import { LargeTitle } from '../look/LargeTitle'
 import { Segmented } from '../look/Segmented'
 import { useActivity } from './useActivity'
+import { useProfiles } from '../setup/useProfile'
+import { ageOf } from '../family/roster'
+import { SleepHero, SleepStagesRow } from './detail/SleepDetail'
+import { ActivityHero, FamilyToday } from './detail/ActivityDetail'
+import { YearBars } from './detail/YearBars'
+import { sleepBand } from './detail/sleepLogic'
 import { isVital } from './vitals'
 import BpCheckButton from './bpcheck/BpCheckButton'
 import BpWords from './bpcheck/BpWords'
@@ -34,20 +40,23 @@ export function bpHeadlineArg(readings: Reading[], code: string, latest: Reading
 
 export default function MetricScreen({ code }: { code: string }) {
   const { ready, people, personId, readings, thresholds, canMark, reload } = useHealthPerson()
-  const acts = useActivity(personId)
-  const [period, setPeriod] = useState<Period>('month')
+  const profiles = useProfiles()
+  const [period, setPeriod] = useState<Period | 'year'>('month')
   const [part, setPart] = useState<'am' | 'pm' | null>(null)
   const [adding, setAdding] = useState(false)
   const [saved, setSaved] = useState('')
   const now = useMemo(() => new Date(), [])
   const activity = isActivityCode(code)
+  const acts = useActivity(personId, activity ? 400 : 120) // a year of days for the year view and month-against-year
+  const detail = code === 'sleep' || code === 'steps'
+  const age = ageOf(profiles[personId]?.birthdate ?? null, now)
   const lab = !activity && !isVital(code) // lab results: sparse and dated, so a list, not a week/month chart
   const known = activity || readings.some((r) => r.test === code) || !!GUIDE[code]
   const partOf = (iso: string) => (new Date(iso).getHours() < 12 ? 'am' : 'pm')
   const mine = readings.filter((r) => r.test === code).map(toCanonicalReading).filter((r): r is NonNullable<typeof r> => !!r).sort((a, b) => Date.parse(b.takenAt) - Date.parse(a.takenAt))
   const minePart = part ? mine.filter((r) => partOf(r.takenAt) === part) : mine
   const pts: Point[] = activity ? activitySeries(acts, code as (typeof ACTIVITY_CODES)[number]) : [...minePart].reverse().map((r) => ({ takenAt: r.takenAt, value: r.value }))
-  const shown = inPeriod(pts, period, now)
+  const shown = inPeriod(pts, period === 'year' ? 'month' : period, now)
   const label = activity ? ACT_LABEL[code]!.label : metricLabel(code)
   const unit = activity ? ACT_LABEL[code]!.unit : (mine[0]?.unit ?? GUIDE[code]?.unit ?? '')
   const latest = mine[0]
@@ -55,7 +64,7 @@ export default function MetricScreen({ code }: { code: string }) {
   const v = latest ? latestVsNormal(latest, family) : null
   const last = pts[pts.length - 1]
   const months = monthlyAverages(pts, now)
-  const band = activity ? null : (latest ? effectiveRange(latest, family).range : null) ?? GUIDE[code] ?? null
+  const band = activity ? (code === 'sleep' ? sleepBand(age) : null) : (latest ? effectiveRange(latest, family).range : null) ?? GUIDE[code] ?? null
   const spec = entrySpec(code)
   const bpCode = code === 'bp_systolic' || code === 'bp_diastolic'
   const bpDoctor = bpDoctorOf(thresholds, personId) // both doctor targets, so every row of the pair, the headline and the add preview read the same word on either BP route
@@ -86,7 +95,9 @@ export default function MetricScreen({ code }: { code: string }) {
         </div>
       ) : (
         <>
-          {!lab && <div className="grp hv-latest" style={{ marginTop: 12 }}>
+          {code === 'sleep' && <SleepHero acts={acts} age={age} now={now} />}
+          {code === 'steps' && <ActivityHero acts={acts} now={now} />}
+          {!lab && !detail && <div className="grp hv-latest" style={{ marginTop: 12 }}>
             <div className="row">
               <span className="grow">
                 <span className="sub">Latest{(latest?.takenAt ?? last?.takenAt) ? ` · ${shortDate(latest?.takenAt ?? last!.takenAt)}` : ''}</span>
@@ -104,18 +115,22 @@ export default function MetricScreen({ code }: { code: string }) {
           {bpCode && canMark && personId && <BpCheckButton personId={personId} forName={properName(people.find((x) => x.id === personId)?.name ?? '')} onSaved={(m) => { setSaved(m); reload() }} className="btn mc-add" />}
           {saved && <p className="sub" role="status">{saved}</p>}
           {!lab && (
-            <Segmented<Period> label="Period" value={period} onChange={setPeriod} options={[{ id: 'week', label: 'This week' }, { id: 'month', label: 'This month' }]} />
+            <Segmented<Period | 'year'> label="Period" value={period} onChange={setPeriod} options={[{ id: 'week', label: 'This week' }, { id: 'month', label: detail ? '30 days' : 'This month' }, ...(detail ? [{ id: 'year' as const, label: 'Year' }] : [])]} />
           )}
           {!activity && !lab && (
             <Segmented<'am' | 'pm' | 'all'> label="Time of day" value={part ?? 'all'} onChange={(id) => setPart(id === 'all' || part === id ? null : id)} options={[{ id: 'am', label: 'Morning' }, { id: 'pm', label: 'Evening' }]} />
           )}
           {!lab && <div className="grp hv-graph">
-            {shown.length === 0 ? (
+            {period === 'year' && detail ? (
+              <YearBars pts={pts} now={now} unit={code === 'sleep' ? 'hours' : 'steps'} label={`${label} this year`} band={band && band.low != null && band.high != null ? { low: band.low, high: band.high } : null} />
+            ) : shown.length === 0 ? (
               <p className="sub" style={{ margin: 0, padding: 16 }}>Nothing in the last {period === 'week' ? '7' : '30'} days. Newer readings will show here.</p>
             ) : (
               <MetricChart pts={shown} days={period === 'week' ? 7 : 30} now={now} band={band} label={`${label} ${period === 'week' ? 'this week' : 'this month'}`} unit={unit} goal={activity && code === 'steps' ? STEP_GOAL : null} />
             )}
           </div>}
+          {code === 'sleep' && <SleepStagesRow />}
+          {code === 'steps' && <FamilyToday now={now} />}
           {!lab && <section aria-labelledby="hv-ma">
             <h2 className="hd" id="hv-ma">Monthly averages</h2>
             {months.length === 0 ? (

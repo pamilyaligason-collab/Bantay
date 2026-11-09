@@ -189,6 +189,7 @@ export function MetricChart(s: ChartSpec) {
         {g.ticks.map((t) => <text key={`t${t}`} x={L - 5} y={g.y(t) + 4} className="mc-t" textAnchor="end">{tickLabel(t, s.unit)}</text>)}
         {dateLabels.map((l, i) => <text key={i} x={l.x} y={H - 6} className="mc-d" textAnchor={l.anchor}>{l.text}</text>)}
         {bars && s.goal != null && <><line className="mc-goal" x1={L} x2={W - R} y1={g.y(s.goal)} y2={g.y(s.goal)} /><text className="mc-g" x={W - R} y={g.y(s.goal) - 4} textAnchor="end">Goal {s.goal.toLocaleString('en-US')}</text></>}
+        {bars && vals.length > 1 && <line className="mc-avgline" data-testid="avg-line" x1={L} x2={W - R} y1={g.y(vals.reduce((t, v) => t + v, 0) / vals.length)} y2={g.y(vals.reduce((t, v) => t + v, 0) / vals.length)} />}
         {!bars && sp.length > 1 && <path className="mc-spread" d={`${sp.map((r, i) => `${i ? 'L' : 'M'}${g.x(r.takenAt).toFixed(1)} ${g.y(r.max).toFixed(1)}`).join('')}${[...sp].reverse().map((r) => `L${g.x(r.takenAt).toFixed(1)} ${g.y(r.min).toFixed(1)}`).join('')}Z`} />}
         {bars
           ? pts.map((p, i) => { const h = p.value > 0 ? Math.max(2, base - g.y(p.value)) : 1; // a logged 0 keeps a hairline so it never looks like a day with no log
