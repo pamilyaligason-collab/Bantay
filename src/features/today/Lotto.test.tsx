@@ -85,14 +85,14 @@ describe('Lotto card', () => {
     expect(row.children[0]!.children).toHaveLength(2) // name + date in one head
     expect(row.children[1]!.className).toBe('lotto-balls')
   })
-  it('tracks card_lotto when shown and when the PCSO link is tapped', () => {
+  it('tracks card_lotto only when the PCSO link is tapped, never on show (D-160 tap names)', () => {
     tr.mockClear()
     h.rows = ALL
     render(<Lotto />)
-    expect(tr).toHaveBeenCalledWith('action', 'card_lotto')
-    expect(tr).toHaveBeenCalledTimes(1)
+    expect(tr).not.toHaveBeenCalled()
     fireEvent.click(screen.getByRole('link', { name: 'Check your ticket with PCSO' }))
-    expect(tr).toHaveBeenCalledTimes(2)
+    expect(tr).toHaveBeenCalledTimes(1)
+    expect(tr).toHaveBeenCalledWith('action', 'card_lotto')
   })
   it('its class names are global CSS: none is defined in any other stylesheet (.lt-row once restyled the page header)', () => {
     const own = new Set(readFileSync('src/features/today/lotto.css', 'utf8').match(/\.lotto[\w-]*/g))

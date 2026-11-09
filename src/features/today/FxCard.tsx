@@ -38,8 +38,7 @@ export default function FxCard() {
     asked.current = true
     void fetchPhp().then((php) => { if (php === null) setFailed(true); else setSaved(nextSaved(saved, php, Date.now())) })
   }, [loaded, saved, setSaved])
-  const has = !!saved
-  useEffect(() => { if (has) void track('action', 'card_fx') }, [has]) // shown (D-160)
+  // card_fx is recorded on tap only (D-160)
   if (!saved) return null
   const offline = failed && dayOf(saved.at) !== dayOf(Date.now())
   const diff = saved.prev === null ? null : Math.round((saved.php - saved.prev) * 100) / 100
@@ -57,7 +56,7 @@ export default function FxCard() {
           )}
         </div>
         <p className="fx-note">{FX_NOTE}</p>
-        <a className="fx-credit" href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer">Rates by exchangerate-api.com</a>
+        <a className="fx-credit" onClick={() => void track('action', 'card_fx')} href="https://www.exchangerate-api.com" target="_blank" rel="noopener noreferrer">Rates by exchangerate-api.com</a>
       </div>
     </Section>
   )

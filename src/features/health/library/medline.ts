@@ -20,7 +20,7 @@ export const normKey = (text: string) => text.trim().toLowerCase().replace(/[^a-
 
 /** ICD-10-CM codes for common conditions (each checked live against Connect 2026-11-09). Connect ignores the display name for problems and finds a topic by code only. */
 const ICD10: Record<string, string> = {
-  'high blood pressure': 'I10', hypertension: 'I10', 'type 2 diabetes': 'E11.9', diabetes: 'E11.9', 'chronic kidney disease': 'N18.9', asthma: 'J45.909', stroke: 'I63.9',
+  'high blood pressure': 'I10', hypertension: 'I10', 'type 2 diabetes': 'E11.9', 'chronic kidney disease': 'N18.9', asthma: 'J45.909', stroke: 'I63.9',
   'fatty liver': 'K76.0', 'fatty liver disease': 'K76.0', osteoporosis: 'M81.0', 'high cholesterol': 'E78.5', cholesterol: 'E78.5', hypothyroidism: 'E03.9', obesity: 'E66.9',
   'coronary artery disease': 'I25.10', 'heart failure': 'I50.9', copd: 'J44.9', gout: 'M10.9', anemia: 'D64.9'
 }

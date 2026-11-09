@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import hotlines from '../../data/safety/hotlines.json'
 import { track } from '../admin/events'
 import { Icon } from '../shell/Icon'
@@ -8,7 +7,7 @@ import './calm.css'
 /** S26 (D-164): the Today hero card. Calm teal (never SOS red, never the 911 button style), the one --shadow-hero on the screen. "Talk" opens #calm, where the numbers are (CrisisCard below);
  *  911 stays first in the words. Tracks card_talk when shown and when Talk is tapped. */
 export function TalkCard() {
-  useEffect(() => { void track('action', 'card_talk') }, [])
+  // card_talk is recorded on tap only (D-160)
   return (
     <section className="cm-talk" data-testid="today-talk" aria-labelledby="cm-talk-h">
       <Icon name="chat" size={32} />

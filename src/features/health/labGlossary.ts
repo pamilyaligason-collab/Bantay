@@ -31,7 +31,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}alt-blood-test/`
   },
   {
-    code: 'ast', loinc: '1920-8', topic: 'fattyliver', name: 'AST (SGOT)', aliases: ['sgot', 'ast/sgot', 'aspartate aminotransferase'], organ: 'Liver and muscle enzyme', short: 'An enzyme in the liver, heart and muscles',
+    code: 'ast', loinc: '1920-8', name: 'AST (SGOT)', aliases: ['sgot', 'ast/sgot', 'aspartate aminotransferase'], organ: 'Liver and muscle enzyme', short: 'An enzyme in the liver, heart and muscles',
     what: 'AST is an enzyme found mostly in the liver, and also in the heart, muscles and other tissues. It is usually read together with other liver tests.',
     high: 'It can rise when the liver or another tissue that holds AST is irritated or damaged, for example by some medicines, alcohol, a liver illness or a muscle or heart problem. ' + NOT_ALARM,
     low: 'A low AST is usually considered normal.',
@@ -49,7 +49,7 @@ export const LAB_GLOSSARY: LabEntry[] = [
     url: `${ML}creatinine-test/`
   },
   {
-    code: 'egfr', loinc: '33914-3', topic: 'ckd', name: 'eGFR', aliases: ['gfr', 'estimated gfr'], organ: 'Kidney filtering score', short: 'How well the kidneys filter your blood',
+    code: 'egfr', loinc: '98979-8', topic: 'ckd', name: 'eGFR', aliases: ['gfr', 'estimated gfr'], organ: 'Kidney filtering score', short: 'How well the kidneys filter your blood',
     what: 'eGFR is an estimate of how well your kidneys filter waste from your blood. It is worked out from your creatinine, age and sex, so a higher number is better.',
     high: 'A high eGFR is usually not a concern.',
     low: 'A lower eGFR means the kidneys may be filtering less well. Doctors usually repeat it and look at other results before deciding what it means. ' + NOT_ALARM,

@@ -16,7 +16,7 @@ export function probeProblems(r: CheckShape): Problem[] {
 
 /** Battery optimisation is on, but exact alarms and notifications are fine: an amber warning, never a failed check. */
 export const batteryWarning = (r: CheckShape | null | undefined): boolean => !!r && r.battery_ok === false && r.exact_ok === true && r.notif_ok === true
-export const BATTERY_WARNING_TEXT = 'Battery saver may delay alarms. Tap to allow Bantay to run.'
+export const BATTERY_WARNING_TEXT = 'Battery settings may delay some alarms. Tap Allow so Bantay can keep running.'
 
 export type AlarmState = 'ok' | 'warn' | 'fix' | 'unknown'
 /** Medicine alarms: fix when an alarm problem exists, warn for the battery warning, ok only when all four are known good. */

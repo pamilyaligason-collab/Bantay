@@ -140,7 +140,7 @@ describe('AlarmHealthRow (Me)', () => {
   it('battery saver with exact alarms and notifications on is an amber warning with an Allow button, not a Fix', async () => {
     await db.kv.put({ key: KEY_PHONE_CHECK, value: { at: 'x', ...XIAOMI, exact_ok: true } })
     render(<AlarmHealthRow />)
-    expect(await screen.findByText('Battery saver may delay alarms. Tap to allow Bantay to run.')).toBeTruthy()
+    expect(await screen.findByText('Battery settings may delay some alarms. Tap Allow so Bantay can keep running.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Fix' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
     expect(fx.applyFix).toHaveBeenCalledWith('battery')

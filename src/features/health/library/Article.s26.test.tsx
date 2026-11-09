@@ -19,6 +19,6 @@ describe('Article (S26)', () => {
   })
   it('a test with nothing anywhere says so in plain words', async () => {
     render(<Article rawKey="s:Zzzqx" />)
-    expect((await screen.findByTestId('article-none')).textContent).toBe('No plain-words note for this test yet. Ask your doctor what it means.')
+    expect((await screen.findByTestId('article-none')).textContent).toBe('No plain-words note for this yet. Ask your doctor or pharmacist what it means.')
   })
 })

@@ -36,16 +36,17 @@ describe('CrisisCard', () => {
 })
 
 describe('TalkCard (Today hero, S26)', () => {
-  it('names the card, leads with 911 in words, and Talk opens #calm with a 48 px target; tracks card_talk on show and on tap', () => {
+  it('names the card, leads with 911 in words, and Talk opens #calm with a 48 px target; tracks card_talk on tap only', () => {
     tr.mockClear()
     render(<TalkCard />)
     expect(screen.getByRole('heading', { name: 'Need to talk to someone?' })).toBeTruthy()
     expect(screen.getByText(/Call 911\./)).toBeTruthy()
     const talk = screen.getByRole('link', { name: /Talk to someone/ })
     expect(talk.getAttribute('href')).toBe('#calm')
-    expect(tr).toHaveBeenCalledTimes(1)
+    expect(tr).not.toHaveBeenCalled()
     fireEvent.click(talk)
-    expect(tr).toHaveBeenNthCalledWith(2, 'action', 'card_talk')
+    expect(tr).toHaveBeenCalledTimes(1)
+    expect(tr).toHaveBeenCalledWith('action', 'card_talk')
     expect(css).toMatch(/\.cm-talk-btn \{[^}]*min-height: 48px/)
   })
   it('is the hero depth, teal, and not SOS red', () => {

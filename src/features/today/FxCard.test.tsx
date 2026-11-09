@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FxSaved } from './FxCard'
@@ -35,7 +35,9 @@ describe('FxCard', () => {
     expect(screen.queryByTestId('fx-change')).toBeNull()
     expect(screen.queryByText(/Offline/)).toBeNull()
     expect(h.set).toHaveBeenCalledWith({ php: 63.1, at: NOON, prev: null, prevAt: null })
-    await waitFor(() => expect(tr).toHaveBeenCalledWith('action', 'card_fx'))
+    expect(tr).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('link', { name: 'Rates by exchangerate-api.com' }))
+    expect(tr).toHaveBeenCalledWith('action', 'card_fx')
   })
   it('a new day compares with the saved value: up 0.08 since yesterday', async () => {
     h.saved = { php: 63.02, at: at(8, 8, 2), prev: null, prevAt: null } satisfies FxSaved

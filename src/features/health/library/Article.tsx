@@ -68,7 +68,7 @@ function LabArticle({ e }: { e: LabEntry }) {
         <p className="sub">{e.short}</p>
       </article>
       <LabExplain entry={e} />
-      {rel && <p className="sub" style={{ margin: '8px 4px 0' }} data-testid="lab-related">Related: <a href={topicHref(rel.id)}>{rel.title}</a></p>}
+      {rel && <p className="sub" style={{ margin: '8px 4px 0' }} data-testid="lab-related">Read more: <a href={topicHref(rel.id)}>{rel.title}</a></p>}
       <p className="sub ar-src" style={{ margin: '8px 4px 0' }}>{SOURCE_LINE}</p>
     </>
   )
@@ -120,7 +120,7 @@ function TopicArticle({ rawKey }: { rawKey: string }) {
             <a className="hv-open ar-more" href={view.topic.url} target="_blank" rel="noopener noreferrer">Read the full page on MedlinePlus<span className="hv-sr"> (opens in new tab)</span></a>
           </>
         )}
-        {view.s === 'none' && <p className="ar-body" data-testid="article-none">{/^[sl]:/.test(rawKey) ? 'No plain-words note for this test yet. Ask your doctor what it means.' : 'No plain-words note for this yet. Ask your doctor what it means.'}</p>}
+        {view.s === 'none' && <p className="ar-body" data-testid="article-none">{/^l:/.test(rawKey) ? 'No plain-words note for this test yet. Ask your doctor what it means.' : 'No plain-words note for this yet. Ask your doctor or pharmacist what it means.'}</p>}
         {view.s === 'offline' && (
           <div data-testid="article-offline">
             <p className="ar-body">This article needs the internet and nothing is saved on this phone yet. Try again when you are online.</p>

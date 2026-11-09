@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Section } from '../look'
 import { track } from '../admin/events'
 import { latestPerGame, useLotto, type LottoRow } from './lottoApi'
@@ -23,8 +23,7 @@ export default function Lotto() {
   const { rows } = useLotto()
   const [all, setAll] = useState(false)
   const latest = rows ? latestPerGame(rows) : []
-  const has = latest.length > 0
-  useEffect(() => { if (has) void track('action', 'card_lotto') }, [has]) // the card was shown (D-160)
+  // card_lotto is recorded on tap only (D-160)
   if (!latest.length) return null
   const byDate = [...latest].sort((a, b) => (a.draw_date < b.draw_date ? 1 : a.draw_date > b.draw_date ? -1 : 0)) // stable: ties keep game order
   const top = new Set(byDate.slice(0, SHOWN))
