@@ -4,16 +4,18 @@ import { dayKey, eventDay, timeLabel } from './events'
 import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
 
 /** Family calendar rows (S16 L4, mockup family-s16). Pure: the screen passes what it read, this decides what shows on which day. */
-export type CalKind = 'dose' | 'visit' | 'event' | 'task' | 'note'
+export type CalKind = 'dose' | 'checkup' | 'visit' | 'event' | 'task' | 'note'
 /** Icon + label + hue per kind (colour plus shape plus word, D-96). */
-export const KIND: Record<CalKind, { label: string; icon: IconName; hue: Hue }> = {
+/** The five card hues are all taken by the other kinds, so the check-up marker borrows teal (its own colour, distinct from Note's lilac). */
+export const KIND: Record<CalKind, { label: string; icon: IconName; hue: Hue | 'teal' }> = {
   dose: { label: 'Dose', icon: 'pill', hue: 'green' },
+  checkup: { label: 'Check-up or lab', icon: 'flask', hue: 'teal' }, // S28 (D-168): its own shape and colour (teal, not Note's lilac) in the markers, the legend and the row tag
   visit: { label: 'Visit', icon: 'cross', hue: 'blue' },
   event: { label: 'Event', icon: 'calendar', hue: 'amber' },
   task: { label: 'Task', icon: 'check', hue: 'terra' },
   note: { label: 'Note', icon: 'file', hue: 'lilac' }
 }
-export const KIND_ORDER: CalKind[] = ['dose', 'visit', 'event', 'task', 'note']
+export const KIND_ORDER: CalKind[] = ['dose', 'checkup', 'visit', 'event', 'task', 'note']
 
 export interface CalDose { personId: string; name: string; dose: string | null; slot: string }
 export interface CalAppt { personId: string; startsAt?: string; dueOn?: string; provider?: string; facility?: string; purpose?: string; apptStatus?: string }
@@ -31,6 +33,9 @@ export interface CalSource {
   /** True for a person whose doses and visits may show only that they exist (the Family root, D-109): no medicine, dose, doctor, clinic, or event title; a visit shows no time, an event keeps its time. */
   masked?: (personId: string) => boolean
 }
+
+/** A visit that is a check-up or a lab test, by its own purpose or provider words. Masked visits (D-173) never reach this: their kind stays Visit so a marker cannot say more than the title does. */
+export const isCheckup = (a: Pick<CalAppt, 'purpose' | 'provider'>) => /check-?\s?up|\blab(s|oratory)?\b|blood test|\bcbc\b|screening/i.test(`${a.purpose ?? ''} ${a.provider ?? ''}`)
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const hhmm = (iso: string) => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}` }
@@ -76,7 +81,7 @@ export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Dat
     if (s.masked?.(a.personId)) { out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: MASKED_APPT, sub: given(s.nameOf(a.personId)), sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done', masked: true }); return }
     const time = at && !Number.isNaN(at.getTime()) ? ` · ${clock(hhmm(a.startsAt!))}` : ''
     const where = a.facility || a.provider || given(s.nameOf(a.personId))
-    out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: 'visit', title: a.purpose || a.provider || 'Doctor visit', sub: `${where}${time}`, sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' })
+    out.push({ key: `visit|${i}|${a.startsAt ?? a.dueOn}`, kind: isCheckup(a) ? 'checkup' : 'visit', title: a.purpose || a.provider || 'Doctor visit', sub: `${where}${time}`, sort: at && !Number.isNaN(at.getTime()) ? hhmm(a.startsAt!) : '00:00', done: a.apptStatus === 'done' })
   })
   for (const e of s.events) {
     if (eventDay(e) !== day) continue
@@ -88,7 +93,8 @@ export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Dat
     const overdue = !t.done && !!t.due && t.due < today && day === today
     if (t.due !== day && !overdue) continue
     const who = t.assigneePersonId ? given(s.nameOf(t.assigneePersonId)) : 'Everyone'
-    out.push({ key: `task|${t.clientId}`, kind: 'task', title: t.title, sub: overdue ? `${who} · Overdue` : who, sort: '24:00', done: t.done })
+    const at = !overdue && t.remindAt ? ` · ${clock(t.remindAt)}` : '' // the optional reminder time (S28); an overdue task keeps the word Overdue
+    out.push({ key: `task|${t.clientId}`, kind: 'task', title: t.title, sub: overdue ? `${who} · Overdue` : `${who}${at}`, sort: !overdue && t.remindAt ? t.remindAt : '24:00', done: t.done })
   }
   if (day === today) {
     for (const n of s.notes) if (n.pinned) out.push({ key: `note|${n.clientId}`, kind: 'note', title: n.body.split('\n')[0] ?? '', sub: 'Pinned note', sort: '25:00', done: false })

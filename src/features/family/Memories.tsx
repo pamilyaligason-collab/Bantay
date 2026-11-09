@@ -3,7 +3,7 @@ import { EmptyState, MoreGrid } from '../look'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
 import { addPhoto, listPhotos, removePhoto, type Photo } from './memoriesApi'
-import { CAPTION_MAX, shortDay, stripToJpeg } from './memoriesLogic'
+import { CAPTION_MAX, canShareFiles, newestFirst, sharePhoto, shortDay, stripToJpeg } from './memoriesLogic'
 import Sheet from './Sheet'
 import './memories.css'
 
@@ -52,10 +52,11 @@ function MemoriesOn({ turnOff }: { turnOff: () => void }) {
           <div className="mem-tile" key="add">
             <button type="button" className="mem-add" onClick={() => input.current?.click()}><span className="mem-img"><Icon name="plus" size={28} /></span><b>Add a photo</b></button>
           </div>
-          {view.photos.map((p) => (
+          {newestFirst(view.photos).map((p) => (
             <div className="mem-tile" key={p.id}>
               <span className="mem-img">{p.url ? <img src={p.url} alt={p.caption ?? 'Family photo'} loading="lazy" /> : <Icon name="photo" size={28} />}</span>
               <span className="mem-cap"><b>{p.caption ?? 'Photo'}</b><span className="sub">{shortDay(p.takenOn ?? p.createdAt) ?? ''}</span></span>
+              {p.url && canShareFiles() && <button type="button" className="mem-share" onClick={() => { void sharePhoto(p.url!, p.caption).then((r) => setNote(r === 'failed' ? 'Could not share that photo. Try again.' : '')) }} aria-label={`Share ${p.caption ?? 'this photo'}`}><Icon name="send" size={20} />Share</button>}
               {p.mine && <button type="button" className="mem-del" onClick={() => setGone(p)} aria-label={`Delete ${p.caption ?? 'this photo'}`}><Icon name="trash" size={20} /></button>}
             </div>
           ))}

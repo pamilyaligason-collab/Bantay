@@ -55,8 +55,8 @@ export const TABLES: Record<string, TableSpec> = {
     fields: ['photoPath', 'phone', 'birthdate', 'bloodType', 'allergies', 'conditions'],
     onConflict: 'id', resolution: 'merge-duplicates', noClientId: true, patch: { table: 'people', idField: 'id' }
   },
-  // Family plan (0012): edits and soft deletes (deletedAt) are full-row upserts on client_id; the pull removes tombstoned rows.
-  family_tasks: { fields: ['title', 'due', 'assigneePersonId', 'done', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
+  // Family plan (0012; remind_at from 0061 must be applied before this build ships): edits and soft deletes (deletedAt) are full-row upserts on client_id; the pull removes tombstoned rows.
+  family_tasks: { fields: ['title', 'due', 'assigneePersonId', 'done', 'remindAt', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
   family_events: { fields: ['title', 'startsAt', 'endsAt', 'allDay', 'personId', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
   family_notes: { fields: ['body', 'pinned', 'deletedAt'], onConflict: 'client_id', resolution: 'merge-duplicates', pull: true, cursor: 'updated_at' },
   // The live medicine schedule (0014). Edits and soft deletes are full-row upserts on client_id, like the plan rows. origin and

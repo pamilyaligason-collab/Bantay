@@ -43,6 +43,26 @@ export async function stripToJpeg(file: Blob, max = MAX_SIDE): Promise<Blob | nu
   } catch { return null }
 }
 
+/** Newest first for the grid: the day it was taken (else the day it was added), then the time it was added. */
+export function newestFirst<T extends { takenOn: string | null; createdAt: string }>(list: T[]): T[] {
+  const day = (p: T) => (p.takenOn ?? p.createdAt).slice(0, 10)
+  return [...list].sort((a, b) => day(b).localeCompare(day(a)) || b.createdAt.localeCompare(a.createdAt))
+}
+
+/** True when this phone's browser can share a picture file (Web Share API with files). No new dependency; where it cannot, the Share button is not shown. */
+export function canShareFiles(): boolean {
+  try { return typeof navigator !== 'undefined' && typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [new File([], 'a.jpg', { type: 'image/jpeg' })] }) } catch { return false }
+}
+
+/** One tap share: the picture goes to the phone's share sheet as a file (not as a link: a signed link expires). 'cancelled' when the person closed the sheet. Never logs the caption. */
+export async function sharePhoto(url: string, caption: string | null): Promise<'shared' | 'cancelled' | 'failed'> {
+  try {
+    const blob = await (await fetch(url)).blob()
+    await navigator.share({ files: [new File([blob], 'family-photo.jpg', { type: blob.type || 'image/jpeg' })], ...(caption ? { text: caption } : {}) })
+    return 'shared'
+  } catch (e) { return (e as { name?: string })?.name === 'AbortError' ? 'cancelled' : 'failed' }
+}
+
 /** "12 Oct" from a yyyy-mm-dd or ISO date, or null when there is none. */
 export function shortDay(v: string | null | undefined): string | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v ?? '')

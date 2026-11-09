@@ -76,20 +76,22 @@ describe('PeopleList flag word (D-109)', () => {
 })
 
 describe('PeopleList reach buttons and today status (D-168)', () => {
-  it('Message on everyone but you; Messenger only with a saved handle, WhatsApp only with a +country number', () => {
+  it('no in-app Message button: Messenger/WhatsApp when saved, else Call for a number, else Add Messenger name; nothing for you', () => {
     const list = [person('me', 'Rey Villar', true, { phone: '+63 917 000 0000', messenger: 'rey.villar' }), person('ma', 'Ma Villar', false, { phone: '+63 917 123 4567', messenger: 'ma.villar' }), person('pa', 'Papa Villar', false, { phone: '0917 123 4567' }), person('ti', 'Tita Cruz')]
     render(<PeopleList people={list} />)
-    expect(within(row(/You/)).queryByRole('button', { name: 'Message' })).toBeNull() // not for yourself
+    expect(screen.queryByRole('button', { name: 'Message' })).toBeNull()
+    expect(within(row(/You/)).queryByRole('group', { name: /Message/ })).toBeNull() // not for yourself
     const ma = within(row(/Ma/))
-    expect(ma.getByRole('button', { name: 'Message' })).toBeTruthy()
     expect(ma.getByRole('link', { name: 'Messenger' }).getAttribute('href')).toBe('https://m.me/ma.villar')
     expect(ma.getByRole('link', { name: 'WhatsApp' }).getAttribute('href')).toBe('https://wa.me/639171234567')
-    const pa = within(row(/Papa/)) // local number, no handle: neither app button
-    expect(pa.getByRole('button', { name: 'Message' })).toBeTruthy()
+    expect(ma.queryByRole('link', { name: 'Call' })).toBeNull()
+    const pa = within(row(/Papa/)) // local number, no handle: neither app button, so the phone call
     expect(pa.queryByRole('link', { name: 'Messenger' })).toBeNull()
     expect(pa.queryByRole('link', { name: 'WhatsApp' })).toBeNull()
-    const ti = within(row(/Tita/)) // nothing saved: never a messenger.com link
-    expect(ti.queryByRole('link', { name: /Messenger|WhatsApp/ })).toBeNull()
+    expect(pa.getByRole('link', { name: 'Call' }).getAttribute('href')).toBe('tel:09171234567')
+    const ti = within(row(/Tita/)) // nothing saved: never a messenger.com link; the way forward is the Messenger name
+    expect(ti.queryByRole('link', { name: /Messenger$|WhatsApp|Call/ })).toBeNull()
+    expect(ti.getByRole('link', { name: 'Add Messenger name' }).getAttribute('href')).toBe('#family/people/ti')
     expect(document.querySelector('a[href*="messenger.com"]')).toBeNull()
   })
 
