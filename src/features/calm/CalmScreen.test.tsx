@@ -96,12 +96,14 @@ describe('Listen and watch and crisis', () => {
     const media = screen.getByTestId('calm-media')
     const row = screen.getByTestId('calm-row')
     expect(media.querySelectorAll('.carousel')).toHaveLength(0)
-    expect(row.querySelectorAll('.more-grid > *')).toHaveLength(4)
+    expect(row.querySelectorAll('.md-list > *')).toHaveLength(4)
+    expect(row.querySelectorAll('[data-hero]')).toHaveLength(0) // Calm's own breathing card is the one hero; the videos are rows
+    expect(row.querySelector('.more-grid')).toBeNull()
     expect(within(media).getAllByRole('button', { name: /^Play (Love Radio|Easy Rock|DZRH|Home Radio|Magic 89\.9)/ })).toHaveLength(5)
     expect(['music', 'pop', 'news'].map((s) => within(media).getByTestId(`radio-sec-${s}`).querySelectorAll('li').length)).toEqual([2, 2, 1])
-    expect(within(row).getAllByRole('button', { name: /^Play / })).toHaveLength(4)
-    expect(within(media).getByRole('button', { name: /Play Steps for Stress/ })).toBeTruthy()
-    expect(media.textContent).toMatch(/Channel: NHS inform/)
+    expect(within(row).getAllByRole('button', { name: /^Video, / }).map((b) => b.getAttribute('aria-label'))).toEqual(['Video, Steps for Stress: a breathing exercise, NHS inform', 'Video, Heavy Rain and Thunder Soundscape, The Ambient Warrior', 'Video, Forest stream with birdsong, Wildflow Nature', 'Video, Ocean waves on a pebble beach, Alesia in Wonderland'])
+    expect(within(media).getByRole('button', { name: /^Video, Steps for Stress/ })).toBeTruthy()
+    expect(media.textContent).toMatch(/NHS inform/)
     expect(media.textContent).not.toMatch(/Radio Paradise|Swiss|SomaFM|Tara Brach/)
     expect(media.querySelector('iframe, video')).toBeNull() // nothing embeds before a tap
     expect(media.textContent).toMatch(/Radio plays here after a tap\. Radio stops when you leave Calm\./)
@@ -116,7 +118,7 @@ describe('Listen and watch and crisis', () => {
   })
   it('a tap loads the privacy-mode player for that video only', () => {
     render(<CalmScreen />)
-    fireEvent.click(screen.getByRole('button', { name: /Play Heavy Rain/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Video, Heavy Rain/ })) // the card opens and plays at once: one tap
     const frames = screen.getByTestId('calm-media').querySelectorAll('iframe')
     expect(frames).toHaveLength(1)
     expect(frames[0]!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\/gzUSh6eEtKE\?/)
