@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ClimateType } from '../../data/provinceClimate'
 import type { DaPrices, DaRow } from './daPrices'
 const h = vi.hoisted(() => ({ type: 4 as number | null, guess: false, ready: true, pick: vi.fn(), d: null as DaPrices | null | undefined }))
-vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: h.type, suggested: null, guess: h.guess, ready: h.ready, pick: h.pick, picked: null }) }))
+vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: h.type, guess: h.guess, ready: h.ready, pick: h.pick, picked: null }) }))
 vi.mock('./daPrices', async (orig) => ({ ...(await orig<typeof import('./daPrices')>()), useDaPrices: () => h.d }))
 import { resolveClimate, cropsFor, provinceNameAt } from './climate'
 import { PlantCard, PlantPoster, PLANT_FOOTER, plantList } from './Plant'
@@ -19,14 +19,14 @@ afterEach(() => { vi.useRealTimers(); cleanup(); h.type = 4; h.guess = false; h.
 describe('climate rule', () => {
   it('the province decides, uncertain ones too; a pick counts only where no province answers or in the province it was made in', () => {
     const sure = { type: 4 as const, uncertain: false }, unsure = { type: 2 as const, uncertain: true }
-    expect(resolveClimate(sure, null, 'A')).toEqual({ type: 4, suggested: null, guess: false })
-    expect(resolveClimate(unsure, null, 'A')).toEqual({ type: 2, suggested: null, guess: true })
+    expect(resolveClimate(sure, null, 'A')).toEqual({ type: 4, guess: false })
+    expect(resolveClimate(unsure, null, 'A')).toEqual({ type: 2, guess: true })
     expect(resolveClimate(sure, { type: 3, province: 'A' }, 'A').type).toBe(3) // pick made here
     expect(resolveClimate(sure, { type: 3, province: 'A' }, 'B').type).toBe(4) // moved: automatic again
     expect(resolveClimate(null, { type: 3, province: 'A' }, null).type).toBe(3) // province unknown: latest pick
     expect(resolveClimate(sure, 3, 'A').type).toBe(4) // legacy bare number: ignored once a province resolves
     expect(resolveClimate(null, 3, null).type).toBe(3)
-    expect(resolveClimate(null, null, null)).toEqual({ type: null, suggested: null, guess: false })
+    expect(resolveClimate(null, null, null)).toEqual({ type: null, guess: false })
   })
   it('cropsFor reads the bulletin: type 4 in November lists sitaw, ampalaya, pipino, repolyo, upo and sayote (calendar names)', () => {
     const names = cropsFor(4, 11).map((c) => c.name)
