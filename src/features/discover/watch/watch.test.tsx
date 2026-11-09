@@ -1,14 +1,18 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import benefits from '../../../data/discover/benefits.json'
 import { playable } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
+import { watchName } from '../channels'
 import Watch, { WATCH_PICK } from './Screen'
 
+const ev = vi.hoisted(() => ({ calls: [] as string[] }))
+vi.mock('../../admin/events', async (orig) => ({ ...(await orig<typeof import('../../admin/events')>()), track: async (_k: string, n: string) => { ev.calls.push(n); return true } }))
+beforeEach(() => { ev.calls.length = 0 })
 afterEach(cleanup)
 
 describe('Watch', () => {
-  it('shows 4 posters at a time in a grid (no player, no side-swipe row) and one row per topic plus Live TV; health topics are gone', () => {
+  it('shows 4 video cards at a time in one column (no player, no side-swipe row) and one row per topic plus Live TV; health topics are gone', () => {
     const { container } = render(<Watch />)
     expect(DISCOVER_VIDEOS.filter(playable).length).toBe(55) // counted by hand in src/data/discover/ready.json: Be prepared 20, Farming and DIY 23, Listen 7, Recipe videos 5, none a placeholder
     expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(4)
@@ -25,7 +29,7 @@ describe('Watch', () => {
     expect(screen.getByText(/or opens in YouTube/)).toBeTruthy()
     expect(screen.getByTestId('watch-health-link').getAttribute('href')).toBe('#health')
   })
-  it('Show more adds four posters at a time', () => {
+  it('Show more adds four cards at a time', () => {
     render(<Watch />)
     fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
     expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(8)
@@ -39,6 +43,17 @@ describe('Watch', () => {
     expect(within(p).getByRole('link', { name: /Open in YouTube/ }).getAttribute('href')).toBe('https://www.youtube.com/watch?v=oTyYzHntBxQ')
     fireEvent.click(within(p).getByRole('button', { name: 'Play Disaster Wais: the go bag' }))
     expect(container.querySelector('iframe')!.getAttribute('src')).toContain('youtube-nocookie.com/embed/oTyYzHntBxQ')
+  })
+  it('a card pick and the play tap on the player each count once for the channel (known channels only)', () => {
+    const { container } = render(<Watch />)
+    const v = DISCOVER_VIDEOS.filter(playable).find((x) => x.title.startsWith('Disaster Wais: the go bag'))!
+    fireEvent.click(screen.getByRole('button', { name: /^Video, Disaster Wais: the go bag/ }))
+    expect(watchName(v.source)).not.toBeNull() // a known channel, so the tap is counted
+    expect(ev.calls).toEqual([watchName(v.source)])
+    fireEvent.click(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play Disaster Wais: the go bag' }))
+    expect(ev.calls).toHaveLength(2)
+    expect(ev.calls[1]).toBe(ev.calls[0])
+    expect(container.querySelector('iframe')).not.toBeNull()
   })
   it('a topic row narrows the grid and a second tap shows all again', () => {
     render(<Watch />)
@@ -54,8 +69,8 @@ describe('Watch', () => {
   it('a picture that cannot load falls back to the title on a drawn tile', () => {
     const { container } = render(<Watch />)
     fireEvent.error(container.querySelector('img')!)
-    expect(container.querySelector('.dc-poster[data-thumb="off"]')).toBeTruthy()
-    expect(container.querySelectorAll('img').length).toBe(3)
+    expect(container.querySelectorAll('img').length).toBe(3) // the card keeps its same-size placeholder, title and name
+    expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(4)
   })
 })
 

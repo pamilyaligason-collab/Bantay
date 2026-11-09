@@ -5,6 +5,11 @@ import { getAccessToken } from '../auth/session'
 
 // Usage insights (contract D-16..D-19). PRIVACY: only these fixed names are ever recorded. No health values, no free text.
 // Anything not on the list is dropped, so a reading like "bp_150" or a name with a digit cannot get through.
+// session 28 (D-180): one name per Discover channel (prepping, farming and DIY, regional news), counted per tap. Keys come from channelKey() in discover/channels.ts; a vitest checks every shelf source has one.
+export const WATCH_CH_NAMES = [
+  'watch_ch_philippine_red_cross', 'watch_ch_american_red_cross', 'watch_ch_fema', 'watch_ch_swedish_civil_defence_and_resil', 'watch_ch_phivolcs', 'watch_ch_pagasa', 'watch_ch_this_old_house', 'watch_ch_ask_this_old_house', 'watch_ch_the_home_depot', 'watch_ch_city_prepping', 'watch_ch_knowledge_channel', 'watch_ch_gma_news', 'watch_ch_agribusiness_how_it_works', 'watch_ch_abs_cbn_news', 'watch_ch_pinoy_prepper_central', 'watch_ch_agree_sa_agri', 'watch_ch_agri_nihan', 'watch_ch_don_bustamante_rooftop_gardenin', 'watch_ch_the_agrillenial', 'watch_ch_raffy_s_green_thumb', 'watch_ch_bilyonaryo', 'watch_ch_gma_public_affairs'
+] as const
+
 export const EVENT_NAMES = {
   screen: ['today', 'health', 'records', 'family', 'safety', 'admin', 'me', 'notif', 'docs', 'ask', 'discover', 'sharing', 'weather', 'calm'],
   action: ['alerts_on', 'alerts_off', 'sensors_on', 'sensors_off', 'import_started', 'import_done', 'reading_added', 'dose_logged', 'sos_sent',
@@ -23,7 +28,8 @@ export const EVENT_NAMES = {
     'acting_enter', 'acting_exit',
     // session 26 (D-160): card taps and which phone-check probe failed first
     'card_talk', 'card_fx', 'card_lotto', 'card_explainer', 'card_top_story', 'card_farm_video', 'card_regional_video', 'card_learn',
-    'phone_check_fail_notif', 'phone_check_fail_exact', 'phone_check_fail_battery', 'phone_check_fail_alarms', 'phone_check_fail_call'],
+    'phone_check_fail_notif', 'phone_check_fail_exact', 'phone_check_fail_battery', 'phone_check_fail_alarms', 'phone_check_fail_call',
+    ...WATCH_CH_NAMES],
   error: ['sync_failed', 'import_failed', 'push_failed', 'assistant_failed']
 } as const
 export type EventKind = keyof typeof EVENT_NAMES

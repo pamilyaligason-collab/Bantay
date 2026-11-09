@@ -105,10 +105,10 @@ test('signed-in cards keep their own look: a paused medicine (md-paused)', async
   expect(await orderDiffs(page)).toEqual([])
 })
 
-test('signed-in cards keep their own look: a Learn topic with videos (ry-video)', async ({ page }) => {
+test('signed-in cards keep their own look: a Learn topic with video cards', async ({ page }) => {
   await startToday(page, 'calm', { scheme: 'light' })
   await page.goto('/#discover/learn/prepping')
-  await expect(page.locator('.card.ry-video').first()).toBeVisible()
+  await expect(page.getByTestId('ready-videos').locator('button.md').first()).toBeVisible()
   await settle(page)
   await shot(page, 'learn-prepping-light')
   expect(await orderDiffs(page)).toEqual([])

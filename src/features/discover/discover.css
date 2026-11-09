@@ -68,48 +68,13 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 :root[data-theme="dark"] .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dc-prows .rw-lead { background: color-mix(in srgb, var(--h-ic) 18%, var(--card)); } }
 
-/* Watch: poster cards in a 4-card grid (D-156), then the player and one row per topic. */
+/* Watch: video cards in one column (D-156, D-180), then the player and one row per topic. */
 .dc-sh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
 .dc-sh h2 { margin: 0; }
-.dc-poster { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; min-height: 90px; padding: 0; border: 0; border-radius: 16px; overflow: hidden; background: linear-gradient(135deg, var(--hue-terra), var(--card2)); color: var(--ink); font: inherit; text-align: left; box-shadow: var(--shadow); }
-.dc-poster[data-thumb="on"] { background: #555555; } /* until the still loads: the white caption stays readable, same stand-in as LiteVideo */
-.dc-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.dc-poster[aria-pressed="true"] { box-shadow: inset 0 0 0 3px var(--hue-terra-ic), var(--shadow); }
-.dc-poster:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-.dc-poster-cap { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 2px; padding: 16px 8px 6px; font-size: 13px; line-height: 1.25; color: #fff; background: linear-gradient(to top, rgb(0 0 0 / .8), rgb(0 0 0 / 0)); }
-.dc-poster-cap b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 600; }
-.dc-poster[data-thumb="off"] .dc-poster-cap { background: none; color: var(--ink); top: 0; justify-content: flex-end; }
 .dc-player { display: grid; gap: 4px; }
 .dc-prows { padding: 0 16px; }
 .dc-prows > .rw + .rw { border-top: 1px solid var(--line); }
 
-/* v13 overview: a 16:9 still picture inside a PreviewTile. */
-.dc-still { display: block; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: var(--tint-fill, var(--card2)); margin-top: 8px; }
-.dc-still img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.dc-pick { display: contents; }
-
-/* v13 gaps lane D: the video hero is a full-width 16:9 poster with a 56 px play disc and the title under it. */
-.card.dc-herocard { display: block; padding: 0; overflow: hidden; border-radius: 24px; text-decoration: none; color: var(--ink); }
-.dc-poster-box { position: relative; display: flex; align-items: center; justify-content: center; height: 190px; background: var(--tint-red); }
-.dc-poster-box .dc-still { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
-.dc-hchip { position: absolute; left: 14px; top: 14px; z-index: 1; padding: 4px 10px; border-radius: 12px; background: var(--card); color: var(--tint-red-ink); font-size: 13px; font-weight: 700; letter-spacing: .02em; width: max-content; max-width: calc(100% - 28px); height: fit-content; line-height: 18px; }
-.dc-hero-play { position: relative; z-index: 1; width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--tint-red-ink); box-shadow: 0 4px 14px rgb(120 40 30 / .2); }
-.dc-hero-body { display: flex; flex-direction: column; gap: 2px; padding: 12px 16px; }
-.dc-hero-k { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .02em; }
-.dc-hero-t { font-size: 22px; line-height: 28px; font-weight: 700; letter-spacing: -.01em; }
-.dc-hero-s { font-size: 13px; color: var(--muted); margin-top: 2px; }
-/* the two more videos: a 96 px picture, a 15/600 title in the one ink colour, two lines at most */
-.card.dc-vc { display: flex; flex-direction: column; padding: 0; overflow: hidden; text-decoration: none; color: var(--ink); }
-.dc-vc-pic { position: relative; display: flex; align-items: center; justify-content: center; height: 96px; flex: none; background: var(--tint-fill, var(--card2)); }
-.dc-vc[data-tint="teal"] { --tint-fill: var(--tint-teal); --tint-ink: var(--tint-teal-ink); }
-.dc-vc[data-tint="purple"] { --tint-fill: var(--tint-purple); --tint-ink: var(--tint-purple-ink); }
-.dc-vc[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
-.dc-vc[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }
-.dc-vc-pic .dc-still { position: absolute; inset: 0; margin: 0; border-radius: 0; aspect-ratio: auto; background: transparent; }
-.dc-vc-play { position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--tint-ink); }
-.dc-vc-body { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; min-width: 0; }
-.dc-vc-k { font-size: 13px; font-weight: 600; color: var(--tint-ink); text-transform: uppercase; letter-spacing: .02em; }
-.dc-vc-t { font-size: 15px; line-height: 20px; font-weight: 600; color: var(--ink); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 /* Play tiles: small drawn glyphs (CSS only) */
 .dc-glyph { display: block; margin-top: 8px; }
 .dc-glyph-mem { display: grid; grid-template-columns: repeat(3, 14px); gap: 4px; }
@@ -126,18 +91,10 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .rw > button.dc-play.sh-iconbtn[aria-pressed="true"] { background: var(--green); color: var(--on-green); }
 [data-testid="dc-listen"] .rw-title { white-space: normal; overflow: visible; text-overflow: clip; }
 .dc-sh h2, .dc-season .sh-h2 { font-family: inherit; } /* the shell's .sh-h2 is serif; Discover uses the app font */
-/* S22: the first-screen negative margins on the video row and the season row are gone (Top story now leads, the rows keep the panel gap). The video pictures stay 72 px for the season row and three-line titles. */
-.dc-vc-pic { height: 72px; }
-.dc-vc-play { width: 36px; height: 36px; }
 .dc-season-row .rw-main { min-height: 40px; }
-.dc-vc-body { padding: 8px 12px; }
-.dc-hero-body { padding: 10px 16px; }
-.dc-hero-s { margin-top: 0; }
-/* D-124: no reserved heights. A section link would sit under Jack (right column) at rest, so on Discover the link follows its title on the left instead of the far right. */
-.bt section.sec[data-testid^="dc-"] > .sec-h { justify-content: flex-start; gap: 16px; }
 
 /* board: the play triangles are solid (Icon has no filled twin for play on purpose, so the shape is filled here) */
-.dc-hero-play .sh-ic, .dc-vc-play .sh-ic, .rw > button.dc-play:not([aria-pressed="true"]) .sh-ic { fill: currentColor; }
+.rw > button.dc-play:not([aria-pressed="true"]) .sh-ic { fill: currentColor; }
 
 /* compliance CD: header search button (the bell's twin), Learn as three full-width tinted cards per the board */
 .dc-search { position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; flex: none; text-decoration: none; background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
@@ -156,42 +113,22 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 [data-testid="dc-play"] .pt-v { margin-top: auto; }
 [data-testid="dc-play"] .pt-s { color: var(--tint-ink); }
 
-/* The hero, video cards and season row (the .dc-top block, under the large title) must end above the Jack button's top edge (viewport height - 154), so the full-width season link is never under Jack: the hero poster is the one flexible part, 190 px down to 72 px as the viewport gets shorter. Nothing is reserved under the block any more (D-124): the next section follows at once and its link sits left of Jack's column. Neither pulls the cards apart, so hero, videos and season row stay 8 and 4 px apart. */
-.dc-top { display: flex; flex-direction: column; gap: 22px; } /* gap: the page gap these children had, so the -14 / -18 pulls land at 8 and 4 px */
-.dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 653px - var(--sat) - var(--sab)), 190px); } /* 390 px wide: natural bottom 685 with the 190 px poster, so P <= vh - 653 (190 at 844 tall) */
-@media (max-width: 389px) { .dc-top .dc-poster-box { height: clamp(72px, calc(100dvh - 684px - var(--sat) - var(--sab)), 190px); } } /* 360 px wide: the season row wraps to 2 lines and the block ends 28 px lower (713), so P <= vh - 684 */
-
-/* short screens: the poster is under 136 px, so the centred 56 px disc would share rows with the Watch chip; park it at the right edge */
-@media (max-height: 819px) { .dc-top .dc-hero-play { margin-left: auto; margin-right: 14px; } }
-:root[data-narrow] .dc-top .dc-hero-play { display: none; } /* 195 px: the chip wraps to 3 lines and fills the poster; the disc is decoration (aria-hidden) on a card that is one link */
-
 /* S25 fix 1: Show more / Show less keep a symmetric 64 px each side so the floating Jack button (right edge, 56 px) never covers any part of it */
 .dc-panel .more-grid-btn { display: block; width: max(calc(100% - 128px), min(100%, 160px)); margin-inline: auto; }
-/* S25 fix 1: the channel chips wrap inside the same clear 64 px, so a chip never sits under Jack */
-.dc-panel .dc-wrapchips, .dc-panel .nv-chips { padding-right: 64px; }
 
-/* S26 Discover (D-166..): hero depth, tappable cards raised, wide rows, the Channel menu, the lead card, length and label badges. */
-.card.dc-herocard { box-shadow: var(--shadow-hero); }
-.card.dc-vc, .card.dc-lc, .card.nv-card { box-shadow: var(--shadow-raised); }
-.card.dc-vc:active, .card.dc-lc:active, .card.nv-card:active, .card.dc-herocard:active { box-shadow: var(--shadow-press); }
-.dc-vc-len { position: absolute; right: 8px; bottom: 8px; z-index: 1; padding: 3px 8px; border-radius: 8px; background: rgb(0 0 0 / .72); color: #fff; font-size: 13px; line-height: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.dc-poster-box > .dc-vc-len { top: 14px; right: 14px; bottom: auto; }
-.dc-vc-tag { position: absolute; left: 8px; top: 8px; z-index: 1; padding: 3px 8px; border-radius: 8px; background: var(--card); color: var(--ink); font-size: 13px; line-height: 16px; font-weight: 700; }
-.dc-vrows { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
-.dc-vgrid { margin-top: 12px; }
-.card.dc-vc.dc-vwide { flex-direction: row; align-items: stretch; }
-.dc-vwide .dc-vc-pic { width: 110px; height: auto; min-height: 92px; }
-.dc-vwide .dc-vc-play { width: 36px; height: 36px; }
-.dc-vwide .dc-vc-len { right: 4px; bottom: 4px; padding: 2px 6px; font-size: 12px; }
-.dc-vwide .dc-vc-body { justify-content: center; flex: 1; }
-:root[data-narrow] .card.dc-vc.dc-vwide { flex-direction: column; }
-:root[data-narrow] .dc-vwide .dc-vc-pic { width: auto; height: 72px; min-height: 0; }
-.dc-vlead .dc-vc-pic { height: 168px; }
-.dc-vlead .dc-vc-play { width: 56px; height: 56px; }
-.dc-vlead .dc-vc-t { font-size: 18px; line-height: 24px; font-weight: 700; -webkit-line-clamp: 2; }
-.card.dc-vlead { margin-bottom: 12px; }
+/* S28 (D-180): sections are not cards; --sp-5 (24 px) above each section is the panel's own gap (today.css), --card-gap between the video cards inside one (look/media/media.css). Title left, See all right comes from Section. */
+/* S28 fix 1: "See all" stays on the right (contract) but ends 72 px short of the screen gutter: the floating Jack button is 62 px wide at right 18 px (80 px from the edge) and the link's -6 px margin reaches past the padding edge; e2e s28-discover hit-tests it at 360 and 412 px. */
+.dc-panel > section.sec > .sec-h { padding-right: var(--jack-clear, 72px); }
+/* S28 fix 2: the Play tiles and the guided Listen poster have no Jack allowance, so they end 72 px short of the screen gutter too (the tiles drop to one column when two would be under 150 px). */
+.dc-panel [data-testid="dc-play"] .pt-grid { padding-right: var(--jack-clear, 72px); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.dc-panel .card.dc-guided, .dc-panel .card.dc-fact { margin-right: var(--jack-clear, 72px); }
+.dc-panel [data-testid="dc-recipes"] .dc-rgrid { padding-right: var(--jack-clear, 72px); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.dc-stack { display: flex; flex-direction: column; gap: var(--card-gap, 12px); }
+/* S26 Discover (D-166..): Learn cards raised, the Channel menu. */
+.card.dc-lc { box-shadow: var(--shadow-raised); }
+.card.dc-lc:active { box-shadow: var(--shadow-press); }
 .dc-chan { display: flex; flex-direction: column; gap: 6px; padding-right: 64px; margin-bottom: 12px; } /* clear of the Jack button, like the old chips */
 .dc-chan-l { font-size: 16px; line-height: 22px; color: var(--ink); }
 .dc-select { width: 100%; min-height: 48px; padding: 0 16px; border: 1.5px solid var(--muted); border-radius: 14px; background: var(--card); color: var(--ink); font: inherit; font-size: 16px; } /* --muted on --card and --ground is >= 4.5:1 in both themes, so the border clears 3:1 */
 .dc-select:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-@media (prefers-reduced-motion: no-preference) { .card.dc-vc:active, .card.dc-lc:active { transform: scale(.98); } }
+@media (prefers-reduced-motion: no-preference) { .card.dc-lc:active { transform: scale(.98); } }

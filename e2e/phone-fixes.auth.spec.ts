@@ -20,7 +20,8 @@ async function discover(page: Page, w: number, h: number) {
   await page.setViewportSize({ width: w, height: h })
   await page.goto('/#discover')
   await expect(page.getByTestId('dc-learn')).toBeVisible()
-  await page.waitForFunction(() => Array.from(document.querySelectorAll('.dc-still img')).every((i) => (i as HTMLImageElement).complete || (r => r.top > innerHeight * 2 || r.left > innerWidth)(i.getBoundingClientRect()))) // lazy stills below the fold or in a carousel off to the side never start loading
+  await expect(page.getByTestId('dc-hero')).toBeVisible() // Top stories show once the day's order is read
+  await page.waitForFunction(() => Array.from(document.querySelectorAll('.md-pic img')).every((i) => (i as HTMLImageElement).complete || (r => r.top > innerHeight * 2 || r.left > innerWidth)(i.getBoundingClientRect()))) // lazy stills below the fold or in a carousel off to the side never start loading
 }
 
 for (const [w, h] of [[450, 997], [390, 997], [360, 997], [390, 844]] as const) {
@@ -29,7 +30,7 @@ for (const [w, h] of [[450, 997], [390, 997], [360, 997], [390, 844]] as const) 
     await shot(page, `discover-${w}x${h}`)
     const m = await page.evaluate(() => {
       const box = (e: Element) => e.getBoundingClientRect()
-      const fill = Array.from(document.querySelectorAll('.dc-herocard .dc-still, .dc-vc .dc-still')).map((e) => { const a = box(e); const p = box(e.parentElement!); return { w: a.width, h: a.height, pw: p.width, ph: p.height } })
+      const fill = Array.from(document.querySelectorAll('a.md .md-pic img')).map((e) => { const a = box(e); const p = box(e.parentElement!); return { w: a.width, h: a.height, pw: p.width, ph: p.height } })
       const link = Array.from(document.querySelectorAll('[data-testid="dc-learn"] a')).find((n) => n.textContent === 'All topics')!.getBoundingClientRect()
       const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
       return { fill, overlap: link.left < fab.right && link.right > fab.left && link.top < fab.bottom && link.bottom > fab.top }

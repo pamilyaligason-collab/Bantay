@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { EmptyState, JackArt, LargeTitle, MoreGrid, PreviewTile, Section } from '../look'
+import { useMemo, useState, type MouseEvent } from 'react'
+import { EmptyState, JackArt, LargeTitle, PreviewTile, Section } from '../look'
+import { MediaCard } from '../look/media/MediaCard'
+import { MediaList } from '../look/media/MediaList'
 import { HeadActions } from '../shell/HeadActions'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
@@ -17,92 +19,50 @@ import { DiscoverTabs, panelId, tabId, type View } from './Tabs'
 import { WATCH_PICK } from './watch/Screen'
 import type { Video } from '../health/library/videosLogic'
 import { NewsVideos } from './newsvideo/NewsVideos'
+import { trackWatch } from './channels'
+import { turn as turnOf } from './today/topStories'
+import { useTopStories } from './today/familyWatch'
 import { READY_TOPICS, countLine, readyShelf as shelf } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
 import './today.css'
 
-/** A still picture (i.ytimg.com, no cookies, no referrer), the same one Watch's poster row loads. If it cannot load it hides itself and the tile keeps its text. The Ken Burns zoom is paused while the card is off screen. */
-function Thumb({ id }: { id: string }) {
-  const [off, setOff] = useState(false)
-  const [seen, setSeen] = useState(true) // no IntersectionObserver (old webview, jsdom): keep it running
-  const ref = useRef<HTMLSpanElement>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver(([e]) => setSeen(!!e?.isIntersecting))
-    io.observe(el)
-    return () => io.disconnect()
-  }, [off])
-  if (off) return null
-  return (
-    <span className={`dc-still${seen ? '' : ' is-paused'}`} ref={ref}>
-      <img src={`https://i.ytimg.com/vi/${id}/mqdefault.jpg`} alt="" width={320} height={180} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />
-    </span>
-  )
-}
-
 const COUNTS = 'dc.watchcounts'
-/** Taps per video on this phone (a bounded map: only ids of the fixed shelves are ever stored). Drives the Farming and DIY lead card; nothing leaves the device. */
+/** Taps per video on this phone (a bounded map: only ids of the fixed shelves are ever stored). The second signal for Top stories and the Farming and DIY lead; nothing leaves the device. */
 const readCounts = (): Record<string, number> => { try { const o = JSON.parse(localStorage.getItem(COUNTS) ?? '{}'); return o && typeof o === 'object' ? o : {} } catch { return {} } }
 const bump = (id: string) => { try { const c = readCounts(); c[id] = (Number(c[id]) || 0) + 1; localStorage.setItem(COUNTS, JSON.stringify(c)) } catch { /* private mode */ } }
 type Ev = 'card_top_story' | 'card_farm_video'
-const lenOf = (v: Video) => (v.minutes != null ? `${v.minutes} min` : null)
-/** S26: every video card is read as "Video, title, channel, length". */
-const vidName = (v: Video) => ['Video', v.title, v.source, v.minutes != null ? `${v.minutes} minutes` : null].filter(Boolean).join(', ')
 
-/** The anchor keeps its href (keyboard, middle-click); the click bubbles here and hands the video to Watch. */
-const Pick = ({ id, ev, children }: { id: string; ev?: Ev; children: ReactNode }) => (
-  <span className="dc-pick" onClick={(e) => { if (e.ctrlKey || e.metaKey || e.shiftKey) return; try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } bump(id); if (ev) void track('action', ev) }}>{children}</span>
+/** A plain tap hands the video to Watch, counts it on this phone and for its channel (watch_ch_<key>, known channels only). The link keeps its href (keyboard, middle-click); a modified click is not counted. */
+const tap = (v: Video, ev?: Ev) => (e: MouseEvent) => {
+  if (e.ctrlKey || e.metaKey || e.shiftKey) return
+  try { sessionStorage.setItem(WATCH_PICK, v.id) } catch { /* private mode */ }
+  bump(v.id)
+  if (ev) void track('action', ev)
+  trackWatch(v.source)
+}
+
+/** A video preview that opens Watch (which plays it after a tap). */
+const VidCard = ({ v, variant = 'row', ev, tag, note }: { v: Video; variant?: 'hero' | 'row'; ev?: Ev; tag?: string; note?: string }) => (
+  <MediaCard variant={variant} id={v.id} title={v.title} channel={v.source} minutes={v.minutes} href="#discover/watch" onClick={tap(v, ev)} tag={tag} note={note} testId={variant === 'hero' ? 'dc-hero' : 'dc-vcard'} />
 )
 
-/** k videos from the list starting at today's turn (wrapping): the same day always gives the same picks, and the shelf changes day by day. The day number comes from dayKey (Date.parse of YYYY-MM-DD is UTC midnight). */
-function turn<T>(list: T[], now: Date, k: number): T[] {
-  if (!list.length) return []
-  const start = Math.floor(Date.parse(dayKey(now)) / 864e5) % list.length
-  return Array.from({ length: Math.min(k, list.length) }, (_, i) => list[(start + i) % list.length]!)
-}
+const TOP_K = 9 // one hero and eight rows: 4 rows then Show more (D-156)
+const topPool = () => [...shelf('prepping'), ...shelf('farm-diy')]
 
-type Tint = 'green' | 'amber' | 'purple' | 'teal'
-/** A video card: the still is the picture with a play circle (centre) and the length (bottom right), the channel is the kicker. The whole card is a link to Watch (which plays it after a tap). */
-function VidCard({ v, tint, className, note, ev, label }: { v: Video; tint: Tint; className: string; note?: string; ev?: Ev; label?: string }) {
-  const len = lenOf(v)
+/** Top stories (S28): farming, DIY and prepping videos together, ranked by the channels the family watches (family counts, else this phone's, else the day's turn), fixed for the day. One hero, then rows. null = the day's order is still being read. */
+function TopStory({ ranked }: { ranked: Video[] | null }) {
+  const [hero, ...rest] = ranked ?? []
   return (
-    <Pick id={v.id} ev={ev}>
-      <a className={`card dc-vc ${className}`} href="#discover/watch" data-tint={tint} data-testid="dc-vcard" aria-label={vidName(v)}>
-        <span className="dc-vc-pic"><Thumb id={v.id} /><span className="dc-vc-play" aria-hidden="true"><Icon name="play" size={18} /></span>{label && <span className="dc-vc-tag" aria-hidden="true">{label}</span>}{len && <span className="dc-vc-len" aria-hidden="true">{len}</span>}</span>
-        <span className="dc-vc-body"><span className="dc-vc-k">{v.source}</span><span className="dc-vc-t">{v.title}</span>{note && <span className="dc-vc-n">{note}</span>}</span>
-      </a>
-    </Pick>
-  )
-}
-
-/** Top stories (S26): the prepping pick of the day as one hero video, two half cards and two wide rows. */
-function TopStory({ now }: { now: Date }) {
-  const [hero, a, b, c, d] = turn(shelf('prepping'), now, 5)
-  const len = hero && lenOf(hero)
-  return (
-    <Section title="Top stories" link={{ href: '#discover/learn/prepping', label: 'All prepping' }} testId="dc-top-story">
-      <p className="sub dc-sub">Survival and prepping, a new pick each day.</p>
-      {hero
+    <Section title="Top stories" link={{ href: '#discover/watch', label: 'See all' }} testId="dc-top-story">
+      <p className="sub dc-sub">Farming, DIY and prepping, picked for your family.</p>
+      {!ranked
+        ? <p className="sub" role="status">Picking videos</p>
+        : hero
         ? (
-          <div className="nw">
-            <Pick id={hero.id} ev="card_top_story">
-              <a className="card dc-herocard dc-over" href="#discover/watch" data-hero data-testid="dc-hero" aria-label={vidName(hero)}>
-                <span className="dc-poster-box">
-                  <Thumb id={hero.id} />
-                  <span className="dc-hchip">Prepping · {hero.source}</span>
-                  <span className="dc-hero-play" aria-hidden="true"><Icon name="play" size={28} /></span>
-                  {len && <span className="dc-vc-len" aria-hidden="true">{len}</span>}
-                </span>
-                <span className="dc-hero-body" data-contrast-bg="#555555">
-                  <span className="dc-hero-t">{hero.title}</span>
-                  <span className="dc-hero-s">Plays in privacy mode after you tap</span>
-                </span>
-              </a>
-            </Pick>
-            <div className="dc-vgrid" data-testid="dc-top-grid">{[a, b].map((v) => v && <VidCard key={v.id} v={v} tint="teal" className="dc-vgcard" ev="card_top_story" />)}</div>
-            <div className="dc-vrows" data-testid="dc-top-rows">{[c, d].map((v) => v && <VidCard key={v.id} v={v} tint="purple" className="dc-vwide" ev="card_top_story" />)}</div>
+          <div className="dc-stack">
+            <VidCard v={hero} variant="hero" ev="card_top_story" />
+            {rest.length > 0 && <MediaList label="More top stories" testId="dc-top-rows">{rest.map((v) => <VidCard key={v.id} v={v} ev="card_top_story" />)}</MediaList>}
           </div>
         )
         : <EmptyState icon="play" title="No checked videos yet" />}
@@ -110,33 +70,34 @@ function TopStory({ now }: { now: Date }) {
   )
 }
 
-/** Farming and DIY (S26): one labelled Channel menu (default All channels), a lead card (the video tapped most on this phone, else the first), then 4 cards and "Show 4 more" (D-156). The title link says how many there are. */
-function FarmShelf({ title, link, testId, videos, tint }: { title: string; link: { href: string; label: string }; testId: string; videos: Video[]; tint: Tint }) {
+/** Farming and DIY: one labelled Channel menu (default All channels), then rows (the video tapped most on this phone first, tagged), 4 and "Show 4 more" (D-156). Videos already in Top stories are left out of the all-channels list. The title link says how many there are. */
+function FarmShelf({ title, link, testId, videos, skip }: { title: string; link: { href: string; label: string }; testId: string; videos: Video[]; skip: Set<string> }) {
   const [src, setSrc] = useState('')
   const sources = [...new Set(videos.map((v) => v.source))]
-  const list = src ? videos.filter((v) => v.source === src) : videos
+  const list = src ? videos.filter((v) => v.source === src) : videos.filter((v) => !skip.has(v.id))
   if (!videos.length) return null
   const counts = readCounts()
-  const top = list.reduce((m, v) => ((counts[v.id] ?? 0) > (counts[m.id] ?? 0) ? v : m), list[0]!)
-  const popular = (counts[top.id] ?? 0) > 0
-  const lead = popular ? top : list[0]!
+  const top = list.reduce<Video | undefined>((m, v) => (!m || (counts[v.id] ?? 0) > (counts[m.id] ?? 0) ? v : m), undefined)
+  const popular = !!top && (counts[top.id] ?? 0) > 0
+  const lead = popular ? top : undefined
+  const ordered = lead ? [lead, ...list.filter((v) => v !== lead)] : list
   return (
     <Section title={title} link={{ href: link.href, label: `${link.label} ${videos.length}` }} testId={testId}>
-      <div className="nw">
+      <div className="dc-stack">
         <div className="dc-chan">
           <label htmlFor={testId + '-ch'} className="dc-chan-l">Channel</label>
           <select id={testId + '-ch'} className="dc-select" value={src} onChange={(e) => setSrc(e.target.value)}>
             <option value="">All channels</option>
-            {sources.map((s) => <option key={s} value={s}>{s}</option>)}
+            {sources.map((x) => <option key={x} value={x}>{x}</option>)}
           </select>
         </div>
-        <VidCard v={lead} tint={tint} className="dc-vlead" ev="card_farm_video" label={popular ? 'Most watched' : undefined} />
-        <MoreGrid key={src || 'all'} label={`${title} videos`} testId={testId + '-row'}>{list.filter((v) => v !== lead).map((v) => <VidCard key={v.id} v={v} tint={tint} className="dc-vgcard" ev="card_farm_video" />)}</MoreGrid>
+        <MediaList key={src || 'all'} label={`${title} videos`} testId={testId + '-row'}>{ordered.map((v) => <VidCard key={v.id} v={v} ev="card_farm_video" tag={v === lead ? 'Most watched' : undefined} />)}</MediaList>
       </div>
     </Section>
   )
 }
 
+type Tint = 'green' | 'amber' | 'purple' | 'teal'
 type LearnCardProps = { tint: Tint; title: string; sub: string; href: string; testId: string }
 const LearnCard = (p: LearnCardProps) => (
   <a className="card dc-lc" data-tint={p.tint} href={p.href} data-testid={p.testId} onClick={() => void track('action', 'card_learn')}><span className="dc-lc-blob" aria-hidden="true" /><b className="dc-lc-t">{p.title}</b><span className="dc-lc-s">{p.sub}</span><span className="dc-lc-go" aria-hidden="true"><Icon name="chev" size={20} /></span></a>
@@ -162,7 +123,7 @@ function Learn() {
   )
 }
 
-/** Listen: one large guided video (plays after a tap, privacy mode), then a row of the rest of the checked listening videos. */
+/** Listen: one large guided video (plays after a tap, privacy mode), then the rest of the checked listening videos as cards. */
 function Listen() {
   const [g, ...rest] = shelf('listen')
   return (
@@ -175,11 +136,11 @@ function Listen() {
               <b className="dc-guided-t">{g.title}</b>
               <span className="dc-guided-s">{g.source} · large controls</span>
             </div>
-            {rest.length > 0 && <MoreGrid label="More to listen to" testId="dc-listen-row">{rest.map((v) => <VidCard key={v.id} v={v} tint="purple" className="dc-vgcard" />)}</MoreGrid>}
+            {rest.length > 0 && <MediaList label="More to listen to" testId="dc-listen-row">{rest.map((v) => <VidCard key={v.id} v={v} />)}</MediaList>}
           </div>
         )
         : <p className="sub">Nothing to listen to yet.</p>}
-      <a className="card dc-hlink" href="#discover/listen/radio" data-testid="dc-radio-link"><span className="dc-grow">Live radio: Love Radio, Easy Rock, DZRH</span><Icon name="chev" size={20} /></a>
+      <a className="card dc-hlink" href="#discover/listen/radio" data-testid="dc-radio-link"><span className="dc-grow">Philippine radio: music, pop and news</span><Icon name="chev" size={20} /></a>
     </Section>
   )
 }
@@ -187,7 +148,7 @@ function Listen() {
 /** Recipes: two-column cards. The app's own low-salt recipes first (ones with a Commons photo first), then recipe videos with a salt reminder. The title link covers the card; the credit link sits above it. */
 function Recipes({ now }: { now: Date }) {
   const list = [...RECIPES].sort((a, b) => Number(!!b.image) - Number(!!a.image)).slice(0, 4)
-  const videos = turn(shelf('recipes-video'), now, 2)
+  const videos = turnOf(shelf('recipes-video'), now, 2)
   return (
     <Section title="Recipes" link={{ href: '#discover/learn/recipes', label: `All ${RECIPES.length}` }} testId="dc-recipes">
       <div className="dc-rgrid">
@@ -198,20 +159,22 @@ function Recipes({ now }: { now: Date }) {
             <span className="dc-rcard-s">{r.minutes} min · {r.blurb}</span>
           </div>
         ))}
-        {videos.map((v) => <VidCard key={v.id} v={v} tint="amber" className="dc-vgcard" note="Tip: use less patis and salt" />)}
       </div>
+      <MediaList label="Recipe videos" testId="dc-recipe-videos">{videos.map((v) => <VidCard key={v.id} v={v} note="Tip: use less patis and salt" />)}</MediaList>
     </Section>
   )
 }
 
 function Today({ now }: { now: Date }) {
+  const ranked = useTopStories(topPool, now, TOP_K, readCounts) // the day's order, stored once (family counts are read in the background, at most twice a day, and used from the next open): it does not move after first paint
+  const skip = useMemo(() => new Set((ranked ?? []).map((v) => v.id)), [ranked])
   return (
     <>
       <Learn />
-      <TopStory now={now} />
-      <FarmShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} tint="green" />
+      <TopStory ranked={ranked} />
       <NewsVideos now={now.getTime()} />
       <Listen />
+      <FarmShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} skip={skip} />
       <a className="card dc-hlink" href="#health" data-testid="dc-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
       <Recipes now={now} />
       <Section title="Play" link={{ href: '#discover/play', label: 'All games' }} testId="dc-play">
@@ -233,7 +196,7 @@ function NewsPanel() {
   return zone === undefined ? <p className="sub" role="status">Loading headlines</p> : <NewsView zone={zone} />
 }
 
-/** #discover (S22 board): large title, a Today | News | Saved control, then that view. Today is Learn, Top stories (prepping videos), Farming and DIY, Regional news, Listen, the Health pointer, Recipes, Play, Did you know. Headlines live on the Today tab (D-142); the News tab here stays. */
+/** #discover (S22 board): large title, a Today | News | Saved control, then that view. Today is Learn, Top stories (farming, DIY and prepping videos ranked by what the family watches), Regional news, Listen, Farming and DIY, the Health pointer, Recipes, Play, Did you know. Headlines live on the Today tab (D-142); the News tab here stays. */
 export default function Overview({ now = new Date() }: { now?: Date }) {
   const [view, setView] = useState<View>('today')
   return (
