@@ -3,6 +3,7 @@ import { EmptyState, JackArt, LargeTitle, MoreGrid, PreviewTile, Section } from 
 import { HeadActions } from '../shell/HeadActions'
 import { Icon } from '../shell/Icon'
 import { useKv } from '../shell/useKv'
+import { track } from '../admin/events'
 import { LiteVideo } from '../media/LiteVideo'
 import { RECIPES } from './learn/data'
 import { RecipePhoto } from './learn/RecipePhoto'
@@ -41,9 +42,18 @@ function Thumb({ id }: { id: string }) {
   )
 }
 
+const COUNTS = 'dc.watchcounts'
+/** Taps per video on this phone (a bounded map: only ids of the fixed shelves are ever stored). Drives the Farming and DIY lead card; nothing leaves the device. */
+const readCounts = (): Record<string, number> => { try { const o = JSON.parse(localStorage.getItem(COUNTS) ?? '{}'); return o && typeof o === 'object' ? o : {} } catch { return {} } }
+const bump = (id: string) => { try { const c = readCounts(); c[id] = (Number(c[id]) || 0) + 1; localStorage.setItem(COUNTS, JSON.stringify(c)) } catch { /* private mode */ } }
+type Ev = 'card_top_story' | 'card_farm_video'
+const lenOf = (v: Video) => (v.minutes != null ? `${v.minutes} min` : null)
+/** S26: every video card is read as "Video, title, channel, length". */
+const vidName = (v: Video) => ['Video', v.title, v.source, v.minutes != null ? `${v.minutes} minutes` : null].filter(Boolean).join(', ')
+
 /** The anchor keeps its href (keyboard, middle-click); the click bubbles here and hands the video to Watch. */
-const Pick = ({ id, children }: { id: string; children: ReactNode }) => (
-  <span className="dc-pick" onClick={(e) => { if (e.ctrlKey || e.metaKey || e.shiftKey) return; try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } }}>{children}</span>
+const Pick = ({ id, ev, children }: { id: string; ev?: Ev; children: ReactNode }) => (
+  <span className="dc-pick" onClick={(e) => { if (e.ctrlKey || e.metaKey || e.shiftKey) return; try { sessionStorage.setItem(WATCH_PICK, id) } catch { /* private mode */ } bump(id); if (ev) void track('action', ev) }}>{children}</span>
 )
 
 /** k videos from the list starting at today's turn (wrapping): the same day always gives the same picks, and the shelf changes day by day. The day number comes from dayKey (Date.parse of YYYY-MM-DD is UTC midnight). */
@@ -54,33 +64,36 @@ function turn<T>(list: T[], now: Date, k: number): T[] {
 }
 
 type Tint = 'green' | 'amber' | 'purple' | 'teal'
-/** A video card: the still is the picture, the channel is the kicker. The whole card is a link to Watch (which plays it after a tap). */
-function VidCard({ v, tint, className, note }: { v: Video; tint: Tint; className: string; note?: string }) {
+/** A video card: the still is the picture with a play circle (centre) and the length (bottom right), the channel is the kicker. The whole card is a link to Watch (which plays it after a tap). */
+function VidCard({ v, tint, className, note, ev, label }: { v: Video; tint: Tint; className: string; note?: string; ev?: Ev; label?: string }) {
+  const len = lenOf(v)
   return (
-    <Pick id={v.id}>
-      <a className={`card dc-vc ${className}`} href="#discover/watch" data-tint={tint} data-testid="dc-vcard">
-        <span className="dc-vc-pic"><Thumb id={v.id} /><span className="dc-vc-play" aria-hidden="true"><Icon name="play" size={18} /></span></span>
+    <Pick id={v.id} ev={ev}>
+      <a className={`card dc-vc ${className}`} href="#discover/watch" data-tint={tint} data-testid="dc-vcard" aria-label={vidName(v)}>
+        <span className="dc-vc-pic"><Thumb id={v.id} /><span className="dc-vc-play" aria-hidden="true"><Icon name="play" size={18} /></span>{label && <span className="dc-vc-tag" aria-hidden="true">{label}</span>}{len && <span className="dc-vc-len" aria-hidden="true">{len}</span>}</span>
         <span className="dc-vc-body"><span className="dc-vc-k">{v.source}</span><span className="dc-vc-t">{v.title}</span>{note && <span className="dc-vc-n">{note}</span>}</span>
       </a>
     </Pick>
   )
 }
 
-/** Top story: prepping videos, one large and a 2 x 2 grid. */
+/** Top stories (S26): the prepping pick of the day as one hero video, two half cards and two wide rows. */
 function TopStory({ now }: { now: Date }) {
-  const [hero, ...rest] = turn(shelf('prepping'), now, 5)
+  const [hero, a, b, c, d] = turn(shelf('prepping'), now, 5)
+  const len = hero && lenOf(hero)
   return (
-    <Section title="Top story" link={{ href: '#discover/learn/prepping', label: 'All prepping' }} testId="dc-top-story">
+    <Section title="Top stories" link={{ href: '#discover/learn/prepping', label: 'All prepping' }} testId="dc-top-story">
       <p className="sub dc-sub">Survival and prepping, a new pick each day.</p>
       {hero
         ? (
           <div className="nw">
-            <Pick id={hero.id}>
-              <a className="card dc-herocard dc-over" href="#discover/watch" data-hero data-testid="dc-hero">
+            <Pick id={hero.id} ev="card_top_story">
+              <a className="card dc-herocard dc-over" href="#discover/watch" data-hero data-testid="dc-hero" aria-label={vidName(hero)}>
                 <span className="dc-poster-box">
                   <Thumb id={hero.id} />
                   <span className="dc-hchip">Prepping · {hero.source}</span>
                   <span className="dc-hero-play" aria-hidden="true"><Icon name="play" size={28} /></span>
+                  {len && <span className="dc-vc-len" aria-hidden="true">{len}</span>}
                 </span>
                 <span className="dc-hero-body" data-contrast-bg="#555555">
                   <span className="dc-hero-t">{hero.title}</span>
@@ -88,7 +101,8 @@ function TopStory({ now }: { now: Date }) {
                 </span>
               </a>
             </Pick>
-            <div className="dc-vgrid" data-testid="dc-top-grid">{rest.map((v) => <VidCard key={v.id} v={v} tint="teal" className="dc-vgcard" />)}</div>
+            <div className="dc-vgrid" data-testid="dc-top-grid">{[a, b].map((v) => v && <VidCard key={v.id} v={v} tint="teal" className="dc-vgcard" ev="card_top_story" />)}</div>
+            <div className="dc-vrows" data-testid="dc-top-rows">{[c, d].map((v) => v && <VidCard key={v.id} v={v} tint="purple" className="dc-vwide" ev="card_top_story" />)}</div>
           </div>
         )
         : <EmptyState icon="play" title="No checked videos yet" />}
@@ -96,19 +110,28 @@ function TopStory({ now }: { now: Date }) {
   )
 }
 
-/** A titled shelf of video cards with the channel chips above it; a chip narrows the shelf to that channel, tapping it again shows all. Four cards show, "Show more" adds four at a time (D-156), and the title link says how many there are. */
-function VideoShelf({ title, link, testId, videos, tint }: { title: string; link: { href: string; label: string }; testId: string; videos: Video[]; tint: Tint }) {
-  const [src, setSrc] = useState<string | null>(null)
+/** Farming and DIY (S26): one labelled Channel menu (default All channels), a lead card (the video tapped most on this phone, else the first), then 4 cards and "Show 4 more" (D-156). The title link says how many there are. */
+function FarmShelf({ title, link, testId, videos, tint }: { title: string; link: { href: string; label: string }; testId: string; videos: Video[]; tint: Tint }) {
+  const [src, setSrc] = useState('')
   const sources = [...new Set(videos.map((v) => v.source))]
   const list = src ? videos.filter((v) => v.source === src) : videos
   if (!videos.length) return null
+  const counts = readCounts()
+  const top = list.reduce((m, v) => ((counts[v.id] ?? 0) > (counts[m.id] ?? 0) ? v : m), list[0]!)
+  const popular = (counts[top.id] ?? 0) > 0
+  const lead = popular ? top : list[0]!
   return (
     <Section title={title} link={{ href: link.href, label: `${link.label} ${videos.length}` }} testId={testId}>
       <div className="nw">
-        <div className="nw-chips dc-wrapchips" role="group" aria-label={`${title} channels`}>
-          {sources.map((s) => <button key={s} type="button" className="nw-chip" aria-pressed={src === s} onClick={() => setSrc(src === s ? null : s)}>{s}</button>)}
+        <div className="dc-chan">
+          <label htmlFor={testId + '-ch'} className="dc-chan-l">Channel</label>
+          <select id={testId + '-ch'} className="dc-select" value={src} onChange={(e) => setSrc(e.target.value)}>
+            <option value="">All channels</option>
+            {sources.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
         </div>
-        <MoreGrid key={src ?? 'all'} label={`${title} videos`} testId={testId + '-row'}>{list.map((v) => <VidCard key={v.id} v={v} tint={tint} className="dc-vgcard" />)}</MoreGrid>
+        <VidCard v={lead} tint={tint} className="dc-vlead" ev="card_farm_video" label={popular ? 'Most watched' : undefined} />
+        <MoreGrid key={src || 'all'} label={`${title} videos`} testId={testId + '-row'}>{list.filter((v) => v !== lead).map((v) => <VidCard key={v.id} v={v} tint={tint} className="dc-vgcard" ev="card_farm_video" />)}</MoreGrid>
       </div>
     </Section>
   )
@@ -116,7 +139,7 @@ function VideoShelf({ title, link, testId, videos, tint }: { title: string; link
 
 type LearnCardProps = { tint: Tint; title: string; sub: string; href: string; testId: string }
 const LearnCard = (p: LearnCardProps) => (
-  <a className="card dc-lc" data-tint={p.tint} href={p.href} data-testid={p.testId}><span className="dc-lc-blob" aria-hidden="true" /><b className="dc-lc-t">{p.title}</b><span className="dc-lc-s">{p.sub}</span><span className="dc-lc-go" aria-hidden="true"><Icon name="chev" size={20} /></span></a>
+  <a className="card dc-lc" data-tint={p.tint} href={p.href} data-testid={p.testId} onClick={() => void track('action', 'card_learn')}><span className="dc-lc-blob" aria-hidden="true" /><b className="dc-lc-t">{p.title}</b><span className="dc-lc-s">{p.sub}</span><span className="dc-lc-go" aria-hidden="true"><Icon name="chev" size={20} /></span></a>
 )
 
 /** Learn: four tinted cards onto existing Learn topics, each with a slow-drifting colour blob. Medicines takes the recipes place once the clinician flag is on (Recipes has its own section below). */
@@ -184,11 +207,11 @@ function Today({ now }: { now: Date }) {
   return (
     <>
       <Learn />
-      <NewsVideos now={now.getTime()} />
       <TopStory now={now} />
-      <a className="card dc-hlink" href="#health" data-testid="dc-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
-      <VideoShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} tint="green" />
+      <FarmShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} tint="green" />
+      <NewsVideos now={now.getTime()} />
       <Listen />
+      <a className="card dc-hlink" href="#health" data-testid="dc-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
       <Recipes now={now} />
       <Section title="Play" link={{ href: '#discover/play', label: 'All games' }} testId="dc-play">
         <div className="pt-grid">
@@ -209,7 +232,7 @@ function NewsPanel() {
   return zone === undefined ? <p className="sub" role="status">Loading headlines</p> : <NewsView zone={zone} />
 }
 
-/** #discover (S22 board): large title, a Today | News | Saved control, then that view. Today is Learn, Top story (prepping videos), Health videos, Farming and DIY, Listen, Recipes, Play, Did you know. Headlines live on the Today tab (D-142); the News tab here stays. */
+/** #discover (S22 board): large title, a Today | News | Saved control, then that view. Today is Learn, Top stories (prepping videos), Farming and DIY, Regional news, Listen, the Health pointer, Recipes, Play, Did you know. Headlines live on the Today tab (D-142); the News tab here stays. */
 export default function Overview({ now = new Date() }: { now?: Date }) {
   const [view, setView] = useState<View>('today')
   return (

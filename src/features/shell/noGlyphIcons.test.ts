@@ -6,7 +6,6 @@ const files = import.meta.glob('/src/**/*.tsx', { query: '?raw', import: 'defaul
 const sources = Object.entries(files).filter(([f]) => !/\.test\.tsx$/.test(f))
 
 const GRAPHICS = [
-  '/src/features/anatomy/Silhouette.tsx', // body art
   '/src/features/health/MetricChart.tsx', // chart line
   '/src/features/health/LatestList.tsx', // sparkline
   '/src/features/weather/WeatherScene.tsx', // weather scene cloud

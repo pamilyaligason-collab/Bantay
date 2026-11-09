@@ -1,0 +1,1564 @@
+{
+ "source": "PCAARRD (DOST), Vegetable Planting Calendar, data from the Bureau of Plant Industry",
+ "sourceUrl": "https://elibrary.pcaarrd.dost.gov.ph/home",
+ "sourceNote": "Search the e-library for: Vegetable Planting Calendar, Information Bulletin 200/2000",
+ "bulletin": "Information Bulletin No. 200/2000",
+ "year": 2000,
+ "types": {
+  "1": {
+   "crops": [
+    {
+     "name": "Bitter gourd",
+     "tagalog": "ampalaya",
+     "months": [
+      1,
+      5,
+      6,
+      7,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Bottle gourd",
+     "tagalog": "upo",
+     "months": [
+      1,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cabbage",
+     "tagalog": "repolyo",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Carrot",
+     "tagalog": "karot",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cauliflower",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Celery",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Chayote",
+     "tagalog": "sayote",
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cowpea",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11
+     ]
+    },
+    {
+     "name": "Cucumber",
+     "tagalog": "pipino",
+     "months": [
+      5,
+      6,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Eggplant",
+     "tagalog": "talong",
+     "months": [
+      1,
+      2,
+      5,
+      6,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Garden pea",
+     "tagalog": null,
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Garlic",
+     "tagalog": "bawang",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Hyacinth bean",
+     "tagalog": null,
+     "months": [
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Kutsai",
+     "tagalog": null,
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Lettuce",
+     "tagalog": "letsugas",
+     "months": [
+      1,
+      8,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Lima bean",
+     "tagalog": "patani",
+     "months": [
+      1,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Melon",
+     "tagalog": null,
+     "months": [
+      1,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Musk melon",
+     "tagalog": null,
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Mustard",
+     "tagalog": "mustasa",
+     "months": [
+      1,
+      8,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Okra",
+     "tagalog": "okra",
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Onion",
+     "tagalog": "sibuyas",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Pechay",
+     "tagalog": "pechay",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Pigeon pea",
+     "tagalog": null,
+     "months": [
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Radish",
+     "tagalog": "labanos",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Snap bean",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Spinach",
+     "tagalog": null,
+     "months": [
+      10,
+      11
+     ]
+    },
+    {
+     "name": "Sponge gourd",
+     "tagalog": "patola",
+     "months": [
+      1,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Squash",
+     "tagalog": "kalabasa",
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Sweet pepper",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Tomato",
+     "tagalog": "kamatis",
+     "months": [
+      1,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Waterleaf",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Watermelon",
+     "tagalog": "pakwan",
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Wax gourd",
+     "tagalog": "kundol",
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Winged bean",
+     "tagalog": "sigarilyas",
+     "months": [
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Yam bean",
+     "tagalog": "singkamas",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Yardlong bean",
+     "tagalog": "sitaw",
+     "months": [
+      1,
+      2,
+      5,
+      6,
+      11,
+      12
+     ]
+    }
+   ]
+  },
+  "2": {
+   "crops": [
+    {
+     "name": "Bitter gourd",
+     "tagalog": "ampalaya",
+     "months": [
+      1,
+      2,
+      6,
+      7,
+      8,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Bottle gourd",
+     "tagalog": "upo",
+     "months": [
+      1,
+      2,
+      3,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cabbage",
+     "tagalog": "repolyo",
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Carrot",
+     "tagalog": "karot",
+     "months": [
+      3,
+      4
+     ]
+    },
+    {
+     "name": "Cauliflower",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Celery",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Chayote",
+     "tagalog": "sayote",
+     "months": [
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Cowpea",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      3,
+      5,
+      6,
+      7,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cucumber",
+     "tagalog": "pipino",
+     "months": [
+      3,
+      4
+     ]
+    },
+    {
+     "name": "Eggplant",
+     "tagalog": "talong",
+     "months": [
+      1,
+      2,
+      3,
+      4,
+      8,
+      9
+     ]
+    },
+    {
+     "name": "Garden pea",
+     "tagalog": null,
+     "months": [
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Garlic",
+     "tagalog": "bawang",
+     "months": [
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Hyacinth bean",
+     "tagalog": null,
+     "months": [
+      2,
+      3,
+      4
+     ]
+    },
+    {
+     "name": "Kutsai",
+     "tagalog": null,
+     "months": [
+      3,
+      4,
+      5,
+      6,
+      7
+     ]
+    },
+    {
+     "name": "Lettuce",
+     "tagalog": "letsugas",
+     "months": [
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Lima bean",
+     "tagalog": "patani",
+     "months": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "name": "Melon",
+     "tagalog": null,
+     "months": [
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Musk melon",
+     "tagalog": null,
+     "months": [
+      3,
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Mustard",
+     "tagalog": "mustasa",
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Okra",
+     "tagalog": "okra",
+     "months": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Onion",
+     "tagalog": "sibuyas",
+     "months": [
+      1,
+      2,
+      3,
+      12
+     ]
+    },
+    {
+     "name": "Pechay",
+     "tagalog": "pechay",
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Pigeon pea",
+     "tagalog": null,
+     "months": [
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Radish",
+     "tagalog": "labanos",
+     "months": [
+      3,
+      4,
+      5,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Snap bean",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "name": "Spinach",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Sponge gourd",
+     "tagalog": "patola",
+     "months": [
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+     ]
+    },
+    {
+     "name": "Squash",
+     "tagalog": "kalabasa",
+     "months": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Sugar beet",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Sweet pepper",
+     "tagalog": null,
+     "months": [
+      2,
+      3,
+      8,
+      9
+     ]
+    },
+    {
+     "name": "Tomato",
+     "tagalog": "kamatis",
+     "months": [
+      1,
+      2,
+      3,
+      4,
+      8,
+      9
+     ]
+    },
+    {
+     "name": "Waterleaf",
+     "tagalog": null,
+     "months": [
+      6,
+      7,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Watermelon",
+     "tagalog": "pakwan",
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Wax gourd",
+     "tagalog": "kundol",
+     "months": [
+      1,
+      2,
+      3
+     ]
+    },
+    {
+     "name": "Winged bean",
+     "tagalog": "sigarilyas",
+     "months": [
+      2,
+      3,
+      4
+     ]
+    },
+    {
+     "name": "Yam bean",
+     "tagalog": "singkamas",
+     "months": [
+      10,
+      11
+     ]
+    },
+    {
+     "name": "Yardlong bean",
+     "tagalog": "sitaw",
+     "months": [
+      5,
+      6
+     ]
+    }
+   ]
+  },
+  "3": {
+   "crops": [
+    {
+     "name": "Bitter gourd",
+     "tagalog": "ampalaya",
+     "months": [
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Bottle gourd",
+     "tagalog": "upo",
+     "months": [
+      1,
+      4,
+      5,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cabbage",
+     "tagalog": "repolyo",
+     "months": [
+      4,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Carrot",
+     "tagalog": "karot",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cauliflower",
+     "tagalog": null,
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Celery",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      7,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Chayote",
+     "tagalog": "sayote",
+     "months": [
+      1,
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cowpea",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cucumber",
+     "tagalog": "pipino",
+     "months": [
+      1,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Eggplant",
+     "tagalog": "talong",
+     "months": [
+      1,
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Garden pea",
+     "tagalog": null,
+     "months": [
+      1,
+      4,
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Garlic",
+     "tagalog": "bawang",
+     "months": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Hyacinth bean",
+     "tagalog": null,
+     "months": [
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Kutsai",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Lettuce",
+     "tagalog": "letsugas",
+     "months": [
+      4,
+      5,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Lima bean",
+     "tagalog": "patani",
+     "months": [
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Melon",
+     "tagalog": null,
+     "months": [
+      1,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Musk melon",
+     "tagalog": null,
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Mustard",
+     "tagalog": "mustasa",
+     "months": [
+      5,
+      6,
+      7,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Okra",
+     "tagalog": "okra",
+     "months": [
+      5,
+      6,
+      7,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Onion (big bulb)",
+     "tagalog": "sibuyas",
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Onion (small bulb)",
+     "tagalog": "sibuyas",
+     "months": [
+      4,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Pechay",
+     "tagalog": "pechay",
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Pigeon pea",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11
+     ]
+    },
+    {
+     "name": "Radish",
+     "tagalog": "labanos",
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Snap bean",
+     "tagalog": null,
+     "months": [
+      1,
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Spinach",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Sponge gourd",
+     "tagalog": "patola",
+     "months": [
+      1,
+      5,
+      6,
+      7,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Squash",
+     "tagalog": "kalabasa",
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Sugar beet",
+     "tagalog": null,
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Sweet pepper",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Tomato",
+     "tagalog": "kamatis",
+     "months": [
+      1,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Waterleaf",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Watermelon",
+     "tagalog": "pakwan",
+     "months": [
+      1,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Wax gourd",
+     "tagalog": "kundol",
+     "months": [
+      1,
+      6,
+      7,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Winged bean",
+     "tagalog": "sigarilyas",
+     "months": [
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Yam bean",
+     "tagalog": "singkamas",
+     "months": [
+      1,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Yardlong bean",
+     "tagalog": "sitaw",
+     "months": [
+      1,
+      5,
+      6
+     ]
+    }
+   ]
+  },
+  "4": {
+   "crops": [
+    {
+     "name": "Bitter gourd",
+     "tagalog": "ampalaya",
+     "months": [
+      1,
+      5,
+      6,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Bottle gourd",
+     "tagalog": "upo",
+     "months": [
+      1,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cabbage",
+     "tagalog": "repolyo",
+     "months": [
+      1,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Carrot",
+     "tagalog": "karot",
+     "months": [
+      1,
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cauliflower",
+     "tagalog": null,
+     "months": [
+      1,
+      4,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Celery",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      6,
+      7
+     ]
+    },
+    {
+     "name": "Chayote",
+     "tagalog": "sayote",
+     "months": [
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cowpea",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Cucumber",
+     "tagalog": "pipino",
+     "months": [
+      6,
+      7,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Eggplant",
+     "tagalog": "talong",
+     "months": [
+      1,
+      6,
+      7,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Garden pea",
+     "tagalog": null,
+     "months": [
+      1,
+      6,
+      7,
+      12
+     ]
+    },
+    {
+     "name": "Garlic",
+     "tagalog": "bawang",
+     "months": [
+      1,
+      2,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Hyacinth bean",
+     "tagalog": null,
+     "months": [
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Kutsai",
+     "tagalog": null,
+     "months": [
+      6,
+      7
+     ]
+    },
+    {
+     "name": "Lettuce",
+     "tagalog": "letsugas",
+     "months": [
+      1,
+      2,
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Lima bean",
+     "tagalog": "patani",
+     "months": [
+      1,
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Melon",
+     "tagalog": null,
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Musk melon",
+     "tagalog": null,
+     "months": [
+      1,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Mustard",
+     "tagalog": "mustasa",
+     "months": [
+      1,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Okra",
+     "tagalog": "okra",
+     "months": [
+      1,
+      2,
+      6,
+      7,
+      9,
+      10
+     ]
+    },
+    {
+     "name": "Onion",
+     "tagalog": "sibuyas",
+     "months": [
+      1,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Pechay",
+     "tagalog": "pechay",
+     "months": [
+      1,
+      5,
+      6,
+      7,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Pigeon pea",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      7
+     ]
+    },
+    {
+     "name": "Radish",
+     "tagalog": "labanos",
+     "months": [
+      1,
+      5,
+      6,
+      7,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Snap bean",
+     "tagalog": null,
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Spinach",
+     "tagalog": null,
+     "months": [
+      4,
+      5
+     ]
+    },
+    {
+     "name": "Sponge gourd",
+     "tagalog": "patola",
+     "months": [
+      1,
+      5,
+      6,
+      12
+     ]
+    },
+    {
+     "name": "Squash",
+     "tagalog": "kalabasa",
+     "months": [
+      1,
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Sweet pepper",
+     "tagalog": null,
+     "months": [
+      1,
+      5,
+      6,
+      9,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Tomato",
+     "tagalog": "kamatis",
+     "months": [
+      1,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Waterleaf",
+     "tagalog": null,
+     "months": [
+      1,
+      2,
+      6,
+      7
+     ]
+    },
+    {
+     "name": "Watermelon",
+     "tagalog": "pakwan",
+     "months": [
+      1,
+      4,
+      5,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Wax gourd",
+     "tagalog": "kundol",
+     "months": [
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Winged bean",
+     "tagalog": "sigarilyas",
+     "months": [
+      5,
+      6
+     ]
+    },
+    {
+     "name": "Yam bean",
+     "tagalog": "singkamas",
+     "months": [
+      1,
+      5,
+      6,
+      11,
+      12
+     ]
+    },
+    {
+     "name": "Yardlong bean",
+     "tagalog": "sitaw",
+     "months": [
+      1,
+      5,
+      6,
+      10,
+      11,
+      12
+     ]
+    }
+   ]
+  }
+ }
+}

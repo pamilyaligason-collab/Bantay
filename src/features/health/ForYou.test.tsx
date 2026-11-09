@@ -8,12 +8,14 @@ import { playable, VIDEOS } from './library/videosLogic'
 import { pickAttention } from './attention'
 import type { Reading } from './ranges'
 
+const track = vi.hoisted(() => vi.fn())
+vi.mock('../admin/events', async (orig) => ({ ...(await orig<object>()), track }))
 afterEach(cleanup)
 const r: Reading[] = [{ personId: 'p1', test: 'ldl', value: 162, unit: 'mg/dL', takenAt: new Date().toISOString(), labLow: 0, labHigh: 130 }]
 const show = (readings: Reading[]) => render(<ForYou personId="p1" readings={readings} attention={pickAttention(readings, () => undefined, new Date())} canLog onAdd={() => undefined} />)
 
 describe('For you', () => {
-  it('holds a nudge card, a video card and an article card', () => {
+  it('holds a nudge card, a video card and an article card', async () => {
     show(r)
     const c = screen.getByTestId('for-you')
     expect(within(c).getByTestId('nudge').querySelector('a.nr-t')!.getAttribute('href')).toBe('#health/nudge')
@@ -24,7 +26,14 @@ describe('For you', () => {
     expect(within(c).getByTestId('foryou-video').querySelector('iframe')!.getAttribute('src')).toMatch(/^https:\/\/www\.youtube-nocookie\.com\/embed\//) // plays in place, no dead link
     const art = within(c).getByTestId('foryou-because')
     expect(art.textContent).toContain('Because of your LDL cholesterol')
-    expect(art.getAttribute('href')).toBe('#health/library/' + encodeURIComponent('s:LDL cholesterol'))
+    await waitFor(() => expect(screen.getByTestId('foryou-because').getAttribute('href')).toBe('#health/library/' + encodeURIComponent('t:ldl'))) // a lab in the glossary opens its own note, not the online look-up
+  })
+  it('S26: ALT links to the glossary note (t:alt), not s:ALT', async () => {
+    const alt: Reading[] = [{ personId: 'p1', test: 'alt', value: 120, unit: 'U/L', takenAt: new Date().toISOString(), labLow: 7, labHigh: 56 }]
+    show(alt)
+    await waitFor(() => expect(screen.getByTestId('foryou-because').getAttribute('href')).toBe('#health/library/t%3Aalt'))
+    fireEvent.click(screen.getByTestId('foryou-because'))
+    expect(track).toHaveBeenCalledWith('action', 'card_explainer')
   })
   it('empty person: no nudge, no article, video stays', () => {
     show([])

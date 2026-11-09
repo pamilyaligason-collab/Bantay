@@ -48,7 +48,7 @@ for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoo
         })
         expect(m.title).toBe('Learn')
         expect(m.href).toBe('#discover/learn')
-        expect(m.cards).toBe(4) // the 2 x 2 grid under the Top story hero
+        expect(m.cards).toBe(2) // the two half cards under the Top stories hero (S26)
         expect(m.order).toBe(true)
         expect(m.gap, 'gap between the Learn section and Top story').toBeLessThan(40)
         expect(m.overlap, 'All topics link under Jack at rest').toBe(false)

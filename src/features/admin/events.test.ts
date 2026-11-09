@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto'
+import { readFileSync } from 'node:fs'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { EVENT_NAMES, track } from './events'
@@ -78,5 +79,23 @@ describe('pinError', () => {
     expect(pinError('12345a')).not.toBeNull()
     expect(pinError('111111')).not.toBeNull()
     expect(pinError('123456')).not.toBeNull()
+  })
+})
+
+describe('0056 server allowlist (D-160)', () => {
+  const sql = readFileSync('supabase/migrations/0056_usage_allowlist.sql', 'utf8')
+  const listFor = (kind: string): string[] => {
+    const seg = (sql.split(`when '${kind}' then`)[1] ?? '').split('])')[0] ?? ''
+    return [...seg.matchAll(/'([a-z_]+)'/g)].map((x) => x[1]!)
+  }
+  it('lists exactly the names in EVENT_NAMES, per kind', () => {
+    for (const kind of Object.keys(EVENT_NAMES) as (keyof typeof EVENT_NAMES)[]) {
+      expect(listFor(kind).sort(), kind).toEqual([...EVENT_NAMES[kind]].sort())
+    }
+  })
+  it('has the S26 names and a down file', () => {
+    expect(EVENT_NAMES.screen).toEqual(expect.arrayContaining(['weather', 'calm']))
+    expect(EVENT_NAMES.action).toEqual(expect.arrayContaining(['card_talk', 'phone_check_fail_call']))
+    expect(readFileSync('supabase/migrations/0056_usage_allowlist.down.sql', 'utf8')).toMatch(/drop trigger/)
   })
 })

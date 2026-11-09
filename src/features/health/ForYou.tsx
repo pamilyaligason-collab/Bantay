@@ -6,6 +6,9 @@ import type { Attention } from './attention'
 import { NudgeRow } from './GlanceGrid'
 import { VideoCard } from './HealthVideos'
 import { articleHref } from './library/medline'
+import { labKey } from './library/resolve'
+import { useLabGlossary } from './labsLogic'
+import { track } from '../admin/events'
 import { prefersReducedMotion } from '../look/useReducedMotion'
 import { DISCOVER_SET, playable, type Video } from './library/videosLogic'
 import { metricLabel } from './model'
@@ -67,6 +70,8 @@ const toVideos = () => document.getElementById('health-videos')?.scrollIntoView?
 export function ForYou({ personId, readings, attention, canLog, onAdd }: { personId: string; readings: Reading[]; attention: Attention | null; canLog: boolean; onAdd: (code: 'bp' | 'fasting_glucose') => void }) {
   const clips = useMemo(() => forYouClips(DISCOVER_SET.filter(playable), clipReasons(readings, attention)), [readings, attention])
   const label = attention ? metricLabel(attention.reading.test) : null
+  const g = useLabGlossary()
+  const key = attention ? labKey(g, attention.reading.test) ?? labKey(g, label ?? '') : null // a lab we describe opens its own note, never the online look-up
   const next = nextVisitLine(useVisits(personId))
   const visit = next?.text.startsWith('Next visit: ') ? next : null // a follow-up due is not a booked visit
   return (
@@ -76,7 +81,7 @@ export function ForYou({ personId, readings, attention, canLog, onAdd }: { perso
         {(label || visit) && (
           <div className="fy-reads">
             {label && (
-              <a className="card fy-link press" href={articleHref('s', label)} data-testid="foryou-because">
+              <a className="card fy-link press" href={key ? articleHref('t', key.slice(2)) : articleHref('s', label)} data-testid="foryou-because" onClick={() => void track('action', 'card_explainer')}>
                 <span className="pt-k">Because of your {label}</span>
                 <b>A short, checked explainer</b>
                 <span className="sub">Read</span>

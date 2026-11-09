@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { EmptyState, MoreGrid, Section } from '../../look'
 import { LiteVideo } from '../../media/LiteVideo'
 import { Icon } from '../../shell/Icon'
+import { track } from '../../admin/events'
 import { ageBadge, NEWS_CHANNELS, updatedLine, useNewsVideos, type NewsVideo } from './api'
 import './newsvideo.css'
 
@@ -13,7 +14,7 @@ function Still({ id }: { id: string }) {
 
 function NewsCard({ v, now, lead, on, pick }: { v: NewsVideo; now: number; lead?: boolean; on: boolean; pick: () => void }) {
   return (
-    <button type="button" className={`card nv-card${lead ? ' nv-lead' : ''}`} aria-pressed={on} aria-label={`Play ${v.title}, ${v.channel}`} data-testid={lead ? 'nv-lead' : 'nv-card'} onClick={pick}>
+    <button type="button" className={`card nv-card${lead ? ' nv-lead' : ''}`} aria-pressed={on} aria-label={`Video, ${v.title}, ${v.channel}`} data-testid={lead ? 'nv-lead' : 'nv-card'} onClick={pick}>
       <span className="nv-pic"><Still id={v.video_id} /><span className="nv-age">{ageBadge(v.published_at, now)}</span><span className="nv-play" aria-hidden="true"><Icon name="play" size={lead ? 26 : 18} /></span></span>
       <span className="nv-body"><span className="nv-t">{v.title}</span><span className="nv-ch">{v.channel}</span></span>
     </button>
@@ -27,10 +28,13 @@ export function NewsVideos({ now = Date.now() }: { now?: number }) {
   const [sel, setSel] = useState<string | null>(null)
   const got = useNewsVideos(channel)
   const last = useRef<typeof got>(null)
+  const player = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (sel) player.current?.querySelector<HTMLElement>('.lv-play, .lv-yt')?.focus() }, [sel]) // S26: the player takes focus when it opens
   if (got) last.current = got
   const list = got ?? (last.current && { ...last.current, rows: last.current.rows.filter((r) => !channel || r.channel_id === channel) }) // while a channel loads, the chips and the rows we have stay (no blink)
   if (!list) return null
   const [lead, ...rest] = list.rows
+  const pick = (id: string) => { setSel(id); void track('action', 'card_regional_video') }
   const chosen = list.rows.find((v) => v.video_id === sel)
   return (
     <Section title="Regional news" meta={list.rows.length && list.fetchedAt !== null ? updatedLine(list.fetchedAt, now) : undefined} testId="dc-regional">
@@ -40,7 +44,7 @@ export function NewsVideos({ now = Date.now() }: { now?: number }) {
           {NEWS_CHANNELS.map((c) => <button key={c.id} type="button" className="nw-chip" aria-pressed={channel === c.id} onClick={() => { setChannel(channel === c.id ? undefined : c.id); setSel(null) }}>{c.label}</button>)}
         </div>
         {chosen && (
-          <div className="card dc-player" data-testid="nv-player">
+          <div ref={player} className="card dc-player" data-testid="nv-player">
             <LiteVideo key={chosen.video_id} id={chosen.video_id} title={chosen.title} />
             <span className="sub">{chosen.channel}</span>
           </div>
@@ -48,8 +52,8 @@ export function NewsVideos({ now = Date.now() }: { now?: number }) {
         {lead
           ? (
             <>
-              <NewsCard v={lead} now={now} lead on={lead.video_id === sel} pick={() => setSel(lead.video_id)} />
-              {rest.length > 0 && <MoreGrid key={channel ?? 'all'} label="More regional news" testId="nv-grid">{rest.map((v) => <NewsCard key={v.video_id} v={v} now={now} on={v.video_id === sel} pick={() => setSel(v.video_id)} />)}</MoreGrid>}
+              <NewsCard v={lead} now={now} lead on={lead.video_id === sel} pick={() => pick(lead.video_id)} />
+              {rest.length > 0 && <MoreGrid key={channel ?? 'all'} label="More regional news" testId="nv-grid">{rest.map((v) => <NewsCard key={v.video_id} v={v} now={now} on={v.video_id === sel} pick={() => pick(v.video_id)} />)}</MoreGrid>}
             </>
           )
           : <EmptyState icon="play" title="No news videos yet" body="New ones show up here every half hour." />}

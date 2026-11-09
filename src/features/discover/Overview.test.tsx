@@ -11,11 +11,14 @@ import css from './today.css?raw'
 import discoverCss from './discover.css?raw'
 import Overview from './Overview'
 
+const ev = vi.hoisted(() => ({ calls: [] as string[], news: null as null | { rows: Record<string, string>[]; fetchedAt: number | null } }))
+vi.mock('../admin/events', () => ({ track: async (_k: string, n: string) => { ev.calls.push(n); return true } }))
+vi.mock('./newsvideo/api', async (orig) => ({ ...(await orig<typeof import('./newsvideo/api')>()), useNewsVideos: () => ev.news }))
 vi.mock('./news/Screen', async (orig) => ({ ...(await orig<typeof import('./news/Screen')>()), useNewsZone: () => null, loadFeed: vi.fn() }))
 const row = (id: string, o: Partial<NewsRow> = {}): NewsRow => ({ id, title: 'Headline ' + id, url: 'https://news.test/' + id, source: 'PNA', kind: 'article', published_at: '2026-10-28T09:20:00Z', zone: null, ...o })
 const feed = (items: NewsRow[] | null) => vi.mocked(loadFeed).mockResolvedValue({ items, savedAt: null, offline: false })
 
-beforeEach(async () => { feed([]); location.hash = '#discover'; sessionStorage.clear(); localStorage.clear(); await db.kv.clear() })
+beforeEach(async () => { ev.calls.length = 0; ev.news = null; feed([]); location.hash = '#discover'; sessionStorage.clear(); localStorage.clear(); await db.kv.clear() })
 afterEach(cleanup)
 
 const now = new Date(2026, 9, 28, 10, 20)
@@ -57,12 +60,13 @@ describe('head and the Today | News | Saved control', () => {
 })
 
 describe('Today: sections in order', () => {
-  it('Learn, Regional news, Top story, the Health pointer, Farming and DIY, Listen, Recipes, Play, Did you know', () => {
+  it('Learn, Top stories, Farming and DIY, Regional news, Listen, then the rest (Health pointer, Recipes, Play, Did you know)', () => {
+    ev.news = { rows: [{ video_id: 'abcdefghijk', channel_id: 'c', channel: 'GMA News', title: 'Story one', published_at: '2026-10-28T09:00:00Z' }], fetchedAt: null }
     render(<Overview now={now} />)
-    const ids = ['dc-learn', 'dc-top-story', 'dc-health-link', 'dc-farm', 'dc-listen', 'dc-recipes', 'dc-play', 'dc-fact']
+    const ids = ['dc-learn', 'dc-top-story', 'dc-farm', 'dc-regional', 'dc-listen', 'dc-health-link', 'dc-recipes', 'dc-play', 'dc-fact']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
-    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Learn', 'Top story', 'Farming and DIY', 'Listen', 'Recipes', 'Play']) // Regional news has no rows here (no server), so it stays hidden
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Learn', 'Top stories', 'Farming and DIY', 'Regional news', 'Listen', 'Recipes', 'Play'])
   })
   it('no news headline and no season row on Today: the news lives on the Today tab (D-142); the News tab stays', async () => {
     feed([row('a')])
@@ -78,9 +82,9 @@ describe('Today: sections in order', () => {
 const idOf = (img: Element) => /vi\/([\w-]{11})\//.exec(img.getAttribute('src')!)![1]
 const pics = (el: Element) => Array.from(el.querySelectorAll('.dc-still img'))
 
-describe('Top story (prepping videos)', () => {
+describe('Top stories (prepping videos)', () => {
   // 28 Oct 2026 is day 20754 since 1970; 20754 mod 20 prepping videos = 14, so the turn starts at the 15th video (counted by hand from ready.json)
-  it('one large card and a 2 x 2 grid of today\'s five prepping videos, All prepping link', () => {
+  it('one hero card, two half cards and two wide rows from today\'s five prepping videos, All prepping link', () => {
     render(<Overview now={now} />)
     const sec = screen.getByTestId('dc-top-story')
     expect(within(sec).getByRole('link', { name: 'All prepping' }).getAttribute('href')).toBe('#discover/learn/prepping')
@@ -89,13 +93,18 @@ describe('Top story (prepping videos)', () => {
     expect(hero.querySelector('.dc-hchip')!.textContent).toBe('Prepping · Knowledge Channel')
     expect(hero.getAttribute('href')).toBe('#discover/watch')
     const grid = screen.getByTestId('dc-top-grid')
-    expect(grid.querySelectorAll('a.dc-vgcard')).toHaveLength(4)
-    expect(pics(grid).map(idOf)).toEqual(['IEN3GJap2Kc', '3oRx8JDns2E', 'fmJlnEExTvg', '7Ogz8BQ_nX0'])
+    expect(grid.querySelectorAll('a.dc-vgcard')).toHaveLength(2)
+    expect(pics(grid).map(idOf)).toEqual(['IEN3GJap2Kc', '3oRx8JDns2E'])
+    const rows = screen.getByTestId('dc-top-rows')
+    expect(rows.querySelectorAll('a.dc-vwide')).toHaveLength(2)
+    expect(pics(rows).map(idOf)).toEqual(['fmJlnEExTvg', '7Ogz8BQ_nX0'])
+    expect(discoverCss).toMatch(/\.card\.dc-herocard \{ box-shadow: var\(--shadow-hero\)/)
+    expect(discoverCss).toMatch(/\.card\.dc-vc, \.card\.dc-lc, \.card\.nv-card \{ box-shadow: var\(--shadow-raised\)/)
   })
   it('every picture is a still from i.ytimg.com with no referrer, sized and lazy, and nothing from YouTube loads before a tap', () => {
     const { container } = render(<Overview now={now} />)
     const imgs = Array.from(container.querySelectorAll('.dc-still img'))
-    expect(imgs.length).toBe(15) // 1 hero + 4 grid + 4 Farming + 4 Listen + 2 recipe videos, counted by hand (each shelf shows 4 until Show more)
+    expect(imgs.length).toBe(16) // 1 hero + 2 half + 2 wide + 1 lead and 4 Farming + 4 Listen + 2 recipe videos, counted by hand (each shelf shows 4 until Show more)
     imgs.forEach((img) => {
       expect(img.getAttribute('src')).toMatch(/^https:\/\/i\.ytimg\.com\/vi\/[\w-]{11}\/mqdefault\.jpg$/)
       expect(img.getAttribute('alt')).toBe(''); expect(img.getAttribute('loading')).toBe('lazy')
@@ -116,6 +125,17 @@ describe('Top story (prepping videos)', () => {
     expect(sessionStorage.getItem('dc.watch')).toBe('7WxUgGfiHb4')
     fireEvent.click(screen.getByTestId('dc-top-grid').querySelectorAll('a')[1]!)
     expect(sessionStorage.getItem('dc.watch')).toBe('3oRx8JDns2E')
+    expect(ev.calls).toEqual(['card_top_story', 'card_top_story']) // the two plain taps; the three modified clicks are not counted
+  })
+  it('every video card has a play circle and is named "Video, title, channel, length" (length left out when not recorded)', () => {
+    render(<Overview now={now} />)
+    const cards = screen.getAllByTestId('dc-vcard')
+    expect(cards.length).toBeGreaterThan(10)
+    cards.forEach((c) => {
+      expect(c.querySelector('.dc-vc-play')).toBeTruthy()
+      expect(c.getAttribute('aria-label')).toBe(`Video, ${c.querySelector('.dc-vc-t')!.textContent}, ${c.querySelector('.dc-vc-k')!.textContent}`)
+    })
+    expect(screen.getByTestId('dc-hero').getAttribute('aria-label')).toMatch(/^Video, .+, Knowledge Channel/)
   })
 })
 
@@ -128,29 +148,43 @@ describe('Health pointer and Farming and DIY shelf', () => {
     expect(link.textContent).toBe('Health videos are in Health')
     expect(link.getAttribute('href')).toBe('#health')
   })
-  it('Farming and DIY: 4 cards then Show more (4 at a time), every card names its channel and opens Watch, link says All 23', () => {
+  it('Farming and DIY: a lead card, 4 cards then Show more (4 at a time), every card names its channel and opens Watch, link says All 23', () => {
     render(<Overview now={now} />)
     const row = screen.getByTestId('dc-farm-row')
     const cards = () => Array.from(row.querySelectorAll('a.dc-vgcard'))
+    const lead = screen.getByTestId('dc-farm').querySelector('a.dc-vlead')!
+    expect(pics(lead.parentElement!).map(idOf)).toEqual(['zMH61Yabdj0']) // no watch counts yet: the first (newest) video leads
+    expect(lead.querySelector('.dc-vc-tag')).toBeNull()
     expect(cards()).toHaveLength(4)
-    expect(cards()[0]!.querySelector('.dc-vc-k')!.textContent).toBe('This Old House')
+    expect(cards()[0]!.querySelector('.dc-vc-k')!.textContent).toBe('Ask This Old House')
     cards().forEach((c) => expect(c.getAttribute('href')).toBe('#discover/watch'))
     fireEvent.click(within(row).getByRole('button', { name: 'Show 4 more' }))
     expect(cards()).toHaveLength(8)
+    fireEvent.click(cards()[0]!)
+    expect(ev.calls).toEqual(['card_farm_video'])
     expect(within(screen.getByTestId('dc-farm')).getByRole('link', { name: 'All 23' }).getAttribute('href')).toBe('#discover/learn/farm-diy') // 23 farm-diy videos counted by hand in ready.json
   })
-  it('channel chips (wrapping buttons) narrow the shelf to one channel; a second tap shows all', () => {
+  it('one labelled Channel menu (default All channels) narrows the shelf to one channel; picking All channels shows all again', () => {
     render(<Overview now={now} />)
-    const group = screen.getByRole('group', { name: 'Farming and DIY channels' })
-    expect(within(group).getAllByRole('button').map((b) => b.textContent)).toEqual(['This Old House', 'Ask This Old House', 'The Home Depot', 'Agribusiness How It Works', 'Agree sa Agri', 'Agri-nihan', 'Don Bustamante Rooftop Gardening', 'The Agrillenial', "Raffy's Green Thumb"])
-    const chip = within(group).getByRole('button', { name: 'Agri-nihan' })
-    fireEvent.click(chip)
-    expect(chip.getAttribute('aria-pressed')).toBe('true')
-    const kickers = () => Array.from(screen.getByTestId('dc-farm-row').querySelectorAll('.dc-vc-k')).map((k) => k.textContent)
-    expect(kickers()).toEqual(['Agri-nihan', 'Agri-nihan', 'Agri-nihan', 'Agri-nihan']) // 4 Agri-nihan videos in ready.json
+    expect(screen.queryByRole('group', { name: 'Farming and DIY channels' })).toBeNull()
+    const sel = screen.getByLabelText('Channel') as HTMLSelectElement
+    expect(sel.value).toBe('')
+    expect(Array.from(sel.options).map((o) => o.textContent)).toEqual(['All channels', 'This Old House', 'Ask This Old House', 'The Home Depot', 'Agribusiness How It Works', 'Agree sa Agri', 'Agri-nihan', 'Don Bustamante Rooftop Gardening', 'The Agrillenial', "Raffy's Green Thumb"])
+    fireEvent.change(sel, { target: { value: 'Agri-nihan' } })
+    const kickers = () => Array.from(screen.getByTestId('dc-farm').querySelectorAll('.dc-vc-k')).map((k) => k.textContent)
+    expect(kickers()).toEqual(['Agri-nihan', 'Agri-nihan', 'Agri-nihan', 'Agri-nihan']) // 4 Agri-nihan videos in ready.json: the lead and three cards
     expect(within(screen.getByTestId('dc-farm')).queryByRole('button', { name: /Show .* more/ })).toBeNull()
-    fireEvent.click(chip)
+    fireEvent.change(sel, { target: { value: '' } })
     expect(kickers()[0]).toBe('This Old House')
+  })
+  it('the most-tapped video on this phone leads, with a Most watched label', () => {
+    localStorage.setItem('dc.watchcounts', JSON.stringify({ hHLJiEbjWfA: 3, PLGmTzEGSIY: 1 }))
+    render(<Overview now={now} />)
+    const lead = screen.getByTestId('dc-farm').querySelector('a.dc-vlead')!
+    expect(pics(lead.parentElement!).map(idOf)).toEqual(['hHLJiEbjWfA'])
+    expect(lead.querySelector('.dc-vc-tag')!.textContent).toBe('Most watched')
+    fireEvent.click(lead)
+    expect(JSON.parse(localStorage.getItem('dc.watchcounts')!).hHLJiEbjWfA).toBe(4)
   })
   it('no side-swipe row is left on Discover Today', () => {
     const { container } = render(<Overview now={now} />)

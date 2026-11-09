@@ -102,11 +102,11 @@ test('Listen: one at a time, and leaving the sub stops the voice', async ({ page
 test('Watch: a poster picks a video, nothing is embedded before the tap', async ({ page }) => {
   await page.goto('/#discover/watch')
   await expect(page.getByTestId('watch')).toBeVisible()
-  await expect(page.getByRole('button', { name: /^Choose / })).toHaveCount(4) // the MoreGrid shows four, then Show more; Watch lists only the Discover shelf (ready.json), health clips are in Health
+  await expect(page.getByRole('button', { name: /^Video, / })).toHaveCount(4) // the MoreGrid shows four, then Show more; Watch lists only the Discover shelf (ready.json), health clips are in Health
   await expect(page.locator('iframe')).toHaveCount(0)
   await expect(page.getByTestId('live-tv')).toContainText('Coming soon')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
-  await page.getByRole('button', { name: /^Choose / }).first().click()
+  await page.getByRole('button', { name: /^Video, / }).first().click()
   await expect(page.getByRole('link', { name: /Open in YouTube/ })).toHaveAttribute('href', /youtube\.com\/watch\?v=[A-Za-z0-9_-]{11}/)
   await expect(page.locator('iframe')).toHaveCount(0)
 })

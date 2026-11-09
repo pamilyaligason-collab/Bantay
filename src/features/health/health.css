@@ -409,7 +409,7 @@
 .hv-chip { min-height: 44px; padding: 0 14px; border: 1.5px solid var(--tab-accent, #9C2A3A); border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .hv-chip[aria-pressed="true"] { background: var(--tint-amber); color: var(--tint-amber-ink); } /* a tested tint pair: 4.5:1 in light and dark */
 .hv-chip:focus-visible, .hv-vbtn:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-.card.hv-vc { display: flex; flex-direction: column; padding: 0 0 10px; overflow: hidden; color: var(--ink); }
+.card.hv-vc { display: flex; flex-direction: column; padding: 0 0 10px; overflow: hidden; color: var(--ink); box-shadow: var(--shadow-raised); }
 .more-grid > .card.hv-vc[data-open] { grid-column: 1 / -1; }
 .hv-vbtn { display: flex; flex-direction: column; gap: 4px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .hv-vbtn > :not(.hv-still) { padding: 0 12px; }

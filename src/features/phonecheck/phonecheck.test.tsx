@@ -17,7 +17,7 @@ import { AlarmHealthRow, healthLine } from './AlarmHealthRow'
 import { KEY_ALARM_HEALTH, KEY_PHONE_CHECK, KEY_PHONE_LATER, KEY_TOAST_SEEN } from './keys'
 import { PhoneCheckCard } from './PhoneCheckCard'
 
-const XIAOMI = { notif_ok: true, exact_ok: true, battery_ok: false, alarms_ok: true, call_ok: true, oem: 'xiaomi' }
+const XIAOMI = { notif_ok: true, exact_ok: null, battery_ok: false, alarms_ok: true, call_ok: true, oem: 'xiaomi' } // exact_ok unknown: battery is only a warning while exact alarms and notifications are both on (D-162)
 const HEALTH = { at: '2026-10-20T00:40:00.000Z', set: 7, rearmed: 7, ok: true, days: 7, recovered: true }
 
 beforeEach(async () => { m.android = true; vi.clearAllMocks(); fx.applyFix.mockResolvedValue('prompted'); fx.probe.mockResolvedValue(XIAOMI); fx.sync.mockResolvedValue('unchanged'); fx.test.mockResolvedValue('scheduled'); await db.kv.clear() })
@@ -136,6 +136,14 @@ describe('AlarmHealthRow (Me)', () => {
     expect(screen.getByText('Tap to allow')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
     expect(fx.applyFix).toHaveBeenCalledWith('call')
+  })
+  it('battery saver with exact alarms and notifications on is an amber warning with an Allow button, not a Fix', async () => {
+    await db.kv.put({ key: KEY_PHONE_CHECK, value: { at: 'x', ...XIAOMI, exact_ok: true } })
+    render(<AlarmHealthRow />)
+    expect(await screen.findByText('Battery settings may delay some alarms. Tap Allow so Bantay can keep running.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Fix' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Allow' }))
+    expect(fx.applyFix).toHaveBeenCalledWith('battery')
   })
   it('a problem turns Check now into Fix', async () => {
     await db.kv.put({ key: KEY_PHONE_CHECK, value: { at: 'x', ...XIAOMI } })

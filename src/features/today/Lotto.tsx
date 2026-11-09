@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Section } from '../look'
+import { track } from '../admin/events'
 import { latestPerGame, useLotto, type LottoRow } from './lottoApi'
 import './lotto.css'
 
-export const LOTTO_NOTE = 'Source: lottopcso.com (unofficial). Check your ticket with PCSO.'
+export const LOTTO_NOTE = 'Source: lottopcso.com (unofficial).'
 export const PCSO_URL = 'https://www.pcso.gov.ph/'
 const SHOWN = 3
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -22,6 +23,7 @@ export default function Lotto() {
   const { rows } = useLotto()
   const [all, setAll] = useState(false)
   const latest = rows ? latestPerGame(rows) : []
+  // card_lotto is recorded on tap only (D-160)
   if (!latest.length) return null
   const byDate = [...latest].sort((a, b) => (a.draw_date < b.draw_date ? 1 : a.draw_date > b.draw_date ? -1 : 0)) // stable: ties keep game order
   const top = new Set(byDate.slice(0, SHOWN))
@@ -33,12 +35,13 @@ export default function Lotto() {
           const w = winnerLine(r)
           return (
             <div key={r.game} className="lotto-row">
-              <span className="lotto-name">{r.game}<span className="lotto-sub">{drawDay(r.draw_date)}{w ? ` · ${w}` : ''}</span></span>
+              <div className="lotto-head"><span className="lotto-name">{r.game}</span><span className="lotto-sub">{drawDay(r.draw_date)}{w ? ` · ${w}` : ''}</span></div>
               <span className="lotto-balls">{balls(r).map((n, i) => <span key={i} className="lotto-ball">{n}</span>)}</span>
             </div>
           )
         })}
-        <p className="lotto-note">Source: lottopcso.com (unofficial). Check your ticket with <a href={PCSO_URL} target="_blank" rel="noopener noreferrer">PCSO</a>.</p>
+        <p className="lotto-note">{LOTTO_NOTE}</p>
+        <a className="lotto-pcso" href={PCSO_URL} target="_blank" rel="noopener noreferrer" onClick={() => void track('action', 'card_lotto')}>Check your ticket with PCSO</a>
       </div>
     </Section>
   )

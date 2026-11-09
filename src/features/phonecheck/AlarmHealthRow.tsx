@@ -3,6 +3,7 @@ import { syncDoseReminders } from '../health/reminders'
 import { isNativeAndroid } from '../safety/settingsOpener'
 import '../shell/shell.css'
 import { applyFix, fixCopy } from './fix'
+import { BATTERY_WARNING_TEXT, batteryWarning } from './health'
 import { KEY_ALARM_HEALTH, KEY_PHONE_CHECK, type AlarmHealth } from './keys'
 import { PhoneCheckCard } from './PhoneCheckCard'
 import { probe, probeProblems, scheduleTestAlarm, type ProbeResult } from './probe'
@@ -29,6 +30,7 @@ export function AlarmHealthRow() {
   if (!isNativeAndroid()) return null
   const problems = check ? probeProblems(check) : []
   const alarmProblems = problems.filter((p) => p !== 'call')
+  const warn = !alarmProblems.length && batteryWarning(check)
   const run = async () => {
     setBusy(true); setNote('')
     await syncDoseReminders()
@@ -46,11 +48,13 @@ export function AlarmHealthRow() {
       <div>
         <div className="sh-grow">
           <b>Alarms</b>
-          <div className="sh-sub" role="status">{alarmProblems.length ? fixCopy(alarmProblems[0]!, check?.oem ?? null).title.replace('One thing to fix: ', 'Needs fixing: ') : note || healthLine(health)}</div>
+          <div className="sh-sub" role="status">{alarmProblems.length ? fixCopy(alarmProblems[0]!, check?.oem ?? null).title.replace('One thing to fix: ', 'Needs fixing: ') : warn ? <span style={{ color: 'var(--warn)' }}>{BATTERY_WARNING_TEXT}</span> : note || healthLine(health)}</div>
         </div>
         {alarmProblems.length
           ? <button type="button" className="sh-pill sh-ghost sh-small" onClick={() => setFixing((x) => !x)}>Fix</button>
-          : <button type="button" className="sh-pill sh-ghost sh-small" disabled={busy} onClick={() => void run()}>Check now</button>}
+          : warn
+            ? <button type="button" className="sh-pill sh-ghost sh-small" onClick={() => void applyFix('battery')}>Allow</button>
+            : <button type="button" className="sh-pill sh-ghost sh-small" disabled={busy} onClick={() => void run()}>Check now</button>}
       </div>
       {fixing && check && alarmProblems.length > 0 && <PhoneCheckCard result={check} onFixed={() => setFixing(false)} onLater={() => setFixing(false)} />}
       <div>

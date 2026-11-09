@@ -7,6 +7,8 @@
   --tint-teal: #DDF1EE; --tint-teal-ink: #0F766E; --tint-purple: #EEE9FA; --tint-purple-ink: #6D4BC2; --tint-green: #E3EFE8; --tint-green-ink: #1E6B4E;
   --red: #B42318; --danger-bg: #C8372D; --amber: #D97706; --focus: #8A4B06;
   --shadow: 0 1px 2px rgba(40,30,10,.06); --shadow-float: 0 8px 24px rgba(40,30,10,.12);
+  /* S26 depth (D-170): raised = tappable card, hero = one per screen, press = :active */
+  --shadow-raised: 0 0 0 1px rgba(40,30,10,.04), 0 2px 4px rgba(40,30,10,.06), 0 12px 24px -6px rgba(40,30,10,.16); --shadow-hero: 0 0 0 1px rgba(40,30,10,.05), 0 4px 8px rgba(40,30,10,.06), 0 24px 48px -16px rgba(40,30,10,.28); --shadow-press: 0 0 0 1px rgba(40,30,10,.05), 0 1px 2px rgba(40,30,10,.08);
   --glass-bg: rgb(255 255 255 / .80); --glass-sheet: rgb(245 243 239 / .96); --glass-edge: rgb(255 255 255 / .6); --glass-blur: blur(20px) saturate(160%);
   --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
   --c1: #2B6CC4; --c2: #C2610F; --band: rgba(43,108,196,0.12);
@@ -30,6 +32,7 @@
   --tint-teal: #12302D; --tint-teal-ink: #5CC4B8; --tint-purple: #26203A; --tint-purple-ink: #B59CF0; --tint-green: #15302A; --tint-green-ink: #4FA37F;
   --red: #F08A80; --danger-bg: #B3261E; --amber: #E8B04E; --focus: #E8B04E;
   --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
+  --shadow-raised: 0 0 0 1px rgba(255,255,255,.06), 0 2px 4px rgba(0,0,0,.4), 0 12px 24px -6px rgba(0,0,0,.55); --shadow-hero: 0 0 0 1px rgba(255,255,255,.08), 0 4px 8px rgba(0,0,0,.4), 0 24px 48px -16px rgba(0,0,0,.7); --shadow-press: 0 0 0 1px rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.5);
   --glass-bg: rgb(30 29 26 / .78); --glass-sheet: rgb(30 29 26 / .96); --glass-edge: rgb(255 255 255 / .08); --glass-blur: blur(20px) saturate(160%);
   --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
   --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
@@ -53,6 +56,7 @@
     --tint-teal: #12302D; --tint-teal-ink: #5CC4B8; --tint-purple: #26203A; --tint-purple-ink: #B59CF0; --tint-green: #15302A; --tint-green-ink: #4FA37F;
     --red: #F08A80; --danger-bg: #B3261E; --amber: #E8B04E; --focus: #E8B04E;
     --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
+    --shadow-raised: 0 0 0 1px rgba(255,255,255,.06), 0 2px 4px rgba(0,0,0,.4), 0 12px 24px -6px rgba(0,0,0,.55); --shadow-hero: 0 0 0 1px rgba(255,255,255,.08), 0 4px 8px rgba(0,0,0,.4), 0 24px 48px -16px rgba(0,0,0,.7); --shadow-press: 0 0 0 1px rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.5);
     --glass-bg: rgb(30 29 26 / .78); --glass-sheet: rgb(30 29 26 / .96); --glass-edge: rgb(255 255 255 / .08); --glass-blur: blur(20px) saturate(160%);
     --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
     --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);

@@ -32,7 +32,7 @@ test('the Learn section opens Discover Today, before Top story, Health videos, F
     const title = document.querySelector<HTMLElement>('[data-testid="dc-learn"] h2')!
     return { learn: y('dc-learn'), story: y('dc-top-story'), health: y('dc-health-link'), farm: y('dc-farm'), listen: y('dc-listen'), prep: card('dc-learn-prepping'), repairs: card('dc-learn-farm'), titleLines: Math.round(title.getBoundingClientRect().height / parseFloat(getComputedStyle(title).lineHeight)) }
   })
-  expect([m.learn, m.story, m.health, m.farm, m.listen].every((t, i, a) => i === 0 || t > a[i - 1]!), 'section order').toBe(true)
+  expect([m.learn, m.story, m.farm, m.listen, m.health].every((t, i, a) => i === 0 || t > a[i - 1]!), 'section order').toBe(true)
   expect(m.prep.href).toBe('#discover/learn/prepping')
   expect(m.repairs.href).toBe('#discover/learn/farm-diy')
   for (const c of [m.prep, m.repairs]) { expect(c.h).toBeGreaterThanOrEqual(44); expect(c.lines).toBe(1) }
@@ -110,7 +110,7 @@ for (const [name, day] of SEASONS) {
         const box = (id: string) => { const e = document.querySelector(`[data-testid="${id}"]`); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom } }
         return { learn: box('dc-learn'), story: box('dc-top-story'), hero: box('dc-hero'), health: box('dc-health-link'), farm: box('dc-farm') }
       })
-      const chain = [r.learn, r.story, r.health, r.farm].filter((x): x is { top: number; bottom: number } => !!x)
+      const chain = [r.learn, r.story, r.farm, r.health].filter((x): x is { top: number; bottom: number } => !!x)
       expect(chain.length).toBe(4)
       chain.slice(1).forEach((b, i) => expect(b.top - chain[i]!.bottom, `gap ${i}`).toBeGreaterThanOrEqual(0))
       expect(r.hero!.top, 'hero inside Top story').toBeGreaterThanOrEqual(r.story!.top)

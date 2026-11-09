@@ -96,7 +96,7 @@ export default function App() {
   const scroll = useRef<HTMLElement | null>(null)
   const prev = useRef(idx)
   // S16-L0: #family/papers is the Records screen
-  useTrackScreen(view === 'docs' ? 'docs' : view === 'weather' || view === 'calm' ? 'today' : isTabView ? (hash === '#family/papers' ? 'records' : tab) : view!)
+  useTrackScreen(view === 'docs' || view === 'weather' || view === 'calm' ? view : isTabView ? (hash === '#family/papers' ? 'records' : tab) : view!)
   useEffect(() => startSync(), []) // inside AuthGate; returns its stop fn; no-op until signed in
   useEffect(() => startSensorSync(), []) // reads the phone's health store on open and on return; no-op on the web
   useEffect(() => watchAlertsForSession(), []) // family alerts (D-78): Realtime + poll while open; stops on sign-out

@@ -5,7 +5,8 @@ import { deviceMaker, isNativeAndroid, nativeStatus } from '../safety/settingsOp
 import { ALARM_SHELL, shellVersionNow, versionAtLeast } from './appInfo'
 import { callOk } from './callState'
 import { ensureAlarmChannel } from './channel'
-import { ALARM_CHANNEL, KEY_ALARM_HEALTH, KEY_PHONE_CHECK, type AlarmHealth } from './keys'
+import { probeProblems } from './health'
+import { ALARM_CHANNEL, KEY_ALARM_HEALTH, KEY_CALL_SEEN, KEY_PHONE_CHECK, type AlarmHealth } from './keys'
 
 /** null = unknown (never false): web, an old shell, a plugin that could not answer. */
 export interface ProbeResult { notif_ok: boolean | null; exact_ok: boolean | null; battery_ok: boolean | null; alarms_ok: boolean | null; call_ok: boolean | null; oem: string | null }
@@ -28,26 +29,21 @@ export async function probe(): Promise<ProbeResult> {
     const newShell = versionAtLeast(ver, ALARM_SHELL)
     // alarms_ok: only a shell that can plan alarms says anything; an explicit false from any source wins, no answer stays null
     const alarms = !newShell ? null : (health?.ok === false || notif === false || exact === false) ? false : typeof health?.ok === 'boolean' ? health.ok : null
-    r = { notif_ok: notif, exact_ok: exact, battery_ok: st ? st.ignoringBatteryOptimizations : null, alarms_ok: alarms, call_ok: call, oem }
+    // Hold-for-help is "on" once Android has granted the Phone permission; a phone that never granted it is not a failure, only one that lost it (D-162)
+    if (call === true) await db.kv.put({ key: KEY_CALL_SEEN, value: true }).catch(() => undefined)
+    const callWanted = call === true || (call === false && (await db.kv.get(KEY_CALL_SEEN).catch(() => undefined))?.value === true)
+    r = { notif_ok: notif, exact_ok: exact, battery_ok: st ? st.ignoringBatteryOptimizations : null, alarms_ok: alarms, call_ok: callWanted ? call : null, oem }
   }
   try { await db.kv.put({ key: KEY_PHONE_CHECK, value: { at: new Date().toISOString(), ...r } }) } catch { /* the answer is still returned */ }
-  const verdict = probeProblems(r).length ? 'phone_check_fail' : 'phone_check_pass'
-  if (lastVerdict !== verdict) { lastVerdict = verdict; void track('action', verdict) } // names on the allowlist only (events.ts); one event per change, not per open
+  if (isNativeAndroid()) { // the web has no phone to check: no events from it
+    const first = probeProblems(r)[0]
+    const verdict = first ? 'phone_check_fail' : 'phone_check_pass'
+    if (lastVerdict !== verdict) { lastVerdict = verdict; void track('action', verdict); if (first) void track('action', `phone_check_fail_${first}`) } // names on the allowlist only (events.ts); one event per change, not per open
+  }
   return r
 }
 
-export type Problem = 'notif' | 'exact' | 'battery' | 'alarms' | 'call'
-
-/** What is wrong, most important first. Only an explicit false counts; unknown is not a problem. `alarms` is listed only when nothing more specific explains it. */
-export function probeProblems(r: ProbeResult): Problem[] {
-  const p: Problem[] = []
-  if (r.notif_ok === false) p.push('notif')
-  if (r.exact_ok === false) p.push('exact')
-  if (r.battery_ok === false) p.push('battery')
-  if (r.alarms_ok === false && !p.length) p.push('alarms')
-  if (r.call_ok === false) p.push('call')
-  return p
-}
+export { probeProblems, type Problem } from './health' // the shared rule lives in health.ts so the Safety hub can use it without Capacitor
 
 export type TestAlarm = 'web' | 'no-permission' | 'scheduled' | 'failed'
 const TEST_ID = 1_999_999_999 // top of the id space, outside the snooze range

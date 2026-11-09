@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { LottoRow } from './lottoApi'
 const h = vi.hoisted(() => ({ rows: null as unknown as LottoRow[] | null }))
 vi.mock('./lottoApi', async (orig) => ({ ...(await orig<typeof import('./lottoApi')>()), useLotto: () => ({ rows: h.rows }) }))
+const tr = vi.hoisted(() => vi.fn(async () => true))
+vi.mock('../admin/events', () => ({ track: tr }))
 import Lotto, { drawDay, LOTTO_NOTE } from './Lotto'
 
 const r = (game: string, draw_date: string, combination: string, winners: number | null = 0): LottoRow => ({ game, draw_date, combination, jackpot_php: 1_000_000, winners })
@@ -42,9 +44,11 @@ describe('Lotto card', () => {
     expect(container.querySelectorAll('.lotto-ball')).toHaveLength(6 + 6 + 3)
     expect(container.textContent).not.toContain('01 02 03')
     const note = container.querySelector('.lotto-note')!
-    expect(note.textContent).toBe('Source: lottopcso.com (unofficial). Check your ticket with PCSO.')
+    expect(note.textContent).toBe('Source: lottopcso.com (unofficial).')
     expect(note.textContent).toBe(LOTTO_NOTE)
-    const link = note.querySelector('a')!
+    const link = screen.getByRole('link', { name: 'Check your ticket with PCSO' }) // its own line: no spaced full stop after it
+    expect(link.nextSibling).toBeNull()
+    expect(link.parentElement!.textContent!.endsWith('PCSO')).toBe(true)
     expect(link.getAttribute('href')).toBe('https://www.pcso.gov.ph/')
     expect(link.getAttribute('rel')).toContain('noopener')
   })
@@ -66,10 +70,29 @@ describe('Lotto card', () => {
     expect(drawDay('2026-01-01')).toBe('Thu 1 Jan')
     expect(drawDay('nope')).toBe('nope')
   })
-  it('balls are round 44-safe chips: a wrapping row, no fixed width on the row', () => {
+  it('balls are round chips on their own left-aligned line below the name and date, which share one line; no mid-word breaks; PCSO link is 44 px', () => {
     const css = readFileSync('src/features/today/lotto.css', 'utf8')
     expect(css).toMatch(/\.lotto-ball \{[^}]*border-radius: 50%/)
-    expect(css).toMatch(/\.lotto-row \{[^}]*flex-wrap: wrap/)
+    expect(css).toMatch(/\.lotto-row \{[^}]*display: grid/)
+    expect(css).toMatch(/\.lotto-balls \{[^}]*justify-content: flex-start/)
+    expect(css).toMatch(/\.lotto-name \{[^}]*overflow-wrap: normal/)
+    expect(css).not.toMatch(/overflow-wrap: anywhere/)
+    expect(css).toMatch(/\.lotto-pcso \{[^}]*min-height: 44px/)
+    h.rows = ALL
+    const { container } = render(<Lotto />)
+    const row = container.querySelector('.lotto-row')!
+    expect(row.children[0]!.className).toBe('lotto-head')
+    expect(row.children[0]!.children).toHaveLength(2) // name + date in one head
+    expect(row.children[1]!.className).toBe('lotto-balls')
+  })
+  it('tracks card_lotto only when the PCSO link is tapped, never on show (D-160 tap names)', () => {
+    tr.mockClear()
+    h.rows = ALL
+    render(<Lotto />)
+    expect(tr).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('link', { name: 'Check your ticket with PCSO' }))
+    expect(tr).toHaveBeenCalledTimes(1)
+    expect(tr).toHaveBeenCalledWith('action', 'card_lotto')
   })
   it('its class names are global CSS: none is defined in any other stylesheet (.lt-row once restyled the page header)', () => {
     const own = new Set(readFileSync('src/features/today/lotto.css', 'utf8').match(/\.lotto[\w-]*/g))

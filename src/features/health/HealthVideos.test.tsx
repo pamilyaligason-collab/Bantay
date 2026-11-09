@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { HealthVideos } from './HealthVideos'
 import css from './health.css?raw'
@@ -56,6 +56,19 @@ describe('Health videos (S25)', () => {
     fireEvent.click(cards()[1]!.querySelector('button.hv-vbtn')!)
     expect(screen.getByTestId(first.getAttribute('data-testid')!).hasAttribute('data-open')).toBe(false) // the first folds back to its still
   })
+  it('each card button has a play icon and is named "Video, title, channel, length"; opening it moves focus into the player', async () => {
+    render(<HealthVideos />)
+    const first = cards()[0]!
+    const id = first.getAttribute('data-testid')!.slice(3)
+    const v = VIDEOS.find((x) => x.id === id)!
+    const btn = first.querySelector('button.hv-vbtn')!
+    expect(btn.querySelector('.hv-play')).toBeTruthy()
+    expect(btn.getAttribute('aria-label')).toBe(`Video, ${v.title}, ${v.source}${v.minutes != null ? `, ${v.minutes} minutes` : ''}`)
+    fireEvent.click(btn)
+    const box = screen.getByTestId(`hv-${id}`).querySelector('.hv-opened')!
+    await waitFor(() => expect(box.contains(document.activeElement)).toBe(true))
+  })
+  it('a tappable video card carries the raised shadow', () => expect(css).toMatch(/\.card\.hv-vc \{[^}]*box-shadow: var\(--shadow-raised\)/))
   it('every chip has a video; the stylesheet gives chips a 44 px height and lets the row wrap with no side scroll', () => {
     render(<HealthVideos />)
     expect(SUBS.every((s) => forSub(s.sub).length > 0)).toBe(true)

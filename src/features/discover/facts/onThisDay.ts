@@ -32,7 +32,7 @@ export async function loadOnThisDay(now: Date = new Date(), f: typeof fetch = fe
   const old = ((await db.kv.get(KEY).catch(() => undefined))?.value as Cache | undefined) ?? null
   if (old && old.day === day && old.items.length) return { items: old.items, stale: false }
   try {
-    const res = await f(`https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`, { signal: AbortSignal.timeout(8000) })
+    const res = await f(`https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`, { signal: typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal ? AbortSignal.timeout(8000) : undefined })
     if (!res.ok) throw new Error(String(res.status))
     const items = pick(((await res.json()) as { events?: Raw[] }).events ?? [], day)
     if (!items.length) throw new Error('empty')

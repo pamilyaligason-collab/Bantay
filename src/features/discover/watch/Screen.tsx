@@ -15,7 +15,7 @@ const readPick = () => { try { return sessionStorage.getItem(WATCH_PICK) } catch
 function Poster({ v, on, pick }: { v: Video; on: boolean; pick: () => void }) {
   const [off, setOff] = useState(false)
   return (
-    <button type="button" className="dc-poster" aria-pressed={on} aria-label={`Choose ${v.title}${v.minutes ? `, ${v.minutes} min` : ''}`} data-thumb={off ? 'off' : 'on'} onClick={pick}>
+    <button type="button" className="dc-poster" aria-pressed={on} aria-label={["Video", v.title, v.source, v.minutes != null ? `${v.minutes} minutes` : null].filter(Boolean).join(", ")} data-thumb={off ? 'off' : 'on'} onClick={pick}>
       {!off && <img src={`https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`} alt="" width={160} height={90} loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setOff(true)} />}
       <span className="dc-poster-cap" data-contrast-bg={off ? undefined : '#555555'}><b>{v.title}</b>{v.minutes ? <> <span>{v.minutes} min</span></> : null}</span>
     </button>
@@ -34,6 +34,7 @@ export default function Watch() {
   useEffect(() => { try { sessionStorage.removeItem(WATCH_PICK) } catch { /* private mode */ } }, [])
   const list = topic ? all.filter((v) => v.topic === topic) : all
   const chosen = list.find((v) => v.id === sel)
+  useEffect(() => { if (chosen) player.current?.querySelector<HTMLElement>('.lv-play, .lv-yt')?.focus() }, [chosen?.id]) // S26: focus moves to the player when it opens
   const pick = (id: string) => { setSel(id); setTimeout(() => player.current?.scrollIntoView?.({ block: 'nearest' }), 0) }
   return (
     <div className="dc-list" data-testid="watch">
