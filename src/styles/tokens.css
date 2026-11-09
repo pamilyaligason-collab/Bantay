@@ -5,8 +5,9 @@
   --green: #1E6B4E; --green-tint: #E3EFE8; --on-green: #FFFFFF; --btn: #1E6B4E;
   --tint-blue: #E5EDFB; --tint-blue-ink: #2459C7; --tint-red: #FBE7E4; --tint-red-ink: #B42318; --tint-amber: #FDF1DC; --tint-amber-ink: #8A4B06;
   --tint-teal: #DDF1EE; --tint-teal-ink: #0F766E; --tint-purple: #EEE9FA; --tint-purple-ink: #6D4BC2; --tint-green: #E3EFE8; --tint-green-ink: #1E6B4E;
+  --tint-rose: #FBE7E4; --tint-rose-ink: #B42318; --tint-violet: #EEE9FA; --tint-violet-ink: #6D4BC2; --tint-slate: #E8ECF1; --tint-slate-ink: #3F4B5A;
   --red: #B42318; --danger-bg: #C8372D; --amber: #D97706; --focus: #8A4B06;
-  --shadow: 0 1px 2px rgba(40,30,10,.06); --shadow-float: 0 8px 24px rgba(40,30,10,.12);
+  --shadow: 0 1px 2px rgba(40,30,10,.08), 0 6px 14px -8px rgba(40,30,10,.22); --shadow-float: 0 8px 24px rgba(40,30,10,.12);
   /* S26 depth (D-170): raised = tappable card, hero = one per screen, press = :active */
   --shadow-raised: 0 0 0 1px rgba(40,30,10,.04), 0 2px 4px rgba(40,30,10,.06), 0 12px 24px -6px rgba(40,30,10,.16); --shadow-hero: 0 0 0 1px rgba(40,30,10,.05), 0 4px 8px rgba(40,30,10,.06), 0 24px 48px -16px rgba(40,30,10,.28); --shadow-press: 0 0 0 1px rgba(40,30,10,.05), 0 1px 2px rgba(40,30,10,.08);
   --glass-bg: rgb(255 255 255 / .80); --glass-sheet: rgb(245 243 239 / .96); --glass-edge: rgb(255 255 255 / .6); --glass-blur: blur(20px) saturate(160%);
@@ -14,6 +15,10 @@
   --c1: #2B6CC4; --c2: #C2610F; --band: rgba(43,108,196,0.12);
   --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
   --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
+  /* S28 type, space, card tokens (contract: Design tokens) */
+  --fs-display: 30px; --fs-value: 24px; --fs-title: 20px; --fs-body: 17px; --fs-meta: 15px; --fw-title: 700; --fw-value: 700; --fw-body: 400; --fw-meta: 600; --lh-tight: 1.2; --lh-body: 1.45;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px;
+  --depth-card: 0 1px 2px rgba(40,30,10,.06), 0 12px 26px -14px rgba(40,30,10,.32);
   /* legacy aliases: untouched screens still render; Phase 1 lanes delete their uses */
   --green2: #1E6B4E; --soft: #E3EFE8; --line: rgba(60,55,45,.16); --amber-ink: #8A4B06; --red-soft: var(--tint-red); --ok: #1E6B4E; --warn: #8A4B06;
   --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
@@ -30,14 +35,19 @@
   --green: #4FA37F; --green-tint: #15302A; --on-green: #0E1A14; --btn: #27795A;
   --tint-blue: #16213A; --tint-blue-ink: #7FA6F0; --tint-red: #3A1A17; --tint-red-ink: #F08A80; --tint-amber: #3A2A10; --tint-amber-ink: #E8B04E;
   --tint-teal: #12302D; --tint-teal-ink: #5CC4B8; --tint-purple: #26203A; --tint-purple-ink: #B59CF0; --tint-green: #15302A; --tint-green-ink: #4FA37F;
+  --tint-rose: #3A1A17; --tint-rose-ink: #F08A80; --tint-violet: #26203A; --tint-violet-ink: #B59CF0; --tint-slate: #1F252C; --tint-slate-ink: #A9B7C8;
   --red: #F08A80; --danger-bg: #B3261E; --amber: #E8B04E; --focus: #E8B04E;
-  --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
+  --shadow: 0 1px 2px rgba(0,0,0,.45), 0 6px 14px -8px rgba(0,0,0,.6); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
   --shadow-raised: 0 0 0 1px rgba(255,255,255,.06), 0 2px 4px rgba(0,0,0,.4), 0 12px 24px -6px rgba(0,0,0,.55); --shadow-hero: 0 0 0 1px rgba(255,255,255,.08), 0 4px 8px rgba(0,0,0,.4), 0 24px 48px -16px rgba(0,0,0,.7); --shadow-press: 0 0 0 1px rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.5);
   --glass-bg: rgb(30 29 26 / .78); --glass-sheet: rgb(30 29 26 / .96); --glass-edge: rgb(255 255 255 / .08); --glass-blur: blur(20px) saturate(160%);
   --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
   --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
   --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
   --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
+  /* S28 type, space, card tokens (contract: Design tokens) */
+  --fs-display: 30px; --fs-value: 24px; --fs-title: 20px; --fs-body: 17px; --fs-meta: 15px; --fw-title: 700; --fw-value: 700; --fw-body: 400; --fw-meta: 600; --lh-tight: 1.2; --lh-body: 1.45;
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px;
+  --depth-card: 0 1px 2px rgba(0,0,0,.4), 0 12px 26px -14px rgba(0,0,0,.7);
   --green2: #4FA37F; --soft: #15302A; --line: rgba(255,255,255,.14); --amber-ink: #E8B04E; --red-soft: var(--tint-red); --ok: #4FA37F; --warn: #E8B04E;
   --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
   --link: var(--green); --act: var(--green); --fill: rgba(79,163,127,.10);
@@ -54,14 +64,19 @@
     --green: #4FA37F; --green-tint: #15302A; --on-green: #0E1A14; --btn: #27795A;
     --tint-blue: #16213A; --tint-blue-ink: #7FA6F0; --tint-red: #3A1A17; --tint-red-ink: #F08A80; --tint-amber: #3A2A10; --tint-amber-ink: #E8B04E;
     --tint-teal: #12302D; --tint-teal-ink: #5CC4B8; --tint-purple: #26203A; --tint-purple-ink: #B59CF0; --tint-green: #15302A; --tint-green-ink: #4FA37F;
+  --tint-rose: #3A1A17; --tint-rose-ink: #F08A80; --tint-violet: #26203A; --tint-violet-ink: #B59CF0; --tint-slate: #1F252C; --tint-slate-ink: #A9B7C8;
     --red: #F08A80; --danger-bg: #B3261E; --amber: #E8B04E; --focus: #E8B04E;
-    --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
+    --shadow: 0 1px 2px rgba(0,0,0,.45), 0 6px 14px -8px rgba(0,0,0,.6); --shadow-float: 0 8px 24px rgba(0,0,0,.5);
     --shadow-raised: 0 0 0 1px rgba(255,255,255,.06), 0 2px 4px rgba(0,0,0,.4), 0 12px 24px -6px rgba(0,0,0,.55); --shadow-hero: 0 0 0 1px rgba(255,255,255,.08), 0 4px 8px rgba(0,0,0,.4), 0 24px 48px -16px rgba(0,0,0,.7); --shadow-press: 0 0 0 1px rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.5);
     --glass-bg: rgb(30 29 26 / .78); --glass-sheet: rgb(30 29 26 / .96); --glass-edge: rgb(255 255 255 / .08); --glass-blur: blur(20px) saturate(160%);
     --r-hero: 24px; --r-card: 20px; --r-group: 16px; --r-ic: 9px;
     --c1: #5B95E0; --c2: #C9772A; --band: rgba(91,149,224,0.16);
     --ease-out: cubic-bezier(.23, 1, .32, 1); --ease-sheet: cubic-bezier(.32, .72, 0, 1); --ease-in-out: cubic-bezier(.77, 0, .175, 1);
     --dur-press: 100ms; --dur-fast: 150ms; --dur-base: 200ms; --dur-sheet: 280ms;
+    /* S28 type, space, card tokens (contract: Design tokens) */
+    --fs-display: 30px; --fs-value: 24px; --fs-title: 20px; --fs-body: 17px; --fs-meta: 15px; --fw-title: 700; --fw-value: 700; --fw-body: 400; --fw-meta: 600; --lh-tight: 1.2; --lh-body: 1.45;
+    --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --card-pad: 16px; --card-gap: 12px;
+    --depth-card: 0 1px 2px rgba(0,0,0,.4), 0 12px 26px -14px rgba(0,0,0,.7);
     --green2: #4FA37F; --soft: #15302A; --line: rgba(255,255,255,.14); --amber-ink: #E8B04E; --red-soft: var(--tint-red); --ok: #4FA37F; --warn: #E8B04E;
     --warn-bg: color-mix(in srgb, var(--amber) 22%, var(--card));
     --link: var(--green); --act: var(--green); --fill: rgba(79,163,127,.10);

@@ -14,8 +14,8 @@ export function Row(p: { icon?: IconName; tint?: Tint; avatar?: ReactNode; chev?
   const main: ReactNode = (
     <>
       <span className="rw-lead rw-ic" data-tint={p.tint ?? 'none'}>{p.avatar ?? (p.icon && <Icon name={p.icon} size={20} />)}</span>
-      <span className="rw-txt"><b className="rw-title">{p.title}</b>{p.sub && <span className="rw-sub">{p.sub}</span>}</span>
-      {p.value && <span className="rw-value">{p.value}</span>}
+      <span className="rw-txt"><b className="rw-title">{p.title}</b>{p.sub && <span className="rw-sub cd-meta">{p.sub}</span>}</span>
+      {p.value && <span className="rw-value cd-meta">{p.value}</span>}
       {badge && <span className="rw-badge" data-tint={p.badgeTint ?? (typeof p.badge === 'number' ? 'red-solid' : 'none')}>{p.badge}</span>}
       {(p.href || p.chev) && !p.control && <Icon name="chev" size={20} />}
     </>

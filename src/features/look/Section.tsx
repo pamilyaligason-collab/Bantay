@@ -7,7 +7,7 @@ export function Section(p: { title: string; link?: { href: string; label: string
   return (
     <section className="sec" aria-labelledby={h} data-testid={p.testId} id={p.id}>
       <div className="sec-h">
-        <h2 id={h}>{p.title}</h2>
+        <h2 id={h} className="cd-title">{p.title}</h2>
         {p.link ? ('href' in p.link ? <a href={p.link.href}>{p.link.label}</a> : <button type="button" onClick={p.link.onClick}>{p.link.label}</button>)
           : p.meta && <span className="sec-meta">{p.meta}</span>}
       </div>
