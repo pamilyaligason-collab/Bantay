@@ -1,6 +1,6 @@
 import { isRough } from './freshness'
 import { pickLocalSet, type LatLon } from './geo'
-import { nearestPlace, placeLabel, zoneLabel } from './nearestPlace'
+import { nearestPlace, nearestLabel, zoneLabel } from './nearestPlace'
 import { agoWords } from '../today/timeWords'
 
 export interface PlaceWords { title: string; approx?: boolean; sub?: string; stale: boolean } // approx: the fix is rough, so only the place LINE reads 'around <title>' (placeLine); sentences use the plain title // stale -> callers add data-testid="place-last"
@@ -11,7 +11,7 @@ const short = (zone: string) => zoneLabel(zone) // S28: '<barangay>, <town>' for
 /** The area the phone is in. Outside every named area it is 'where you are': a home zone 500 km away is not the phone's place. */
 const areaOf = (p: PlaceLike) => { const s = p.weather ? pickLocalSet(p.weather) : null; return s?.where === 'area' ? s.area.name : 'where you are' }
 /** S28: the exact place when the fix is good enough to name a barangay (not rough), else the area. */
-const exactOf = (p: PlaceLike) => { const n = p.weather && !isRough(p.accuracy) ? nearestPlace(p.weather) : null; return n ? placeLabel(n) : areaOf(p) }
+const exactOf = (p: PlaceLike) => { const n = p.weather && !isRough(p.accuracy) ? nearestPlace(p.weather) : null; return n ? nearestLabel(n) : areaOf(p) }
 const roughOf = (p: PlaceLike) => areaOf(p) !== 'where you are' && isRough(p.accuracy)
 /** The place LINE (chip, card kicker, hero kicker): 'around <place>' for a rough fix. Never put this inside a sentence. */
 export const placeLine = (w: PlaceWords): string => (w.approx ? `around ${w.title}` : w.title)

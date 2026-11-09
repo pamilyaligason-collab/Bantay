@@ -164,9 +164,9 @@ export const hoursFrom = (fc: Forecast, n: number, now = Date.now()): Hour[] => 
 /** "Saved for offline · updated 6:00 AM": the forecast is kept on the phone, this says how old it is. */
 export const savedLine = (fc: Forecast): string => `Saved for offline · updated ${clockIn(fc.fetchedAt, fc.tz)}`
 
-/** "7:20 PM" in the place's own time zone. */
-export const clockIn = (iso: string, tz?: string): string => {
-  const d = new Date(iso)
+/** "7:20 PM" in the place's own time zone (the one clock wording; AM/PM always upper case). Takes an ISO string, a Date or epoch ms; unreadable is ''. */
+export const clockIn = (at: string | number | Date, tz?: string): string => {
+  const d = new Date(at)
   if (Number.isNaN(d.getTime())) return ''
   const f = (timeZone?: string) => d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone }).replace(/\s/g, ' ').toUpperCase()
   try { return f(tz) } catch { return f() }

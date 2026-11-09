@@ -200,7 +200,16 @@ describe('lock.css', () => {
   it.each(['light', 'dark'])('S26 frosted glass %s: white text is >= 4.5:1 over the frost on a pure white backdrop (lighter than any sky stop plus fog) and on the lightest sky stop', (n) => {
     const sel = n === 'light' ? '\\.lk2 \\{ --lk-frost: (rgba\\([^)]*\\))' : ':root\\[data-theme="dark"\\] \\.lk2 \\{ --lk-frost: (rgba\\([^)]*\\))'
     const frost = parse(new RegExp(sel).exec(css)![1]!)
-    for (const back of [[255, 255, 255], [232, 228, 216]] as [number, number, number][]) expect(rat([255, 255, 255], over(frost, back))).toBeGreaterThanOrEqual(4.5)
+    const dim = Number(/--lk-dim: ([\d.]+)/.exec(css)![1])
+    // the glass dims the backdrop first (brightness), then the tint sits over it. Hand value, light, pure white backdrop: dimmed 178.5, tint .55 of (22,58,50) -> (92,112,108), ratio 5.28
+    for (const back of [[255, 255, 255], [232, 228, 216]] as [number, number, number][]) expect(rat([255, 255, 255], over(frost, back.map((v) => v * dim) as [number, number, number]))).toBeGreaterThanOrEqual(4.5)
+    if (n === 'light') expect(rat([255, 255, 255], over(frost, [178.5, 178.5, 178.5]))).toBeCloseTo(5.28, 1)
+  })
+  it('S28 glass reads as tinted glass, not black: a teal tint (green above red), the scene blurred and saturated through it, a white edge and an inner highlight', () => {
+    const [[r, g, b]] = parse('rgba(22, 58, 50, .55)')
+    expect(g).toBeGreaterThan(r * 2); expect(b).toBeGreaterThan(r * 2)
+    expect(css).toMatch(/backdrop-filter: blur\(20px\) saturate\(150%\) brightness\(var\(--lk-dim\)\)/)
+    expect(css).toMatch(/border: 1px solid rgba\(255, 255, 255, \.35\)/); expect(css).toMatch(/inset 0 1px 0 var\(--lk-glass-hi\)/)
   })
   it('S28: the fingerprint disc is glass in light and dark (blur + frost, white icon), the prompt chip under it too', () => {
     const rule = /@supports[^{]*\{[\s\S]*?\.lk2 \.lk2-fp, :root\[data-theme="dark"\] \.lk2 \.lk2-fp, :root:not\(\[data-theme="light"\]\) \.lk2 \.lk2-fp \{([^}]*)\}/.exec(css)![1]!

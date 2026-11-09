@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
-import { nearestPlace, placeLabel, BARANGAY_KM } from '../location/nearestPlace'
+import { nearestPlace, nearestLabel, BARANGAY_KM } from '../location/nearestPlace'
 import { placeLine, placeWords } from '../location/placeWords'
 import PagasaMapCard, { PAGASA_MAP_URL, PAGASA_OUTLOOK_URL } from '../safety/PagasaMapCard'
 import CalmCard from './CalmCard'
 import { takenLabel } from './doneMorph'
-import { agoWords, clock12, noBreak } from './timeWords'
+import { clockIn } from '../weather/forecast'
+import { agoWords, noBreak } from './timeWords'
 
 afterEach(cleanup)
 const NOW = Date.parse('2026-11-09T12:00:00Z')
@@ -14,10 +15,14 @@ const NOW = Date.parse('2026-11-09T12:00:00Z')
 describe('S28 A: offline place lookup', () => {
   it('names the home barangays at their centre points and nothing far from them', () => {
     expect(nearestPlace({ lat: 9.645705, lon: 123.877951 })).toEqual({ barangay: 'Dampas', town: 'Tagbilaran' })
-    expect(placeLabel(nearestPlace({ lat: 6.2015121, lon: 125.1878084 })!)).toBe('Conel, General Santos')
+    expect(nearestLabel(nearestPlace({ lat: 6.2015121, lon: 125.1878084 })!)).toBe('Conel, General Santos')
     // 0.02 degrees of latitude = 0.02 * pi/180 * 6371.0088 = 2.22 km north of Dampas: past the 2 km radius
     expect(BARANGAY_KM).toBe(2)
     expect(nearestPlace({ lat: 9.665705, lon: 123.877951 })).toBeNull()
+    // 0.01 degrees of latitude = 0.01 * pi/180 * 6371.0088 = 1.11 km north of Dampas: inside the radius, still Dampas
+    expect(nearestPlace({ lat: 9.655705, lon: 123.877951 })).toEqual({ barangay: 'Dampas', town: 'Tagbilaran' })
+    // 0.005 degrees of latitude = 0.56 km north of Conel: inside, Conel
+    expect(nearestPlace({ lat: 6.2065121, lon: 125.1878084 })).toEqual({ barangay: 'Conel', town: 'General Santos' })
     expect(nearestPlace({ lat: 14.5995, lon: 120.9842 })).toBeNull()
   })
   it('unknown is null, never a default barangay', () => {
@@ -47,10 +52,10 @@ describe('S28 A: Today times', () => {
   })
   it('every clock time is h:mm AM/PM in upper case', () => {
     const t = new Date(2026, 10, 9, 21, 9)
-    expect(clock12(t)).toBe('9:09 PM')
+    expect(clockIn(t)).toBe('9:09 PM')
     expect(takenLabel(t)).toBe('Taken 9:09 PM')
-    expect(clock12(new Date(2026, 10, 9, 0, 5))).toBe('12:05 AM')
-    expect(clock12('not a time')).toBe('')
+    expect(clockIn(new Date(2026, 10, 9, 0, 5))).toBe('12:05 AM')
+    expect(clockIn('not a time')).toBe('')
   })
   it('the kicker keeps a number with its unit and a time with AM/PM (no orphan wrap)', () => {
     const k = noBreak('Tagbilaran · last known, 3 days ago · as of 9:09 PM')

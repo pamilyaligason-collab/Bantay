@@ -1,11 +1,11 @@
-import { clock12 } from './timeWords'
+import { clockIn } from '../weather/forecast'
 
 /** Dose card done-morph (session 13): the button shows "Taken h:mm" for MORPH_MS, then the card collapses (COLLAPSE_MS, or a FADE_MS cross-fade under reduced motion). */
 export const MORPH_MS = 600
 export const COLLAPSE_MS = 240
 export const FADE_MS = 150
 
-export const takenLabel = (d: Date) => `Taken ${clock12(d)}`
+export const takenLabel = (d: Date) => `Taken ${clockIn(d)}`
 export const leaveMs = (reduced: boolean) => (reduced ? FADE_MS : COLLAPSE_MS)
 
 /** S22 My day rows: the tick and burst play for TICK_MS, then the row slides out and collapses (ROW_OUT_MS), or cross-fades for FADE_MS under reduced motion. */

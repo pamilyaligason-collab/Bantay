@@ -1,5 +1,5 @@
 import { liveQuery } from 'dexie'
-import { clock12 } from './timeWords'
+import { clockIn } from '../weather/forecast'
 import { useEffect, useState } from 'react'
 import { dayKey, eventDay } from '../family/events'
 import { MASKED_APPT } from '../family/calendarLogic'
@@ -20,7 +20,7 @@ export async function planCard(now: Date, selfId: string | null = null): Promise
     return { key: `plan:${row.key}`, kind: 'plan', kicker: row.overdue ? 'Plan · overdue' : 'Plan · today', title: `Next: ${row.task.title}`, body: row.overdue ? 'This was due earlier' : 'Due today', actions: [{ id: 'plan', label: 'Open plan' }] }
   }
   const e = row.event
-  const at = e.allDay || eventDay(e) !== today ? 'today' : clock12(e.startsAt)
+  const at = e.allDay || eventDay(e) !== today ? 'today' : clockIn(e.startsAt)
   return { key: `plan:${row.key}`, kind: 'plan', kicker: 'Plan · today', title: `Next: ${e.personId && e.personId !== selfId ? MASKED_APPT : e.title}`, body: at === 'today' ? 'On the calendar today' : `At ${at}`, actions: [{ id: 'plan', label: 'Open plan' }] }
 }
 

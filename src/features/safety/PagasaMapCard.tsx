@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Section } from '../look'
 import { Icon } from '../shell/Icon'
+import { Frame } from './MapsPanel'
 import './pagasa.css'
 
 /** panahon.gov.ph sends no frame block (curl -I 2026-11-09: no X-Frame-Options, CSP only upgrade-insecure-requests); www.pagasa.dost.gov.ph sends SAMEORIGIN, so it can only be linked. */
@@ -15,7 +16,7 @@ export default function PagasaMapCard() {
     <Section title="PAGASA weather map and outlook" testId="pagasa-map-section">
       <div className="card pgm" data-testid="pagasa-map-card">
         {open ? (
-          <iframe className="pgm-frame" title="PAGASA weather map" src={PAGASA_MAP_URL} loading="lazy" referrerPolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-popups" />
+          <Frame title="PAGASA weather map" src={PAGASA_MAP_URL} />
         ) : (
           <button type="button" className="pgm-poster" onClick={() => setOpen(true)}>
             <Icon name="map" size={32} />

@@ -22,7 +22,7 @@ describe('PersonCard last synced line', () => {
   it('a missed dose says how old the data is', () => {
     synced = Date.now() - 3 * 3_600_000
     render(<PersonCard item={item('missed')} selfName="Me" onNote={() => {}} />)
-    expect(screen.getByTestId('pc-sync').textContent).toBe('Last synced 3 h ago')
+    expect(screen.getByTestId('pc-sync').textContent).toBe('Last synced 3 hours ago')
   })
   it('never synced says so', () => {
     synced = undefined

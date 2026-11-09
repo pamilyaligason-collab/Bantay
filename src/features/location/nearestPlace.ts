@@ -17,6 +17,6 @@ export function nearestPlace(p: LatLon | null | undefined): NamedPlace | null {
   for (const b of BARANGAYS) { const km = distanceKm(p, b); if (km <= BARANGAY_KM && (!best || km < best.km)) best = { barangay: b.barangay, town: b.town, km } }
   return best ? { barangay: best.barangay, town: best.town } : null
 }
-export const placeLabel = (n: NamedPlace): string => `${n.barangay}, ${n.town}`
+export const nearestLabel = (n: NamedPlace): string => `${n.barangay}, ${n.town}`
 /** The label of a home zone id ('Dampas, Tagbilaran'); unknown id -> the first zone, as placeWords did. */
-export const zoneLabel = (zone: string): string => placeLabel(split((HOME_ZONES.find((z) => z.id === zone) ?? HOME_ZONES[0]).name))
+export const zoneLabel = (zone: string): string => nearestLabel(split((HOME_ZONES.find((z) => z.id === zone) ?? HOME_ZONES[0]).name))
