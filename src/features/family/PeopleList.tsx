@@ -43,7 +43,7 @@ export function PeopleList({ people, places, focus = [], selfName = '' }: { peop
           const wa = whatsappHref(p.phone)
           return (
             <div key={p.id} className="pp-card" data-testid="people-row">
-              <a className="pp-main" href={`#family/people/${p.id}`} aria-label={`Open ${name}`}>
+              <a className="pp-main" href={`#family/people/${p.id}`}>
                 <FmAvatar name={p.name} photoPath={p.photoPath} thumb={p.thumb} size={44} />
                 <b className="rw-title">{name}</b>
                 <span className="sub">{place ? `${lastCheckInWords(loaded[p.id])} · Place ${placeSub(place, now)}` : lastCheckInWords(loaded[p.id])}</span>

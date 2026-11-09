@@ -57,6 +57,10 @@ describe('PeopleList flag word (D-109)', () => {
     const names = () => screen.getAllByTestId('people-row').map((r) => r.querySelector('.rw-title')!.textContent)
     expect(names()).toEqual(['Zed', 'You', 'Ana', 'Ben']) // flagged first, then the checked-in rest in input order
     expect(row(/Zed/).textContent).toContain('2 to check')
+    const open = within(row(/Zed/)).getByRole('link', { name: /Zed/ }) // no aria-label: the card text (name, check-in, flag word) is the accessible name
+    expect(open.getAttribute('aria-label')).toBeNull()
+    expect(open.textContent).toContain('2 to check')
+    expect(screen.getByRole('link', { name: /Zed.*2 to check/ })).toBe(open)
     fireEvent.click(screen.getByRole('button', { name: 'Show 1 more' }))
     expect(names()).toEqual(['Zed', 'You', 'Ana', 'Ben', 'Cy'])
   })

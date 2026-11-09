@@ -73,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await noSideways(page)).toBe(true)
 
       await pickPerson(page, 'Lola Remy')
-      await peopleCard(page, 'Lola').getByRole('link', { name: 'Open Lola' }).click()
+      await peopleCard(page, 'Lola').locator('a.pp-main').click()
       await expect(page).toHaveURL(/#family\/people\/p3$/)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-member-${scheme}.png` })
       expect(await axe(page)).toEqual([])

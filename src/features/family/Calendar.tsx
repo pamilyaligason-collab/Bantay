@@ -5,7 +5,7 @@ import { vdb, type Appointment } from '../health/visitsStore'
 import { ldb, type Medication } from '../log/store'
 import { Icon } from '../shell/Icon'
 import { useActing, useActingCan, useViewedVisibleIds } from '../viewas/viewAs'
-import { KIND, kindsOn, monthCells, monthName, otherRows, rowsOn, weekSun, type CalRow, type CalSource } from './calendarLogic'
+import { KIND, doneRows, kindsOn, laterRows, monthCells, monthName, otherRows, rowsOn, weekSun, type CalRow, type CalSource } from './calendarLogic'
 import { dayKey } from './events'
 import { addDay, dayLabel, emptyHint } from './planList'
 import { ItemSheet, NoteSheet } from './PlanSheets'
@@ -50,10 +50,9 @@ export default function Calendar() {
   const [sel, setSel] = useState(today)
   const [month, setMonth] = useState(false)
   const [open, setOpen] = useState<Open | null>(null)
-  const ok = (id: string | null) => !id || ids.includes(id) // a row tied to someone outside you and your links is hidden; family-wide rows (no person) stay
   const src: CalSource = useMemo(() => ({
-    events: events.filter((e) => ok(e.personId)),
-    tasks: tasks.filter((t) => ok(t.assigneePersonId)),
+    events, // every Plan task, event and note shows as it did before the merge (D-168); only doses and visits follow the readable people (D-109)
+    tasks,
     notes,
     appts,
     doses: (day) => ids.flatMap((id) => slotsFor(meds, id, day).map((s) => ({ personId: id, name: s.name, dose: s.dose, slot: s.slot }))),
@@ -63,6 +62,11 @@ export default function Calendar() {
   const selDate = new Date(`${sel}T00:00:00`)
   const rows = rowsOn(sel, src, today)
   const other = otherRows(src)
+  const cells = monthCells(selDate)
+  const rangeEnd = month ? cells[cells.length - 1]!.day : dayKey(weekSun(selDate)[6]!)
+  const later = laterRows(src, rangeEnd)
+  const done = doneRows(src, today).filter((r) => !rows.some((x) => x.key === r.key)) // not twice: a ticked task already on the open day stays there
+  const step = (dir: 1 | -1) => setSel(dayKey(month ? new Date(selDate.getFullYear(), selDate.getMonth() + dir, 1) : new Date(selDate.getFullYear(), selDate.getMonth(), selDate.getDate() + 7 * dir)))
   const locked = acting && !can?.edit
   const openRow = (r: CalRow) => { // the same sheets the old Plan list opened: edit a task, event or note in place
     const id = r.key.slice(r.key.indexOf('|') + 1)
@@ -98,10 +102,14 @@ export default function Calendar() {
         <h2 className="fm2-h">Calendar · {monthName(selDate)}</h2>
         <button type="button" className="btn2 fm2-mon" aria-pressed={month} onClick={() => setMonth((m) => !m)}>{month ? 'Week' : 'Month'}</button>
       </div>
+      <div className="fm2-nav">
+        <button type="button" className="btn2" aria-label={month ? 'Previous month' : 'Previous week'} onClick={() => step(-1)}><Icon name="back" size={20} /></button>
+        <button type="button" className="btn2" aria-label={month ? 'Next month' : 'Next week'} onClick={() => step(1)}><Icon name="chev" size={20} /></button>
+      </div>
       {month ? (
         <div className="fm2-month" role="group" aria-label={`${monthName(selDate)} days`}>
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => <small key={d} className="fm2-dow">{d}</small>)}
-          {monthCells(selDate).map((c) => cell(c.day, c.num, '', c.inMonth ? undefined : 'out'))}
+          {cells.map((c) => cell(c.day, c.num, '', c.inMonth ? undefined : 'out'))}
         </div>
       ) : (
         <div className="fm2-week" role="group" aria-label="Days of this week">
@@ -117,6 +125,18 @@ export default function Calendar() {
           <h3 className="fm2-sub">No date</h3>
           <ul className="fm2-day" aria-label="Notes and reminders with no date" data-testid="cal-nodate">{other.map(line)}</ul>
         </>
+      )}
+      {later.length > 0 && (
+        <>
+          <h3 className="fm2-sub">Later</h3>
+          <ul className="fm2-day" aria-label="Later" data-testid="cal-later">{later.map(line)}</ul>
+        </>
+      )}
+      {done.length > 0 && (
+        <details className="fm2-done" data-testid="cal-done">
+          <summary>Done ({done.length})</summary>
+          <ul className="fm2-day" aria-label="Done in the last 30 days">{done.map(line)}</ul>
+        </details>
       )}
       {locked
         ? <button type="button" className="btn2 fm2-add" disabled aria-label="Add, view only"><Icon name="lock" size={20} />View only</button>

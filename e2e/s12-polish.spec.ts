@@ -167,7 +167,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page).toHaveURL(/#family\/messages$/)
       await page.goto('/#family')
       await pickPerson(page, 'Papa Ben')
-      await card('Papa').getByRole('link', { name: 'Open Papa' }).click()
+      await card('Papa').locator('a.pp-main').click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await page.goto('/#family')
       await pickPerson(page, 'Papa Ben')

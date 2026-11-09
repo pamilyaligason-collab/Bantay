@@ -33,9 +33,9 @@ describe.each([
   })
 })
 
-// D-109: a row tied to a person outside you and your links is hidden; a family-wide row (no person) stays.
+// D-168 fix round: every Plan task and event shows as before the merge, whoever it is assigned to (only doses and visits follow readable people, D-109).
 describe('Calendar rows by person', () => {
-  it('hides an event and a task for someone you are not linked to; keeps yours, a link\'s and the family\'s', async () => {
+  it('shows an event and a task for someone outside the readable list, plus yours, a link\'s and the family\'s', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
     vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
     const at = (h: number) => new Date(2026, 9, 27, h, 0).toISOString()
@@ -52,8 +52,28 @@ describe('Calendar rows by person', () => {
     render(<Calendar />)
     const list = screen.getByRole('list', { name: 'Today' })
     await waitFor(() => expect(list.textContent).toContain('Family lunch'))
-    for (const t of ['Own checkup', 'Ma dentist', 'Fetch Ma']) expect(list.textContent).toContain(t)
-    for (const t of ['Tita clinic', 'Pay for Tita']) expect(list.textContent).not.toContain(t)
+    for (const t of ['Own checkup', 'Ma dentist', 'Fetch Ma', 'Tita clinic', 'Pay for Tita', 'Family lunch']) expect(list.textContent).toContain(t)
+  })
+
+  it('keeps an item 3 months ahead under Later and a done task under Done; week and month buttons page the view', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
+    await fdb.tasks.bulkPut([
+      { clientId: 'f1', title: 'Renew licence', due: '2027-01-27', assigneePersonId: 'p3', done: false },
+      { clientId: 'd1', title: 'Paid water bill', due: '2026-10-20', assigneePersonId: null, done: true },
+      { clientId: 'd2', title: 'Ancient chore', due: '2026-06-01', assigneePersonId: null, done: true }
+    ])
+    render(<Calendar />)
+    const later = await screen.findByTestId('cal-later')
+    expect(later.textContent).toContain('Renew licence')
+    const done = screen.getByTestId('cal-done')
+    expect(done.textContent).toContain('Paid water bill')
+    expect(done.textContent).not.toContain('Ancient chore')
+    fireEvent.click(screen.getByRole('button', { name: 'Next week' }))
+    expect(screen.getByRole('heading', { name: /November/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Previous month' }))
+    expect(screen.getByRole('heading', { name: /October/ })).toBeTruthy()
   })
 })
 

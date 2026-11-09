@@ -43,3 +43,8 @@
 .fm-fab-wrap { position: static; margin-top: 12px; /* at the list end: never under the tab bar, never over a row (sections have their own Add) */ display: flex; justify-content: flex-end; z-index: 3; pointer-events: none; }
 .bt .fm-fab { pointer-events: auto; min-height: 56px; padding: 0 22px 0 18px; border: 0; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; background: var(--green); color: var(--on-green); font-size: 17px; font-weight: 700; box-shadow: 0 6px 20px rgba(20, 30, 20, .28); }
 @media (prefers-reduced-motion: no-preference) { .bt .fm-fab { transition: transform .12s; } .bt .fm-fab:active { transform: scale(.96); } }
+
+/* S26 W4F fix: week/month steppers and the Done fold */
+.fm2-nav { display: flex; justify-content: space-between; gap: 12px; }
+.fm2-nav .btn2 { min-width: 44px; min-height: 44px; width: auto; flex: none; padding: 0 14px; }
+.fm2-done > summary { min-height: 44px; display: flex; align-items: center; font-size: 15px; font-weight: 700; color: var(--muted); cursor: pointer; }

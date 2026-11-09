@@ -122,7 +122,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const r = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze()
       expect(r.violations.map(brief)).toEqual([])
       await pickPerson(page, 'Papa Ben')
-      await peopleCard(page, 'Papa').getByRole('link', { name: 'Open Papa' }).click()
+      await peopleCard(page, 'Papa').locator('a.pp-main').click()
       await expect(page).toHaveURL(/#family\/people\/p2$/)
       await expect(page.locator('h1')).toHaveText('Papa Ben')
       await expect(page.getByRole('link', { name: 'Call Papa' })).toHaveAttribute('href', 'tel:+639171234567')
