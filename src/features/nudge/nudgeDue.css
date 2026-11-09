@@ -4,7 +4,7 @@
 .pt-k.nd-k { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
 .pt-k.nd-k .nd-due { margin-left: auto; }
 /* S28: the 15 px kicker leaves the Due pill too little room in a 173 px Pinned tile, so the tile keeps 10 px sides and the pill 13 px type (the badge floor) with 6 px sides */
-.pn-cell .card.pt { padding-left: 10px; padding-right: 10px; }
+.rc-pins .pn-cell > .card.pt, .pn-cell .card.pt { padding-left: 10px; padding-right: 10px; }
 .nd-due { font-size: 13px; padding: 1px 6px; }
 
 /* Today row: the icon tile gets the ring and the icon leans; the Log / I'm OK button glows softly */

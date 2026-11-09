@@ -80,7 +80,8 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
     await expect(pl).toBeVisible()
     await expect(pl.locator('.gpl-tile')).toHaveCount(3)
     await expect(pl.locator('.gpl-tile').first()).toContainText('Sitaw₱109.30/kg')
-    expect(await pl.locator('.gpl-tile img').first().evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), 'photo loaded').toBe(true)
+    await pl.locator('.gpl-tile img').first().scrollIntoViewIfNeeded() // the photos are lazy: at 195 px the card is below the first screen
+    await expect.poll(() => pl.locator('.gpl-tile img').first().evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0), { message: 'photo loaded' }).toBe(true)
     expect(await overflow(page, '[data-testid="today-plant"] *')).toEqual([])
     if (dir) { await pl.scrollIntoViewIfNeeded(); await page.screenshot({ path: `${dir}/plant-card-${w}-${scheme}.png` }) }
 

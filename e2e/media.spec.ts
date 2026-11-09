@@ -12,6 +12,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await page.route(/youtube-nocookie\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>player stub</p>' }))
     await page.emulateMedia({ colorScheme: scheme })
     await skipOnboarding(page)
+    await page.setViewportSize({ width: 390, height: 1700 }) // tall: axe reads only the text inside the viewport, so a card cut by the fold would look like a name that has extra words
     await page.goto('/#health')
     const section = page.getByTestId('health-videos')
     await section.scrollIntoViewIfNeeded()
