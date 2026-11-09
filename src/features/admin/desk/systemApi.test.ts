@@ -167,7 +167,7 @@ describe('migrations.json', () => {
     expect([...KNOWN_MIGRATIONS].sort()).toEqual(KNOWN_MIGRATIONS)
     expect(new Set(KNOWN_MIGRATIONS).size).toBe(KNOWN_MIGRATIONS.length)
     expect(KNOWN_MIGRATIONS).not.toContain('0028')
-    expect(KNOWN_MIGRATIONS.slice(-17)).toEqual(['0040', '0041', '0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053', '0054', '0055', '0056'])
+    expect(KNOWN_MIGRATIONS.slice(-17)).toEqual(['0042', '0043', '0044', '0045', '0046', '0047', '0048', '0049', '0050', '0051', '0052', '0053', '0054', '0055', '0056', '0057', '0058'])
     expect(KNOWN_MIGRATIONS.every((v) => /^\d{4}$/.test(v))).toBe(true)
   })
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
@@ -178,7 +178,7 @@ describe('migrations.json', () => {
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v) && !writtenNotApplied.includes(v))).toEqual([])
   })
   it('has no gap except 0028 up to the last number', () => {
-    const all = Array.from({ length: 56 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
+    const all = Array.from({ length: 58 }, (_, i) => String(i + 1).padStart(4, '0')).filter((v) => v !== '0028')
     expect(KNOWN_MIGRATIONS).toEqual(all)
   })
 })

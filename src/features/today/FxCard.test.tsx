@@ -35,7 +35,7 @@ describe('FxCard', () => {
     expect(screen.queryByTestId('fx-change')).toBeNull()
     expect(screen.queryByText(/Offline/)).toBeNull()
     expect(h.set).toHaveBeenCalledWith({ php: 63.1, at: NOON, prev: null, prevAt: null })
-    expect(tr).toHaveBeenCalledWith('action', 'card_fx')
+    await waitFor(() => expect(tr).toHaveBeenCalledWith('action', 'card_fx'))
   })
   it('a new day compares with the saved value: up 0.08 since yesterday', async () => {
     h.saved = { php: 63.02, at: at(8, 8, 2), prev: null, prevAt: null } satisfies FxSaved

@@ -166,7 +166,7 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 :root[data-narrow] .dc-top .dc-hero-play { display: none; } /* 195 px: the chip wraps to 3 lines and fills the poster; the disc is decoration (aria-hidden) on a card that is one link */
 
 /* S25 fix 1: Show more / Show less keep a symmetric 64 px each side so the floating Jack button (right edge, 56 px) never covers any part of it */
-.dc-panel .more-grid-btn { display: block; width: calc(100% - 128px); margin-inline: auto; }
+.dc-panel .more-grid-btn { display: block; width: max(calc(100% - 128px), min(100%, 160px)); margin-inline: auto; }
 /* S25 fix 1: the channel chips wrap inside the same clear 64 px, so a chip never sits under Jack */
 .dc-panel .dc-wrapchips, .dc-panel .nv-chips { padding-right: 64px; }
 
