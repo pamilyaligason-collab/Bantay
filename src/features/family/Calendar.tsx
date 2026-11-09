@@ -38,7 +38,7 @@ function useRows<T>(query: () => Promise<T[]>, none: T[], key: string): T[] {
 export default function Calendar() {
   const { tasks, events, notes } = usePlan()
   const people = useLinkedPeople() // you and the people you are linked to (D-109), or while viewing as someone, who they can see
-  const { people: family } = useFamilyPeople() // Plan rows name and assign anyone in the family, as the old Plan page did (D-168)
+  const { people: family } = useFamilyPeople() // the Add sheet can assign anyone in the family, as the old Plan page did (D-168); rows name only readable people
   const visible = useViewedVisibleIds()
   const { acting } = useActing()
   const can = useActingCan()
@@ -58,9 +58,9 @@ export default function Calendar() {
     notes,
     appts,
     doses: (day) => ids.flatMap((id) => slotsFor(meds, id, day).map((s) => ({ personId: id, name: s.name, dose: s.dose, slot: s.slot }))),
-    nameOf: (id) => family.find((p) => p.id === id)?.name ?? 'Family'
+    nameOf: (id) => readable.find((p) => p.id === id)?.name ?? 'Family' // a person you may not read is never named (D-109)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [events, tasks, notes, appts, meds, family, key, visible])
+  }), [events, tasks, notes, appts, meds, readable, key, visible])
   const selDate = new Date(`${sel}T00:00:00`)
   const rows = rowsOn(sel, src, today)
   const other = otherRows(src)

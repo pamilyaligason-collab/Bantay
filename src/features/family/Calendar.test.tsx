@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 const person = (id: string, name: string, isMe = false) => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe })
 vi.mock('./useFamilyScope', () => ({ useLinkedPeople: () => [person('p1', 'Rey Villar', true), person('p2', 'Ma Villar')] })) // you and one link (invented); p3 is neither
+vi.mock('./roster', async (orig) => ({ ...(await orig<object>()), useFamilyPeople: () => ({ selfId: 'p1', people: [person('p1', 'Rey Villar', true), person('p2', 'Ma Villar'), person('p3', 'Tita Villar')] }) })) // the whole family, as the Add sheet lists it
 import { db } from '../../db'
 import Calendar from './Calendar'
 import { dayKey } from './events'
@@ -53,6 +54,20 @@ describe('Calendar rows by person', () => {
     const list = screen.getByRole('list', { name: 'Today' })
     await waitFor(() => expect(list.textContent).toContain('Family lunch'))
     for (const t of ['Own checkup', 'Ma dentist', 'Fetch Ma', 'Tita clinic', 'Pay for Tita', 'Family lunch']) expect(list.textContent).toContain(t)
+  })
+
+  it('names only readable people on a row: Ma by name, Tita (not readable) as Family', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 9, 27, 10, 0))
+    await fdb.tasks.bulkPut([
+      { clientId: 't1', title: 'Fetch Ma', due: '2026-10-27', assigneePersonId: 'p2', done: false },
+      { clientId: 't2', title: 'Pay for Tita', due: '2026-10-27', assigneePersonId: 'p3', done: false }
+    ])
+    render(<Calendar />)
+    const list = screen.getByRole('list', { name: 'Today' })
+    await waitFor(() => expect(list.textContent).toContain('Pay for Tita'))
+    expect(list.textContent).toContain('Ma')
+    expect(list.textContent).not.toContain('Tita Villar')
   })
 
   it('keeps an item 3 months ahead under Later and a done task under Done; week and month buttons page the view', async () => {
@@ -111,7 +126,7 @@ describe('Calendar holds the old Plan (D-168)', () => {
     await screen.findByRole('button', { pressed: true })
     add()
     fireEvent.change(screen.getByLabelText('What needs doing?'), { target: { value: 'Buy rice' } })
-    await waitFor(() => expect(within(screen.getByLabelText('Who does it?')).getAllByRole('option').length).toBe(3)) // Everyone + two people
+    await waitFor(() => expect(within(screen.getByLabelText('Who does it?')).getAllByRole('option').length).toBe(4)) // Everyone + the whole family (three people)
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
     const box = await screen.findByRole('checkbox', { name: 'Buy rice' })
     expect(box.getAttribute('aria-checked')).toBe('false')
