@@ -1,3 +1,4 @@
+import { App } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { useEffect, useState } from 'react'
@@ -6,7 +7,8 @@ import { remindPeople } from '../health/reminders'
 import { ensureAlarmChannel } from '../phonecheck/channel'
 import { ALARM_CHANNEL, KEY_ALARM_HEALTH, type AlarmHealth } from '../phonecheck/keys'
 import { selfIdOrCached } from '../sync/profile'
-import type { FamilyTask } from './store'
+import { liveQuery } from 'dexie'
+import { fdb, type FamilyTask } from './store'
 
 /** Family task reminders on this phone (S28, D-168). One one-shot local notification per open task that has a due day and a reminder time, for the next 30 days.
  *  It rings here only when this phone's alarm rules say so: the person it is for (the assignee; "Everyone" counts as the signed-in person) is in remindPeople AND the last alarm plan was healthy (KEY_ALARM_HEALTH.ok).
@@ -64,6 +66,20 @@ async function once(tasks: FamilyTask[], now: Date): Promise<void> {
     await LocalNotifications.schedule({ notifications: plan.map((p) => ({ id: p.id, title: 'Family reminder', body: 'Open Bantay to see it.', channelId: ALARM_CHANNEL, extra: { kind: 'task' }, schedule: { at: p.at, allowWhileIdle: true } })) })
     await db.kv.put({ key: KEY_TASK_IDS, value: plan.map((p) => p.id) })
   } else await db.kv.put({ key: KEY_TASK_IDS, value: [] })
+}
+
+/** App-wide: re-arm task rings whenever the tasks table changes (a pull from another phone, a local edit) and on every return to the app, not only while Calendar is open (Opus S28 release review). Native only. */
+export function watchTaskReminders(): () => void {
+  if (!Capacitor.isNativePlatform()) return () => undefined
+  let timer: ReturnType<typeof setTimeout> | undefined
+  let gone = false
+  let off: (() => void) | undefined
+  const sub = liveQuery(() => fdb.tasks.toArray()).subscribe({ next: (t) => { clearTimeout(timer); timer = setTimeout(() => void syncTaskReminders(t), 1500) }, error: () => undefined })
+  try {
+    void Promise.resolve(App.addListener('appStateChange', (s) => { if (s.isActive) void fdb.tasks.toArray().then((t) => syncTaskReminders(t)).catch(() => undefined) }))
+      .then((h) => { if (gone) void Promise.resolve(h.remove()).catch(() => undefined); else off = () => void Promise.resolve(h.remove()).catch(() => undefined) }).catch(() => undefined)
+  } catch { /* no app plugin: the live query still keeps the rings current */ }
+  return () => { gone = true; clearTimeout(timer); sub.unsubscribe(); off?.() }
 }
 
 /** Whether a reminder for `assignee` would ring on this phone right now (for the Add sheet's one line). False until known. */

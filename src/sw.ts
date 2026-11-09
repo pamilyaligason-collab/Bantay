@@ -26,6 +26,11 @@ registerRoute(
   ({ url }) => url.origin === self.location.origin && url.pathname.startsWith('/geo/barangays/') && url.pathname.endsWith('.json'),
   async ({ request }) => {
     const c = await caches.open(PACKS)
+    // index.json is network-first so a rebuilt pack set reaches phones; tiles stay cache-first (Opus S28 release review)
+    if (new URL(request.url).pathname.endsWith('/index.json')) {
+      try { const r = await fetch(request); if (isJson(r)) { await c.put(request, r.clone()); return r } } catch { /* offline: the cached index below */ }
+      return (await c.match(request)) ?? fetch(request)
+    }
     const hit = await c.match(request)
     if (hit) return hit
     const r = await fetch(request)

@@ -54,7 +54,7 @@ function codeText(code: string): string {
 }
 /** A network failure gives its try back, so tries 0 with a code is not "Tried 0 times". */
 export function queuedNote(r: { tries: number; lastCode?: string; lastStatus?: number; table?: string; stuck?: boolean }): string {
-  if (r.stuck) return `Could not be sent - call instead.${r.lastCode ? ` Code ${r.lastCode}.` : ''}` // an SOS the server refused five times: kept, not retried by itself
+  if (r.stuck) return `Could not be sent - call instead.${r.lastCode ? ` Code ${r.lastCode}.` : ''}` // an SOS the server refused five times: kept, retried only on its slow (30 min) schedule
   // an SOS is never given up on: any server failure on an urgent row is retried (5xx with or without a PostgREST code)
   if (r.table && isSyncable(r.table) && TABLES[r.table].urgent && r.lastCode && r.lastCode !== 'net' && r.lastCode !== 'insert-queued' && !/^(auth|HTTP401|PGRST30[123])$/.test(r.lastCode)) {
     // worded by the HTTP status when known (reasonText); the one "It will keep trying." replaces the "try again" tail of the plain text

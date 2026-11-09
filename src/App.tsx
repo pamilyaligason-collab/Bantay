@@ -12,6 +12,7 @@ import { startLibraryAuto } from './features/health/library/autoStart'
 import { startSensorSync } from './features/sensors/health'
 import { watchAlertsForSession } from './features/notify/alertsLive'
 import { watchDoseReminders } from './features/health/reminders'
+import { watchTaskReminders } from './features/family/taskReminders'
 import { AdminScreen, useTrackScreen } from './features/admin'
 import { webAdminUrl } from './features/admin/desk/types'
 import { DocsScreen } from './features/docs/DocsScreen'
@@ -105,6 +106,7 @@ export default function App() {
   useEffect(() => { void loadLang() }, []) // the saved language (kv `lang`) becomes the one t() uses
   useEffect(() => startLibraryAuto(), []) // full medical library downloads on Wi-Fi by saved consent, not only while the Library page is open
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
+  useEffect(() => watchTaskReminders(), []) // family task rings follow pulls and app resume, not only the open Calendar
   const title = view === 'me' ? 'Settings' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'calm' ? 'Calm' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {

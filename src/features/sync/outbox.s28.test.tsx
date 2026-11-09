@@ -34,6 +34,20 @@ describe('A: an SOS the server keeps refusing', () => {
     expect(await syncCounts()).toEqual({ waiting: 0, unknown: 0, dead: 1 })
     expect(queuedNote(row)).toMatch(/^Could not be sent - call instead\./)
   })
+  it('a stuck SOS is still tried by itself once its slow wait (30 min cap) is over, and a good answer then removes it', async () => {
+    await enqueue('sos_events', 'insert', sos)
+    answer(403)
+    startSync(cfg())()
+    for (let i = 0; i < MAX_TRIES; i++) await syncNow(true)
+    expect((await db.outbox.toArray())[0].stuck).toBe(true)
+    const t0 = Date.now()
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(t0 + 31 * 60_000)
+    try {
+      answer(201)
+      await syncNow(false)
+      await waitFor(async () => expect(await db.outbox.count()).toBe(0))
+    } finally { clock.mockRestore() }
+  })
   it('a 503 never counts: ten of them leave the SOS retrying, not stuck', async () => {
     await enqueue('sos_events', 'insert', sos)
     answer(503)

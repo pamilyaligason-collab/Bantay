@@ -184,7 +184,7 @@ async function sendRow(row: OutboxRow, token: string, failed: { row?: OutboxRow 
   }
   if (res.status === 403 && row.table === 'push_subscriptions') { void track('error', 'push_failed'); return void (await db.outbox.delete(row.id!)) } // not allowed to subscribe (e.g. disabled): drop, no dead letter, visible in admin usage
   if (res.status === 401) { failed.row = row; throw new SyncError('auth', code, res.status) }
-  // An SOS is never dropped, but the server saying no (400/403/404/422) five times is not a reason to keep hammering: the row stays, marked stuck, until the person taps Try again.
+  // An SOS is never dropped, but the server saying no (400/403/404/422) five times is not a reason to keep hammering: the row stays, marked stuck, retried only on its slow held schedule (or at once when the person taps Try again).
   if (spec.urgent && PERM_4XX.has(res.status)) {
     const n = (row.permFails ?? 0) + 1
     await db.outbox.update(row.id!, { permFails: n, ...(n >= MAX_TRIES ? { stuck: true } : {}) })
@@ -229,7 +229,8 @@ async function push(token: string, waiting: Set<string>, skip: Set<number>, forc
   const sendable = (r: OutboxRow) => {
     if (!isSyncable(r.table)) return false
     const h = held[r.id!]
-    if (waiting.has(r.table) || skip.has(r.id!) || r.stuck || heldThisFlight.has(r.id!) || (h && !force && now < h.nextAt)) {
+    // A stuck SOS is not hammered (never on a forced run), but it is still tried on its own slow schedule (backoff caps at 30 min): a server fixed later delivers it by itself (Opus S28 release review).
+    if (waiting.has(r.table) || skip.has(r.id!) || (r.stuck && (force || !h || now < h.nextAt)) || heldThisFlight.has(r.id!) || (h && !force && now < h.nextAt)) {
       skip.add(r.id!)
       if (r.op === 'insert') { const k = rowKey(r); if (k) blocked.add(k) }
       return false
