@@ -26,3 +26,20 @@ describe('todayRows masking (D-109)', () => {
     expect(JSON.stringify(rows.map(({ title, time, sort }) => ({ title, time, sort })))).not.toContain('Dentist')
   })
 })
+
+describe('planCard masking (D-109)', () => {
+  beforeEach(async () => { await fdb.events.clear(); await fdb.tasks.clear() })
+  it('another person\'s next event reads Doctors & Lab Appointments and keeps its time; own and whole-family keep the title', async () => {
+    const now = new Date('2026-10-19T01:00:00Z') // 9 AM Manila
+    await fdb.events.add({ id: 'e1', clientId: 'e1', title: 'Dentist', startsAt: '2026-10-19T02:00:00Z', allDay: false, personId: 'ma' } as never)
+    const other = await planCard(now, 'me')
+    expect(other?.title).toBe('Next: Doctors & Lab Appointments')
+    expect(JSON.stringify(other)).not.toContain('Dentist')
+    expect(other?.body).toMatch(/^At 10/)
+    expect((await planCard(now, null))?.title).toBe('Next: Doctors & Lab Appointments')
+    expect((await planCard(now, 'ma'))?.title).toBe('Next: Dentist')
+    await fdb.events.clear()
+    await fdb.events.add({ id: 'e2', clientId: 'e2', title: 'Fiesta', startsAt: '2026-10-19T02:00:00Z', allDay: false, personId: null } as never)
+    expect((await planCard(now, 'me'))?.title).toBe('Next: Fiesta')
+  })
+})

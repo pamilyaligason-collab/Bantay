@@ -4,11 +4,11 @@ import { dayKey, eventDay } from '../family/events'
 import { MASKED_APPT } from '../family/calendarLogic'
 import { groupPlan } from '../family/planList'
 import { fdb } from '../family/store'
-import { useSelfPersonId } from '../setup/useProfile'
+import { useActingPersonId } from '../viewas/viewAs'
 import type { HeroCard } from './heroCards'
 
 /** The first open plan item for today (overdue tasks, today's tasks and events) as a Next up card, or null. Notes are not "next".
- *  Another person's event shows only as "Doctors & Lab Appointments" (D-109, Lloyd 2026-11-09); while selfId is unknown every personal event is masked. */
+ *  Another person's event shows only as "Doctors & Lab Appointments" (D-109, Lloyd 2026-11-09); 'self' is the person on show (View-as follows the acting person); while unknown every personal event is masked. */
 export async function planCard(now: Date, selfId: string | null = null): Promise<HeroCard | null> {
   const [tasks, events] = await Promise.all([fdb.tasks.toArray(), fdb.events.toArray()])
   const today = dayKey(now)
@@ -24,7 +24,7 @@ export async function planCard(now: Date, selfId: string | null = null): Promise
 }
 
 export function usePlanCard(now: Date): HeroCard | null {
-  const selfId = useSelfPersonId()
+  const selfId = useActingPersonId()
   const [card, setCard] = useState<HeroCard | null>(null)
   const minute = Math.floor(now.getTime() / 60_000)
   useEffect(() => {
