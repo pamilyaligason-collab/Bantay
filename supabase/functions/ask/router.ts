@@ -25,7 +25,7 @@ export interface RouteIn {
 }
 export interface Route { tier: 'fast' | 'strong'; model: string; maxTokens: number; why: string }
 
-const HEALTH = /\b(blood|sugar|glucose|pressure|bp|a1c|hba1c|cholesterol|creatinine|lab|result|test|medicine|medication|gamot|pill|tablet|dose|dosage|side effects?|symptoms?|sakit|pain|fever|lagnat|ubo|cough|rash|diabet\w*|hypertens\w*|kidney|heart|liver|thyroid|infection|allerg\w*|pregnan\w*|diet|insulin|statin|doctor|doktor)\b/i
+const HEALTH = /\b(blood|sugar|glucose|pressure|bp|a1c|hba1c|cholesterol|creatinine|lab|result|test|medicine|medication|gamot|pill|tablet|dose|dosage|side effects?|symptoms?|sakit|pain|fever|lagnat|ubo|cough|rash|diabet\w*|hypertens\w*|kidney|heart|liver|thyroid|infection|allerg\w*|pregnan\w*|diet|insulin|statin|doctor|doktor|presyon|asukal|dugo|kolesterol|ihi|hilo|sikmura|gamutin|reseta|check-?up|laboratoryo|ospital|nars)\b/i
 const THINK = /\b(why|how come|explain|compare|difference|versus|vs|should i|can i|is it safe|interact\w*|what does .{1,40} mean|ano ang ibig sabihin|bakit|ano ang pagkakaiba|ipaliwanag|step by step|in detail|detailed|plan|summar\w*|list)\b/i
 
 export function route(i: RouteIn): Route {

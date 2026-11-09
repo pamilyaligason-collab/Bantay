@@ -24,6 +24,11 @@ describe('route', () => {
     expect(r({ question: 'ok and then', turns: 8 }).tier).toBe('strong')
     expect(r({ question: 'explain the difference between baking and frying for me please' }).tier).toBe('strong')
   })
+  it('common Tagalog health words count as health: records in play goes strong', () => {
+    for (const w of ['mataas ang presyon ko', 'asukal ko kanina', 'may dugo sa ihi', 'hilo ako', 'masakit ang sikmura', 'saan ang ospital', 'kailan ang check-up', 'resulta ng laboratoryo', 'reseta ni nars', 'kolesterol ko', 'paano gamutin']) {
+      expect(r({ question: w, records: true }).why, w).toBe('records in play')
+    }
+  })
   it('under 70% of the cap routes by task; 70% and over is fast only', () => {
     expect(r({ question: 'is this ok', hits: 1, spendUsd: 6.99 }).tier).toBe('strong')
     expect(r({ question: 'is this ok', hits: 1, spendUsd: 7 })).toMatchObject({ tier: 'fast', maxTokens: FAST_TOKENS })
@@ -107,7 +112,7 @@ describe('handleAsk with the router', () => {
   it('a missing cost is counted by estimate, not as 0', async () => {
     const p = port({ chat: vi.fn(async () => ok(null)) })
     await handleAsk(p, env, body('good morning'))
-    expect(p.addSpend.mock.calls[0]![0]).toBeCloseTo((100 * 3 + 20 * 15) / 1e6, 10)
+    expect(p.addSpend.mock.calls[0]![0]).toBeCloseTo(0.0006, 10) // hand-computed: 100 in x $3/M = 0.0003, 20 out x $15/M = 0.0003
   })
   it('emergency replies never reach the router, the spend counter or a model, even at 100% of the cap', async () => {
     const p = port({ spendUsd: vi.fn(async () => 99) })
@@ -128,7 +133,10 @@ describe('Jack prompt', () => {
   const sys = buildPrompt('health', 'en', [], [], none)
   it('answers directly and keeps the safety rules', () => {
     expect(sys).toContain('Answer the question first')
-    expect(sys).toContain('Do not open with a refusal')
+    expect(sys).toContain('do not open with a refusal')
+    expect(sys).toContain('urgent signs are named first')
+    expect(sys).toContain('grade 6')
+    expect(sys).toContain('short sentences, everyday words')
     expect(sys).not.toContain('I am not sure. Please ask your doctor.')
     expect(sys).toContain('Never diagnose the person')
     expect(sys).toContain('never give a dose beyond what the family already logged')

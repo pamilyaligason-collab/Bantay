@@ -53,9 +53,14 @@ function makePort(req: Request, key: string): Port {
       if (!admin) return null
       const { data, error } = await admin.rpc('assistant_spend_get')
       const n = Number(data)
+      if (error) console.error(JSON.stringify({ fn: 'ask', spend_get_failed: true })) // fixed field only, never the error text (B-7)
       return error || data === null || !Number.isFinite(n) ? null : n
     },
-    async addSpend(usd) { if (admin) await admin.rpc('assistant_spend_add', { p_usd: usd }) },
+    async addSpend(usd) {
+      if (!admin) return
+      const { error } = await admin.rpc('assistant_spend_add', { p_usd: usd })
+      if (error) console.error(JSON.stringify({ fn: 'ask', spend_add_failed: true }))
+    },
     async user() { const { data } = await sb.auth.getUser(); return data.user?.id ?? null },
     async takeSlot(limit) {
       const { data, error } = await sb.rpc('assistant_take', { p_limit: limit })
