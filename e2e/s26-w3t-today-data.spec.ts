@@ -89,7 +89,7 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
     await expect(page).toHaveURL(/#garden\/plant$/)
     const pg = page.getByTestId('plant-page')
     await expect(pg.locator('article.gpl-poster')).toHaveCount(6)
-    await expect(pg.getByTestId('poster-Chayote')).toContainText('Grows best above 1,000 m')
+    await expect(pg.getByTestId('poster-Chayote')).toContainText('Grows best in cool upland areas')
     await expect(pg.getByTestId('poster-Yardlong bean')).toContainText('45 to 50 days')
     await expect(pg).toContainText('General guide from the Bureau of Plant Industry planting calendar (PCAARRD bulletin 200, 2000).')
     expect(await overflow(page, '[data-testid="plant-page"] *')).toEqual([])

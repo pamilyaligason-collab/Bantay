@@ -143,7 +143,7 @@ describe('Regional news section', () => {
     tr.calls.length = 0
     render(<NewsVideos now={NOW} />)
     const lead = await screen.findByTestId('nv-lead')
-    expect(lead.getAttribute('aria-label')).toBe('Video, Story 1, GMA News')
+    expect(lead.getAttribute('aria-label')).toBe('Video, Story 1, GMA News, 40 min ago') // the age is on the card, so it is in the name (WCAG 2.5.3)
     fireEvent.click(lead)
     expect(tr.calls).toEqual(['card_regional_video', 'watch_ch_gma_news'])
     fireEvent.click(screen.getAllByTestId('nv-card')[0]!)

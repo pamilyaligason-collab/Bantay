@@ -97,7 +97,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByText('Off for now')).toHaveCount(0)
       if (SHOTS) await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/memories-${scheme}.png` })
       await page.goto('/#family/messages')
-      await expect(page.getByLabel('Alerts and check-ins').or(page.getByTestId('msg-state'))).toBeVisible() // S28 (D-179 era): the Messages page is read-only alerts, there is no compose box
+      await expect(page.getByRole('region', { name: 'Family feed' })).toBeVisible() // S28 (D-179 era): the Messages page is read-only alerts, there is no compose box
       const empties = await page.locator('.bt .scroll *').evaluateAll((els) => els.filter((e) => !e.children.length && !(e.textContent || '').trim() && !['IMG', 'SVG', 'svg', 'path', 'INPUT', 'TEXTAREA', 'AUDIO', 'CIRCLE', 'LINE', 'use', 'canvas'].includes(e.tagName) && e.getBoundingClientRect().height > 40 && !e.hasAttribute('aria-hidden')).map((e) => e.className))
       expect(empties).toEqual([])
       if (SHOTS) await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/messages-${scheme}.png` })

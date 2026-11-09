@@ -74,7 +74,7 @@ for (const scheme of ['light', 'dark'] as const) {
     await expect(page.getByRole('article', { name: /Wind Signal No. 2/ }).getByText('PAGASA, CC BY 4.0').first()).toBeVisible()
     await page.getByText('If a source is down').click()
     await expect(page.getByText(/GDACS and Open-Meteo carry on/)).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Open the PAGASA bulletin' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Open the PAGASA bulletin', exact: true })).toBeVisible()
     await page.screenshot({ path: `${SHOTS}/safety-warnings-${scheme}.png` })
   })
 

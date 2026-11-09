@@ -70,7 +70,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await shot(page, 'family-home', scheme)
       await page.getByTestId('msgs').click()
       await expect(page).toHaveURL(/#family\/messages$/)
-      await expect(page.getByLabel('Alerts and check-ins').or(page.getByTestId('msg-state'))).toBeVisible() // S28: Messages is read-only alerts, no quick replies
+      await expect(page.getByRole('region', { name: 'Family feed' })).toBeVisible() // S28: Messages is read-only alerts, no quick replies
       await shot(page, 'messages', scheme)
       await page.getByRole('link', { name: 'Back to Family' }).click()
       await expect(page.getByTestId('planrow')).toHaveCount(0) // D-168: Plan is part of the one Calendar card
@@ -85,7 +85,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
     test('Messages has no quick replies and sends nothing (S28: read-only alerts)', async ({ page }) => {
       await page.goto('/#family/messages')
-      await expect(page.getByLabel('Alerts and check-ins').or(page.getByTestId('msg-state'))).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Family feed' })).toBeVisible()
       await expect(page.getByRole('group', { name: 'Quick replies' })).toHaveCount(0)
       expect(sent).toEqual([])
     })

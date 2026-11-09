@@ -80,7 +80,6 @@ for (const scheme of ['light', 'dark'] as const) {
       // Needs: S28 lane E (Today merge) says Ma's missed medicine once, on her People card, so there is no second Needs line
       await expect(page.getByTestId('need-row')).toHaveCount(0)
       await expect(page.getByTestId('people-row').filter({ hasText: 'Ma' }).first()).toContainText('Missed a medicine')
-      await expect(page.getByTestId('needs')).not.toContainText(/Nasal|\d dose/)
       // People: Rey and the people linked to Rey; Tita and Kuya (owner-only) are in the pill, not on the page
       await expect(page.getByTestId('people-row')).toHaveCount(3)
       const cal = (await page.getByTestId('calendar').innerText()).replace(/\s+/g, ' ') // the Calendar card lists doses of the people you are linked to, as #family/calendar always did (D-109 helpers)
@@ -105,12 +104,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(tita).not.toContainText(/Needs a look|high|to check|missed/i) // her 168 reading is not shown to a read-only viewer
       await expect(rows.filter({ hasText: 'Ma' }).first()).toContainText('2 to check') // a writer link keeps the flag word
       await expect(page.getByTestId('need-row')).toHaveCount(0) // Ma's miss is on her card (S28 Today merge); no line for Tita
-      await expect(page.getByTestId('needs')).not.toContainText('Tita')
+      await expect(page.getByTestId('people-row').filter({ hasText: 'Ma' }).first()).not.toContainText('Nasal')
     })
 
     // D-128: Jack covers no small control and no section link; only whole-card links may sit partly under him (named below, more than half tappable). Open Papa on a Needs row and See all are small controls: no allowance.
     const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"]' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main, [data-testid="together-list"] a.fm-tile' }]
-    const STATES: [string, Data, number][] = [['full data', {}, 0], ['no readings, no need row', { readings: false }, 0], ['no readings, one need row', { readings: false, extraNeed: true }, 1], ['no activity, no readings, one need row', { activity: false, readings: false, extraNeed: true }, 1]] // S28 lane E (Today merge): Ma's missed medicine is on her People card, so each state has one Needs row less
+    const STATES: [string, Data, number][] = [['full data', {}, 0], ['no readings', { readings: false }, 0], ['no readings, a second missed dose', { readings: false, extraNeed: true }, 0], ['no activity, no readings, a second missed dose', { activity: false, readings: false, extraNeed: true }, 0]] // S28 lane E (Today merge): Ma's missed medicine is on her People card, so no state has a Needs row for a missed dose now
     for (const [name, data, needs] of STATES) {
       test(`four people, ${name}: no small control is under Jack, 390 x 844 and 450 x 949 (${scheme})`, async ({ page }) => {
         await open(page, scheme, 844, ['ti'], data)

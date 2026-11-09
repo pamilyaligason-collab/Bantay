@@ -99,5 +99,5 @@
 .wx-remind > span { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .wx-remind b { font-size: 15px; font-weight: 600; }
 
-.wx-fnote a { display: inline-flex; align-items: center; min-height: 44px; color: inherit; text-decoration: underline; }
+.wx-fnote a { display: inline-block; padding: 12px 0; margin: -12px 0; color: inherit; text-decoration: underline; } /* 44 px to tap, 20 px of layout */
 .wx-fnote { display: block; margin-top: 6px; font-size: 15px; }

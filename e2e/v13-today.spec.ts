@@ -45,11 +45,11 @@ test('My day: ring, the three rows and the breath row', async ({ page }) => {
   await expect(day.getByTestId('selfcare')).toBeVisible()
 })
 
-test('Your numbers: empty tiles are honest, and the radio row opens Calm', async ({ page }) => {
+test('Your numbers: empty tiles are honest, and the radio row opens Listen radio', async ({ page }) => {
   const nums = page.getByTestId('numbers')
   await expect(nums.getByText('--/--')).toBeVisible()
   await expect(nums.getByText('Log now').first()).toBeVisible()
-  await expect(page.getByRole('link', { name: /Relaxing radio/ })).toHaveAttribute('href', '#calm/listen')
+  await expect(page.getByRole('link', { name: /Relaxing radio/ })).toHaveAttribute('href', '#discover/listen/radio') // D-178: the radio lives in Listen now
   await expect(page.getByRole('link', { name: 'Open Calm' })).toHaveAttribute('href', '#calm') // the only way into the Calm page
 })
 

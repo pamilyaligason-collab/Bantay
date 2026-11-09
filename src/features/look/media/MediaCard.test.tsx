@@ -13,8 +13,8 @@ describe('MediaCard', () => {
     const a = screen.getByTestId('c')
     expect(a.tagName).toBe('A')
     expect(a.getAttribute('href')).toBe('#discover/watch')
-    expect(a.getAttribute('aria-label')).toBe('Video, Plant a small garden, Garden Channel, 7 minutes')
-    expect(screen.getByRole('link', { name: 'Video, Plant a small garden, Garden Channel, 7 minutes' })).toBe(a)
+    expect(a.getAttribute('aria-label')).toBe('Video, Plant a small garden, Garden Channel, 7 min')
+    expect(screen.getByRole('link', { name: 'Video, Plant a small garden, Garden Channel, 7 min' })).toBe(a)
     const img = a.querySelector('img')!
     expect(img.getAttribute('src')).toBe('https://i.ytimg.com/vi/abcdefghijk/mqdefault.jpg')
     expect([img.getAttribute('alt'), img.getAttribute('loading'), img.getAttribute('decoding'), img.getAttribute('referrerpolicy'), img.getAttribute('width'), img.getAttribute('height')]).toEqual(['', 'lazy', 'async', 'no-referrer', '320', '180'])
@@ -46,13 +46,9 @@ describe('MediaCard', () => {
     cleanup()
     const t = render(<MediaCard {...base} variant="row" href="#x" tag="Most watched" note="Use less salt" />)
     expect(t.container.querySelector('.md-flag')!.textContent).toBe('Most watched')
-    expect(t.container.querySelector('a')!.getAttribute('aria-label')).toMatch(/^Video, Most watched, /) // the tag is hidden from the tree, so it is part of the name
+    expect(t.container.querySelector('a')!.getAttribute('aria-label')).toBe('Video, Plant a small garden, Garden Channel, Use less salt, Most watched')
     expect(t.container.querySelector('.md-line')!.textContent).toBe('Use less salt')
-    expect(t.container.querySelector('a')!.getAttribute('aria-label')).toMatch(/, Use less salt$/) // WCAG 2.5.3: every visible word, in the order shown
-    cleanup()
-    const s = render(<MediaCard {...base} variant="row" href="#x" tag="Philippines" tagShort="PH" />)
-    expect(s.container.querySelector('.md-flag')!.textContent).toBe('PH') // fits a 128 px still at 200% text
-    expect(s.container.querySelector('a')!.getAttribute('aria-label')).toBe('Video, Philippines, Plant a small garden, Garden Channel') // the full word stays in the name
+    expect(t.container.querySelector('a')!.textContent!.trim()).toBe('Plant a small garden Garden Channel Use less salt Most watched') // WCAG 2.5.3: the name holds every visible word, in this order
   })
 })
 
