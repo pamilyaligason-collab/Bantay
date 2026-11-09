@@ -9,7 +9,7 @@ const URL1 = 'https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather-bul
 const row = (o: Partial<PagasaRow> = {}): PagasaRow => ({ dedupe_key: 'k', kind: 'tropical_cyclone', title: 'Typhoon "Samuel" - Tropical Cyclone Bulletin #1', issued_at: new Date(Date.now() - 3_600_000).toISOString(), areas: '', signals: [], source_url: URL1, fetched_at: new Date().toISOString(), ...o })
 const put = (rows: PagasaRow[], saved = false, readAt = Date.now()) => { h.d = { rows, saved, readAt } }
 afterEach(() => { cleanup(); h.d = undefined })
-const link = () => screen.getByRole('link', { name: /^Open the PAGASA bulletin ›\s*\(opens in browser\)$/ })
+const link = () => screen.getByRole('link', { name: /^Open the PAGASA bulletin\s*\(opens in browser\)$/ })
 const tone = (c: HTMLElement) => c.querySelector('[data-testid="pagasa-card"]')!.getAttribute('data-tone')
 
 describe('PAGASA card', () => {

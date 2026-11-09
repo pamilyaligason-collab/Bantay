@@ -2,6 +2,7 @@ import { Section } from '../look'
 import { usePlace } from '../location/useLocation'
 import { cut, manilaTime, PAGASA_HOME, shownRows, signalLines, tone, usePagasa, usePlaceNames, type PagasaPlace } from './pagasa'
 import './pagasa.css'
+import { Icon } from '../shell/Icon'
 
 export const PAGASA_NONE = 'No PAGASA bulletin read in the last 2 hours. Check PAGASA directly.'
 export const PAGASA_AUTH = 'PAGASA is the official word.'
@@ -25,7 +26,7 @@ export function PagasaCard({ place }: { place: PagasaPlace | null }) {
           </div>
         ))}
         <p className="pg-note">{PAGASA_AUTH}</p>
-        <a className="pg-link" href={rows[0]?.source_url ?? PAGASA_HOME} target="_blank" rel="noopener noreferrer">Open the PAGASA bulletin ›<span className="pg-vh"> (opens in browser)</span></a>
+        <a className="pg-link" href={rows[0]?.source_url ?? PAGASA_HOME} target="_blank" rel="noopener noreferrer">Open the PAGASA bulletin<Icon name="chev" size={18} /><span className="pg-vh"> (opens in browser)</span></a>
       </div>
     </Section>
   )
