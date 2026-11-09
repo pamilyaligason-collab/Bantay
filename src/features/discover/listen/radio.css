@@ -1,0 +1,28 @@
+/* Live radio (S26 D-166, board S26Listen). Each card has its own slow gradient; white text on every stop is >= 4.5:1. */
+.rd-back { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; font-size: 17px; font-weight: 600; text-decoration: none; color: var(--green2); }
+.rd-h { margin: 4px 0 0; }
+.rd-lead { font-size: 16px; line-height: 22px; margin: 6px 0 0; }
+.rd-fine { font-size: 15px; line-height: 21px; margin: 16px 0 0; }
+.rd-list { list-style: none; margin: 0; padding: 0; }
+.rd-st { position: relative; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 60px; gap: 12px; align-items: end; border-radius: 24px; padding: 20px; margin-top: 12px; color: #fff; min-height: 118px; box-sizing: border-box; box-shadow: var(--shadow-raised); background-size: 220% 220%; animation: rd-flow 14s ease-in-out infinite alternate; transition: transform var(--dur-2, 220ms) var(--ease-out), box-shadow var(--dur-2, 220ms) var(--ease-out); }
+.rd-st::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 85% 15%, rgba(255,255,255,.28), rgba(255,255,255,0) 45%); pointer-events: none; }
+.rd-st.is-playing { box-shadow: var(--shadow-hero), inset 0 0 0 3px #fff; transform: translateY(-2px); }
+.rd-txt { position: relative; z-index: 1; min-width: 0; }
+.rd-freq { font-size: 13px; line-height: 16px; font-weight: 800; letter-spacing: .08em; }
+.rd-nm { font-size: 22px; line-height: 27px; font-weight: 800; margin-top: 2px; overflow-wrap: anywhere; }
+.rd-sub { font-size: 16px; line-height: 22px; font-weight: 600; margin-top: 2px; color: #fff; }
+.rd-err { display: inline-block; background: #fff; color: #8E1F31; font-size: 16px; line-height: 22px; font-weight: 600; border-radius: 8px; padding: 4px 10px; margin-top: 6px; }
+.rd-play { position: relative; z-index: 1; width: 60px; height: 60px; border-radius: 50%; border: 0; background: #fff; color: var(--ink); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(0,0,0,.25); transition: transform var(--dur-1, 120ms) var(--ease-out); }
+.rd-play:active { transform: scale(.94); }
+.rd-eq { display: flex; gap: 3px; align-items: flex-end; height: 18px; margin-top: 8px; }
+.rd-eq i { width: 4px; background: #fff; border-radius: 2px; animation: rd-eq 1s ease-in-out infinite alternate; }
+.rd-eq i:nth-child(1) { height: 8px; } .rd-eq i:nth-child(2) { height: 16px; animation-delay: .2s; } .rd-eq i:nth-child(3) { height: 11px; animation-delay: .4s; } .rd-eq i:nth-child(4) { height: 14px; animation-delay: .1s; }
+.rd-spin { animation: rd-spin 900ms linear infinite; }
+@keyframes rd-flow { from { background-position: 0% 30%; } to { background-position: 100% 70%; } }
+@keyframes rd-eq { from { height: 4px; } to { height: 18px; } }
+@keyframes rd-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .rd-st, .rd-eq i, .rd-spin { animation: none; transition: none; } .rd-st.is-playing { transform: none; } .rd-play { transition: none; } }
+/* Listen home and Discover Today: the Live radio entry card */
+.card.rd-link { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 14px 16px; text-decoration: none; color: var(--ink); box-shadow: var(--shadow-raised); }
+.rd-link-t { display: block; font-size: 18px; line-height: 24px; font-weight: 700; }
+.rd-link-s { display: block; font-size: 15px; line-height: 21px; color: var(--muted); }

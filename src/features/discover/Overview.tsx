@@ -179,6 +179,7 @@ function Listen() {
           </div>
         )
         : <p className="sub">Nothing to listen to yet.</p>}
+      <a className="card dc-hlink" href="#discover/listen/radio" data-testid="dc-radio-link"><span className="dc-grow">Live radio: Love Radio, Easy Rock, DZRH</span><Icon name="chev" size={20} /></a>
     </Section>
   )
 }
