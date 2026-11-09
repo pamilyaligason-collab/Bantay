@@ -12,30 +12,33 @@ import discoverCss from './discover.css?raw'
 import mediaCss from '../look/media/media.css?raw'
 import Overview from './Overview'
 
-const ev = vi.hoisted(() => ({ calls: [] as string[], news: null as null | { rows: Record<string, string>[]; fetchedAt: number | null }, family: null as null | Record<string, number> }))
+const ev = vi.hoisted(() => ({ calls: [] as string[], news: null as null | { rows: Record<string, string>[]; fetchedAt: number | null }, family: null as null | Record<string, number>, rpcCalls: 0 }))
 vi.mock('../admin/events', async (orig) => ({ ...(await orig<typeof import('../admin/events')>()), track: async (_k: string, n: string) => { ev.calls.push(n); return true } }))
-vi.mock('./today/familyWatch', () => ({ useFamilyWatch: () => ev.family }))
+// the family counts come through the same rpc the app uses (migration 0060): null = signed out, an object = the rows the server returns
+vi.mock('../auth/client', () => ({ get supabase() { return ev.family === null ? null : { auth: { getSession: async () => ({ data: { session: null } }) }, rpc: async () => { ev.rpcCalls++; return { data: Object.entries(ev.family!).map(([name, n]) => ({ name, n })), error: null } } } } }))
 vi.mock('./newsvideo/api', async (orig) => ({ ...(await orig<typeof import('./newsvideo/api')>()), useNewsVideos: () => ev.news }))
 vi.mock('./news/Screen', async (orig) => ({ ...(await orig<typeof import('./news/Screen')>()), useNewsZone: () => null, loadFeed: vi.fn() }))
 const row = (id: string, o: Partial<NewsRow> = {}): NewsRow => ({ id, title: 'Headline ' + id, url: 'https://news.test/' + id, source: 'PNA', kind: 'article', published_at: '2026-10-28T09:20:00Z', zone: null, ...o })
 const feed = (items: NewsRow[] | null) => vi.mocked(loadFeed).mockResolvedValue({ items, savedAt: null, offline: false })
 
-beforeEach(async () => { ev.calls.length = 0; ev.news = null; ev.family = null; feed([]); location.hash = '#discover'; sessionStorage.clear(); localStorage.clear(); await db.kv.clear() })
+beforeEach(async () => { ev.calls.length = 0; ev.news = null; ev.family = null; ev.rpcCalls = 0; feed([]); location.hash = '#discover'; sessionStorage.clear(); localStorage.clear(); await db.kv.clear() })
 afterEach(cleanup)
 
 const now = new Date(2026, 9, 28, 10, 20)
+/** Top stories are read once per day before they show (never a list that then moves): wait for the hero. */
+const show = async (at: Date = now) => { const r = render(<Overview now={at} />); await screen.findByTestId('dc-hero'); return r }
 const tab = (name: string) => screen.getByRole('tab', { name })
 
 describe('head and the Today | News | Saved control', () => {
-  it('draws the large title with the kicker and a search button', () => {
-    render(<Overview now={now} />)
+  it('draws the large title with the kicker and a search button', async () => {
+    await show()
     const head = screen.getByTestId('dc-head')
     expect(within(head).getByRole('heading', { level: 1 }).textContent).toBe('Discover')
     expect(head.querySelector('.lt-kicker')!.textContent).toBe('Learn, watch, play')
     expect(screen.getByTestId('dc-search').getAttribute('href')).toBe('#health/library') // S25: the library moved into Health
   })
-  it('is a tablist of three tabs, Today selected, one tabpanel labelled by the selected tab', () => {
-    render(<Overview now={now} />)
+  it('is a tablist of three tabs, Today selected, one tabpanel labelled by the selected tab', async () => {
+    await show()
     expect(screen.getByRole('tablist', { name: 'Discover views' })).toBeTruthy()
     expect(screen.getAllByRole('tab').map((t) => [t.textContent, t.getAttribute('aria-selected')])).toEqual([['Today', 'true'], ['News', 'false'], ['Saved', 'false']])
     const panel = screen.getByRole('tabpanel')
@@ -44,7 +47,7 @@ describe('head and the Today | News | Saved control', () => {
     expect(tab('News').getAttribute('tabindex')).toBe('-1')
   })
   it('a click or an arrow key moves the selection and the panel follows; Home and End jump', async () => {
-    render(<Overview now={now} />)
+    await show()
     fireEvent.click(tab('News'))
     expect(tab('News').getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(tab('News').id)
@@ -62,9 +65,9 @@ describe('head and the Today | News | Saved control', () => {
 })
 
 describe('Today: sections in order', () => {
-  it('Learn, Top stories, Regional news, Listen, Farming and DIY, then the rest (Health pointer, Recipes, Play, Did you know)', () => {
+  it('Learn, Top stories, Regional news, Listen, Farming and DIY, then the rest (Health pointer, Recipes, Play, Did you know)', async () => {
     ev.news = { rows: [{ video_id: 'abcdefghijk', channel_id: 'c', channel: 'GMA News', title: 'Story one', published_at: '2026-10-28T09:00:00Z' }], fetchedAt: null }
-    render(<Overview now={now} />)
+    await show()
     const ids = ['dc-learn', 'dc-top-story', 'dc-regional', 'dc-listen', 'dc-farm', 'dc-health-link', 'dc-recipes', 'dc-play', 'dc-fact']
     const els = ids.map((i) => screen.getByTestId(i))
     els.slice(1).forEach((e, i) => expect(els[i]!.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy())
@@ -72,7 +75,7 @@ describe('Today: sections in order', () => {
   })
   it('no news headline and no season row on Today: the news lives on the Today tab (D-142); the News tab stays', async () => {
     feed([row('a')])
-    render(<Overview now={now} />)
+    await show()
     expect(screen.queryByTestId('dc-lead')).toBeNull()
     expect(screen.queryByTestId('season-row')).toBeNull()
     expect(screen.queryByText(/All news/)).toBeNull()
@@ -88,8 +91,8 @@ const tracked = () => ev.calls.filter((n) => !n.startsWith('watch_ch_'))
 describe('Top stories (farming, DIY and prepping videos together)', () => {
   // The pool is the 20 prepping videos then the 23 farming and DIY videos in ready.json (43). 28 Oct 2026 is day 20754 since 1970; 20754 mod 43 = 28,
   // so with no signal the turn starts at the 29th video (index 28, counted by hand): a hero and eight rows, 4 of them shown until Show more.
-  it('no signal: one hero and rows from today\'s turn of the farm, DIY and prepping pool, 4 rows then Show 4 more, See all link', () => {
-    render(<Overview now={now} />)
+  it('no signal: one hero and rows from today\'s turn of the farm, DIY and prepping pool, 4 rows then Show 4 more, See all link', async () => {
+    await show()
     const sec = screen.getByTestId('dc-top-story')
     expect(within(sec).getByRole('link', { name: 'See all' }).getAttribute('href')).toBe('#discover/watch')
     const hero = screen.getByTestId('dc-hero')
@@ -104,42 +107,55 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
     expect(pics(rows).map(idOf)).toEqual(['hHYxtgCasGE', 'gfweUKAwvDc', 'eKkd-FxQ3_o', 'h9K9vH-JeZ8', 'hHLJiEbjWfA', 'XQascgMHres', 'YKal0IwqArc', '--3VleyQw8o'])
     expect(within(rows).queryByRole('button', { name: /Show .* more/ })).toBeNull()
   })
-  it('no category chip or channel tag on the cards (S28), only the title, channel and length', () => {
-    const { container } = render(<Overview now={now} />)
+  it('no category chip or channel tag on the cards (S28), only the title, channel and length', async () => {
+    const { container } = await show()
     expect(container.querySelector('.dc-hchip, .dc-vc-tag, .dc-vc-k, .nw-chip')).toBeNull()
-    expect(screen.getByTestId('dc-hero').querySelector('.md-tag')).toBeNull()
+    expect(screen.getByTestId('dc-hero').querySelector('.md-flag')).toBeNull()
   })
-  it('the same day gives the same order on every open (no reshuffle), and the next day changes it', () => {
-    const first = render(<Overview now={now} />)
+  it('the same day gives the same order on every open (no reshuffle, even when the family counts change), and the next day changes it', async () => {
+    const first = await show()
     const ids = () => pics(screen.getByTestId('dc-top-story')).map(idOf)
     const a = ids()
     first.unmount()
-    render(<Overview now={new Date(2026, 9, 28, 23, 50)} />)
+    ev.family = { watch_ch_raffy_s_green_thumb: 9, watch_ch_gma_news: 4 } // new taps arrive during the day: the order must not move
+    localStorage.setItem('dc.watchcounts', JSON.stringify({ hHLJiEbjWfA: 9 }))
+    await show(new Date(2026, 9, 28, 23, 50))
     expect(ids()).toEqual(a)
     cleanup()
-    render(<Overview now={new Date(2026, 9, 29, 0, 20)} />)
-    expect(ids()[0]).toBe('hHYxtgCasGE') // one step on
+    await show(new Date(2026, 9, 29, 0, 20))
+    expect(ids()[0]).not.toBe(a[0]) // the next day ranks again
   })
-  it('weighting 1: the family\'s counts put the most-watched channel first (hero), the next channel second', () => {
+  it('the family counts are read once on the first open of the day; a read that found nothing is retried once on a later open, then not again', async () => {
+    ev.family = {} // signed in, but no channel has 2 viewers yet: nothing known
+    await show(); cleanup()
+    expect(ev.rpcCalls).toBe(1)
+    await show(); cleanup()
+    await waitFor(() => expect(ev.rpcCalls).toBe(2)) // the one later retry
+    await show(); cleanup()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(ev.rpcCalls).toBe(2)
+  })
+  it('weighting 1: the family\'s counts put the most-watched channel first (hero), the next channel second', async () => {
     ev.family = { watch_ch_raffy_s_green_thumb: 5, watch_ch_gma_news: 2 }
     localStorage.setItem('dc.watchcounts', JSON.stringify({ hHLJiEbjWfA: 9 })) // this phone's own counts are ignored while the family has a signal
-    render(<Overview now={now} />)
+    await show()
     expect(idOf(pics(screen.getByTestId('dc-hero'))[0]!)).toBe('JkEJhm_ikc8') // Raffy's Green Thumb, the only video of that channel in today's turn
     expect(pics(screen.getByTestId('dc-top-rows')).map(idOf)[0]).toBe('3oRx8JDns2E') // GMA News next
   })
-  it('weighting 2: no family counts, so this phone\'s own taps decide; weighting 3: none at all, today\'s turn', () => {
+  it('weighting 2: no family counts, so this phone\'s own taps decide; weighting 3: none at all, today\'s turn', async () => {
     localStorage.setItem('dc.watchcounts', JSON.stringify({ hHLJiEbjWfA: 3 }))
-    render(<Overview now={now} />)
+    await show()
     expect(idOf(pics(screen.getByTestId('dc-hero'))[0]!)).toBe('hHLJiEbjWfA') // Agri-nihan leads
     expect(pics(screen.getByTestId('dc-top-rows')).map(idOf).slice(0, 2)).toEqual(['qdbieBBd-Ko', 'eKkd-FxQ3_o']) // then one from each other channel, in today's order
     cleanup()
     localStorage.clear()
+    await db.kv.clear() // a new day
     ev.family = {} // a family with no taps is no signal either
-    render(<Overview now={now} />)
+    await show()
     expect(idOf(pics(screen.getByTestId('dc-hero'))[0]!)).toBe('qdbieBBd-Ko')
   })
-  it('every picture is a still from i.ytimg.com with no referrer, sized and lazy, and nothing from YouTube loads before a tap', () => {
-    const { container } = render(<Overview now={now} />)
+  it('every picture is a still from i.ytimg.com with no referrer, sized and lazy, and nothing from YouTube loads before a tap', async () => {
+    const { container } = await show()
     const imgs = Array.from(container.querySelectorAll('.md-pic img'))
     expect(imgs.length).toBe(15) // 1 hero + 4 rows + 4 Farming + 4 Listen + 2 recipe videos, counted by hand (each shelf shows 4 until Show more)
     imgs.forEach((img) => {
@@ -149,8 +165,8 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
     })
     expect(container.querySelector('iframe')).toBeNull()
   })
-  it('tapping a card stores the video for Watch, counts the card and its channel; a new-tab click does nothing', () => {
-    render(<Overview now={now} />)
+  it('tapping a card stores the video for Watch, counts the card and its channel; a new-tab click does nothing', async () => {
+    await show()
     const a = screen.getByTestId('dc-hero')
     for (const k of ['ctrlKey', 'metaKey', 'shiftKey']) { fireEvent.click(a, { [k]: true }); expect(sessionStorage.getItem('dc.watch')).toBeNull() }
     expect(ev.calls).toEqual([])
@@ -161,8 +177,8 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
     expect(ev.calls).toEqual(['card_top_story', 'watch_ch_agribusiness_how_it_works', 'card_top_story', 'watch_ch_agree_sa_agri'])
     expect(JSON.parse(localStorage.getItem('dc.watchcounts')!)).toEqual({ 'qdbieBBd-Ko': 1, 'eKkd-FxQ3_o': 1 })
   })
-  it('every video card has a play circle and is named "Video, title, channel, length" (length left out when not recorded)', () => {
-    render(<Overview now={now} />)
+  it('every video card has a play circle and is named "Video, title, channel, length" (length left out when not recorded)', async () => {
+    await show()
     const cards = screen.getAllByTestId('dc-vcard')
     expect(cards.length).toBeGreaterThan(10)
     cards.forEach((c) => {
@@ -172,10 +188,10 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
       expect(c.getAttribute('aria-label')).toBe(len ? `${base}, ${len.replace(' min', '')} minutes` : base)
     })
   })
-  it('sections are not cards and the cards are separated: a section gap, a card gap, shadow and no border', () => {
-    const { container } = render(<Overview now={now} />)
+  it('sections are not cards and the cards are separated: a section gap, a card gap, shadow and no border', async () => {
+    const { container } = await show()
     expect(container.querySelector('section.sec.card, section.sec .md .md, .md .md')).toBeNull()
-    expect(discoverCss).toMatch(/\.dc-panel > section\.sec \{ margin-top: var\(--sp-5, 24px\); \}/)
+    expect(css).toMatch(/\.dc-panel \{[^}]*gap: var\(--sp-5, 24px\)/) // one 24 px step between sections (a margin on top of the gap made 46)
     expect(discoverCss).toMatch(/\.dc-stack \{[^}]*gap: var\(--card-gap, 12px\)/)
     expect(mediaCss).toMatch(/\.md-list \{[^}]*gap: var\(--card-gap, 12px\)/)
     expect(mediaCss).toMatch(/\.md \{[^}]*border: 0[^}]*box-shadow: var\(--shadow-raised/)
@@ -183,20 +199,20 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
 })
 
 describe('Health pointer and Farming and DIY shelf', () => {
-  it('Health videos left Discover: no Health shelf, one link card that goes to Health', () => {
-    render(<Overview now={now} />)
+  it('Health videos left Discover: no Health shelf, one link card that goes to Health', async () => {
+    await show()
     expect(screen.queryByTestId('dc-health')).toBeNull()
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).not.toContain('Health videos')
     const link = screen.getByTestId('dc-health-link')
     expect(link.textContent).toBe('Health videos are in Health')
     expect(link.getAttribute('href')).toBe('#health')
   })
-  it('Farming and DIY: cards not already in Top stories, 4 then Show more (4 at a time), each names its channel and opens Watch, link says All 23', () => {
-    render(<Overview now={now} />)
+  it('Farming and DIY: cards not already in Top stories, 4 then Show more (4 at a time), each names its channel and opens Watch, link says All 23', async () => {
+    await show()
     const row = screen.getByTestId('dc-farm-row')
     const cards = () => Array.from(row.querySelectorAll('a.md'))
     expect(pics(row).map(idOf)).toEqual(['zMH61Yabdj0', 'PLGmTzEGSIY', '7ePc9cz__FM', 'D32Hay6IQQQ']) // no watch counts yet: the shelf's own order, the 9 Top stories left out (23 - 9 = 14)
-    expect(row.querySelector('.md-tag')).toBeNull()
+    expect(row.querySelector('.md-flag')).toBeNull()
     expect(cards()).toHaveLength(4)
     expect(cards()[1]!.querySelector('.md-meta')!.textContent).toBe('Ask This Old House')
     cards().forEach((c) => expect(c.getAttribute('href')).toBe('#discover/watch'))
@@ -207,8 +223,8 @@ describe('Health pointer and Farming and DIY shelf', () => {
     expect(ev.calls).toContain('watch_ch_this_old_house')
     expect(within(screen.getByTestId('dc-farm')).getByRole('link', { name: 'All 23' }).getAttribute('href')).toBe('#discover/learn/farm-diy') // 23 farm-diy videos counted by hand in ready.json
   })
-  it('one labelled Channel menu (default All channels) narrows the shelf to one channel; picking All channels shows all again', () => {
-    render(<Overview now={now} />)
+  it('one labelled Channel menu (default All channels) narrows the shelf to one channel; picking All channels shows all again', async () => {
+    await show()
     expect(screen.queryByRole('group', { name: 'Farming and DIY channels' })).toBeNull()
     const sel = screen.getByLabelText('Channel') as HTMLSelectElement
     expect(sel.value).toBe('')
@@ -220,25 +236,26 @@ describe('Health pointer and Farming and DIY shelf', () => {
     fireEvent.change(sel, { target: { value: '' } })
     expect(metas()[0]).toBe('This Old House')
   })
-  it('the most-tapped video on this phone comes first, with a Most watched label', () => {
+  it('the most-tapped video on this phone comes first, with a Most watched label', async () => {
     localStorage.setItem('dc.watchcounts', JSON.stringify({ rgQyZX1sg38: 5 }))
-    render(<Overview now={now} />)
+    await show()
     const row = screen.getByTestId('dc-farm-row')
     expect(pics(row).map(idOf)[0]).toBe('rgQyZX1sg38') // This Old House leads Top stories with zMH61Yabdj0 (its first in today's turn), so its other tapped video is first on this shelf
-    expect(row.querySelector('.md-tag')!.textContent).toBe('Most watched')
+    expect(row.querySelector('.md-flag')!.textContent).toBe('Most watched')
+    expect(row.querySelector('a.md')!.getAttribute('aria-label')).toMatch(/^Video, Most watched, /) // the tag is in the accessible name
     fireEvent.click(row.querySelector('a.md')!)
     expect(JSON.parse(localStorage.getItem('dc.watchcounts')!).rgQyZX1sg38).toBe(6)
   })
-  it('no side-swipe row is left on Discover Today', () => {
-    const { container } = render(<Overview now={now} />)
+  it('no side-swipe row is left on Discover Today', async () => {
+    const { container } = await show()
     expect(container.querySelector('.carousel, .dc-posters, .dc-vrow, .dc-prep')).toBeNull()
   })
 })
 
 describe('Learn', () => {
   const cards = () => Array.from(screen.getByTestId('dc-learn').querySelectorAll('a.dc-lc')).map((c) => [c.querySelector('.dc-lc-t')!.textContent, c.getAttribute('href'), c.getAttribute('data-tint')])
-  it('four tinted cards onto Learn topics, each with a drifting blob, All topics link', () => {
-    render(<Overview now={now} />)
+  it('four tinted cards onto Learn topics, each with a drifting blob, All topics link', async () => {
+    await show()
     const sec = screen.getByTestId('dc-learn')
     expect(within(sec).getByRole('link', { name: 'All topics' }).getAttribute('href')).toBe('#discover/learn')
     expect(cards()).toEqual([
@@ -255,15 +272,15 @@ describe('Learn', () => {
   })
   it('Medicines takes the fourth place when the flag is on', async () => {
     await db.kv.put({ key: 'learn.medcards', value: true })
-    render(<Overview now={now} />)
+    await show()
     await waitFor(() => expect(cards()[3]).toEqual(['Medicines', '#discover/learn/meds', 'teal']))
     expect(cards()).toHaveLength(4)
   })
 })
 
 describe('Listen', () => {
-  it('one large guided video (a play button naming it, big title, channel), All 7, then the other six as 4 cards and Show more', () => {
-    const { container } = render(<Overview now={now} />)
+  it('one large guided video (a play button naming it, big title, channel), All 7, then the other six as 4 cards and Show more', async () => {
+    const { container } = await show()
     const sec = screen.getByTestId('dc-listen')
     expect(within(sec).getByRole('link', { name: 'All 7' }).getAttribute('href')).toBe('#discover/listen')
     expect(within(sec).getByRole('button', { name: /^Play Sleep talk down: guided sleep meditation/ })).toBeTruthy()
@@ -279,8 +296,8 @@ describe('Listen', () => {
 })
 
 describe('Recipes', () => {
-  it('two-column photo cards; ones with a photo first, each with its credit and licence under the photo', () => {
-    render(<Overview now={now} />)
+  it('two-column photo cards; ones with a photo first, each with its credit and licence under the photo', async () => {
+    await show()
     const cards = Array.from(screen.getByTestId('dc-recipes').querySelectorAll('[data-testid="dc-recipe"]'))
     expect(cards).toHaveLength(4)
     const withPhoto = RECIPES.filter((r) => r.image)
@@ -296,14 +313,14 @@ describe('Recipes', () => {
       expect(credit.querySelector('a')!.getAttribute('href')).toBe(r.image!.sourceUrl)
     })
   })
-  it('after the app recipes come two recipe videos with the salt reminder', () => {
-    render(<Overview now={now} />)
+  it('after the app recipes come two recipe videos with the salt reminder', async () => {
+    await show()
     const sec = screen.getByTestId('dc-recipes')
     const apps = Array.from(sec.querySelectorAll('.dc-rgrid [data-testid="dc-recipe"]'))
     expect(apps).toHaveLength(4)
     const vids = Array.from(screen.getByTestId('dc-recipe-videos').querySelectorAll('a.md'))
     expect(vids).toHaveLength(2)
-    vids.forEach((v) => { expect(v.querySelector('.md-note')!.textContent).toBe('Tip: use less patis and salt') })
+    vids.forEach((v) => { expect(v.querySelector('.md-line')!.textContent).toBe('Tip: use less patis and salt') })
     expect(pics(sec).map(idOf)).toEqual(['27baGt4-kzg', 'pEMMBceYyMw']) // 20754 mod 5 recipe videos = 4: the 5th, then the 1st
   })
   it('every photo in recipes.json has a Commons file page link and a licence that allows reuse', () => {
@@ -326,14 +343,14 @@ describe('Recipes', () => {
 })
 
 describe('Play and Did you know', () => {
-  it('two game cards with deep links', () => {
-    render(<Overview now={now} />)
+  it('two game cards with deep links', async () => {
+    await show()
     const sec = screen.getByTestId('dc-play')
     expect(within(sec).getByRole('link', { name: 'All games' }).getAttribute('href')).toBe('#discover/play')
     expect(Array.from(sec.querySelectorAll('a.pt')).map((c) => c.getAttribute('href'))).toEqual(['#discover/play/memory', '#discover/play/wordsearch'])
   })
-  it('the fact of the day opens the fun facts', () => {
-    render(<Overview now={now} />)
+  it('the fact of the day opens the fun facts', async () => {
+    await show()
     const f = screen.getByTestId('dc-fact')
     expect(f.querySelector('.dc-fact-t')!.textContent).toBe(phFactOf(dayKey(now)))
     expect(f.getAttribute('href')).toBe('#discover/play/facts')
@@ -351,7 +368,7 @@ describe('News view', () => {
   ]
   it('six chips; Top leads with prepping then health, Latest is newest first, every card names its source', async () => {
     feed(rows)
-    render(<Overview now={now} />)
+    await show()
     fireEvent.click(tab('News'))
     const chips = await screen.findByRole('group', { name: 'News topics' })
     expect(within(chips).getAllByRole('button').map((b) => b.textContent)).toEqual(['Top', 'Latest', 'Prepping', 'Health', 'National', 'Wellbeing'])
@@ -366,7 +383,7 @@ describe('News view', () => {
   })
   it('a topic chip shows only that topic; an empty topic says so; the row without a picture gets the initial tile', async () => {
     feed(rows)
-    render(<Overview now={now} />)
+    await show()
     fireEvent.click(tab('News'))
     fireEvent.click(await screen.findByRole('button', { name: 'Health' }))
     expect(screen.getByRole('button', { name: 'Health' }).getAttribute('aria-pressed')).toBe('true')
@@ -381,7 +398,7 @@ describe('News view', () => {
   })
   it('Read later is a 44 px button with an aria-label', async () => {
     feed(rows)
-    render(<Overview now={now} />)
+    await show()
     fireEvent.click(tab('News'))
     fireEvent.click(await screen.findByRole('button', { name: 'Latest' }))
     const b = within(await screen.findByRole('region', { name: 'Latest' })).getAllByRole('button')[0]!
@@ -393,7 +410,7 @@ describe('News view', () => {
 describe('Saved (read later)', () => {
   it('Read later on a Latest row puts it in Saved; the same button there takes it off', async () => {
     feed([row('a', { source: 'WHO' }), row('b', { source: 'DOH', published_at: '2026-10-28T08:00:00Z' })])
-    render(<Overview now={now} />)
+    await show()
     fireEvent.click(tab('News'))
     fireEvent.click(await screen.findByRole('button', { name: 'Latest' }))
     const latest = await screen.findByRole('region', { name: 'Latest' })
@@ -414,7 +431,7 @@ describe('Saved (read later)', () => {
     feed([row('a')])
     const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('blocked') })
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('blocked') })
-    render(<Overview now={now} />)
+    await show()
     fireEvent.click(tab('News'))
     fireEvent.click(await screen.findByRole('button', { name: 'Latest' }))
     const latest = await screen.findByRole('region', { name: 'Latest' })

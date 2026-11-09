@@ -39,14 +39,15 @@ describe('MediaCard', () => {
   })
   it('a still that cannot load is removed and the same-size placeholder stays; a tag shows only when given', () => {
     const { container } = render(<MediaCard {...base} variant="row" href="#x" />)
-    expect(container.querySelector('.md-tag')).toBeNull()
+    expect(container.querySelector('.md-flag')).toBeNull()
     fireEvent.error(container.querySelector('img')!)
     expect(container.querySelector('img')).toBeNull()
     expect(container.querySelector('.md-pic')).toBeTruthy()
     cleanup()
     const t = render(<MediaCard {...base} variant="row" href="#x" tag="Most watched" note="Use less salt" />)
-    expect(t.container.querySelector('.md-tag')!.textContent).toBe('Most watched')
-    expect(t.container.querySelector('.md-note')!.textContent).toBe('Use less salt')
+    expect(t.container.querySelector('.md-flag')!.textContent).toBe('Most watched')
+    expect(t.container.querySelector('a')!.getAttribute('aria-label')).toMatch(/^Video, Most watched, /) // the tag is hidden from the tree, so it is part of the name
+    expect(t.container.querySelector('.md-line')!.textContent).toBe('Use less salt')
   })
 })
 

@@ -1,10 +1,13 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import benefits from '../../../data/discover/benefits.json'
 import { playable } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
 import Watch, { WATCH_PICK } from './Screen'
 
+const ev = vi.hoisted(() => ({ calls: [] as string[] }))
+vi.mock('../../admin/events', async (orig) => ({ ...(await orig<typeof import('../../admin/events')>()), track: async (_k: string, n: string) => { ev.calls.push(n); return true } }))
+beforeEach(() => { ev.calls.length = 0 })
 afterEach(cleanup)
 
 describe('Watch', () => {
@@ -39,6 +42,16 @@ describe('Watch', () => {
     expect(within(p).getByRole('link', { name: /Open in YouTube/ }).getAttribute('href')).toBe('https://www.youtube.com/watch?v=oTyYzHntBxQ')
     fireEvent.click(within(p).getByRole('button', { name: 'Play Disaster Wais: the go bag' }))
     expect(container.querySelector('iframe')!.getAttribute('src')).toContain('youtube-nocookie.com/embed/oTyYzHntBxQ')
+  })
+  it('a card pick and the play tap on the player each count once for the channel (known channels only)', () => {
+    const { container } = render(<Watch />)
+    const v = DISCOVER_VIDEOS.filter(playable).find((x) => x.title.startsWith('Disaster Wais: the go bag'))!
+    fireEvent.click(screen.getByRole('button', { name: /^Video, Disaster Wais: the go bag/ }))
+    expect(ev.calls).toEqual(['watch_ch_' + v.source.toLowerCase().replace(/[^a-z]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 31).replace(/_+$/, '')])
+    fireEvent.click(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play Disaster Wais: the go bag' }))
+    expect(ev.calls).toHaveLength(2)
+    expect(ev.calls[1]).toBe(ev.calls[0])
+    expect(container.querySelector('iframe')).not.toBeNull()
   })
   it('a topic row narrows the grid and a second tap shows all again', () => {
     render(<Watch />)

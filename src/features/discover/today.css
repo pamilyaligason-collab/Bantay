@@ -3,7 +3,7 @@
 .dc-seg button { min-height: 44px; border: 0; border-radius: 10px; background: none; font: inherit; font-size: 15px; font-weight: 500; color: var(--ink); }
 .dc-seg button[aria-selected="true"] { background: var(--card); box-shadow: 0 1px 3px rgba(40, 30, 10, .14); font-weight: 600; }
 .dc-seg button:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
-.dc-panel { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.dc-panel { display: flex; flex-direction: column; gap: var(--sp-5, 24px); min-width: 0; }
 .dc-panel > * { min-width: 0; }
 .nw { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .nw-chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }

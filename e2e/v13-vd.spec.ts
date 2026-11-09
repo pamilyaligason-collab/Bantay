@@ -11,17 +11,16 @@ test.beforeEach(async ({ page }) => {
 })
 
 for (const scheme of ['light', 'dark'] as const) {
-  test(`${scheme}: hero label is a slim pill, Play discs are filled (S22: the read-aloud rows moved to #discover/listen, Today's Listen is a guided video)`, async ({ page }) => {
+  test(`${scheme}: the hero play circle and the guided video poster are filled (S22: the read-aloud rows moved to #discover/listen, Today's Listen is a guided video)`, async ({ page }) => {
     await page.goto('/#discover')
     await expect(page.getByTestId('dc-fact')).toBeVisible()
+    await expect(page.getByTestId('dc-hero')).toBeVisible()
     await setScheme(page, scheme)
     const m = await page.evaluate(() => {
-      const chip = document.querySelector('.dc-hchip')!.getBoundingClientRect()
-      const play = document.querySelector('[data-testid="dc-hero"] .dc-hero-play') as HTMLElement
+      const play = document.querySelector('[data-testid="dc-hero"] .md-play') as HTMLElement
       const guided = getComputedStyle(document.querySelector('[data-testid="dc-guided"] button.lv-play') as HTMLElement)
-      return { chipH: chip.height, play: getComputedStyle(play).backgroundColor, guided: guided.backgroundColor !== 'rgba(0, 0, 0, 0)' || guided.backgroundImage !== 'none' }
+      return { play: getComputedStyle(play).backgroundColor, guided: guided.backgroundColor !== 'rgba(0, 0, 0, 0)' || guided.backgroundImage !== 'none' }
     })
-    expect(m.chipH, 'chip height').toBeLessThanOrEqual(34)
     expect(m.play, 'hero play disc filled').not.toBe('rgba(0, 0, 0, 0)')
     expect(m.guided, 'guided video poster filled').toBe(true)
   })

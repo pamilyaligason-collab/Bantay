@@ -20,8 +20,8 @@ import { WATCH_PICK } from './watch/Screen'
 import type { Video } from '../health/library/videosLogic'
 import { NewsVideos } from './newsvideo/NewsVideos'
 import { trackWatch } from './channels'
-import { rankTop, turn as turnOf } from './today/topStories'
-import { useFamilyWatch } from './today/familyWatch'
+import { turn as turnOf } from './today/topStories'
+import { useTopStories } from './today/familyWatch'
 import { READY_TOPICS, countLine, readyShelf as shelf } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
@@ -50,13 +50,15 @@ const VidCard = ({ v, variant = 'row', ev, tag, note }: { v: Video; variant?: 'h
 const TOP_K = 9 // one hero and eight rows: 4 rows then Show more (D-156)
 const topPool = () => [...shelf('prepping'), ...shelf('farm-diy')]
 
-/** Top stories (S28): farming, DIY and prepping videos together, ranked by the channels the family watches (family counts, else this phone's, else the day's turn). One hero, then rows. */
-function TopStory({ ranked }: { ranked: Video[] }) {
-  const [hero, ...rest] = ranked
+/** Top stories (S28): farming, DIY and prepping videos together, ranked by the channels the family watches (family counts, else this phone's, else the day's turn), fixed for the day. One hero, then rows. null = the day's order is still being read. */
+function TopStory({ ranked }: { ranked: Video[] | null }) {
+  const [hero, ...rest] = ranked ?? []
   return (
     <Section title="Top stories" link={{ href: '#discover/watch', label: 'See all' }} testId="dc-top-story">
       <p className="sub dc-sub">Farming, DIY and prepping, picked for your family.</p>
-      {hero
+      {!ranked
+        ? <p className="sub" role="status">Picking videos</p>
+        : hero
         ? (
           <div className="dc-stack">
             <VidCard v={hero} variant="hero" ev="card_top_story" />
@@ -164,17 +166,15 @@ function Recipes({ now }: { now: Date }) {
 }
 
 function Today({ now }: { now: Date }) {
-  const family = useFamilyWatch()
-  const day = dayKey(now)
-  const ranked = useMemo(() => rankTop(topPool(), now, TOP_K, family, readCounts()), [day, family]) // eslint-disable-line react-hooks/exhaustive-deps -- the same day and counts give the same order, so it does not reshuffle on every open
-  const skip = useMemo(() => new Set(ranked.map((v) => v.id)), [ranked])
+  const ranked = useTopStories(topPool, now, TOP_K, readCounts) // the day's order, stored once (family counts read at most twice a day): it does not move after first paint
+  const skip = useMemo(() => new Set((ranked ?? []).map((v) => v.id)), [ranked])
   return (
     <>
       <Learn />
       <TopStory ranked={ranked} />
       <NewsVideos now={now.getTime()} />
       <Listen />
-      <FarmShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} skip={skip} />
+      {ranked && <FarmShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} skip={skip} />}
       <a className="card dc-hlink" href="#health" data-testid="dc-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
       <Recipes now={now} />
       <Section title="Play" link={{ href: '#discover/play', label: 'All games' }} testId="dc-play">

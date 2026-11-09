@@ -1,5 +1,6 @@
 -- Undo 0060_watch_channels.sql: the 0056 allowlist comes back and the counts function goes. Safe to run twice.
 -- watch_ch_* rows already stored stay (they hold a channel name and a time, no person data).
+-- (family_watch_counts() lists only channels with at least 2 distinct family viewers; dropping it removes that rule with it.)
 drop function if exists public.family_watch_counts();
 
 create or replace function public.usage_event_allowed(k text, n text) returns boolean

@@ -6,6 +6,7 @@ import { Icon, type IconName } from '../../shell/Icon'
 import { LiteVideo } from '../../media/LiteVideo'
 import { playable } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
+import { trackWatch } from '../channels'
 
 const TOPIC_ICON: Record<string, IconName> = { 'Be prepared': 'bag', 'Farming and DIY': 'home', Listen: 'moon', 'Recipe videos': 'meal' }
 
@@ -26,7 +27,7 @@ export default function Watch() {
   const list = topic ? all.filter((v) => v.topic === topic) : all
   const chosen = list.find((v) => v.id === sel)
   useEffect(() => { if (chosen) player.current?.querySelector<HTMLElement>('.lv-play, .lv-yt')?.focus() }, [chosen?.id]) // S26: focus moves to the player when it opens
-  const pick = (id: string) => { setSel(id); setTimeout(() => player.current?.scrollIntoView?.({ block: 'nearest' }), 0) }
+  const pick = (id: string) => { setSel(id); trackWatch(all.find((v) => v.id === id)?.source); setTimeout(() => player.current?.scrollIntoView?.({ block: 'nearest' }), 0) }
   return (
     <div className="dc-list" data-testid="watch">
       <div className="dc-sh"><h2 className="sh-h2">{topic ?? 'Checked videos'}</h2><span className="sub">{list.length}</span></div>
@@ -34,7 +35,7 @@ export default function Watch() {
         {list.map((v) => <MediaCard key={v.id} variant="row" id={v.id} title={v.title} channel={v.source} minutes={v.minutes} pressed={v.id === sel} onClick={() => pick(v.id)} />)}
       </MediaList>
       {chosen && (
-        <div ref={player} className="card dc-player" data-testid="watch-player">
+        <div ref={player} className="card dc-player" data-testid="watch-player" onClickCapture={(e) => { if ((e.target as Element).closest('.lv-play')) trackWatch(chosen.source) }}>
           <LiteVideo key={chosen.id} id={chosen.id} title={chosen.title} minutes={chosen.minutes} />
           <span className="sub">{chosen.topic} · {chosen.source}</span>
         </div>

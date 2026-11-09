@@ -32,7 +32,7 @@ test('the Learn section opens Discover Today, before Top story, Health videos, F
     const title = document.querySelector<HTMLElement>('[data-testid="dc-learn"] h2')!
     return { learn: y('dc-learn'), story: y('dc-top-story'), health: y('dc-health-link'), farm: y('dc-farm'), listen: y('dc-listen'), prep: card('dc-learn-prepping'), repairs: card('dc-learn-farm'), titleLines: Math.round(title.getBoundingClientRect().height / parseFloat(getComputedStyle(title).lineHeight)) }
   })
-  expect([m.learn, m.story, m.farm, m.listen, m.health].every((t, i, a) => i === 0 || t > a[i - 1]!), 'section order').toBe(true)
+  expect([m.learn, m.story, m.listen, m.farm, m.health].every((t, i, a) => i === 0 || t > a[i - 1]!), 'section order').toBe(true)
   expect(m.prep.href).toBe('#discover/learn/prepping')
   expect(m.repairs.href).toBe('#discover/learn/farm-diy')
   for (const c of [m.prep, m.repairs]) { expect(c.h).toBeGreaterThanOrEqual(44); expect(c.lines).toBe(1) }
@@ -58,15 +58,24 @@ for (const w of [195, 360, 390]) {
   }
 }
 
+/** S28: a topic page lists its videos as media cards, 4 at a time with Show more; open them all and count. */
+async function expectVideos(page: import('@playwright/test').Page, n: number) {
+  const vids = page.getByTestId('ready-videos')
+  await expect(vids.locator('button.md')).toHaveCount(4)
+  const more = vids.getByRole('button', { name: /Show \d+ more/ })
+  for (let i = 0; i < 8 && (await more.count()) > 0; i++) await more.click()
+  await expect(vids.locator('button.md')).toHaveCount(n)
+}
+
 test('the Learn cards open each topic with its checked videos and reads, and the old repairs link redirects', async ({ page }) => {
   await page.getByTestId('dc-learn-prepping').click()
   await expect(page.getByTestId('ready-prepping')).toBeVisible()
-  await expect(page.locator('.ry-video')).toHaveCount(17) // ready.json: 17 Be prepared videos, 6 prepping reads, counted by hand
+  await expectVideos(page, 20) // ready.json: 20 Be prepared videos, 6 prepping reads, counted by hand
   await expect(page.locator('a.lr-tile')).toHaveCount(6)
   await shot(page, 'learn-prepping-390', 'ready-prepping')
   await page.goto('/#discover/learn/repairs')
   await expect(page).toHaveURL(/#discover\/learn\/farm-diy$/) // the S24 rename
-  await expect(page.locator('.ry-video')).toHaveCount(9) // 9 Farming and DIY videos, 5 reads
+  await expectVideos(page, 23) // 23 Farming and DIY videos, 5 reads
   await expect(page.locator('a.lr-tile')).toHaveCount(5)
   await shot(page, 'learn-farm-diy-390', 'ready-farm-diy')
   await page.goto('/#discover/learn')
@@ -106,6 +115,7 @@ for (const [name, day] of SEASONS) {
       await page.setViewportSize({ width: w, height: 844 })
       await page.reload()
       await expect(page.getByTestId('dc-learn')).toBeVisible()
+      await expect(page.getByTestId('dc-hero')).toBeVisible()
       const r = await page.evaluate(() => {
         const box = (id: string) => { const e = document.querySelector(`[data-testid="${id}"]`); if (!e) return null; const b = e.getBoundingClientRect(); return { top: b.top, bottom: b.bottom } }
         return { learn: box('dc-learn'), story: box('dc-top-story'), hero: box('dc-hero'), health: box('dc-health-link'), farm: box('dc-farm') }
@@ -125,19 +135,4 @@ for (const [name, day] of SEASONS) {
   }
 }
 
-// The shrunk hero poster keeps its play disc: the disc must never paint over the "Prepping" chip (the disc sits at the right edge on short screens). Measured, then shot.
-for (const [w, h] of [[360, 800], [360, 740], [390, 720], [195, 700], [390, 844]] as const) {
-  test(`${w}x${h}: play disc clear of the Prepping chip`, async ({ page }) => {
-    await page.setViewportSize({ width: w, height: h })
-    await page.reload()
-    await expect(page.getByTestId('dc-hero')).toBeVisible()
-    const m = await page.evaluate(() => {
-      ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
-      const a = document.querySelector('.dc-hchip')!.getBoundingClientRect()
-      const b = document.querySelector('.dc-hero-play')!.getBoundingClientRect()
-      return { overlap: a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top, chip: [a.left, a.top, a.right, a.bottom], disc: [b.left, b.top, b.right, b.bottom] }
-    })
-    expect(m.overlap, `chip ${m.chip} disc ${m.disc}`).toBe(false)
-    if (process.env.D117_SHOTS) await page.screenshot({ path: `${process.env.D117_SHOTS}/hero-chip-${w}x${h}.png`, animations: 'disabled' })
-  })
-}
+// S28: the hero's category chip is gone with the channel chips, so there is no chip for the play circle to overlap.

@@ -9,7 +9,7 @@ import { rankTop, turn } from './topStories'
 const t = vi.hoisted(() => ({ calls: [] as string[], rpc: null as null | (() => Promise<{ data: unknown; error: unknown }>) }))
 vi.mock('../../admin/events', async (orig) => ({ ...(await orig<typeof import('../../admin/events')>()), track: async (_k: string, n: string) => { t.calls.push(n); return true } }))
 vi.mock('../../auth/client', () => ({ get supabase() { return t.rpc ? { rpc: t.rpc } : null } }))
-import { loadFamilyWatch } from './familyWatch'
+import { loadFamilyWatch, topForDay, type TopIo, type TopRec } from './familyWatch'
 
 const v = (id: string, source: string): Video => ({ id, placeholder: false, title: id, topic: 'x', source, minutes: null, sub: null })
 // Six videos, three channels. Pool order: a1 a2 b1 b2 c1 c2.
@@ -86,6 +86,12 @@ describe('loadFamilyWatch (migration 0060 reader)', () => {
     t.rpc = async () => ({ data: [{ name: 'watch_ch_fema', n: 3 }, { name: 'watch_ch_gma_news', n: '5' }, { name: 'watch_ch_made_up', n: 9 }, { name: 'watch_ch_pagasa', n: 0 }, { name: 7, n: 1 }], error: null })
     expect(await loadFamilyWatch()).toEqual({ watch_ch_fema: 3, watch_ch_gma_news: 5 })
   })
+  it('a channel the server leaves out (fewer than 2 family viewers) simply has no count, so it ranks by the fallback', async () => {
+    t.rpc = async () => ({ data: [{ name: 'watch_ch_gma_news', n: 4 }], error: null })
+    const c = await loadFamilyWatch()
+    expect(c).toEqual({ watch_ch_gma_news: 4 })
+    expect(c!.watch_ch_fema).toBeUndefined()
+  })
   it('null when signed out, offline, the function is not there yet, it throws, or nothing was watched', async () => {
     t.rpc = null
     expect(await loadFamilyWatch()).toBeNull()
@@ -95,5 +101,55 @@ describe('loadFamilyWatch (migration 0060 reader)', () => {
     expect(await loadFamilyWatch()).toBeNull()
     t.rpc = async () => ({ data: [], error: null })
     expect(await loadFamilyWatch()).toBeNull()
+  })
+})
+
+describe('topForDay (audit fix 1: the order is fixed for the day)', () => {
+  const fake = (rec: TopRec | null, fams: (Record<string, number> | null)[]) => {
+    const st = { rec, reads: 0, writes: [] as TopRec[] }
+    const io: TopIo = {
+      read: async () => st.rec,
+      write: async (r) => { st.writes.push(r); st.rec = r },
+      family: async () => { st.reads++; return fams.shift() ?? null }
+    }
+    return { st, io }
+  }
+  const flush = () => new Promise((r) => setTimeout(r, 0))
+  const real = [v('x1', 'FEMA'), v('x2', 'FEMA'), v('y1', 'GMA News'), v('y2', 'GMA News')]
+  const local = () => ({})
+
+  it('the first open reads the family counts once, ranks, and stores the order; a later open that day paints the stored order without reading again', async () => {
+    const a = fake(null, [{ watch_ch_gma_news: 5 }, { watch_ch_fema: 99 }])
+    const first = await topForDay(real, DAY, 4, local, a.io)
+    expect(first[0]!.source).toBe('GMA News') // 5 taps lead
+    expect(a.st.reads).toBe(1)
+    expect(a.st.writes[0]).toEqual({ day: '2026-01-02', ids: ids(first), ok: true, tries: 1 })
+    const again = await topForDay(real, DAY, 4, local, a.io)
+    expect(ids(again)).toEqual(ids(first)) // new family counts (FEMA 99) are not in the family answer queue, and nothing is read
+    expect(a.st.reads).toBe(1)
+  })
+  it('a failed first read is retried once later that day in the background; the open that retries keeps what it painted, the next open gets the new order', async () => {
+    const a = fake(null, [null, { watch_ch_gma_news: 7 }, { watch_ch_fema: 1 }])
+    const first = await topForDay(real, DAY, 4, local, a.io)
+    expect(a.st.rec).toMatchObject({ ok: false, tries: 1 })
+    const second = await topForDay(real, DAY, 4, local, a.io) // painted from the store while the retry runs
+    expect(ids(second)).toEqual(ids(first))
+    await flush()
+    expect(a.st.reads).toBe(2)
+    expect(a.st.rec).toMatchObject({ ok: true, tries: 2 })
+    const third = await topForDay(real, DAY, 4, local, a.io)
+    expect(third[0]!.source).toBe('GMA News')
+    await flush()
+    expect(a.st.reads).toBe(2) // ok now: no more reads today
+  })
+  it('after two failed reads nothing more is read that day; a new day starts again; a stored id that left the pool is dropped', async () => {
+    const a = fake({ day: '2026-01-02', ids: ['x1', 'gone', 'y1'], ok: false, tries: 2 }, [])
+    expect(ids(await topForDay(real, DAY, 4, local, a.io))).toEqual(['x1', 'y1'])
+    await flush()
+    expect(a.st.reads).toBe(0)
+    const b = fake({ day: '2026-01-01', ids: ['x1'], ok: true, tries: 1 }, [null])
+    await topForDay(real, DAY, 4, local, b.io)
+    expect(b.st.reads).toBe(1)
+    expect(b.st.rec!.day).toBe('2026-01-02')
   })
 })
