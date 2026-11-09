@@ -22,12 +22,12 @@ In `src/features/look/cards.css` (L0): `.cd-kicker` (meta, uppercase off, 600), 
 ## Lane ownership (no lane edits another lane's files; anything else you need goes in `needs`)
 | Lane | Port | Owns |
 |---|---|---|
-| L0 tokens | 4380 | `src/styles/tokens.css`, `src/styles/app.css` (base `.card` only), `src/features/look/**`, a token test |
+| L0 tokens | 4380 | `src/styles/tokens.css`, `src/styles/app.css` (base `.card` only), `src/features/look/**` EXCEPT `look/media/**`, a token test |
 | A Today + lock | 4381 | `src/screens/Today.tsx`, `src/features/today/**`, `src/features/weather/**`, `src/features/location/placeWords.ts` (+ new place lookup files under `src/features/location/`), `src/features/safety/Pagasa*`, `src/features/safety/pagasa*`, `src/features/auth/FingerGate.tsx`, `src/features/auth/lock.css`, `src/features/calm/CrisisCard.tsx`, the `--talk-*` block of `src/features/calm/calm.css`, `src/features/garden/**` |
 | B Listen/radio | 4382 | `src/features/discover/listen/**`, `src/features/calm/MediaLinks.tsx`, `src/features/calm/useRadio.ts`, `src/features/calm/media.ts`, `src/data/calm/**` (styles go in `discover/listen/radio.css`, never calm.css) |
 | C1 Health UI | 4383 | `src/screens/Health.tsx`, `src/features/health/**` EXCEPT `library/**`, `ForYou.tsx`, `labGlossary.ts` |
 | C2 Library/explainer/outbox | 4384 | `src/features/health/library/**`, `src/features/health/ForYou.tsx`, `src/features/health/labGlossary.ts`, `src/features/sync/**`, `src/db.ts`, `src/App.tsx` (one hook line for library auto-download) |
-| D Discover | 4385 | `src/features/discover/**` EXCEPT `listen/**`, `src/features/admin/events.ts`, `supabase/migrations/0060_*` |
+| D Discover | 4385 | `src/features/discover/**` EXCEPT `listen/**`, new `src/features/look/media/**`, `src/features/admin/events.ts`, `supabase/migrations/0060_*` |
 | E Family | 4386 | `src/screens/Family.tsx`, `src/features/family/**`, `supabase/migrations/0061_*` |
 | F Jack | 4387 | `supabase/functions/ask/**`, `src/features/assistant/**`, `docs/ASSISTANT.md`, `supabase/migrations/0062_*` |
 
