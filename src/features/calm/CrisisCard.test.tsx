@@ -1,8 +1,12 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import css from './calm.css?raw'
+import { parse, ratio } from '../look/contrastMath'
+const tr = vi.hoisted(() => vi.fn(async () => true))
+vi.mock('../admin/events', () => ({ track: tr }))
 import hotlines from '../../data/safety/hotlines.json'
-import CrisisCard from './CrisisCard'
+import CrisisCard, { TalkCard } from './CrisisCard'
 afterEach(cleanup)
 
 describe('CrisisCard', () => {
@@ -28,5 +32,33 @@ describe('CrisisCard', () => {
     render(<CrisisCard rows={[{ ...ncmh, status: 'UNKNOWN' }]} />)
     expect(screen.queryByText(/1553/)).toBeNull()
     expect(screen.getByRole('link', { name: 'Call 911' })).toBeTruthy()
+  })
+})
+
+describe('TalkCard (Today hero, S26)', () => {
+  it('names the card, leads with 911 in words, and Talk opens #calm with a 48 px target; tracks card_talk on show and on tap', () => {
+    tr.mockClear()
+    render(<TalkCard />)
+    expect(screen.getByRole('heading', { name: 'Need to talk to someone?' })).toBeTruthy()
+    expect(screen.getByText(/Call 911\./)).toBeTruthy()
+    const talk = screen.getByRole('link', { name: /Talk to someone/ })
+    expect(talk.getAttribute('href')).toBe('#calm')
+    expect(tr).toHaveBeenCalledTimes(1)
+    fireEvent.click(talk)
+    expect(tr).toHaveBeenNthCalledWith(2, 'action', 'card_talk')
+    expect(css).toMatch(/\.cm-talk-btn \{[^}]*min-height: 48px/)
+  })
+  it('is the hero depth, teal, and not SOS red', () => {
+    expect(css).toMatch(/\.cm-talk \{[^}]*box-shadow: var\(--shadow-hero\)/)
+    expect(css).not.toMatch(/\.cm-talk[^{]*\{[^}]*(#B42318|#C8372D|var\(--red\)|var\(--danger-bg\))/)
+  })
+  const pick = (block: string, name: string) => parse(new RegExp(`--talk-${name}: (#[0-9A-Fa-f]{6})`).exec(block)![1]!)[0]
+  const light = /\.cm-talk \{ (--talk-bg[^}]*?);\s*display/.exec(css)![1]!
+  const dark = /:root\[data-theme="dark"\] \.cm-talk \{([^}]*)\}/.exec(css)![1]!
+  it.each([['light', light], ['dark', dark]])('%s: title, sub line and Talk button text are >= 4.5:1 on their fill', (_n, b) => {
+    expect(ratio(pick(b, 'ink'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
+    expect(ratio(pick(b, 'sub'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
+    expect(ratio(pick(b, 'on-btn'), pick(b, 'btn'))).toBeGreaterThanOrEqual(4.5)
+    expect(ratio(pick(b, 'line'), pick(b, 'bg'))).toBeGreaterThanOrEqual(3) // icon and edge
   })
 })
