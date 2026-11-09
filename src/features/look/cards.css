@@ -21,13 +21,13 @@
 .cd-close { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin: -4px -8px 0 0; border: 0; border-radius: 24px; background: transparent; color: var(--muted); }
 
 /* Hero */
-.hc { padding: 16px; }
+.hc { padding: var(--card-pad, 16px); box-shadow: var(--shadow-raised); }
 .hc-head { display: flex; align-items: center; gap: 12px; }
 .hc-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.hc-kicker, .sc-kicker { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.hc-kicker, .sc-kicker { font-size: var(--fs-meta, 15px); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 :root[data-theme="dark"] .hc-kicker { color: var(--h-ic); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hc-kicker { color: var(--h-ic); } }
-.hc-title, .sc-title, .ac-title { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; letter-spacing: -.01em; color: var(--ink); }
+.hc-title, .sc-title, .ac-title { margin: 0; font-size: var(--fs-title, 20px); font-weight: var(--fw-title, 700); line-height: var(--lh-tight, 1.2); letter-spacing: -.01em; color: var(--ink); }
 .hc-body, .sc-copy, .ac-body { margin-top: 8px; font-size: 15px; line-height: 1.4; color: var(--ink); }
 .hc-media { margin-top: 12px; }
 
@@ -48,7 +48,7 @@
 /* Tile */
 .tl { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-height: 96px; padding: 16px; box-sizing: border-box; border: 0; text-align: left; text-decoration: none; color: var(--ink); font: inherit; width: 100%; }
 .tl-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; width: 100%; }
-.tl-label { font-size: 17px; font-weight: 600; line-height: 1.3; }
+.tl-label { font-size: var(--fs-body, 17px); font-weight: 600; line-height: var(--lh-tight, 1.2); }
 .tl-value { font-size: 15px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tl-spark path { stroke: var(--h-ic); }
 .rg-track { stroke: color-mix(in srgb, var(--h-ic, var(--green2)) 22%, transparent); }
@@ -60,10 +60,10 @@
 .rw-main { flex: 1; min-width: 0; box-sizing: border-box; display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 0; border: 0; background: transparent; color: var(--ink); font: inherit; text-align: left; text-decoration: none; }
 .rw-ic, .rw-lead { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-ic); background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); overflow: hidden; }
 .rw-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0; }
-.rw-title { font-size: 17px; font-weight: 500; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rw-sub { font-size: 13px; line-height: 18px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.rw-title { font-size: var(--fs-body, 17px); font-weight: 600; line-height: 22px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rw-sub { font-size: var(--fs-meta, 15px); line-height: 20px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .rw-value { margin-left: auto; font-size: 15px; color: var(--muted); white-space: nowrap; }
-.rw-badge { flex: none; padding: 3px 9px; border-radius: 999px; font-size: 13px; font-weight: 700; line-height: 18px; background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); }
+.rw-badge { flex: none; padding: 3px 9px; border-radius: 999px; font-size: var(--fs-meta, 15px); font-weight: 700; line-height: 20px; background: var(--tint-fill, var(--card2)); color: var(--tint-ink, var(--ink)); }
 .rw-badge[data-tint="red-solid"] { min-width: 24px; box-sizing: border-box; text-align: center; background: var(--danger-bg); color: #fff; }
 .grp .rw + .rw::before { content: ""; position: absolute; top: 0; left: 14px; right: 0; border-top: .5px solid var(--hair); }
 .grp.ic .rw + .rw::before { left: 58px; }
@@ -77,3 +77,18 @@
 .ac-title { flex: 1; min-width: 0; }
 /* A switch is 52 px wide in a Row: the generic `width: auto` above gave it width 0 (Weather and Storm tracker "Pause on mobile data"). */
 .rw > .st-sw { width: 52px; }
+
+/* S28 card system: one scale for title / meta / value, one depth ladder (rest, tap, hero), tint cards from the --tint-<hue> pairs */
+.card[data-hue="teal"], .rg[data-hue="teal"] { --h: var(--tint-teal); --h-ic: var(--tint-teal-ink); }
+.card[data-hue="rose"], .rg[data-hue="rose"] { --h: var(--tint-rose); --h-ic: var(--tint-rose-ink); }
+.card[data-hue="violet"], .rg[data-hue="violet"] { --h: var(--tint-violet); --h-ic: var(--tint-violet-ink); }
+.card[data-hue="slate"], .rg[data-hue="slate"] { --h: var(--tint-slate); --h-ic: var(--tint-slate-ink); }
+.cd-kicker { font-size: var(--fs-meta, 15px); font-weight: var(--fw-meta, 600); line-height: var(--lh-tight, 1.2); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.cd-title { margin: 0; font-size: var(--fs-title, 20px); font-weight: var(--fw-title, 700); line-height: var(--lh-tight, 1.2); letter-spacing: -.01em; color: var(--ink); }
+.cd-meta { font-size: var(--fs-meta, 15px); font-weight: 400; line-height: var(--lh-body, 1.45); color: var(--muted); }
+.cd-value { font-size: var(--fs-value, 24px); font-weight: var(--fw-value, 700); line-height: var(--lh-tight, 1.2); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.card.tap { box-shadow: var(--shadow-raised); transition: box-shadow var(--dur-press, 100ms) var(--ease-out, ease-out), transform var(--dur-press, 100ms) var(--ease-out, ease-out); }
+.card.tap:active { box-shadow: var(--shadow-press); transform: scale(.985); }
+@media (prefers-reduced-motion: reduce) { .card.tap { transition: none; } .card.tap:active { transform: none; } }
+.card.tint { background: var(--h, var(--card)); color: var(--ink); }
+.card.tint .cd-kicker { color: var(--h-ic, var(--muted)); }
