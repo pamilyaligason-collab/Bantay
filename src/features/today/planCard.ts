@@ -1,12 +1,15 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { dayKey, eventDay } from '../family/events'
+import { MASKED_APPT } from '../family/calendarLogic'
 import { groupPlan } from '../family/planList'
 import { fdb } from '../family/store'
+import { useSelfPersonId } from '../setup/useProfile'
 import type { HeroCard } from './heroCards'
 
-/** The first open plan item for today (overdue tasks, today's tasks and events) as a Next up card, or null. Notes are not "next". */
-export async function planCard(now: Date): Promise<HeroCard | null> {
+/** The first open plan item for today (overdue tasks, today's tasks and events) as a Next up card, or null. Notes are not "next".
+ *  Another person's event shows only as "Doctors & Lab Appointments" (D-109, Lloyd 2026-11-09); while selfId is unknown every personal event is masked. */
+export async function planCard(now: Date, selfId: string | null = null): Promise<HeroCard | null> {
   const [tasks, events] = await Promise.all([fdb.tasks.toArray(), fdb.events.toArray()])
   const today = dayKey(now)
   // a timed event that started over an hour ago is no longer "next"
@@ -17,15 +20,16 @@ export async function planCard(now: Date): Promise<HeroCard | null> {
   }
   const e = row.event
   const at = e.allDay || eventDay(e) !== today ? 'today' : new Date(e.startsAt).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit' })
-  return { key: `plan:${row.key}`, kind: 'plan', kicker: 'Plan · today', title: `Next: ${e.title}`, body: at === 'today' ? 'On the calendar today' : `At ${at}`, actions: [{ id: 'plan', label: 'Open plan' }] }
+  return { key: `plan:${row.key}`, kind: 'plan', kicker: 'Plan · today', title: `Next: ${e.personId && e.personId !== selfId ? MASKED_APPT : e.title}`, body: at === 'today' ? 'On the calendar today' : `At ${at}`, actions: [{ id: 'plan', label: 'Open plan' }] }
 }
 
 export function usePlanCard(now: Date): HeroCard | null {
+  const selfId = useSelfPersonId()
   const [card, setCard] = useState<HeroCard | null>(null)
   const minute = Math.floor(now.getTime() / 60_000)
   useEffect(() => {
-    const sub = liveQuery(() => planCard(new Date(minute * 60_000))).subscribe({ next: setCard, error: () => undefined })
+    const sub = liveQuery(() => planCard(new Date(minute * 60_000), selfId)).subscribe({ next: setCard, error: () => undefined })
     return () => sub.unsubscribe()
-  }, [minute])
+  }, [minute, selfId])
   return card
 }

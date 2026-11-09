@@ -13,3 +13,16 @@ describe('planCard', () => {
     expect(card?.title).toBe('Next: Dinner')
   })
 })
+
+describe('todayRows masking (D-109)', () => {
+  it('another person\'s event reads Doctors & Lab Appointments; own, whole-family and tasks keep titles', async () => {
+    const { todayRows } = await import('./PlanToday')
+    const now = new Date('2026-10-19T01:00:00Z')
+    const ev = (id: string, title: string, personId: string | null) => ({ clientId: id, title, startsAt: '2026-10-19T02:00:00Z', allDay: false, personId }) as never
+    const task = { clientId: 't1', title: 'Buy rice', due: '2026-10-19', done: false } as never
+    const { rows } = todayRows([task], [ev('a', 'Dentist', 'ma'), ev('b', 'Checkup', 'me'), ev('c', 'Fiesta', null)], now, 'me')
+    const titles = rows.map((r) => r.title)
+    expect(titles).toEqual(expect.arrayContaining(['Buy rice', 'Doctors & Lab Appointments', 'Checkup', 'Fiesta']))
+    expect(JSON.stringify(rows.map(({ title, time, sort }) => ({ title, time, sort })))).not.toContain('Dentist')
+  })
+})
