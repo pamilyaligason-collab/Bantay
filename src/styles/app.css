@@ -85,7 +85,7 @@ img.avatar { object-fit: cover; }
 
 /* v2 components (mockup v6, D-29). Other lanes build on these names; do not rename. */
 .eyebrow { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
-.card { background: var(--card); border-radius: var(--r-card); padding: var(--card-pad, 16px); box-shadow: var(--depth-card, var(--shadow)); min-width: 0; }
+.card { background: var(--card); border-radius: var(--r-card); padding: var(--card-pad, 16px); box-shadow: var(--shadow); min-width: 0; }
 .sec-h { display: flex; justify-content: space-between; align-items: baseline; margin: 6px 2px -6px; }
 .sec-h a, .link { color: var(--link); font-weight: 600; font-size: 13px; text-decoration: none; background: none; border: 0; padding: 0; }
 .pill { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: var(--tap); padding: 0 18px; border-radius: 999px; border: 0; font-size: 15px; font-weight: 600; background: var(--card2); color: var(--ink); }

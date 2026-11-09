@@ -15,7 +15,7 @@ export function Tile(p: { hue: Hue; icon: IconName; label: string; value?: strin
   const inner: ReactNode = (
     <>
       <span className="hc-ic"><Icon name={p.icon} size={24} /></span>
-      <span className="tl-txt"><b className="tl-label">{p.label}</b>{p.value && <span className="tl-value">{p.value}</span>}</span>
+      <span className="tl-txt"><b className="tl-label">{p.label}</b>{p.value && <span className="tl-value cd-meta">{p.value}</span>}</span>
       {p.spark && p.spark.length > 1 && <Spark pts={p.spark} />}
       {p.ring !== undefined && <Ring value={p.ring} size={28} hue={p.hue} />}
     </>

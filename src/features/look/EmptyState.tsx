@@ -7,7 +7,7 @@ export function EmptyState({ icon, jack, title, body, action, heading }: { icon?
   return (
     <div className="card empty-state">
       {icon ? <Icon name={icon} boxed /> : jack ? <JackArt name={jack} size={96} decorative /> : <JackArt name="empty-list" size={96} />}
-      <Title className="hd">{title}</Title>
+      <Title className="hd cd-title">{title}</Title>
       {body && <p className="sub">{body}</p>}
       {action && <button type="button" className="btn2" onClick={action.onClick}>{action.label}</button>}
     </div>

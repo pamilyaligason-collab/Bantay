@@ -18,6 +18,14 @@ describe('S28 design tokens', () => {
   for (const [name, vars] of Object.entries(blocks)) {
     it(`${name} block defines every contract token`, () => expect(NAMES.filter((n) => !vars[n])).toEqual([]))
   }
+  const VALUES: Record<string, string> = {
+    '--fs-display': '30px', '--fs-value': '24px', '--fs-title': '20px', '--fs-body': '17px', '--fs-meta': '15px',
+    '--fw-title': '700', '--fw-value': '700', '--fw-body': '400', '--fw-meta': '600', '--lh-tight': '1.2', '--lh-body': '1.45',
+    '--sp-1': '4px', '--sp-2': '8px', '--sp-3': '12px', '--sp-4': '16px', '--sp-5': '24px', '--sp-6': '32px', '--card-pad': '16px', '--card-gap': '12px',
+  }
+  for (const [name, vars] of Object.entries(blocks)) {
+    it(`${name} block holds the contract value of every scale token`, () => expect(Object.fromEntries(Object.keys(VALUES).map((k) => [k, vars[k]]))).toEqual(VALUES))
+  }
   it('type floor: body 17, meta 15, card pad 16', () => { expect(blocks.light['--fs-body']).toBe('17px'); expect(blocks.light['--fs-meta']).toBe('15px'); expect(blocks.light['--card-pad']).toBe('16px') })
   for (const theme of ['light', 'dark'] as const) {
     const t = tokensOf(theme)

@@ -12,6 +12,11 @@
 .hc, .sc, .tl { position: relative; }
 .hc-link { color: inherit; text-decoration: none; }
 .hc-link::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+/* S28 shared type classes: kept above the legacy classes so those still win at equal specificity */
+.cd-kicker { font-size: var(--fs-meta, 15px); font-weight: var(--fw-meta, 600); line-height: var(--lh-tight, 1.2); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.cd-title { margin: 0; font-size: var(--fs-title, 20px); font-weight: var(--fw-title, 700); line-height: var(--lh-tight, 1.2); letter-spacing: -.01em; color: var(--ink); }
+.cd-meta { font-size: var(--fs-meta, 15px); font-weight: 400; line-height: var(--lh-body, 1.45); color: var(--muted); }
+.cd-value { font-size: var(--fs-value, 24px); font-weight: var(--fw-value, 700); line-height: var(--lh-tight, 1.2); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
 .cd-act, .cd-close { position: relative; z-index: 1; }
 
 /* actions: 48 px, one line (L-6) */
@@ -21,7 +26,8 @@
 .cd-close { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 48px; height: 48px; margin: -4px -8px 0 0; border: 0; border-radius: 24px; background: transparent; color: var(--muted); }
 
 /* Hero */
-.hc { padding: var(--card-pad, 16px); box-shadow: var(--shadow-raised); }
+.hc { padding: var(--card-pad, 16px); box-shadow: var(--shadow-hero); }
+.hc.tap { box-shadow: var(--shadow-raised); }
 .hc-head { display: flex; align-items: center; gap: 12px; }
 .hc-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .hc-kicker, .sc-kicker { font-size: var(--fs-meta, 15px); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -83,10 +89,6 @@
 .card[data-hue="rose"], .rg[data-hue="rose"] { --h: var(--tint-rose); --h-ic: var(--tint-rose-ink); }
 .card[data-hue="violet"], .rg[data-hue="violet"] { --h: var(--tint-violet); --h-ic: var(--tint-violet-ink); }
 .card[data-hue="slate"], .rg[data-hue="slate"] { --h: var(--tint-slate); --h-ic: var(--tint-slate-ink); }
-.cd-kicker { font-size: var(--fs-meta, 15px); font-weight: var(--fw-meta, 600); line-height: var(--lh-tight, 1.2); letter-spacing: 0; text-transform: none; color: var(--muted); }
-.cd-title { margin: 0; font-size: var(--fs-title, 20px); font-weight: var(--fw-title, 700); line-height: var(--lh-tight, 1.2); letter-spacing: -.01em; color: var(--ink); }
-.cd-meta { font-size: var(--fs-meta, 15px); font-weight: 400; line-height: var(--lh-body, 1.45); color: var(--muted); }
-.cd-value { font-size: var(--fs-value, 24px); font-weight: var(--fw-value, 700); line-height: var(--lh-tight, 1.2); letter-spacing: -.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
 .card.tap { box-shadow: var(--shadow-raised); transition: box-shadow var(--dur-press, 100ms) var(--ease-out, ease-out), transform var(--dur-press, 100ms) var(--ease-out, ease-out); }
 .card.tap:active { box-shadow: var(--shadow-press); transform: scale(.985); }
 @media (prefers-reduced-motion: reduce) { .card.tap { transition: none; } .card.tap:active { transform: none; } }
