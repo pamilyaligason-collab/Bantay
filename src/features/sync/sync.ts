@@ -24,7 +24,7 @@ const DETERMINISTIC = new Set([400, 403, 404, 409, 422])
 /** Tables from a migration that may not be applied yet (0024). A push to a missing table waits in the outbox and local rows stay; it is not a dead letter and not a sync failure. */
 const WAIT_FOR_TABLE = new Set(['food_entries', 'water_entries', 'nutrition_goals', 'family_messages', 'sos_events', 'sos_events_update', 'sos_acks', 'phone_health', 'family_feed'])
 const NO_TABLE = /^(PGRST205|42P01)$/
-/** A row waiting for a table the server lacks gives up after a day and becomes a dead letter the person can see. */
+/** A row waiting for a table the server lacks gives up after 24 h of elapsed time (not a calendar day, so 23:30 vs 00:30 makes no difference) and becomes a dead letter the person can see. */
 export const WAIT_LIMIT_MS = 24 * 3600_000
 /** Answers that are the same every time. An urgent row is never parked for them, but after MAX_TRIES it stops retrying by itself (`stuck`). */
 const PERM_4XX = new Set([400, 403, 404, 422])

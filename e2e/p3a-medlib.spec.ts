@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
 
-// S26 P3A (D-167): the full medical library asks once, downloads only on Wi-Fi, then collapses to one Ready row. The pack is the small test fixture, served by a route (no real download).
+// S26 P3A (D-167): the full medical library asks once, downloads only on Wi-Fi, then hides the card, Delete sits at the page bottom. The pack is the small test fixture, served by a route (no real download).
 declare const process: { env: Record<string, string | undefined> }
 const SHOTS = process.env.P3A_SHOTS ?? 'test-results/p3a'
 const PACK = readFileSync('scripts/medlib/fixtures/mini.pack')
@@ -40,25 +40,28 @@ for (const scheme of ['light', 'dark'] as const) {
     await noSideways(page)
   })
 
-  test(`on Wi-Fi it downloads, collapses to one Ready row, Delete confirms (${scheme})`, async ({ page }) => {
+  test(`on Wi-Fi it downloads, hides the card, Delete sits at the page bottom, Delete confirms (${scheme})`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await boot(page, 'wifi', scheme)
     const card = page.getByTestId('full-library')
     await card.getByRole('button', { name: 'Yes' }).click()
-    await expect(card.getByText(/^Full medical library · Ready · \d+ MB$/)).toBeVisible()
-    await card.screenshot({ path: `${SHOTS}/ready-${scheme}.png` })
-    const del = card.getByRole('button', { name: 'Delete' })
+    const foot = page.getByTestId('full-library-foot')
+    await expect(foot).toBeVisible()
+    await expect(card).toHaveCount(0) // ready: the download card is gone
+    await foot.screenshot({ path: `${SHOTS}/ready-${scheme}.png` })
+    const del = foot.getByRole('button', { name: /^Delete the full library/ })
     expect((await del.boundingBox())!.height).toBeGreaterThanOrEqual(44)
     await del.click()
-    await expect(card.getByText(/It will not download again by itself/)).toBeVisible()
-    await card.screenshot({ path: `${SHOTS}/delete-${scheme}.png` })
-    await card.getByRole('button', { name: 'Yes, delete' }).click()
+    await expect(foot.getByText(/It will not download again by itself/)).toBeVisible()
+    await foot.screenshot({ path: `${SHOTS}/delete-${scheme}.png` })
+    await foot.getByRole('button', { name: 'Yes, delete' }).click()
     await expect(card.getByRole('button', { name: 'Get' })).toBeVisible()
+    await expect(foot).toHaveCount(0)
     await noSideways(page)
   })
 }
 
-test('195 px: the ask and the Ready row fit with no sideways scroll', async ({ page }) => {
+test('195 px: the ask and the Delete row fit with no sideways scroll', async ({ page }) => {
   await page.setViewportSize({ width: 195, height: 700 })
   await boot(page, 'cellular', 'light')
   const card = page.getByTestId('full-library')
@@ -71,7 +74,9 @@ test('195 px: the ask and the Ready row fit with no sideways scroll', async ({ p
   await page.route('**/medlib/**', (r) => r.fulfill({ status: 206, headers: { 'content-range': `bytes 0-${PACK.length - 1}/${PACK.length}` }, body: PACK }))
   await card.getByRole('button', { name: 'Not now' }).click()
   await card.getByRole('button', { name: 'Turn on' }).click()
-  await expect(card.getByText(/Ready · \d+ MB/)).toBeVisible()
-  await card.screenshot({ path: `${SHOTS}/ready-195.png` })
+  const foot = page.getByTestId('full-library-foot')
+  await expect(foot.getByRole('button', { name: /^Delete the full library/ })).toBeVisible()
+  await expect(card).toHaveCount(0)
+  await foot.screenshot({ path: `${SHOTS}/ready-195.png` })
   await noSideways(page)
 })

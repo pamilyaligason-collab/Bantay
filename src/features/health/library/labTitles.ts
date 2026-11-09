@@ -1,6 +1,6 @@
 /** S28: a small fixed map from every lab in labGlossary.ts to (a) the names a result may carry, (b) the mdwiki article title in the full library pack and (c) the LOINC code for MedlinePlus Connect.
  *  It lives in the main bundle on purpose: if the glossary chunk fails to load, a lab still resolves and never reaches the medicine (RxNorm) look-up.
- *  Titles were checked against the title index of pack medlib-mdwiki-2026-11-09 (null = the pack has no article of that name). labTitles.test.ts keeps it in step with the glossary. */
+ *  Titles were checked against the title index of pack medlib-mdwiki-2026-11-09 (null = the pack has no article of that name). explainer.s28.test.tsx keeps it in step with the glossary. */
 export interface LabTitle { code: string; names: string[]; loinc: string; title: string | null }
 
 export const LAB_TITLES: LabTitle[] = [

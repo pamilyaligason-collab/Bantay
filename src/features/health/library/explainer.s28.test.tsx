@@ -52,7 +52,7 @@ describe('lab explainer without a silent null (S28)', () => {
   it.each(LABS)('%s with the glossary loaded opens its own note offline', async (label, code) => {
     expect(await resolveKey(label)).toBe(`t:${code}`)
     render(<Article rawKey={`s:${label}`} />)
-    expect((await screen.findByTestId('lab-measures')).textContent!.length).toBeGreaterThan(20)
+    expect((await screen.findByTestId('lab-measures')).textContent!.trim().length).toBeGreaterThan(20)
     expect(fetch).not.toHaveBeenCalled()
   })
 
@@ -62,8 +62,8 @@ describe('lab explainer without a silent null (S28)', () => {
     const k = await resolveKey(label)
     expect(k).toBe({ alt: 'f:Alanine transaminase', ast: 'f:Transaminase', creatinine: `l:2160-0`, hba1c: 'f:Glycated hemoglobin', ldl: 'f:Low-density lipoprotein' }[code])
     render(<Article rawKey={`s:${label}`} />)
-    if (k.startsWith('f:')) expect(await screen.findByText('Plain article text.')).toBeTruthy()
-    else expect((await screen.findByTestId('article')).textContent).toBeTruthy()
+    if (k.startsWith('f:')) expect((await screen.findByText('Plain article text.')).textContent).toBe('Plain article text.')
+    else expect((await screen.findByText('A short lab summary from MedlinePlus.')).textContent).toContain('lab summary') // LOINC path shows the MedlinePlus Connect summary, not just any node
     for (const c of (fetch as ReturnType<typeof vi.fn>).mock.calls) expect(String(c[0])).not.toContain('6.88') // RxNorm
   })
 
