@@ -15,6 +15,21 @@ describe.each<Theme>(['light', 'dark'])('Discover overview token pairs (%s)', (t
   it.each(TINTS)('tint %s: ink on its fill', (x) => expect(pair(t, `--tint-${x}-ink`, `--tint-${x}`)).toBeGreaterThanOrEqual(4.5))
 })
 
+describe.each<Theme>(['light', 'dark'])('Channel menu border (%s)', (theme) => {
+  const t = tokensOf(theme)
+  it('--muted border on --card and --ground is at least 3:1 (non-text)', () => {
+    expect(pair(t, '--muted', '--card')).toBeGreaterThanOrEqual(3)
+    expect(pair(t, '--muted', '--ground')).toBeGreaterThanOrEqual(3)
+  })
+  it('the label and select use --ink on --card', () => expect(pair(t, '--ink', '--card')).toBeGreaterThanOrEqual(4.5))
+  it('the length badge: white on a 72% black scrim over white is at least 4.5:1', () => expect(ratio(parse('#ffffff')[0], over([parse('rgb(0 0 0 / .72)')[0], 0.72], parse('#ffffff')[0]))).toBeGreaterThanOrEqual(4.5))
+})
+describe('Channel menu css', () => {
+  it('a 1.5px --muted border, 48px tall, and no leftover chip group', () => {
+    expect(css).toMatch(/\.dc-select \{[^}]*min-height: 48px[^}]*border: 1\.5px solid var\(--muted\)/)
+  })
+})
+
 describe('season row icon', () => {
   it('light: the amber icon over the white 55% lead is 3:1 (non-text)', () => {
     const t = tokensOf('light')

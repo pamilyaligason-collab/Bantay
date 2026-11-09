@@ -35,9 +35,10 @@ test('D1: hero poster is the scroller width minus 32, at least 190 tall, play di
 
 // D2: every video card (Top story grid, Health, Farming and DIY, Listen, recipe videos) has a 15 px title in one colour, three lines at most.
 test('D2: video card titles are 15 px, one colour, three lines at most', async ({ page }) => {
-  const t = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.dc-vc-t')).map((e) => ({ fs: getComputedStyle(e).fontSize, c: getComputedStyle(e).color, lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)) })))
+  const t = await page.evaluate(() => Array.from(document.querySelectorAll<HTMLElement>('.dc-vc-t')).map((e) => ({ lead: !!e.closest('.dc-vlead'), fs: getComputedStyle(e).fontSize, c: getComputedStyle(e).color, lines: Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)) })))
   expect(t.length).toBeGreaterThanOrEqual(10) // S24: 4 grid + 4 health (daily set) + farm + listen + recipe videos
-  t.forEach((x) => { expect(x.fs).toBe('15px'); expect(x.lines).toBeLessThanOrEqual(3) })
+  t.forEach((x) => { expect(x.fs).toBe(x.lead ? '18px' : '15px'); // the lead card is 18 px by design
+     expect(x.lines).toBeLessThanOrEqual(3) })
   expect(new Set(t.map((x) => x.c)).size, 'one title colour').toBe(1)
 })
 
@@ -74,8 +75,8 @@ test('one hero, starting on the first screen', async ({ page }) => {
   expect(r.top, 'the hero poster begins within a screen and a half').toBeLessThanOrEqual(r.view * 1.5)
 })
 
-test('order: Learn, Top story, hero, the Health pointer, Farming and DIY, Listen, Recipes, Play, fact', async ({ page }) => {
-  await assertOrder(page, ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-health-link', 'dc-farm', 'dc-listen', 'dc-recipes', 'dc-play', 'dc-fact'])
+test('order: Learn, Top stories, hero, Farming and DIY, Listen, the Health pointer, Recipes, Play, fact', async ({ page }) => {
+  await assertOrder(page, ['dc-learn', 'dc-top-story', 'dc-hero', 'dc-farm', 'dc-listen', 'dc-health-link', 'dc-recipes', 'dc-play', 'dc-fact'])
 })
 
 test('the hero opens Watch and nothing reaches YouTube before a second tap', async ({ page }) => {

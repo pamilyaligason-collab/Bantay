@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import benefits from '../../../data/discover/benefits.json'
 import { playable } from '../../health/library/videosLogic'
@@ -11,7 +11,7 @@ describe('Watch', () => {
   it('shows 4 posters at a time in a grid (no player, no side-swipe row) and one row per topic plus Live TV; health topics are gone', () => {
     const { container } = render(<Watch />)
     expect(DISCOVER_VIDEOS.filter(playable).length).toBe(55) // counted by hand in src/data/discover/ready.json: Be prepared 20, Farming and DIY 23, Listen 7, Recipe videos 5, none a placeholder
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
+    expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(4)
     expect(screen.getByRole('button', { name: 'Show 4 more' })).toBeTruthy()
     expect(container.querySelector('iframe')).toBeNull()
     expect(container.querySelector('.carousel, .dc-posters')).toBeNull()
@@ -28,11 +28,11 @@ describe('Watch', () => {
   it('Show more adds four posters at a time', () => {
     render(<Watch />)
     fireEvent.click(screen.getByRole('button', { name: 'Show 4 more' }))
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(8)
+    expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(8)
   })
   it('a poster picks the video; the player loads nothing until its own tap, and keeps an Open in YouTube link', () => {
     const { container } = render(<Watch />)
-    fireEvent.click(screen.getByRole('button', { name: /^Choose Disaster Wais: the go bag/ }))
+    fireEvent.click(screen.getByRole('button', { name: /^Video, Disaster Wais: the go bag/ }))
     const p = screen.getByTestId('watch-player')
     expect(container.querySelector('iframe')).toBeNull()
     expect(within(p).getByRole('button', { name: 'Play Disaster Wais: the go bag' })).toBeTruthy()
@@ -44,12 +44,12 @@ describe('Watch', () => {
     render(<Watch />)
     fireEvent.click(within(screen.getByTestId('playlist-Listen')).getByRole('button'))
     expect(screen.getByRole('heading', { name: 'Listen' }).nextElementSibling!.textContent).toBe('7')
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
+    expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(4)
     fireEvent.click(screen.getByRole('button', { name: 'Show 3 more' }))
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(7)
+    expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(7)
     fireEvent.click(within(screen.getByTestId('playlist-Listen')).getByRole('button'))
     expect(screen.getByRole('heading', { name: 'Checked videos' }).nextElementSibling!.textContent).toBe('55')
-    expect(screen.getAllByRole('button', { name: /^Choose / }).length).toBe(4)
+    expect(screen.getAllByRole('button', { name: /^Video, / }).length).toBe(4)
   })
   it('a picture that cannot load falls back to the title on a drawn tile', () => {
     const { container } = render(<Watch />)
@@ -67,6 +67,13 @@ describe('Watch opened from the overview', () => {
     expect(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play ' + v.title })).toBeTruthy()
     expect(container.querySelector('iframe')).toBeNull()
     expect(sessionStorage.getItem(WATCH_PICK)).toBeNull()
+  })
+  it('focus moves to the player when it opens from the overview', async () => {
+    const v = DISCOVER_VIDEOS.filter(playable)[3]!
+    sessionStorage.setItem(WATCH_PICK, v.id)
+    render(<Watch />)
+    const play = within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play ' + v.title })
+    await waitFor(() => expect(document.activeElement).toBe(play))
   })
   it('shows no player without the key or with an unknown id', () => {
     render(<Watch />)

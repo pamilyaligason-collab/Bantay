@@ -11,6 +11,8 @@ const h = vi.hoisted(() => ({
   eqs: [] as string[],
   reads: 0
 }))
+const tr = vi.hoisted(() => ({ calls: [] as string[] }))
+vi.mock('../../admin/events', () => ({ track: async (_k: string, n: string) => { tr.calls.push(n); return true } }))
 vi.mock('../../../db', () => ({ db: { kv: { get: async (k: string) => { h.reads++; return h.kv.get(k) }, put: async (v: { key: string; value: unknown }) => { h.kv.set(v.key, v) } } } }))
 vi.mock('../../auth/client', () => ({
   get supabase() {
@@ -135,6 +137,16 @@ describe('Regional news section', () => {
     expect(container.querySelector('iframe')!.getAttribute('src')).toContain('youtube-nocookie.com/embed/vid00000001')
     fireEvent.click(screen.getAllByTestId('nv-card')[0]!)
     expect(within(screen.getByTestId('nv-player')).getByRole('button', { name: 'Play Story 2' })).toBeTruthy()
+  })
+  it('a news card is named "Video, title, channel", counts card_regional_video on a tap, and focus moves to the player', async () => {
+    h.rows = SEVEN
+    tr.calls.length = 0
+    render(<NewsVideos now={NOW} />)
+    const lead = await screen.findByTestId('nv-lead')
+    expect(lead.getAttribute('aria-label')).toBe('Video, Story 1, GMA News')
+    fireEvent.click(lead)
+    expect(tr.calls).toEqual(['card_regional_video'])
+    await waitFor(() => expect(document.activeElement).toBe(within(screen.getByTestId('nv-player')).getByRole('button', { name: 'Play Story 1' })))
   })
   it('a chip filters to one channel (and says so with aria-pressed); All shows every channel again; an empty channel says so', async () => {
     h.rows = SEVEN
