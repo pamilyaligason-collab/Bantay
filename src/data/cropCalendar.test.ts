@@ -79,6 +79,14 @@ describe('provinceClimate.json', () => {
     expect(provinces['Bohol'].type).toBe(4)
     expect(provinces['South Cotabato'].type).toBe(4)
   })
+  it('matches the PAGASA climate map (climate-final-3.jpg) where it is clear', () => {
+    expect(provinces['Bohol']).toEqual({ type: 4 })
+    expect(provinces['Batanes']).toEqual({ type: 2 })
+    expect(provinces['Negros Occidental']).toEqual({ type: 3 })
+    expect(provinces['Leyte']).toEqual({ type: 4 })
+    expect(provinces['Cotabato'].type).toBe(3)
+    expect(provinces['Zamboanga del Norte'].type).toBe(3)
+  })
   it('flags the provinces whose bulletin text splits or contradicts', () => {
     for (const n of ['Marinduque', 'Camarines Norte', 'Camarines Sur']) expect(provinces[n].uncertain).toBe(true)
   })
@@ -91,12 +99,12 @@ describe('climateTypeFor', () => {
     expect(climateTypeFor(undefined)).toBeNull()
   })
   it('matches case and spacing insensitively', () => {
-    expect(climateTypeFor('  SOUTH   cotabato ')).toEqual({ type: 4, uncertain: false })
+    expect(climateTypeFor('  SOUTH   cotabato ')).toEqual({ type: 4, uncertain: true }) // PAGASA map: north III, General Santos coast IV
     expect(climateTypeFor('marinduque')).toEqual({ type: 3, uncertain: true })
   })
   it('resolves old names', () => {
     expect(climateTypeFor('Compostela Valley')).toEqual({ type: 4, uncertain: true })
-    expect(climateTypeFor('Western Samar')).toEqual({ type: 2, uncertain: false })
+    expect(climateTypeFor('Western Samar')).toEqual({ type: 4, uncertain: true }) // PAGASA map: mostly IV, east coast II
     expect(climateTypeFor('Maguindanao')).toEqual({ type: 3, uncertain: true })
   })
 })
