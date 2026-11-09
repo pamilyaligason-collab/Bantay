@@ -43,7 +43,7 @@ describe('plain summaries only when data exists', () => {
   })
   it('BP with no bottom number still reads; pulse says 72 beats a minute from 1 day with the MedlinePlus guide', () => {
     expect(vitalSummary('bp', [null, 140, null], [])).toContain('140 mmHg, from 1 day with a reading.')
-    expect(vitalSummary('pulse', [null, 72, null])).toContain('72 beats a minute, from 1 day with a reading. General guide for a resting pulse in adults: 60 to 100 (MedlinePlus, 2024).')
+    expect(vitalSummary('pulse', [null, 72, null])).toContain('72 beats a minute, from 1 day with a reading. General guide for a resting pulse in adults: 60 to 100 beats a minute (MedlinePlus, 2024).')
   })
   it('no data: no summary at all (null, not a line saying 0)', () => {
     expect(vitalSummary('bp', [null, null], [null])).toBeNull()

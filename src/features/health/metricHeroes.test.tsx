@@ -58,7 +58,7 @@ describe('#health/metric/water (the Water tile page)', () => {
     expect(hero.querySelector('svg.rg')).toBeNull()
     expect(screen.queryByTestId('water-summary')).toBeNull()
     expect(screen.queryByTestId('metric-chart')).toBeNull()
-    expect(screen.queryByTestId('water-tip')).toBeNull()
+    expect(screen.getByTestId('water-tip').textContent).toContain('limited your fluids') // clinical S28: the fluid-limit caveat shows before any glass is logged
   })
 
   it('a glass logged for someone else is not counted on this page', async () => {

@@ -61,15 +61,16 @@ export function WaterDetail() {
                   ? <p className="sub" style={{ margin: 0, padding: 16 }}>Nothing in the last {period === 'week' ? '7' : '30'} days. Newer glasses will show here.</p>
                   : <MetricChart pts={shown} days={period === 'week' ? 7 : 30} now={now} label={`Water ${period === 'week' ? 'this week' : 'this month'}`} unit="glasses" goal={goalGl} />}
               </div>
-              <div className="grp hv-advice" style={{ marginTop: 16 }} data-testid="water-tip">
-                <div className="row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 6 }}>
-                  <strong className="cd-title">General tips</strong>
-                  <span>{WATER_TIP}</span>
-                  <span className="sub">General information, not medical advice. Your doctor sets your own target.</span>
-                </div>
-              </div>
             </>
           )}
+          {/* Clinical review S28: the fluid-limit caveat shows even before any glass is logged. */}
+          <div className="grp hv-advice" style={{ marginTop: 16 }} data-testid="water-tip">
+            <div className="row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 6 }}>
+              <strong className="cd-title">General tips</strong>
+              <span>{WATER_TIP}</span>
+              <span className="sub">General information, not medical advice. Your doctor sets your own target.</span>
+            </div>
+          </div>
         </>
       )}
     </>
