@@ -8,7 +8,8 @@ import { properName } from '../medName'
 import { useHealthPerson } from '../useHealthPerson'
 import { useMedications } from '../useMedications'
 import { articleHref, SOURCE_LINE } from './medline'
-import { loadLabGlossary, useLabGlossary } from '../labsLogic'
+import { useLabGlossary } from '../labsLogic'
+import { resolveHref } from './resolve'
 import Article from './Article'
 import { BodyList, Row, useMedlib } from './encyclopediaList'
 import { BODIES, bodyHref, commonInPh, inSeason, searchTopics, topicHref, type Body } from './encyclopedia'
@@ -71,7 +72,7 @@ function LibraryHome() {
     searchFullLibrary(t).then((r) => live && setMore(r.slice(0, 8))).catch(() => live && setMore([]))
     return () => { live = false }
   }, [q])
-  const online = async () => { const t = q.trim(); const lab = t ? (await loadLabGlossary().catch(() => null))?.labEntry(t) : null; if (lab) location.hash = articleHref('t', lab.code); else if (t) location.hash = articleHref('s', t) } // MedlinePlus: needs internet
+  const online = async () => { const t = q.trim(); if (t) location.hash = await resolveHref(t) } // MedlinePlus: needs internet
   const go = () => { if (found[0]) location.hash = topicHref(found[0].id); else void online() } // Enter opens the best offline hit; the online look-up is only for a word we do not have
   const ph = useMemo(() => commonInPh(topics), [topics])
   const searching = q.trim().length > 0

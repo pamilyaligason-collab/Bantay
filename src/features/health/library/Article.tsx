@@ -4,8 +4,10 @@ import { loadTopic, parseKey, SOURCE_LINE, type Topic } from './medline'
 import type { LabEntry } from '../labGlossary'
 import { useLabGlossary } from '../labsLogic'
 import { LabExplain } from './LabExplain'
+import { resolveKey } from './resolve'
 import { LocalArticle } from './encyclopediaArticle'
-import { BodyList } from './encyclopediaList'
+import { BodyList, useMedlib } from './encyclopediaList'
+import { topicHref } from './encyclopedia'
 import { readArticle, type FullArticleData } from './fullLibrary'
 import { FullArticle } from './FullLibraryCard'
 import '../health.css'
@@ -24,7 +26,16 @@ export default function Article({ rawKey }: { rawKey: string }) {
     const lab = g.labEntry(rawKey.slice(2))
     if (lab) return <LabArticle e={lab} />
   }
+  if (/^[cs]:/.test(rawKey)) return <Resolving rawKey={rawKey} />
   return <TopicArticle rawKey={rawKey} />
+}
+
+/** c:/s: keys first go through the one resolver (glossary, curated topic, full library), so a lab or a topic we hold never needs the network. */
+function Resolving({ rawKey }: { rawKey: string }) {
+  const [k, setK] = useState<string | null>(null)
+  useEffect(() => { let live = true; setK(null); resolveKey(rawKey.slice(2), rawKey[0] as 'c' | 's').then((r) => live && setK(r)).catch(() => live && setK(rawKey)); return () => { live = false } }, [rawKey])
+  if (k === null) return <ArticleLoading />
+  return k === rawKey ? <TopicArticle rawKey={rawKey} /> : <Article rawKey={k} />
 }
 
 /** f:<key>: an article of the downloaded full library (works offline). When the library is not on this phone (or the key is not in it) it says so. */
@@ -48,6 +59,7 @@ function FullArticleView({ k }: { k: string }) {
 
 /** t:<code>: a lab test from the glossary, shown without a network request. Same text as the lab detail page. */
 function LabArticle({ e }: { e: LabEntry }) {
+  const rel = useMedlib().lib?.topics.find((t) => t.id === e.topic)
   return (
     <>
       <SubHeader title="Health library" backHref="#health/library" backLabel="Back to Library" />
@@ -56,6 +68,7 @@ function LabArticle({ e }: { e: LabEntry }) {
         <p className="sub">{e.short}</p>
       </article>
       <LabExplain entry={e} />
+      {rel && <p className="sub" style={{ margin: '8px 4px 0' }} data-testid="lab-related">Related: <a href={topicHref(rel.id)}>{rel.title}</a></p>}
       <p className="sub ar-src" style={{ margin: '8px 4px 0' }}>{SOURCE_LINE}</p>
     </>
   )
@@ -107,7 +120,7 @@ function TopicArticle({ rawKey }: { rawKey: string }) {
             <a className="hv-open ar-more" href={view.topic.url} target="_blank" rel="noopener noreferrer">Read the full page on MedlinePlus<span className="hv-sr"> (opens in new tab)</span></a>
           </>
         )}
-        {view.s === 'none' && <p className="ar-body" data-testid="article-none">MedlinePlus has nothing on this. Try another word, or ask your doctor.</p>}
+        {view.s === 'none' && <p className="ar-body" data-testid="article-none">{/^[sl]:/.test(rawKey) ? 'No plain-words note for this test yet. Ask your doctor what it means.' : 'No plain-words note for this yet. Ask your doctor what it means.'}</p>}
         {view.s === 'offline' && (
           <div data-testid="article-offline">
             <p className="ar-body">This article needs the internet and nothing is saved on this phone yet. Try again when you are online.</p>
