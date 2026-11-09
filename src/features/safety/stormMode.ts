@@ -1,4 +1,5 @@
 import type { Alert } from './alerts'
+import { alarmState } from '../phonecheck/health'
 
 /** Storm mode (mockup safety-storm): a PAGASA wind signal row from alerts-ingest, unexpired (the pull drops expired rows) and not older than a day.
  *  A stale row (the feed could not be reached on the last run) still counts: the last known signal is safer to show than silence. */
@@ -25,10 +26,11 @@ export const WARNINGS_FALLBACK = 'If PAGASA cannot be reached, GDACS and Open-Me
 
 /** The phone check result (kv phone.check, written by the phone check). null = unknown, never counted as a problem. */
 export interface PhoneCheck { notif_ok?: boolean | null; exact_ok?: boolean | null; battery_ok?: boolean | null; alarms_ok?: boolean | null; call_ok?: boolean | null }
-export type Health = 'ok' | 'fix' | 'unknown'
+export type Health = 'ok' | 'warn' | 'fix' | 'unknown'
 
 const healthOf = (v: (boolean | null | undefined)[]): Health => (v.some((x) => x === false) ? 'fix' : v.length && v.every((x) => x === true) ? 'ok' : 'unknown')
-export const alarmsHealth = (c: PhoneCheck | null): Health => (c ? healthOf([c.notif_ok, c.exact_ok, c.battery_ok, c.alarms_ok]) : 'unknown')
+/** Same rule as the Me card and the phone check (phonecheck/health.ts): battery saver alone is 'warn', never 'fix'. */
+export const alarmsHealth = (c: PhoneCheck | null): Health => alarmState(c)
 export const callHealth = (c: PhoneCheck | null): Health => (c ? healthOf([c.call_ok]) : 'unknown')
 
 /** How many phone settings need fixing: the hub tile shows a count only while this is above zero. */

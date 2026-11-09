@@ -7,6 +7,7 @@ vi.mock('../today/actions', () => ({ logFeeling: log.mood, feelingToast: () => '
 import { db } from '../../db'
 import { ALERTS_KEY, type Alert } from './alerts'
 import { StormCard } from './StormCard'
+import { batteryWarning, probeProblems } from '../phonecheck/health'
 import { alarmsHealth, callHealth, liveSignals, phoneAlertCount, signalOf, stormTitle } from './stormMode'
 
 const NOW = Date.parse('2026-10-24T08:00:00+08:00')
@@ -35,6 +36,21 @@ describe('storm mode data', () => {
     expect(phoneAlertCount({ notif_ok: null, exact_ok: null, battery_ok: null, alarms_ok: null, call_ok: null })).toBe(0)
     expect(alarmsHealth({ notif_ok: true, exact_ok: true, battery_ok: true })).toBe('unknown') // alarms_ok missing: not all known
     expect(callHealth({ call_ok: true })).toBe('ok')
+  })
+  it('battery saver alone is a warning, not a fix, and the hub count ignores it', () => {
+    const c = { notif_ok: true, exact_ok: true, battery_ok: false, alarms_ok: true, call_ok: true }
+    expect(alarmsHealth(c)).toBe('warn')
+    expect(phoneAlertCount(c)).toBe(0)
+  })
+  it('the hub, Phone alerts page and Me card agree on every combination of the four alarm checks', () => {
+    const v = [true, false, null]
+    for (const notif_ok of v) for (const exact_ok of v) for (const battery_ok of v) for (const alarms_ok of v) {
+      const c = { notif_ok, exact_ok, battery_ok, alarms_ok }
+      const meFix = probeProblems(c).some((p) => p !== 'call') // what the Me row and fix card treat as a problem
+      expect(alarmsHealth(c) === 'fix', JSON.stringify(c)).toBe(meFix)
+      expect(phoneAlertCount(c) === 1, JSON.stringify(c)).toBe(meFix)
+      expect(alarmsHealth(c) === 'warn', JSON.stringify(c)).toBe(!meFix && batteryWarning(c))
+    }
   })
 })
 

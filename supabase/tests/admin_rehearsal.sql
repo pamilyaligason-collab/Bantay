@@ -19,6 +19,7 @@ create function public.is_admin() returns boolean language sql stable security d
   $$ select exists (select 1 from public.app_roles where user_id = auth.uid() and role = 'admin' and not disabled) $$;
 grant execute on function public.is_admin() to authenticated;
 \ir ../migrations/0004_admin.sql
+\ir ../migrations/0056_usage_allowlist.sql
 create function pg_temp.fails(q text) returns boolean language plpgsql as $$ begin execute q; return false; exception when others then return true; end $$;
 create function pg_temp.ok(c boolean, msg text) returns void language plpgsql as $$ begin if c then raise notice 'PASS %', msg; else raise exception 'FAIL %', msg; end if; end $$;
 grant execute on function pg_temp.fails(text), pg_temp.ok(boolean,text) to authenticated, anon;
@@ -33,6 +34,9 @@ select pg_temp.ok(not pg_temp.fails($$insert into public.usage_events (kind, nam
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (user_id, kind, name) values ('00000000-0000-0000-0000-00000000000c','screen','health')$$), 'member cannot insert as another user');
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name) values ('screen','bp_150')$$), 'db rejects a digit-bearing name');
 select pg_temp.ok(pg_temp.fails($$insert into public.usage_events (kind, name) values ('reading','health')$$), 'db rejects an unknown kind');
+select pg_temp.ok(not pg_temp.fails($$insert into public.usage_events (kind, name) values ('screen','zzz_not_listed')$$), '0056: a well-formed name that is not on the allowlist is dropped without an error');
+select pg_temp.ok((select count(*) from public.usage_events where name = 'zzz_not_listed') = 0, '0056: the unlisted name stored 0 rows');
+select pg_temp.ok((select count(*) from public.usage_events where kind = 'screen' and name = 'health') = 1, '0056: an allowlisted name inserts');
 select pg_temp.ok((select count(*) from public.usage_events) = 1, 'member reads only their own events, not others');
 select pg_temp.ok(pg_temp.fails($$update public.usage_events set name = 'x'$$), 'member cannot update events');
 select pg_temp.ok(pg_temp.fails($$delete from public.usage_events$$), 'member cannot delete events');
