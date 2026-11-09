@@ -25,6 +25,10 @@ describe('Privacy screen', () => {
     expect(w).toContain('Offline maps are on by default')
     expect(w).not.toContain('the usual setting')
   })
+  it('the OpenStreetMap line names the offline barangay files and the credit, in the app credit format', () => {
+    const w = PROCESSORS.find((p) => p.name === 'OpenStreetMap')!.what
+    expect(w).toContain('Barangay names on Today'); expect(w).toContain('© OpenStreetMap contributors')
+  })
   it('the feed paragraph shows only with the feed flag on', async () => {
     render(<PrivacyScreen />)
     await screen.findByText('Agreed when you joined, 26 Oct')

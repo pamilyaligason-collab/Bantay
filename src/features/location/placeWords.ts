@@ -1,6 +1,6 @@
 import { isRough } from './freshness'
 import { pickLocalSet, type LatLon } from './geo'
-import { nearestPlace, nearestLabel, zoneLabel } from './nearestPlace'
+import { nearestPlace, nearestLabel, packPlace, zoneLabel } from './nearestPlace'
 import { agoWords } from '../today/timeWords'
 
 export interface PlaceWords { title: string; approx?: boolean; sub?: string; stale: boolean } // approx: the fix is rough, so only the place LINE reads 'around <title>' (placeLine); sentences use the plain title // stale -> callers add data-testid="place-last"
@@ -10,8 +10,13 @@ export interface PlaceLike { source: string; zone: string; weather?: LatLon; fix
 const short = (zone: string) => zoneLabel(zone) // S28: '<barangay>, <town>' for a home zone
 /** The area the phone is in. Outside every named area it is 'where you are': a home zone 500 km away is not the phone's place. */
 const areaOf = (p: PlaceLike) => { const s = p.weather ? pickLocalSet(p.weather) : null; return s?.where === 'area' ? s.area.name : 'where you are' }
-/** S28: the exact place when the fix is good enough to name a barangay (not rough), else the area. */
-const exactOf = (p: PlaceLike) => { const n = p.weather && !isRough(p.accuracy) ? nearestPlace(p.weather) : null; return n ? nearestLabel(n) : areaOf(p) }
+/** S28: the exact place when the fix is good enough to name a barangay (not rough): the offline pack answer once the lookup has landed (D-181), meanwhile and when it finds nothing the home-zone match, else the area. */
+const exactOf = (p: PlaceLike, now: number) => {
+  if (!p.weather || isRough(p.accuracy)) return areaOf(p)
+  const packed = packPlace(p.weather, now)
+  const n = packed ?? nearestPlace(p.weather)
+  return n ? nearestLabel(n) : areaOf(p)
+}
 const roughOf = (p: PlaceLike) => areaOf(p) !== 'where you are' && isRough(p.accuracy)
 /** The place LINE (chip, card kicker, hero kicker): 'around <place>' for a rough fix. Never put this inside a sentence. */
 export const placeLine = (w: PlaceWords): string => (w.approx ? `around ${w.title}` : w.title)
@@ -20,8 +25,8 @@ export const placeLine = (w: PlaceWords): string => (w.approx ? `around ${w.titl
 export function placeWords(place: PlaceLike | null, now: number = Date.now()): PlaceWords {
   if (!place || place.settled === false) return { title: 'where you are', stale: false }
   switch (place.source) {
-    case 'gps': return { title: exactOf(place), approx: roughOf(place) || undefined, stale: false }
-    case 'last': { const a = place.fixAt == null ? '' : agoWords((now - place.fixAt) / 60_000); return { title: `${exactOf(place)} · last known${a ? `, ${a}` : ''}`, approx: roughOf(place) || undefined, stale: true } }
+    case 'gps': return { title: exactOf(place, now), approx: roughOf(place) || undefined, stale: false }
+    case 'last': { const a = place.fixAt == null ? '' : agoWords((now - place.fixAt) / 60_000); return { title: `${exactOf(place, now)} · last known${a ? `, ${a}` : ''}`, approx: roughOf(place) || undefined, stale: true } }
     case 'gps-abroad': return { title: `Away · ${short(place.zone)}`, stale: false }
     default: return { title: place.picked === false ? `${short(place.zone)} · your home area` : short(place.zone), stale: false }
   }
