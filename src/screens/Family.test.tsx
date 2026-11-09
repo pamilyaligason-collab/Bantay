@@ -20,14 +20,14 @@ const people = [person('p2', 'Ate Joy Cruz'), person('p3', 'Papa Ben')]
 const msg = (o: Partial<Msg>): Msg => ({ id: 'x', clientId: null, mine: false, senderPersonId: 'p2', kind: 'text', body: 'hi', name: null, durationS: null, createdAt: '2026-10-27T02:00:00+00:00', url: null, ...o })
 
 describe('messagesPreview', () => {
-  it('no messages: Say hello and nothing unread', () => {
-    expect(messagesPreview([], people, null)).toEqual({ sub: 'Say hello', unread: 0 })
+  it('no messages: No alerts yet and nothing unread', () => {
+    expect(messagesPreview([], people, null)).toEqual({ sub: 'No alerts yet', unread: 0 })
   })
 
   it('names the sender of the newest message (first word) and says "You" for your own', () => {
-    expect(messagesPreview([msg({ body: 'Dinner at 6' })], people, '2026-10-27T03:00:00Z').sub).toMatch(/^Family chat · Ate: Dinner at 6/)
-    expect(messagesPreview([msg({ mine: true, body: 'ok' })], people, null).sub).toMatch(/^Family chat · You: ok/)
-    expect(messagesPreview([msg({ senderPersonId: 'zz', body: 'ok' })], people, null).sub).toMatch(/^Family chat · Family: ok/)
+    expect(messagesPreview([msg({ body: 'Dinner at 6' })], people, '2026-10-27T03:00:00Z').sub).toMatch(/^Ate: Dinner at 6/)
+    expect(messagesPreview([msg({ mine: true, body: 'ok' })], people, null).sub).toMatch(/^You: ok/)
+    expect(messagesPreview([msg({ senderPersonId: 'zz', body: 'ok' })], people, null).sub).toMatch(/^Family: ok/)
   })
 
   it('words for attachments, not their paths', () => {
