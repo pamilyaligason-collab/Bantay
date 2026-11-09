@@ -117,7 +117,7 @@ test('today weather card: from=action only when an action line shows, and it is 
   await skipOnboarding(page)
   await mockForecast(page) // 33 C at 70% humidity: Danger, so an action line shows
   await page.goto('/#today')
-  const hero = page.getByRole('region', { name: 'Weather' })
+  const hero = page.getByRole('region', { name: 'Weather', exact: true })
   await expect(hero.getByRole('link', { name: /Open the weather/ })).toHaveAttribute('href', '#weather?from=action') // the cover link; the Full forecast row beside it is plain #weather
   await expect(hero).toContainText('Stay indoors 11 AM-3 PM')
 })
@@ -138,5 +138,5 @@ test('today weather card: a calm day opens plain #weather', async ({ page }) => 
   await skipOnboarding(page)
   await page.route('https://api.open-meteo.com/**', (route) => route.fulfill({ json: openMeteoFixture({ now: new Date(), temp: 26, humidity: 50, hourlyProb: () => 5, uvMax: 3 }) }))
   await page.goto('/#today')
-  await expect(page.getByRole('region', { name: 'Weather' }).getByRole('link', { name: /Open the weather/ })).toHaveAttribute('href', '#weather')
+  await expect(page.getByRole('region', { name: 'Weather', exact: true }).getByRole('link', { name: /Open the weather/ })).toHaveAttribute('href', '#weather')
 })

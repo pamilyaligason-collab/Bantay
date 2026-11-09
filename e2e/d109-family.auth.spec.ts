@@ -77,10 +77,9 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('person-card')).toHaveCount(0) // no separate Today list
       await expect(page.getByTestId('facesrow')).toHaveCount(0)
       await expect(page.locator('.lt-kicker')).not.toContainText('PEOPLE')
-      // Needs: one line for Ma, no medicine name, no number
-      const need = page.getByTestId('need-row')
-      await expect(need).toHaveCount(1)
-      await expect(need).toContainText('Ma: missed a medicine')
+      // Needs: S28 lane E (Today merge) says Ma's missed medicine once, on her People card, so there is no second Needs line
+      await expect(page.getByTestId('need-row')).toHaveCount(0)
+      await expect(page.getByTestId('people-row').filter({ hasText: 'Ma' }).first()).toContainText('Missed a medicine')
       await expect(page.getByTestId('needs')).not.toContainText(/Nasal|\d dose/)
       // People: Rey and the people linked to Rey; Tita and Kuya (owner-only) are in the pill, not on the page
       await expect(page.getByTestId('people-row')).toHaveCount(3)
@@ -105,13 +104,13 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(tita).toContainText('OK today') // her check-in
       await expect(tita).not.toContainText(/Needs a look|high|to check|missed/i) // her 168 reading is not shown to a read-only viewer
       await expect(rows.filter({ hasText: 'Ma' }).first()).toContainText('2 to check') // a writer link keeps the flag word
-      await expect(page.getByTestId('need-row')).toHaveCount(1) // only Ma: no line for Tita
-      await expect(page.getByTestId('need-row')).not.toContainText('Tita')
+      await expect(page.getByTestId('need-row')).toHaveCount(0) // Ma's miss is on her card (S28 Today merge); no line for Tita
+      await expect(page.getByTestId('needs')).not.toContainText('Tita')
     })
 
     // D-128: Jack covers no small control and no section link; only whole-card links may sit partly under him (named below, more than half tappable). Open Papa on a Needs row and See all are small controls: no allowance.
     const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"]' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main, [data-testid="together-list"] a.fm-tile' }]
-    const STATES: [string, Data, number][] = [['full data', {}, 1], ['no readings, one need row', { readings: false }, 1], ['no readings, two need rows', { readings: false, extraNeed: true }, 2], ['no activity, no readings, two need rows', { activity: false, readings: false, extraNeed: true }, 2]]
+    const STATES: [string, Data, number][] = [['full data', {}, 0], ['no readings, no need row', { readings: false }, 0], ['no readings, one need row', { readings: false, extraNeed: true }, 1], ['no activity, no readings, one need row', { activity: false, readings: false, extraNeed: true }, 1]] // S28 lane E (Today merge): Ma's missed medicine is on her People card, so each state has one Needs row less
     for (const [name, data, needs] of STATES) {
       test(`four people, ${name}: no small control is under Jack, 390 x 844 and 450 x 949 (${scheme})`, async ({ page }) => {
         await open(page, scheme, 844, ['ti'], data)
@@ -138,7 +137,7 @@ for (const scheme of ['light', 'dark'] as const) {
       const ma = page.getByTestId('people-row').filter({ hasText: 'Ma' }).first()
       await expect(ma).toContainText('Missed a medicine') // today's status is on her card (no medicine name, D-109)
       await expect(ma.getByRole('button', { name: /Mark taken for Ma/ })).toBeVisible() // Rey is her writer carer
-      await page.getByTestId('need-row').getByRole('button', { name: 'Open Ma' }).click()
+      await ma.locator('a.pp-main').click() // S28 Today merge: the People card is the way in, there is no Needs line for Ma
       await expect(page).toHaveURL(/#family\/people\/ma$/)
       await page.goto('/#family')
       await pill(page, 'Me').click()

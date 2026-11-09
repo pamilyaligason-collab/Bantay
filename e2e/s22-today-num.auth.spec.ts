@@ -43,8 +43,8 @@ for (const width of [360, 390]) {
         expect(extra.w, 'same width').toBe(t.w); expect(extra.pad, 'same padding').toBe(t.pad)
         expect(extra.k, 'label scale').toBe(t.k); expect(extra.s, 'sub scale').toBe(t.s); expect(extra.a, 'action scale').toBe(t.a)
       }
-      expect(m[0]!.v).toBe('26px/700') // BP and Sugar carry data: the house value scale
-      expect(m[1]!.v).toBe('26px/700')
+      expect(m[0]!.v).toBe('30px/700') // BP and Sugar carry data: the house value scale (S28 L0: --fs-display 30px)
+      expect(m[1]!.v).toBe('30px/700')
       expect(extra.v, 'the tile with data matches the tiles with data').toBe(m[0]!.v)
       expect(extra.h, 'same row height as the tile beside it').toBe(m[2]!.h)
       expect(extra.top, 'row 2 shared with the lab tile').toBe(m[2]!.top)

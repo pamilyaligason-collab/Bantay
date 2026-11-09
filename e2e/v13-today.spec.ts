@@ -33,7 +33,7 @@ test('order: hero, My day, Calm, Your numbers; no SOS pill, no family feed', asy
 })
 
 test('the hero is one link to Weather', async ({ page }) => {
-  await expect(page.getByTestId('weather-hero').getByRole('link').first()).toHaveAttribute('href', /#weather/)
+  await expect(page.getByTestId('weather-hero').locator('a[href*="#weather"]').first()).toHaveAttribute('href', /#weather/) // the data credit (S26) is an outside link too
 })
 
 test('My day: ring, the three rows and the breath row', async ({ page }) => {
