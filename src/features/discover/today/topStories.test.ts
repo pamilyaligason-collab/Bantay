@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import type { Video } from '../../health/library/videosLogic'
 import { READY_SHELVES, READY_VIDEOS } from '../learn/ready'
 import { NEWS_CHANNELS } from '../newsvideo/api'
@@ -86,7 +86,7 @@ describe('loadFamilyWatch (migration 0060 reader)', () => {
     t.rpc = async () => ({ data: [{ name: 'watch_ch_fema', n: 3 }, { name: 'watch_ch_gma_news', n: '5' }, { name: 'watch_ch_made_up', n: 9 }, { name: 'watch_ch_pagasa', n: 0 }, { name: 7, n: 1 }], error: null })
     expect(await loadFamilyWatch()).toEqual({ watch_ch_fema: 3, watch_ch_gma_news: 5 })
   })
-  it('a channel the server leaves out (fewer than 2 family viewers) simply has no count, so it ranks by the fallback', async () => {
+  it('a channel the server leaves out (fewer than 3 family viewers) simply has no count, so it ranks by the fallback', async () => {
     t.rpc = async () => ({ data: [{ name: 'watch_ch_gma_news', n: 4 }], error: null })
     const c = await loadFamilyWatch()
     expect(c).toEqual({ watch_ch_gma_news: 4 })
@@ -104,7 +104,10 @@ describe('loadFamilyWatch (migration 0060 reader)', () => {
   })
 })
 
-describe('topForDay (audit fix 1: the order is fixed for the day)', () => {
+describe('topForDay (the open never waits; the family order is stored for the next open)', () => {
+  const tz = process.env.TZ
+  beforeAll(() => { process.env.TZ = 'Asia/Manila' })
+  afterAll(() => { process.env.TZ = tz })
   const fake = (rec: TopRec | null, fams: (Record<string, number> | null)[]) => {
     const st = { rec, reads: 0, writes: [] as TopRec[] }
     const io: TopIo = {
@@ -116,40 +119,65 @@ describe('topForDay (audit fix 1: the order is fixed for the day)', () => {
   }
   const flush = () => new Promise((r) => setTimeout(r, 0))
   const real = [v('x1', 'FEMA'), v('x2', 'FEMA'), v('y1', 'GMA News'), v('y2', 'GMA News')]
+  const DAYM = new Date(Date.UTC(2026, 0, 2, 2, 0)) // 10:00 on 2 January in Manila
   const local = () => ({})
+  // 2026-01-02 is day 20455; 20455 mod 4 = 3, so today's turn is y2 x1 x2 y1. FEMA at 5 taps leads: x1 y2 x2 y1.
+  const TURN = ['y2', 'x1', 'x2', 'y1']
+  const FEMA_FIRST = ['x1', 'y2', 'x2', 'y1']
 
-  it('the first open reads the family counts once, ranks, and stores the order; a later open that day paints the stored order without reading again', async () => {
-    const a = fake(null, [{ watch_ch_gma_news: 5 }, { watch_ch_fema: 99 }])
-    const first = await topForDay(real, DAY, 4, local, a.io)
-    expect(first[0]!.source).toBe('GMA News') // 5 taps lead
+  it('the first open paints the day\'s turn at once and stores the family order; the next open that day paints that stored order and reads nothing', async () => {
+    const a = fake(null, [{ watch_ch_fema: 5 }, { watch_ch_gma_news: 99 }])
+    const first = await topForDay(real, DAYM, 4, local, a.io)
+    expect(ids(first)).toEqual(TURN) // painted before the family answer
+    await flush()
     expect(a.st.reads).toBe(1)
-    expect(a.st.writes[0]).toEqual({ day: '2026-01-02', ids: ids(first), ok: true, tries: 1 })
-    const again = await topForDay(real, DAY, 4, local, a.io)
-    expect(ids(again)).toEqual(ids(first)) // new family counts (FEMA 99) are not in the family answer queue, and nothing is read
+    expect(a.st.writes).toEqual([{ day: '2026-01-02', ids: FEMA_FIRST, ok: true, tries: 1 }])
+    const again = await topForDay(real, DAYM, 4, local, a.io)
+    expect(ids(again)).toEqual(FEMA_FIRST)
+    await flush()
     expect(a.st.reads).toBe(1)
   })
-  it('a failed first read is retried once later that day in the background; the open that retries keeps what it painted, the next open gets the new order', async () => {
-    const a = fake(null, [null, { watch_ch_gma_news: 7 }, { watch_ch_fema: 1 }])
-    const first = await topForDay(real, DAY, 4, local, a.io)
-    expect(a.st.rec).toMatchObject({ ok: false, tries: 1 })
-    const second = await topForDay(real, DAY, 4, local, a.io) // painted from the store while the retry runs
-    expect(ids(second)).toEqual(ids(first))
+  it('a failed first read stores the painted order and is retried once on a later open; the open that retries keeps what it painted, the next gets the new order', async () => {
+    const a = fake(null, [null, { watch_ch_fema: 7 }, { watch_ch_gma_news: 1 }])
+    expect(ids(await topForDay(real, DAYM, 4, local, a.io))).toEqual(TURN)
+    await flush()
+    expect(a.st.rec).toEqual({ day: '2026-01-02', ids: TURN, ok: false, tries: 1 })
+    expect(ids(await topForDay(real, DAYM, 4, local, a.io))).toEqual(TURN) // painted from the store while the retry runs
     await flush()
     expect(a.st.reads).toBe(2)
-    expect(a.st.rec).toMatchObject({ ok: true, tries: 2 })
-    const third = await topForDay(real, DAY, 4, local, a.io)
-    expect(third[0]!.source).toBe('GMA News')
+    expect(a.st.rec).toEqual({ day: '2026-01-02', ids: FEMA_FIRST, ok: true, tries: 2 })
+    expect(ids(await topForDay(real, DAYM, 4, local, a.io))).toEqual(FEMA_FIRST)
     await flush()
     expect(a.st.reads).toBe(2) // ok now: no more reads today
   })
   it('after two failed reads nothing more is read that day; a new day starts again; a stored id that left the pool is dropped', async () => {
     const a = fake({ day: '2026-01-02', ids: ['x1', 'gone', 'y1'], ok: false, tries: 2 }, [])
-    expect(ids(await topForDay(real, DAY, 4, local, a.io))).toEqual(['x1', 'y1'])
+    expect(ids(await topForDay(real, DAYM, 4, local, a.io))).toEqual(['x1', 'y1'])
     await flush()
     expect(a.st.reads).toBe(0)
     const b = fake({ day: '2026-01-01', ids: ['x1'], ok: true, tries: 1 }, [null])
-    await topForDay(real, DAY, 4, local, b.io)
+    await topForDay(real, DAYM, 4, local, b.io)
+    await flush()
     expect(b.st.reads).toBe(1)
     expect(b.st.rec!.day).toBe('2026-01-02')
+  })
+  it('the stored day is the Manila day: 23:30 and 00:30 in Manila are two days, on a phone set to Manila or to Los Angeles', async () => {
+    const at2330 = new Date(Date.UTC(2026, 0, 2, 15, 30)) // 2026-01-02 23:30 in Manila
+    const at0030 = new Date(Date.UTC(2026, 0, 2, 16, 30)) // 2026-01-03 00:30 in Manila
+    for (const zone of ['Asia/Manila', 'America/Los_Angeles']) { // in Los Angeles both instants are 2 January, so a device-day key would keep yesterday's order
+      process.env.TZ = zone
+      const a = fake(null, [{ watch_ch_fema: 5 }, { watch_ch_gma_news: 5 }])
+      await topForDay(real, at2330, 4, local, a.io)
+      await flush()
+      expect(a.st.rec, zone).toMatchObject({ day: '2026-01-02', ok: true })
+      await topForDay(real, at2330, 4, local, a.io)
+      await flush()
+      expect(a.st.reads, zone + ' same Manila day: no new read').toBe(1)
+      await topForDay(real, at0030, 4, local, a.io)
+      await flush()
+      expect(a.st.reads, zone + ' next Manila day: read again').toBe(2)
+      expect(a.st.rec, zone).toMatchObject({ day: '2026-01-03', ok: true })
+    }
+    process.env.TZ = 'Asia/Manila'
   })
 })

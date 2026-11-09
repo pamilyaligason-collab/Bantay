@@ -126,7 +126,7 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
     expect(ids()[0]).not.toBe(a[0]) // the next day ranks again
   })
   it('the family counts are read once on the first open of the day; a read that found nothing is retried once on a later open, then not again', async () => {
-    ev.family = {} // signed in, but no channel has 2 viewers yet: nothing known
+    ev.family = {} // signed in, but no channel has 3 viewers yet: nothing known
     await show(); cleanup()
     expect(ev.rpcCalls).toBe(1)
     await show(); cleanup()
@@ -138,6 +138,10 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
   it('weighting 1: the family\'s counts put the most-watched channel first (hero), the next channel second', async () => {
     ev.family = { watch_ch_raffy_s_green_thumb: 5, watch_ch_gma_news: 2 }
     localStorage.setItem('dc.watchcounts', JSON.stringify({ hHLJiEbjWfA: 9 })) // this phone's own counts are ignored while the family has a signal
+    await show()
+    expect(idOf(pics(screen.getByTestId('dc-hero'))[0]!)).not.toBe('JkEJhm_ikc8') // the first open paints the day's turn and does not move when the family answer arrives
+    cleanup()
+    await waitFor(async () => expect((await db.kv.get('dc.topstories'))?.value).toMatchObject({ ok: true })) // the family order is stored for the next open
     await show()
     expect(idOf(pics(screen.getByTestId('dc-hero'))[0]!)).toBe('JkEJhm_ikc8') // Raffy's Green Thumb, the only video of that channel in today's turn
     expect(pics(screen.getByTestId('dc-top-rows')).map(idOf)[0]).toBe('3oRx8JDns2E') // GMA News next

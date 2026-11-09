@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import benefits from '../../../data/discover/benefits.json'
 import { playable } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
+import { watchName } from '../channels'
 import Watch, { WATCH_PICK } from './Screen'
 
 const ev = vi.hoisted(() => ({ calls: [] as string[] }))
@@ -47,7 +48,8 @@ describe('Watch', () => {
     const { container } = render(<Watch />)
     const v = DISCOVER_VIDEOS.filter(playable).find((x) => x.title.startsWith('Disaster Wais: the go bag'))!
     fireEvent.click(screen.getByRole('button', { name: /^Video, Disaster Wais: the go bag/ }))
-    expect(ev.calls).toEqual(['watch_ch_' + v.source.toLowerCase().replace(/[^a-z]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 31).replace(/_+$/, '')])
+    expect(watchName(v.source)).not.toBeNull() // a known channel, so the tap is counted
+    expect(ev.calls).toEqual([watchName(v.source)])
     fireEvent.click(within(screen.getByTestId('watch-player')).getByRole('button', { name: 'Play Disaster Wais: the go bag' }))
     expect(ev.calls).toHaveLength(2)
     expect(ev.calls[1]).toBe(ev.calls[0])

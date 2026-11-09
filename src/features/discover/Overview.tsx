@@ -166,7 +166,7 @@ function Recipes({ now }: { now: Date }) {
 }
 
 function Today({ now }: { now: Date }) {
-  const ranked = useTopStories(topPool, now, TOP_K, readCounts) // the day's order, stored once (family counts read at most twice a day): it does not move after first paint
+  const ranked = useTopStories(topPool, now, TOP_K, readCounts) // the day's order, stored once (family counts are read in the background, at most twice a day, and used from the next open): it does not move after first paint
   const skip = useMemo(() => new Set((ranked ?? []).map((v) => v.id)), [ranked])
   return (
     <>
@@ -174,7 +174,7 @@ function Today({ now }: { now: Date }) {
       <TopStory ranked={ranked} />
       <NewsVideos now={now.getTime()} />
       <Listen />
-      {ranked && <FarmShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} skip={skip} />}
+      <FarmShelf title="Farming and DIY" link={{ href: '#discover/learn/farm-diy', label: 'All' }} testId="dc-farm" videos={shelf('farm-diy')} skip={skip} />
       <a className="card dc-hlink" href="#health" data-testid="dc-health-link"><span className="dc-grow">Health videos are in Health</span><Icon name="chev" size={20} /></a>
       <Recipes now={now} />
       <Section title="Play" link={{ href: '#discover/play', label: 'All games' }} testId="dc-play">

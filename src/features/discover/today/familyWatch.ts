@@ -3,11 +3,11 @@ import { supabase } from '../../auth/client'
 import { db } from '../../../db'
 import { WATCH_CH_NAMES } from '../../admin/events'
 import type { Video } from '../../health/library/videosLogic'
-import { dayKey } from '../play/score'
+import { manilaDay } from '../../assistant/cap'
 import { rankTop, type Counts } from './topStories'
 
-/** family_watch_counts() (migration 0060): taps per channel name across the family, last 30 days. The server only lists a channel that at least 2 different family members tapped (so one person's viewing cannot be read off the totals).
- *  null = nothing known (signed out, offline, rate limited, not applied yet, or no channel with 2 viewers), so the caller falls back to this phone's own counts. */
+/** family_watch_counts() (migration 0060): taps per channel name across the family, last 30 days. The server only lists a channel that at least 3 different family members tapped (so no member can subtract their own taps to read another viewer).
+ *  null = nothing known (signed out, offline, rate limited, not applied yet, or no channel with 3 viewers), so the caller falls back to this phone's own counts. */
 export async function loadFamilyWatch(): Promise<Counts | null> {
   try {
     if (!supabase) return null
@@ -24,7 +24,7 @@ export async function loadFamilyWatch(): Promise<Counts | null> {
   }
 }
 
-/** The day's Top stories, kept in kv so the order is fixed for the (device) day: `ok` = the family counts were read, `tries` = how many reads were made today. */
+/** The day's Top stories, kept in kv so the order is fixed for the Manila day: `ok` = the family counts were read, `tries` = how many reads were made today. */
 export interface TopRec { day: string; ids: string[]; ok: boolean; tries: number }
 const KEY = 'dc.topstories'
 const WAIT_MS = 4000 // the first paint never waits longer than this for the family counts
@@ -42,33 +42,32 @@ export interface TopIo { read: () => Promise<TopRec | null>; write: (r: TopRec) 
 const realIo: TopIo = { read: readRec, write: writeRec, family: () => withTimeout(loadFamilyWatch(), WAIT_MS) }
 
 /**
- * Top stories for the day, computed once. The first open of the day reads the family counts (one call, at most WAIT_MS), ranks, and stores the order with the day.
- * Every later open that day paints that stored order, so the list never reorders after first paint. If the first read failed, ONE more read is tried later that day
- * in the background; a success replaces the stored order for the next open (this open keeps what it painted).
+ * Top stories for the day. The open never waits for the network: it paints the stored order for the day, or (first open of the day) the day's turn of the pool.
+ * The family counts are read in the background (one call, at most WAIT_MS) and the ranked order is STORED for the next open, so nothing moves after first paint.
+ * If that read failed, ONE more read is tried on a later open the same day; a success replaces the stored order for the open after it.
  */
 export async function topForDay(pool: Video[], now: Date, k: number, local: () => Counts, io: TopIo = realIo): Promise<Video[]> {
-  const day = dayKey(now)
+  const day = manilaDay(now)
   const byId = new Map(pool.map((v) => [v.id, v]))
-  const store = (fam: Counts | null, tries: number): Video[] => {
-    const ranked = rankTop(pool, now, k, fam, local())
-    void io.write({ day, ids: ranked.map((v) => v.id), ok: fam !== null, tries })
-    return ranked
-  }
+  const fetchAndStore = (tries: number, painted: Video[]) =>
+    void io.family().then((fam) => io.write({ day, ids: (fam ? rankTop(pool, now, k, fam, local()) : painted).map((v) => v.id), ok: fam !== null, tries }))
   const rec = await io.read()
   if (rec && rec.day === day) {
     const kept = rec.ids.map((i) => byId.get(i)).filter((v): v is Video => !!v)
     if (kept.length) {
-      if (!rec.ok && rec.tries < 2) void io.family().then((fam) => { if (fam) store(fam, rec.tries + 1); else void io.write({ ...rec, tries: rec.tries + 1 }) })
+      if (!rec.ok && rec.tries < 2) fetchAndStore(rec.tries + 1, kept)
       return kept
     }
   }
-  return store(await io.family(), 1)
+  const painted = rankTop(pool, now, k, null, local())
+  fetchAndStore(1, painted)
+  return painted
 }
 
-/** null while the day's order is being read (the screen shows a status line, never a list that then moves). */
+/** null only while the stored order is read from this phone (a moment); the list is never hidden to wait for the network. */
 export function useTopStories(pool: () => Video[], now: Date, k: number, local: () => Counts): Video[] | null {
   const [r, setR] = useState<Video[] | null>(null)
-  const day = dayKey(now)
+  const day = manilaDay(now)
   useEffect(() => {
     let live = true
     void topForDay(pool(), now, k, local).then((x) => { if (live) setR(x) })

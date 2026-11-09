@@ -97,7 +97,7 @@ describe('server allowlist (D-160 0056, D-180 0060)', () => {
     expect(WATCH_CH_NAMES.length).toBe(22)
     expect(sql).toMatch(/function public\.family_watch_counts\(\)[\s\S]*security definer set search_path = ''/)
     expect(sql).toMatch(/revoke all on function public\.family_watch_counts\(\) from public, anon, authenticated, service_role/)
-    expect(sql).toMatch(/group by e\.name having count\(distinct e\.user_id\) >= 2/) // privacy floor: a channel needs 2 different family viewers
+    expect(sql).toMatch(/group by e\.name having count\(distinct e\.user_id\) >= 3/) // privacy floor: a channel needs 3 different family viewers, so no member can subtract their own taps to read another's
     expect(readFileSync('supabase/migrations/0060_watch_channels.down.sql', 'utf8')).toMatch(/drop function if exists public\.family_watch_counts/)
   })
   it('has the S26 names and a 0056 down file', () => {

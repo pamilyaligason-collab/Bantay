@@ -3,8 +3,8 @@
 --    The list must equal EVENT_NAMES in src/features/admin/events.ts (a vitest compares them).
 -- 2. family_watch_counts(): for a signed-in family member, how many times each watch_ch_* name was recorded in the last 30 days by anyone in the family.
 --    Names and totals only, never a person, a video or a time (B-7, ML-07). 30 reads an hour per person (ML-08). Discover ranks Top stories with it.
---    A channel is listed only when at least 2 DIFFERENT family members tapped it in the window (privacy floor, audit fix 5): with one viewer the total is that
---    person's own count, and any member could read it off by subtracting their own taps. The client treats an empty answer as "nothing known" and falls back to this phone's counts.
+--    A channel is listed only when at least 3 DIFFERENT family members tapped it in the window (privacy floor): with 2 viewers a member subtracts their own taps and reads the
+--    other's, with 1 viewer the total is that person's own count. The client treats an empty answer as "nothing known" and falls back to this phone's counts.
 -- Down: 0060_watch_channels.down.sql puts the 0056 list back and drops the function.
 
 create or replace function public.usage_event_allowed(k text, n text) returns boolean
@@ -29,7 +29,7 @@ $$ select case k
   else false end $$;
 revoke all on function public.usage_event_allowed(text, text) from public, anon, authenticated, service_role;
 
--- Totals per channel name for the whole family (an active app_roles row), last 30 days, only for channels with at least 2 distinct viewers. 42501 not a member; 53400 more than 30 reads an hour.
+-- Totals per channel name for the whole family (an active app_roles row), last 30 days, only for channels with at least 3 distinct viewers. 42501 not a member; 53400 more than 30 reads an hour.
 create or replace function public.family_watch_counts() returns table (name text, n bigint)
   language plpgsql security definer set search_path = '' as
 $$
@@ -41,7 +41,7 @@ begin
     select e.name, count(*)::bigint from public.usage_events e
     where e.kind = 'action' and e.name like 'watch\_ch\_%' and e.at >= now() - interval '30 days'
       and exists (select 1 from public.app_roles r where r.user_id = e.user_id and not r.disabled)
-    group by e.name having count(distinct e.user_id) >= 2 order by count(*) desc, e.name;
+    group by e.name having count(distinct e.user_id) >= 3 order by count(*) desc, e.name;
 end $$;
 revoke all on function public.family_watch_counts() from public, anon, authenticated, service_role;
 grant execute on function public.family_watch_counts() to authenticated;
