@@ -43,6 +43,10 @@ Storm surge Safe. Rain-induced landslide Low. Flood not listed (UNKNOWN). Ground
 
 The family fills the UNKNOWN rows in the app (tap "Not confirmed yet, tap to add"). Edits are stored on the phone only and marked "Added by the family".
 
+## Barangay names offline (session 28, D-181)
+
+public/geo/barangays/ holds 1-degree tile packs of barangay centre points with the town or city, built by scripts/places/build-barangays.mjs from OpenStreetMap through the Overpass API. Used only to name the place on Today when GPS is on. Data (c) OpenStreetMap contributors, ODbL 1.0, https://www.openstreetmap.org/copyright . Pack index.json carries the build date and source line; coverage per region is in scripts/places/README.md. Points are centres or map nodes, not boundaries: the name can be the next barangay when two meet.
+
 ## Safety cards
 
 Written in plain words, not copied. Sources named on each card: NDRRMC/OCD, PAGASA, PHIVOLCS, DOH, Philippine Red Cross, WHO, BFP, Ready.gov. The text was written from general knowledge of that guidance, not copied from fetched pages, so the family should check it against the linked pages.
