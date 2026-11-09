@@ -113,6 +113,11 @@ describe('Lotto card', () => {
       expect(jackpotWords(5_000_000)).toBe('₱5 million')
       for (const bad of [0, 999_999, -5, NaN, null, undefined]) expect(jackpotWords(bad as number | null)).toBeNull()
     })
+    it('the next draw estimate line is a seniors size (16 px) and the banner styles are gone', () => {
+      const css = readFileSync('src/features/today/lotto.css', 'utf8')
+      expect(css).toMatch(/\.lotto-next \{[^}]*font-size: 16px/)
+      expect(css).not.toMatch(/\.lotto-big/)
+    })
     it('no jackpot banner (owner 2026-11-10); each six-number game shows its next draw estimate under the balls', () => {
       h.rows = ALL
       h.next = [nj('Ultra Lotto 6/58', 486_000_000), nj('Grand Lotto 6/55', 120_000_000), nj('Lotto 6/42', 24_500_000)]
@@ -145,12 +150,6 @@ describe('Lotto card', () => {
       expect(nextRowFor(next, latest)).toEqual(next[1])
       expect(nextRowFor(next, latest)!.jackpot_php).toBe(nextJackpotFor(next, latest))
       expect(nextRowFor(null, latest)).toBeNull()
-    })
-    it('the banner colours are the ball chip tokens and every size is a seniors size', () => {
-      const css = readFileSync('src/features/today/lotto.css', 'utf8')
-      expect(css).toMatch(/\.lotto-big \{[^}]*background: var\(--warn-bg\)/)
-      expect(css).toMatch(/\.lotto-big-v \{[^}]*font-size: 30px/)
-      expect(css).toMatch(/\.lotto-next \{[^}]*font-size: 16px/)
     })
   })
 })
