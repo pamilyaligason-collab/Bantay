@@ -7,7 +7,7 @@ const READERS = /\b(getActingPersonId|useActingPersonId|useViewedVisibleIds)\b/
 
 const ALLOWED: RegExp[] = [
   /^\/src\/screens\/(Today|Health|Family)\.tsx$/,
-  /^\/src\/features\/today\/(QuickLog|NextUp|SimpleToday|useDueMeds|useMyTakes|MyWeek|MyDay|YourNumbers)\.tsx?$/,
+  /^\/src\/features\/today\/(QuickLog|NextUp|SimpleToday|useDueMeds|useMyTakes|MyWeek|MyDay|YourNumbers|PlanToday|planCard)\.tsx?$/,
   /^\/src\/features\/safety\/StormCard\.tsx$/,
   /^\/src\/features\/health\/(useHealthPerson|AddReadingSheet|LabsScreen|MemberHealth)\.tsx?$/,
   /^\/src\/features\/nutrition\/(PlateSheet|WaterSheet|SaltSummary|NutritionScreen)\.tsx$/,
