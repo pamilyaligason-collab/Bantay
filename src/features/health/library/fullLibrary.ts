@@ -18,9 +18,9 @@ export interface FullHit { title: string; snippet: string; key: string }
 export interface FullArticleData { key: string; title: string; text: string; url: string; image?: string }
 export interface DownloadOpts { onProgress?: (p: { bytes: number; total: number }) => void; signal?: AbortSignal; confirmed?: boolean; url?: string; flushBytes?: number }
 
-/** code 'needs-confirm' = not on Wi-Fi, ask first; 'low-space' = not enough room; others are plain failures. */
+/** code 'paused' = stopped with abort('pause'): the partial file is kept for a later resume; 'needs-confirm' = not on Wi-Fi, ask first; 'low-space' = not enough room; others are plain failures. */
 export class FullLibraryError extends Error {
-  code: 'needs-confirm' | 'low-space' | 'network' | 'bad-pack' | 'busy' | 'aborted'
+  code: 'needs-confirm' | 'low-space' | 'network' | 'bad-pack' | 'busy' | 'aborted' | 'paused' | 'unavailable'
   constructor(code: FullLibraryError['code'], message: string) { super(message); this.code = code }
 }
 
@@ -105,7 +105,10 @@ async function idbStore(): Promise<Store> {
 let storePromise: Promise<Store> | null = null
 const getStore = () => (storePromise ??= (opfsOk() ? opfsStore().catch(idbStore) : idbStore()))
 /** Tests swap the backing store between cases. */
-export function _resetFullLibrary() { openDb?.close(); openDb = null; storePromise = null; idx = null; active = false; lastError = '' }
+export function _resetFullLibrary() {
+  openDb?.close(); openDb = null; storePromise = null; idx = null; active = false; lastError = ''
+  run = null; runSubs.clear(); netSubs.clear(); watched?.removeEventListener?.('change', onNet); watched = undefined
+}
 
 // ---- meta stored with the partial file: which URL it came from, its total size and the server's validator (ETag or Last-Modified) ----
 interface Meta { url: string; total: number; validator: string }
@@ -130,10 +133,15 @@ export async function getStatus(): Promise<FullLibraryStatus> {
   return { state: 'none', bytes, total }
 }
 
-function wifiOk(): boolean {
-  const t = (navigator as Navigator & { connection?: { type?: string } }).connection?.type
+type Conn = EventTarget & { type?: string; saveData?: boolean }
+/** navigator.connection (Chrome and the Android WebView); undefined elsewhere. */
+export const connection = (): Conn | undefined => (typeof navigator === 'undefined' ? undefined : (navigator as Navigator & { connection?: Conn }).connection)
+export function wifiOk(): boolean {
+  const t = connection()?.type
   return t === 'wifi' || t === 'ethernet' // unknown counts as not confirmed: the card then asks before spending the person's data
 }
+/** Automatic downloads need a confirmed unmetered link and no data-saver; anything unknown waits for a tap. */
+export const autoOk = (): boolean => wifiOk() && !connection()?.saveData
 
 /** Starts or resumes the download. Throws FullLibraryError. Cancel with opts.signal (a cancelled download is erased).
  *  A partial file is resumed (Range + If-Range) only when it came from the same URL and the server still has the same file; otherwise it is thrown away. */
@@ -150,8 +158,9 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
     const meta = getMeta()
     if (have && (meta.url !== url || !meta.total)) { await store.clear(); have = 0; setMeta(null) } // a partial from another file, or one we cannot vouch for
     // always a Range (bytes=0- too), so the size comes from Content-Range even if the edge drops Content-Length
+    const stopped = () => (opts.signal?.reason === 'pause' ? new FullLibraryError('paused', 'Paused until Wi-Fi.') : new FullLibraryError('aborted', 'Cancelled.'))
     const get = (from: number) => fetch(url, { headers: { Range: `bytes=${from}-`, ...(from && meta.validator ? { 'If-Range': meta.validator } : {}) }, signal: opts.signal }).catch((e) => {
-      if (opts.signal?.aborted) throw new FullLibraryError('aborted', 'Cancelled.')
+      if (opts.signal?.aborted) throw stopped()
       throw new FullLibraryError('network', `Could not reach the download (${e instanceof Error ? e.message : 'network'}).`)
     })
     const tag = (r: Response) => r.headers.get('etag') || r.headers.get('last-modified') || ''
@@ -169,7 +178,7 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
       await store.clear(); have = 0; setMeta(null)
       res = await get(0)
     }
-    if (!res.ok) throw new FullLibraryError('network', `The download is not available yet (HTTP ${res.status}).`)
+    if (!res.ok) throw new FullLibraryError([403, 404, 410].includes(res.status) ? 'unavailable' : 'network', `The download is not available yet (HTTP ${res.status}).`)
     const total = res.status === 206 ? rangeTotal(res) : Number(res.headers.get('content-length')) || 0
     if (!total) throw new FullLibraryError('network', 'The server did not say how big the library is.')
     const need = total - have
@@ -205,7 +214,7 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
         }
       } catch (e) {
         await flush().catch(() => undefined) // keep what arrived so the next try resumes
-        if (opts.signal?.aborted) throw new FullLibraryError('aborted', 'Cancelled.')
+        if (opts.signal?.aborted) throw stopped()
         throw new FullLibraryError('network', `The download stopped (${e instanceof Error ? e.message : 'network'}). Tap Get to carry on.`)
       }
       await flush()
@@ -216,10 +225,76 @@ export async function download(opts: DownloadOpts = {}): Promise<void> {
     await verify(store, total)
   } catch (e) {
     if (e instanceof FullLibraryError && e.code === 'aborted') { await store.clear(); setMeta(null) }
-    else lastError = e instanceof Error ? e.message : 'Download failed.'
+    else if (!(e instanceof FullLibraryError && e.code === 'paused')) lastError = e instanceof Error ? e.message : 'Download failed.'
     throw e
   } finally {
     active = false
+  }
+}
+
+// ---- one owner for the whole app session (not the card): a consent-started download pauses on mobile data whether or not the card is mounted ----
+export type Prog = { bytes: number; total: number }
+interface Run { ctl: AbortController; exempt: boolean; auto: boolean; prog: Prog | null }
+let run: Run | null = null
+const runSubs = new Set<(p: Prog | null) => void>() // null = the run ended
+const netSubs = new Set<() => void>()
+let watched: Conn | undefined
+let netKey = ''
+const keyOf = () => `${connection()?.type ?? ''}|${connection()?.saveData ? 1 : 0}`
+
+function onNet() {
+  const k = keyOf()
+  if (k === netKey) return // 'change' also fires for rtt and downlink; only a new type or data-saver matters
+  netKey = k
+  // Only a download the person confirmed over mobile data ('Download anyway?') may keep going off Wi-Fi.
+  if (run && !run.exempt && !(run.auto ? autoOk() : wifiOk())) run.ctl.abort('pause')
+  netSubs.forEach((f) => f())
+}
+function ensureWatch() {
+  const c = connection()
+  if (c === watched) return
+  watched?.removeEventListener?.('change', onNet)
+  watched = c; netKey = keyOf()
+  c?.addEventListener?.('change', onNet)
+}
+
+export const currentRun = (): { prog: Prog | null; auto: boolean } | null => (run ? { prog: run.prog, auto: run.auto } : null)
+/** Progress of the running download (null when it ends). A card that mounts mid-download attaches here. */
+export function onRun(fn: (p: Prog | null) => void): () => void { runSubs.add(fn); return () => { runSubs.delete(fn) } }
+/** Called when the connection type or data-saver changes, after any pause has been issued. */
+export function onNetwork(fn: () => void): () => void { ensureWatch(); netSubs.add(fn); return () => { netSubs.delete(fn) } }
+export const cancelDownload = () => run?.ctl.abort()
+
+// ---- failures: never loop on a 178 MB file ----
+const FAIL = 'bantay.medlib.fail'
+const COOLDOWN = 30 * 60 * 1000
+const appVersion = () => String(import.meta.env.VITE_APP_VERSION ?? 'dev')
+const setFail = (f: { permanent: boolean; at: number; v: string } | null) => { try { if (f) localStorage.setItem(FAIL, JSON.stringify(f)); else localStorage.removeItem(FAIL) } catch { /* private mode */ } }
+/** False after a permanent failure (damaged pack, not on the server, no space) until the person taps or the app version changes, and for 30 minutes after a transient one. */
+export function autoRetryOk(): boolean {
+  try {
+    const f = JSON.parse(localStorage.getItem(FAIL) || 'null')
+    if (!f) return true
+    return f.permanent ? f.v !== appVersion() : Date.now() - Number(f.at) >= COOLDOWN
+  } catch { return true }
+}
+
+/** Starts or resumes the one download of the app session. auto = begun by the saved consent; confirmed = the person accepted mobile data. A tap (not auto) clears the failure record. */
+export async function startDownload(o: { confirmed?: boolean; auto?: boolean } = {}): Promise<void> {
+  if (run) throw new FullLibraryError('busy', 'Already downloading.')
+  const r: Run = { ctl: new AbortController(), exempt: !!o.confirmed, auto: !!o.auto, prog: null }
+  run = r
+  ensureWatch()
+  if (!o.auto) setFail(null)
+  try {
+    await download({ confirmed: o.confirmed, signal: r.ctl.signal, onProgress: (p) => { r.prog = p; runSubs.forEach((f) => f(p)) } })
+    setFail(null)
+  } catch (e) {
+    if (e instanceof FullLibraryError && ['bad-pack', 'low-space', 'unavailable', 'network'].includes(e.code)) setFail({ permanent: e.code !== 'network', at: Date.now(), v: appVersion() })
+    throw e
+  } finally {
+    run = null
+    runSubs.forEach((f) => f(null))
   }
 }
 
@@ -246,7 +321,7 @@ async function verify(store: Store, total: number) {
 }
 
 export async function remove(): Promise<void> {
-  idx = null; lastError = ''
+  idx = null; lastError = ''; setFail(null)
   await (await getStore()).clear()
   setMeta(null)
 }

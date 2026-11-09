@@ -21,7 +21,16 @@ const r2 = (n: number) => Math.round(n * 100) / 100 // the ~1 km cell is all tha
 
 export type Loaded = Blended & { stale?: boolean } // stale: every provider was down, this is the function's last cached cell
 /** The blended forecast, also saved as this place's offline forecast (so Today, Safety and offline read the same numbers); throws when unavailable. */
-export async function loadBlended(p: LatLon, invoke: Invoke = invokeBlend): Promise<Loaded> {
+export function loadBlended(p: LatLon, invoke: Invoke = invokeBlend): Promise<Loaded> {
+  const k = forecastKey(p) // Today, Safety and Weather open together share one request (D-163)
+  const hit = pending.get(k)
+  if (hit && hit.invoke === invoke) return hit.run
+  const run: Promise<Loaded> = loadBlendedOnce(p, invoke).finally(() => { if (pending.get(k)?.run === run) pending.delete(k) }) // only this run clears its entry
+  pending.set(k, { invoke, run })
+  return run
+}
+const pending = new Map<string, { invoke: Invoke; run: Promise<Loaded> }>()
+async function loadBlendedOnce(p: LatLon, invoke: Invoke): Promise<Loaded> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new Error('offline')
   const d = (await invoke({ lat: r2(p.lat), lon: r2(p.lon) })) as (Loaded & { ok?: boolean }) | null
   if (!d?.ok || !d.now || !Array.isArray(d.hourly48) || !Array.isArray(d.daily10) || !Array.isArray(d.next2h)) throw new Error('bad_blend')

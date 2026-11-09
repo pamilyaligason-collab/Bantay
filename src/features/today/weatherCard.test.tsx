@@ -6,7 +6,7 @@ import { wxLocal, type Wx } from './heroCards'
 import WeatherCard from './WeatherCard'
 
 const m = vi.hoisted(() => ({ place: { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false } as unknown, wx: null as unknown }))
-vi.mock('../location/useLocation', () => ({ usePlace: () => m.place }))
+vi.mock('../weather/weatherPlace', () => ({ useWeatherPlace: () => ({ place: m.place, point: (m.place as { weather?: unknown } | null)?.weather ?? null }) }))
 vi.mock('../safety/store', () => ({ useKv: () => [] }))
 vi.mock('./weather', () => ({ useWeather: () => m.wx }))
 afterEach(cleanup)
@@ -17,12 +17,12 @@ describe('Today weather card', () => {
   it('opens plain #weather when no action line shows', () => {
     m.wx = base
     render(<WeatherCard />)
-    expect(screen.getByRole('link').getAttribute('href')).toBe('#weather')
+    expect(screen.getByRole('link', { name: /^(?!Weather data)/ }).getAttribute('href')).toBe('#weather')
   })
   it('opens #weather?from=action when an action line shows, and it is the Weather screen heat-index line', () => {
     m.wx = { ...base, temp: 34, humidity: 70 }
     render(<WeatherCard />)
-    expect(screen.getByRole('link').getAttribute('href')).toBe('#weather?from=action')
+    expect(screen.getByRole('link', { name: /^(?!Weather data)/ }).getAttribute('href')).toBe('#weather?from=action')
     expect(screen.getByText(/^Stay indoors/)).toBeTruthy()
   })
   it('hot but dry (low heat index) shows no heat line, so Today and Weather agree', () => {
@@ -100,8 +100,8 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByText('High 34° · Low 26°')).toBeTruthy() // live parity: today's range stays on the expanded card
     expect(container.querySelector('[data-size="expanded"]')).toBeTruthy()
     expect(container.querySelectorAll('.td-hs li')).toHaveLength(12)
-    expect(screen.getByText('30%')).toBeTruthy() // slot 3 hours on
-    expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['#weather', '#weather?from=action']) // Full forecast row, then the cover link
+    expect(screen.getByText('30% rain')).toBeTruthy() // slot 3 hours on
+    expect(screen.getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['https://open-meteo.com/', '#weather', '#weather?from=action']) // the Open-Meteo credit link, Full forecast row, then the cover link // Full forecast row, then the cover link
     expect(screen.getByRole('link', { name: /Full forecast/ })).toBeTruthy()
     expect([...container.querySelectorAll('.td-hs li')].slice(1).every((li) => li.textContent!.includes('27°'))).toBe(true) // every later item shows its temperature; the first is now (33°)
     expect(container.querySelector('.td-act-box svg')).toBeNull() // T7: no icon on the rain pill

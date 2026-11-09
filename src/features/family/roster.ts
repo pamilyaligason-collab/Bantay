@@ -12,6 +12,8 @@ export interface FamilyPerson {
   /** Small cached picture from the sign-in list (data URL), used until the real photo loads. */
   thumb: string | null
   phone: string | null
+  /** Saved Messenger name (m.me/<name>). No profile column holds one yet, so this stays unset until one is saved; unset = no Messenger button. */
+  messenger?: string | null
   birthdate: string | null
   isMe: boolean
 }

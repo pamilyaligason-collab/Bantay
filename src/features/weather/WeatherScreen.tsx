@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { LatLon } from '../location/geo'
 import { liveQuery } from 'dexie'
 import { db } from '../../db'
-import { useLocation, usePlaceFrom, ZONE_KEY } from '../location/useLocation'
+import { ZONE_KEY } from '../location/useLocation'
+import { FOLLOW_KEY, useWeatherPlace } from './weatherPlace'
 import { needsPrecise, oldFixNote, weatherFixState } from '../location/freshness'
 import { track } from '../admin/events'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, type Alert, type StaleSources } from '../safety/alerts'
@@ -24,6 +25,7 @@ import { actionLines, RAIN_WATCH_HOURS } from './actionLine'
 import StormTrack from './StormTrack'
 import { clockIn, conditionWords, hoursFrom, kindOf, nowLocal, type Day, type Forecast, type Kind } from './forecast'
 import { heatIndexC } from './heatIndex'
+import { creditIds, ForecastNote } from './ForecastNote'
 import { wxFlag } from './flags'
 import { AroundYou, Credits, Next2h, OtherNotices } from './BlendCards'
 import { useBlendedWeather, type BlendedState } from './useBlendedWeather'
@@ -40,7 +42,6 @@ import { syncRainReminder } from './rainRemind'
 import './weather.css'
 import './wxs7w.css'
 
-const FOLLOW_KEY = 'wx.follow'
 const NONE_A: Alert[] = []
 const LINKS = [
   ['PAGASA', 'Warnings and typhoon bulletins', 'https://www.pagasa.dost.gov.ph/'],
@@ -75,18 +76,8 @@ function useMinuteTick() {
 /** #weather (or #weather?from=action when opened from an action line): the one full weather view. */
 export default function WeatherScreen() {
   useMinuteTick() // the sky, the words and the card order follow the clock as well as the forecast
-  const gpsLoc = useLocation()
-  // the owner's ruling: a zone picked by hand wins over GPS on this screen until "Current" is picked again. Kept in kv so it holds on the next visit.
-  const [follow, setFollow] = useState<'zone' | 'gps' | null | undefined>(undefined) // undefined until kv answered: no forecast is fetched for a fix that the pick would override
-  useEffect(() => {
-    const sub = liveQuery(() => db.kv.get(FOLLOW_KEY)).subscribe({ next: (r) => setFollow((r?.value as 'zone' | 'gps' | undefined) ?? null), error: () => setFollow(null) })
-    return () => sub.unsubscribe()
-  }, [])
-  const rawFix = gpsLoc.source === 'gps' || gpsLoc.source === 'last'
-  // S22 G: a fix older than 6 h is no fix for Weather (the zone answers, as place.ts does for an old fix abroad); other screens still show it as last known
-  const dropped = rawFix && weatherFixState(gpsLoc.at, Date.now()) === 'drop'
-  const hasFix = rawFix && !dropped
-  const zoneWins = (follow === 'zone' && hasFix) || dropped
+  const { gpsLoc, l, place, point, fix, follow, rawFix, hasFix, zoneWins } = useWeatherPlace()
+  const fixAt = 'at' in gpsLoc ? gpsLoc.at : undefined
   const settled = gpsLoc.source !== 'pending'
   const refined = useRef(false)
   useEffect(() => { // a stored fix older than 30 min: one fresh high-accuracy read, no prompt
@@ -94,24 +85,14 @@ export default function WeatherScreen() {
     refined.current = true
     void gpsLoc.refine()
   }, [settled, rawFix, gpsLoc])
-  const oldFix = hasFix && !zoneWins && weatherFixState(gpsLoc.at, Date.now()) === 'old'
-  const l = useMemo(() => {
-    const ask = async () => { void putKv(FOLLOW_KEY, 'gps'); return gpsLoc.ask() }
-    // read as "no fix": the place, the zone chip and the forecast then all follow the picked zone
-    return zoneWins ? { ...gpsLoc, source: 'home' as const, ask } : { ...gpsLoc, ask }
-  }, [gpsLoc, zoneWins])
-  const place = usePlaceFrom(l)
+  const oldFix = hasFix && !zoneWins && weatherFixState(fixAt, Date.now()) === 'old'
   useEffect(() => { // a pick from the zone chip (ZONE_KEY written after this screen opened) means "follow the zone"
     let first = true
     const sub = liveQuery(() => db.kv.get(ZONE_KEY)).subscribe({ next: () => { if (first) first = false; else void putKv(FOLLOW_KEY, 'zone') }, error: () => {} })
     return () => sub.unsubscribe()
   }, [])
-  // the forecast and the map share one point: the person's fix, or the picked zone. A zone picked by hand, or an old fix abroad, wins over the fix (below)
-  const fix: LatLon | null = follow !== undefined && !zoneWins && (l.source === 'gps' || l.source === 'last') ? { lat: l.lat, lon: l.lon } : null
   const [finding, setFinding] = useState(false) // GPS can take up to ~30 s
   const [locOff, setLocOff] = useState(false)
-  // the zone chip (ZonePicker) owns the home pick; a position wins, unless the place fell back to a home zone (a fix abroad): the forecast follows the label
-  const point: LatLon | null = follow === undefined && hasFix ? null : (place?.source !== 'zone' ? fix : null) ?? place?.weather ?? null
   const bl = useBlendedWeather(point, { on: wxFlag('blend') }) // flag off: the direct forecast, exactly as before
   const { fc, offline, loading } = bl
   const alerts = useKv<Alert[]>(ALERTS_KEY, NONE_A)
@@ -157,7 +138,7 @@ export default function WeatherScreen() {
   return (
     <div className="wx" data-testid="wx-root" data-contrast-bg={hex(lit)}>
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<ZonePicker loc={l} />} />
-      {oldFix && gpsLoc.at != null && <p className="wx-note" role="status" data-testid="wx-fix-old">{oldFixNote(gpsLoc.at, Date.now())} <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Update my location'}</button></p>}
+      {oldFix && fixAt != null && <p className="wx-note" role="status" data-testid="wx-fix-old">{oldFixNote(fixAt, Date.now())} <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Update my location'}</button></p>}
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
       {fc && point ? <Body fc={fc} name={placeNameOf(place)} line={placeLineOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
         <>
@@ -245,7 +226,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
       <div className="card wx-stripbox">
         <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
           {strip.map((h, i) => (
-            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}%`}</span></li>
+            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}% rain`}</span></li>
           ))}
         </ul>
       </div>
@@ -262,6 +243,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         <b className="wx-cond">{cap(conditionWords(c.code))}</b>
         <span className="wx-sub">Feels like {deg(fl.value)}</span>
         <span className="wx-sub">H:{deg(today?.max ?? null)}  L:{deg(today?.min ?? null)}</span>
+        <ForecastNote className="wx-sub wx-fnote" place={name} link sources={creditIds(bl)} />
       </section>
 
       <WarnRow warn={warn} unchecked={unchecked} name={name} />

@@ -14,6 +14,9 @@ import CalmCard from '../features/today/CalmCard'
 import TodayNews from '../features/today/TodayNews'
 import Lotto from '../features/today/Lotto'
 import FxCard from '../features/today/FxCard'
+import PricesCard from '../features/today/PricesCard'
+import { PlantCard } from '../features/garden/Plant'
+import { useGardenPage } from '../features/garden/pages'
 import { TalkCard } from '../features/calm/CrisisCard'
 import BatteryCard from '../features/today/BatteryCard'
 import YourNumbers from '../features/today/YourNumbers'
@@ -60,7 +63,9 @@ export default function Today() {
     void getMember().then((m) => { const n = m?.personId ? loadFamily().find((f) => f.personId === m.personId)?.displayName : ''; if (live && n) setName(n) })
     return () => { live = false }
   }, [])
+  const garden = useGardenPage() // #garden/plant and #garden/prices replace the page
   const h1 = <h1 className="td-h1">Today</h1>
+  if (garden) return <>{garden}</>
   if (!loaded) return ( // one read of the Simple mode switch, so the full page never flashes first
     <section className="td-root" aria-busy="true">{h1}<span className="td-vh">Loading</span><Skeleton lines={4} /><Skeleton lines={2} /></section>
   )
@@ -80,7 +85,7 @@ export default function Today() {
       <BatteryCard />
       <CalmCard />
       <YourNumbers />
-      <TodayNews /><FxCard /><Lotto />
+      <TodayNews /><PricesCard /><PlantCard /><FxCard /><Lotto />
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
       <NoticeStack />
       {toast && <div className="toast" role="status">{toast}</div>}

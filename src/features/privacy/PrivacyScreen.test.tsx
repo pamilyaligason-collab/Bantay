@@ -59,12 +59,12 @@ describe('Privacy screen', () => {
   })
   it('lists exactly the processors of this build and none of Sentry or an SMS gateway', async () => {
     render(<PrivacyScreen />)
-    expect(PROCESSORS.map((p) => p.name)).toEqual(['Supabase', 'Open-Meteo and Windy', 'Wikipedia', 'Wikimedia Commons and news sites', 'YouTube', 'Radio Paradise and Radio Swiss Classic', 'OpenStreetMap', 'Ventusky, HazardHunterPH and PAGASA Panahon', 'MedlinePlus', 'OpenRouter', 'Google Drive', 'Firebase Cloud Messaging (Google)', 'Cloudflare Pages'])
+    expect(PROCESSORS.map((p) => p.name)).toEqual(['Supabase', 'Open-Meteo and Windy', 'Wikipedia', 'Wikimedia Commons and news sites', 'YouTube', 'Love Radio, Easy Rock, DZRH, Home Radio, Magic 89.9, Radio Paradise and Radio Swiss Classic', 'OpenStreetMap', 'Ventusky, HazardHunterPH and PAGASA Panahon', 'MedlinePlus', 'OpenRouter', 'Google Drive', 'Firebase Cloud Messaging (Google)', 'Cloudflare Pages'])
     const text = (await screen.findByText('Where your data goes')).parentElement!.textContent!
     expect(text).toMatch(/about 1 km/)
     expect(text).toMatch(/zero data retention/)
     expect(text).toContain('YouTube: picture previews load when a video card shows, so YouTube sees your internet address; the video loads only when you tap')
-    expect(text).toContain('Radio Paradise and Radio Swiss Classic: only when you tap Play on a radio card; the station sees your internet address')
+    expect(text).toContain('Love Radio, Easy Rock, DZRH, Home Radio, Magic 89.9, Radio Paradise and Radio Swiss Classic: only when you tap Play on a radio card; the station sees your internet address. Love Radio, Easy Rock and DZRH stream from their own servers, Home Radio from radioca.st and Magic 89.9 from Triton (streamtheworld.com)')
     expect(text).toContain('Wikipedia: the "On this day" facts in Discover; it receives today\'s date only, never your name or place')
     expect(text).toContain('Ventusky gets the map centre rounded to about 1 km, the other two get no place from the app')
     expect(text).toContain('what you ask Jack goes through a relay on the family owner\'s own server first')

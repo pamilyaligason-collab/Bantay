@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { pickPerson } from './fixtures/v13/family'
+import { peopleCard, pickPerson } from './fixtures/v13/family'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 const SHOTS = process.env.SHOT_DIR
@@ -60,11 +60,10 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.reload()
       // v13: the roll call is a carousel of person cards; each card's label carries name and status words, the Open link goes to the person page.
       // D-109: one card at a time, picked in the "Who to show" pill.
-      const roll = page.getByRole('group', { name: 'Family roll call' })
       await pickPerson(page, 'Papa Ben')
-      await expect(roll.getByRole('article', { name: /^Papa Ben\. OK / })).toBeVisible()
-      await expect(roll.getByTestId('person-card')).toHaveCount(1)
-      for (const b of await roll.locator('.pc a, .pc button').all()) {
+      await expect(peopleCard(page, 'Papa')).toContainText('OK') // S26 (D-168): the People card carries the status
+      await expect(page.getByTestId('person-card')).toHaveCount(0)
+      for (const b of await peopleCard(page, 'Papa').locator('a, button').all()) {
         const box = await b.boundingBox()
         expect(box!.height).toBeGreaterThanOrEqual(44)
         expect(box!.width).toBeGreaterThanOrEqual(44)
@@ -74,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(await noSideways(page)).toBe(true)
 
       await pickPerson(page, 'Lola Remy')
-      await roll.getByRole('link', { name: 'Open Lola' }).click()
+      await peopleCard(page, 'Lola').locator('a.pp-main').click()
       await expect(page).toHaveURL(/#family\/people\/p3$/)
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/family-member-${scheme}.png` })
       expect(await axe(page)).toEqual([])

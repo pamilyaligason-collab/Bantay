@@ -15,7 +15,7 @@ const m = vi.hoisted(() => ({
   tick: new Date(2026, 9, 28, 23, 30), // this phone's own 23:30: Simple mode's night is the phone's clock, not Manila's
   snooze: vi.fn(async () => 'snoozed')
 }))
-vi.mock('../location/useLocation', () => ({ usePlace: () => m.place }))
+vi.mock('../weather/weatherPlace', () => ({ useWeatherPlace: () => ({ place: m.place, point: (m.place as { weather?: unknown } | null)?.weather ?? null }) }))
 vi.mock('./weather', () => ({ useWeather: () => m.wx }))
 vi.mock('./useDueMeds', () => ({ useDueMeds: () => ({ due: m.due, review: m.review, tick: m.tick }), markDue: vi.fn(async () => true), markTaken: vi.fn(async () => 1) }))
 vi.mock('./useStorm', () => ({ useStorm: () => null }))

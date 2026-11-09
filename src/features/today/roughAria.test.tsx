@@ -5,7 +5,7 @@ import WeatherCard from './WeatherCard'
 
 // a rough (1500 m) live fix in Dampas, Tagbilaran (invented test data)
 const m = vi.hoisted(() => ({ place: { weather: { lat: 9.6457, lon: 123.878 }, zone: 'dampas', source: 'gps', settled: true, picked: true, accuracy: 1500, fixAt: Date.now() } as unknown, wx: null as unknown }))
-vi.mock('../location/useLocation', () => ({ usePlace: () => m.place }))
+vi.mock('../weather/weatherPlace', () => ({ useWeatherPlace: () => ({ place: m.place, point: (m.place as { weather?: unknown } | null)?.weather ?? null }) }))
 vi.mock('../safety/store', () => ({ useKv: () => [] }))
 vi.mock('./weather', () => ({ useWeather: () => m.wx }))
 afterEach(cleanup)

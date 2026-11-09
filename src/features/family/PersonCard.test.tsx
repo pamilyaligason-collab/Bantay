@@ -7,12 +7,12 @@ vi.mock('../log/store', () => ({ logDose }))
 vi.mock('../notify/store', () => ({ markSeen: vi.fn(async () => undefined) }))
 vi.mock('../phonecheck/useKvValue', () => ({ useKvValue: () => synced }))
 
-import { PersonCard } from './PersonCard'
+import { FocusActions as PersonCard } from './PersonCard'
 import type { PersonFocus } from './useFocuses'
 
 const item = (kind: string) => ({
   person: { id: 'ma', name: 'Ma Sample', isMe: false, photoPath: null, thumb: null, phone: null },
-  focus: { kind, tint: 'red', line: 'Missed a medicine', body: 'Aspirin was due 8 AM.', action: { label: 'Open', kind: 'open' } },
+  focus: { kind, tint: 'red', line: 'Missed a medicine', body: 'Aspirin was due 8 AM.', action: { label: 'Mark taken', kind: 'mark' } },
   missedDoses: [], alertIds: [], asks: []
 }) as unknown as PersonFocus
 

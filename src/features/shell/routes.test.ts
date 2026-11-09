@@ -5,7 +5,8 @@ describe('parseHash', () => {
   it('defaults to today', () => expect(parseHash('')).toEqual({ tab: 'today', view: null }))
   it('maps the old Records and Papers links to #family/papers (C-3)', () => {
     for (const old of ['#records', '#family/records', '#health/papers']) expect(canonicalHash(old)).toBe('#family/papers')
-    expect(canonicalHash('#family/plan')).toBe('#family/plan')
+    expect(canonicalHash('#family/plan')).toBe('#family/calendar') // D-168: Plan folded into the Calendar
+    expect(canonicalHash('#plan')).toBe('#family/calendar')
     for (const old of ['#records', '#family/records', '#health/papers', '#family/papers']) expect(parseHash(old)).toEqual({ tab: 'family', view: 'papers' })
   })
   it('S25: the Library lives in Health again; old Discover library links and #health/videos come back to Health', () => {
@@ -29,8 +30,8 @@ describe('parseHash', () => {
     for (const h of ['#health/labs', '#health/meds', '#health/library2', '#discover/learn', '#family/papers', '#me/alerts', '']) expect(canonicalHash(h)).toBe(h)
   })
   it('maps #family/plan and #family/messages to the family tab', () => {
-    expect(parseHash('#family/plan')).toEqual({ tab: 'family', view: 'plan' })
-    expect(parseHash('#plan')).toEqual({ tab: 'family', view: 'plan' })
+    expect(parseHash('#family/plan')).toEqual({ tab: 'family', view: 'calendar' })
+    expect(parseHash('#plan')).toEqual({ tab: 'family', view: 'calendar' })
     expect(parseHash('#family/messages')).toEqual({ tab: 'family', view: 'messages' })
     expect(parseHash('#family/calendar')).toEqual({ tab: 'family', view: 'calendar' })
   })

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import { TEXT_VEIL } from './wxVeil'
-import { usePlace } from '../location/useLocation'
+import { useWeatherPlace } from '../weather/weatherPlace'
 import { placeTimezone } from '../location/place'
 import { Icon } from '../shell/Icon'
 import { JackArt, SceneHero, type JackName } from '../look'
@@ -13,6 +13,7 @@ import { placeLineOf, placeNameOf } from './placeName'
 import { heroRainLine } from './heroRain'
 import { stormSlots, type Slot } from './stormView'
 import HourlyStrip, { hourlySlots } from './HourlyStrip'
+import { ForecastNote } from '../weather/ForecastNote'
 import RainMini, { miniSlots } from './RainMini'
 import './weatherHero.css'
 
@@ -63,8 +64,8 @@ const whereOf = (place: Parameters<typeof placeLineOf>[0]) => placeLineOf(place)
 
 /** Simple mode's one weather line: temperature, words and today's rain chance. Nothing until a temperature is known (never a made-up 0). */
 export function WeatherStrip() {
-  const place = usePlace({ weather: true })
-  const wx = useWeather(place?.weather ?? null)
+  const { place, point } = useWeatherPlace()
+  const wx = useWeather(point)
   if (!wx || wx.temp == null || !place) return null
   const rain = wx.rainPct == null ? null : `Rain chance ${Math.round(wx.rainPct)}%`
   return (
@@ -87,9 +88,9 @@ const offlineNote = (wx: Wx) => (wx.offline ? ', may be out of date' : '')
  *  A PAGASA warning never shows here (N-8, it has its own card); `storm` draws the night storm scene with no Jack (R11); `noJack` drops Jack when another is on screen (D-91).
  *  Nothing is drawn until a temperature is known (never a made-up 0). */
 export default function WeatherCard({ expanded = false, review = 0, noJack = false, storm = false, hero = false }: { expanded?: boolean; review?: number; noJack?: boolean; storm?: boolean; hero?: boolean }) {
-  const place = usePlace({ weather: true })
-  const ready = !!place && place.settled !== false // X7: no forecast for the home zone while the first position is still being found
-  const wx = useWeather(ready ? place.weather : null)
+  const { place, point } = useWeatherPlace()
+  const ready = !!place && !!point && place.settled !== false // X7: no forecast for the home zone while the first position is still being found
+  const wx = useWeather(ready ? point : null)
   if (!wx || wx.temp == null || !place || !ready) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)
     return hero ? (
       <a className="td-wxs td-wxs-empty" href={WEATHER_HREF} data-hero="" data-testid="weather-hero" aria-label="Weather">
@@ -139,9 +140,10 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
             {expanded && <HourlyStrip slots={hourlySlots(wx, now, storm)} />}
             {!expanded && next.length > 0 && (
               <ul className="td-wxh-hrs" aria-label="Next hours">
-                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{Math.round(s.pct)}%<span className="td-vh"> chance of rain</span></span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
+                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>
             )}
+            <ForecastNote className="td-wxh-credit" link place={placeNameOf(place)} sources={wx.sources} />
           </>
         )}
       >

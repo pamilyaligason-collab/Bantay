@@ -2,16 +2,17 @@ import { expect, test } from '@playwright/test'
 import { skipOnboarding, stubWindy } from './helpers'
 
 test('tab hash deep-link and back button', async ({ page }) => {
-  // S16: Plan is a sub-screen of Family (Back + title header), reached from the Plan row on the Family root
+  // S26 (D-168): Plan folded into the Calendar; the old #family/plan link opens it (Back + title header)
   await page.goto('/#family/plan')
-  await expect(page.locator('h1')).toHaveText('Plan')
+  await expect(page.locator('h1')).toHaveText('Calendar')
+  await expect(page).toHaveURL(/#family\/calendar$/)
   await page.getByRole('link', { name: 'Back to Family' }).click()
   await expect(page.locator('h1')).toHaveText('Family')
   await expect(page.getByRole('button', { name: 'Family', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(page).toHaveURL(/#family$/)
   await page.goBack()
-  await expect(page.locator('h1')).toHaveText('Plan')
-  await expect(page).toHaveURL(/#family\/plan$/)
+  await expect(page.locator('h1')).toHaveText('Calendar')
+  await expect(page).toHaveURL(/#family\/calendar$/)
 })
 
 test('installable: manifest fields and service worker', async ({ page }) => {

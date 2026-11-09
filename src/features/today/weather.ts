@@ -1,12 +1,15 @@
 import type { LatLon } from '../location/geo'
-import { conditionWords, getForecast, useForecast, type Forecast } from '../weather/forecast'
+import { wxFlag } from '../weather/flags'
+import { conditionWords, getForecast, type Forecast } from '../weather/forecast'
+import { creditIds } from '../weather/ForecastNote'
+import { useBlendedWeather } from '../weather/useBlendedWeather'
 import { rainLine, type Wx } from './heroCards'
 
 // Lane M4: the forecast itself lives in features/weather/forecast.ts (one request, one cache, shared by every surface).
 // This file keeps the small Wx shape Today, Safety and the Assistant already use, derived from that cache.
 
 /** Hourly times stay in the place's own wall clock (with utcOffset), so a member abroad reads "from 3 PM" in the place's time, never Manila's. */
-export function toWx(fc: Forecast, offline = false): Wx {
+export function toWx(fc: Forecast, offline = false, sources?: string[]): Wx {
   const code = fc.current.code
   const hasT = fc.hourly.length > 0
   return {
@@ -25,7 +28,8 @@ export function toWx(fc: Forecast, offline = false): Wx {
     uvMax: fc.daily[0]?.uvMax ?? null,
     sunrise: fc.daily[0]?.sunrise ?? null,
     sunset: fc.daily[0]?.sunset ?? null,
-    offline
+    offline,
+    ...(sources ? { sources } : {})
   }
 }
 
@@ -38,9 +42,10 @@ const MAX_AGE = 6 * 3600_000 // an older reading is not shown here: it could say
 
 /** Latest weather for a point: cached reading first (works offline), then a fresh fetch. null until something is known. */
 export function useWeather(p: LatLon | null): Wx | null {
-  const { fc, offline } = useForecast(p)
+  const bl = useBlendedWeather(p, { on: wxFlag('blend') }) // D-163: the same hook and flag as the Weather screen, so the three screens show one set of numbers
+  const { fc, offline } = bl
   if (!fc || Date.now() - Date.parse(fc.fetchedAt) >= MAX_AGE) return null
-  return toWx(fc, offline)
+  return toWx(fc, offline, creditIds(bl))
 }
 
 /** The one weather sentence for the app, e.g. "27° partly cloudy. Rain likely from 3 PM for about 2 hours. Chance: 80%."

@@ -25,6 +25,7 @@ export default function Safety() {
 }
 
 function SafetyRoute({ hash }: { hash: string }) {
+  // Hotlines, maps and the abroad check follow the phone's real place; the forecast (RightNow) uses useWeatherPlace itself (D-163)
   const l = useLocation()
   const place = usePlaceFrom(l)
   const sub = subOf(hash)

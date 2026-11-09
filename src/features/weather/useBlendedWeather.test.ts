@@ -84,6 +84,17 @@ describe('loadBlended', () => {
     expect(good).not.toHaveBeenCalled()
     on.mockRestore()
   })
+  it('a finished run never clears the entry of a newer run for the same place', async () => {
+    let doneA!: (v: unknown) => void
+    const a = vi.fn(() => new Promise((r) => { doneA = r }))
+    const b = vi.fn(() => new Promise(() => {})) // never answers: its entry must stay
+    const pa = loadBlended(P, a)
+    void loadBlended(P, b) // a different invoke replaces the entry
+    doneA(BLEND)
+    await pa
+    void loadBlended(P, b)
+    expect(b).toHaveBeenCalledTimes(1) // still shared, not asked again
+  })
   it('an error answer (not ok, or not family) is a failure', async () => {
     await expect(loadBlended(P, async () => ({ ok: false, error: 'not_family' }))).rejects.toThrow('bad_blend')
   })

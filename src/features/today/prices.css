@@ -1,0 +1,8 @@
+/* S26 board S26TodayData: market prices card. Rest depth only (the Talk card is the screen's one hero). */
+.dpc { display: grid; gap: 4px; min-width: 0; }
+.dpc-chip { justify-self: start; padding: 4px 12px; border-radius: 999px; background: var(--tint-amber); color: var(--tint-amber-ink); font-size: 15px; line-height: 20px; font-weight: 600; }
+.dpc-label { margin: 0; font-size: 15px; line-height: 20px; color: var(--muted); }
+.dpc-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; min-height: 44px; padding: 10px 0; border-bottom: .5px solid var(--hair); font-size: 17px; line-height: 24px; color: var(--ink); }
+.dpc-row:last-child { border-bottom: 0; }
+.dpc-row b { font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; }
+.dpc-note { margin: 0; font-size: 15px; line-height: 20px; color: var(--muted); }

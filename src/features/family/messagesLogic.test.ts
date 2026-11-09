@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bubbleStatus, classifyFile, messengerHref, mmss, pickRecorderMime, shortName, stamp } from './messagesLogic'
+import { bubbleStatus, classifyFile, messengerHref, mmss, pickRecorderMime, shortName, stamp, whatsappHref } from './messagesLogic'
 
 describe('bubble status', () => {
   it('a flag beats a check-in; no news when nothing is known', () => {
@@ -27,10 +27,17 @@ describe('attachments', () => {
   })
 })
 describe('messenger and small helpers', () => {
-  it('opens Messenger itself without a handle', () => {
-    expect(messengerHref(null)).toEqual({ href: 'https://www.messenger.com/', label: 'Use Messenger for video' })
-    expect(messengerHref('lola.remy')).toEqual({ href: 'https://m.me/lola.remy', label: 'Video call on Messenger' })
-    expect(messengerHref('a/b?x')).toMatchObject({ label: 'Use Messenger for video' })
+  it('Messenger: no handle, no link (never messenger.com)', () => {
+    expect(messengerHref(null)).toBeNull()
+    expect(messengerHref('')).toBeNull()
+    expect(messengerHref('lola.remy')).toEqual({ href: 'https://m.me/lola.remy', label: 'Messenger' })
+    expect(messengerHref('a/b?x')).toBeNull()
+  })
+  it('WhatsApp: only a number with its country code', () => {
+    expect(whatsappHref('+63 917 123 4567')).toEqual({ href: 'https://wa.me/639171234567', label: 'WhatsApp' })
+    expect(whatsappHref('0917 123 4567')).toBeNull()
+    expect(whatsappHref(null)).toBeNull()
+    expect(whatsappHref('+12')).toBeNull()
   })
   it('formats', () => {
     expect(mmss(65)).toBe('1:05')

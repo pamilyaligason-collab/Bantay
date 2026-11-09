@@ -70,12 +70,14 @@ describe('Family root', () => {
     expect(screen.queryByRole('button', { name: /I'm OK/ })).toBeNull()
   })
 
-  it('Together is a 2x2 grid of Plan, Calendar, Messages and Memories, each a link to its own page', async () => {
+  it('Together is Messages and Memories (Plan and Calendar are one Calendar card now, D-168), each a link to its own page', async () => {
     location.hash = '#family'
     render(<Family />)
     const list = await screen.findByTestId('together-list')
     const hrefs = [...list.querySelectorAll('a')].map((a) => a.getAttribute('href'))
-    expect(hrefs).toEqual(['#family/plan', '#family/calendar', '#family/messages', '#family/memories'])
+    expect(hrefs).toEqual(['#family/messages', '#family/memories'])
+    expect(screen.queryByTestId('planrow')).toBeNull()
+    expect(screen.getByTestId('calendar')).toBeTruthy() // the one Calendar card is on the root
   })
 
   it('the Papers card follows Together, with Upload and Scan buttons and a link to all papers', async () => {
@@ -90,14 +92,15 @@ describe('Family root', () => {
     expect(card.compareDocumentPosition(screen.getByTestId('together-list')) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy() // S25: Together first, then Papers
   })
 
-  it('S25 order: Together, Papers, Where, Needs, People, then the shown Today and Activity', async () => {
+  it('S26 order: the one Calendar, Together, Papers, Where, Needs, People, then Activity; no separate Today list', async () => {
     location.hash = '#family'
     const { container } = render(<Family />)
     await screen.findByTestId('papers-card')
-    const ids = ['together', 'papers-section', 'where', 'needs', 'people', 'facesrow', 'activity']
+    const ids = ['calendar', 'together', 'papers-section', 'where', 'needs', 'people', 'activity']
     const found = [...container.querySelectorAll('[data-testid]')].map((el) => el.getAttribute('data-testid')!).filter((id) => ids.includes(id))
     expect(found).toEqual(ids.filter((id) => found.includes(id))) // whatever shows is in board order, none repeated
-    expect(found.slice(0, 2)).toEqual(['together', 'papers-section'])
+    expect(found.slice(0, 3)).toEqual(['calendar', 'together', 'papers-section'])
+    expect(container.querySelector('[data-testid="facesrow"]')).toBeNull()
   })
 
   it('Scan opens the scan flow', async () => {
@@ -108,7 +111,7 @@ describe('Family root', () => {
     expect(history.state?.bantayScan).toBe(1)
   })
 
-  it('#family/calendar shows only the Calendar under a Back to Family header; #family/plan shows only the Plan', () => {
+  it('#family/calendar shows only the Calendar under a Back to Family header; #family/plan opens the same Calendar (D-168)', () => {
     location.hash = '#family/calendar'
     const first = render(<Family />)
     expect(screen.getByRole('link', { name: 'Back to Family' }).getAttribute('href')).toBe('#family')
@@ -117,8 +120,8 @@ describe('Family root', () => {
     first.unmount()
     location.hash = '#family/plan'
     render(<Family />)
-    expect(screen.getByRole('heading', { name: 'Plan' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Month' })).toBeNull()
+    expect(screen.getByTestId('calendar')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Month' })).toBeTruthy()
   })
 
   it('#family/memories is a pushed page with a Back to Family link; #family/feed is off by default and returns to Family', async () => {

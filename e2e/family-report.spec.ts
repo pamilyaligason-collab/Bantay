@@ -60,13 +60,12 @@ for (const scheme of ['light', 'dark'] as const) {
   test(`people list: neutral flag line with no health numbers (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
     const row = page.getByTestId('people-row').filter({ hasText: 'Maria' })
-    await expect(row.locator('.rw-value')).toHaveText(/^\d+ to check$/)
+    await expect(row.locator('.pp-st')).toHaveText(/^\d+ to check$/)
     const text = (await row.innerText()).replace(/\d+ to check/, '')
     expect(text).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/)
-    const cards = page.getByTestId('person-card')
-    await expect(cards.first()).toBeVisible() // the roll call renders after the people list; count() does not wait
-    expect(await cards.count()).toBeGreaterThan(0)
-    expect((await cards.allInnerTexts()).join(' ')).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/) // the roll-call cards say no numbers either
+    const cards = page.getByTestId('people-row') // S26 (D-168): the People cards carry the status now
+    await expect(cards.first()).toBeVisible()
+    expect((await cards.allInnerTexts()).join(' ')).not.toMatch(/150|95|162|11\.2|mmHg|mg\/dL/) // the cards say no numbers either
     await expect(page.getByTestId('people-row').filter({ hasText: 'Pedro' })).not.toContainText('to check') // no data: no claim either way
     expect(await axe(page)).toEqual([])
     expect(await noSideways(page)).toBe(true)
@@ -74,7 +73,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
   test(`member report: verdicts, 7 day cells, flagged labs, bring-up list, print button, privacy (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme })
-    await page.getByTestId('people-row').filter({ hasText: 'Maria' }).getByRole('link').click()
+    await page.getByTestId('people-row').filter({ hasText: 'Maria' }).getByRole('link', { name: /^Open/ }).click()
     await page.getByRole('link', { name: 'Full report' }).click()
     await expect(page).toHaveURL(/#family\/people\/p1\/report$/)
     await expect(page.getByTestId('report')).toBeVisible()

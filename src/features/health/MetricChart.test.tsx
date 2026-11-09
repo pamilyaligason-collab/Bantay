@@ -117,7 +117,7 @@ describe('S22 charts: bars, gaps, smooth lines, reading a value', () => {
   })
   it('the header shows the average over logged days only: (7.5 + 6) / 2 = 6 h 45 m, steps 4 200 and 7 800 average 6,000', () => {
     const { container } = render(<MetricChart pts={sleep([['2026-10-29', 7.5], ['2026-10-31', 6]])} days={7} now={NOW} unit="hours" label="Sleep this week" />)
-    expect(container.querySelector('[data-testid=metric-avg]')!.textContent).toBe('Avg this week 6h 45m')
+    expect(container.querySelector('[data-testid=metric-avg]')!.textContent).toBe('Avg this week 6 h 45 min')
     expect(avgText([4200, 7800], 'steps')).toBe('6,000 steps')
   })
   it('steps draw a goal line at the goal and keep it on the axis', () => {

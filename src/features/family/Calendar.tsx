@@ -5,13 +5,19 @@ import { vdb, type Appointment } from '../health/visitsStore'
 import { ldb, type Medication } from '../log/store'
 import { Icon } from '../shell/Icon'
 import { useActing, useActingCan, useViewedVisibleIds } from '../viewas/viewAs'
-import { KIND, kindsOn, monthCells, monthName, rowsOn, weekSun, type CalSource } from './calendarLogic'
+import { KIND, doneRows, kindsOn, laterRows, monthCells, monthName, otherRows, rowsOn, weekSun, type CalRow, type CalSource } from './calendarLogic'
 import { dayKey } from './events'
 import { addDay, dayLabel, emptyHint } from './planList'
 import { ItemSheet, NoteSheet } from './PlanSheets'
+import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
+import { toggleTask } from './tasks'
 import { useLinkedPeople } from './useFamilyScope'
+import { useFamilyPeople } from './roster'
 import { usePlan } from './usePlan'
 import './family.css'
+import './plan.css'
+
+type Open = { t: 'item'; item: { kind: 'task'; item?: FamilyTask } | { kind: 'event'; item?: FamilyEvent } } | { t: 'note'; note?: FamilyNote }
 
 const NO_MEDS: Medication[] = []
 const NO_APPTS: Appointment[] = []
@@ -28,10 +34,12 @@ function useRows<T>(query: () => Promise<T[]>, none: T[], key: string): T[] {
 }
 
 /** Calendar on the Family tab (P-4, F-12): the week strip is the default at every width, the month grid sits behind a Month toggle. The picked day lists doses, visits, events, tasks and notes, each tagged with an icon and a word.
- *  Readable members only (D-82): while acting as someone, only who they may see. */
-export default function Calendar() {
+ *  Readable members only (D-82): while acting as someone, only who they may see.
+ *  detailFor (the Family root, D-109): only this person's doses and visits keep their details; anyone else's read "Medicine time · Ma". Left out (#family/calendar), every readable person's rows show in full (D-109 3.1 and Q4: a link shows the whole record). */
+export default function Calendar({ detailFor }: { detailFor?: string } = {}) {
   const { tasks, events, notes } = usePlan()
   const people = useLinkedPeople() // you and the people you are linked to (D-109), or while viewing as someone, who they can see
+  const { people: family } = useFamilyPeople() // the Add sheet can assign anyone in the family, as the old Plan page did (D-168); rows name only readable people
   const visible = useViewedVisibleIds()
   const { acting } = useActing()
   const can = useActingCan()
@@ -44,25 +52,47 @@ export default function Calendar() {
   const today = dayKey(now)
   const [sel, setSel] = useState(today)
   const [month, setMonth] = useState(false)
-  const [open, setOpen] = useState<'item' | 'note' | null>(null)
-  const ok = (id: string | null) => !id || ids.includes(id) // a row tied to someone outside you and your links is hidden; family-wide rows (no person) stay
+  const [open, setOpen] = useState<Open | null>(null)
   const src: CalSource = useMemo(() => ({
-    events: events.filter((e) => ok(e.personId)),
-    tasks: tasks.filter((t) => ok(t.assigneePersonId)),
+    events, // every Plan task, event and note shows as it did before the merge (D-168); only doses and visits follow the readable people (D-109)
+    tasks,
     notes,
     appts,
     doses: (day) => ids.flatMap((id) => slotsFor(meds, id, day).map((s) => ({ personId: id, name: s.name, dose: s.dose, slot: s.slot }))),
-    nameOf: (id) => people.find((p) => p.id === id)?.name ?? 'Family'
+    nameOf: (id) => readable.find((p) => p.id === id)?.name ?? 'Family', // a person you may not read is never named (D-109)
+    masked: detailFor === undefined ? undefined : (id) => id !== detailFor
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [events, tasks, notes, appts, meds, people, key, visible])
+  }), [events, tasks, notes, appts, meds, readable, key, visible, detailFor])
   const selDate = new Date(`${sel}T00:00:00`)
   const rows = rowsOn(sel, src, today)
+  const other = otherRows(src)
+  const cells = monthCells(selDate)
+  const rangeEnd = month ? cells[cells.length - 1]!.day : dayKey(weekSun(selDate)[6]!)
+  const later = laterRows(src, rangeEnd)
+  const done = doneRows(src, today).filter((r) => !rows.some((x) => x.key === r.key)) // not twice: a ticked task already on the open day stays there
+  const step = (dir: 1 | -1) => setSel(dayKey(month ? new Date(selDate.getFullYear(), selDate.getMonth() + dir, 1) : new Date(selDate.getFullYear(), selDate.getMonth(), selDate.getDate() + 7 * dir)))
   const locked = acting && !can?.edit
+  const openRow = (r: CalRow) => { // the same sheets the old Plan list opened: edit a task, event or note in place
+    const id = r.key.slice(r.key.indexOf('|') + 1)
+    if (r.kind === 'task') { const t = tasks.find((x) => x.clientId === id); if (t) setOpen({ t: 'item', item: { kind: 'task', item: t } }) }
+    else if (r.kind === 'event') { const e = events.find((x) => x.clientId === id); if (e) setOpen({ t: 'item', item: { kind: 'event', item: e } }) }
+    else if (r.kind === 'note') { const n = notes.find((x) => x.clientId === id); if (n) setOpen({ t: 'note', note: n }) }
+  }
+  const editable = (r: CalRow) => !locked && (r.kind === 'task' || r.kind === 'event' || r.kind === 'note')
+  const line = (r: CalRow) => (
+    <li key={r.key} data-kind={r.kind}>
+      {r.kind === 'task' && !locked && <button type="button" className="fm-chk" role="checkbox" aria-checked={r.done} aria-label={r.title} onClick={() => { const t = tasks.find((x) => `task|${x.clientId}` === r.key); if (t) void toggleTask(t) }} />}
+      {editable(r)
+        ? <button type="button" className="fm-item press" onClick={() => openRow(r)}><span className="grow"><b className={r.done ? 'done' : ''}>{r.title}</b><span className="sub">{r.sub}</span></span></button>
+        : <span className="grow"><b className={r.done ? 'done' : ''}>{r.title}</b><span className="sub">{r.sub}</span></span>}
+      <span className="fm2-tag" data-hue={KIND[r.kind].hue}><Icon name={KIND[r.kind].icon} size={16} />{KIND[r.kind].label}</span>
+    </li>
+  )
   const dots = (day: string) => kindsOn(day, src, today)
   const cell = (day: string, num: number, label: string, extra?: string) => {
     const k = dots(day)
     return (
-      <button type="button" key={day} className={`fm2-d${extra ? ' ' + extra : ''}`} aria-pressed={sel === day} data-today={day === today || undefined} onClick={() => setSel(day)}>
+      <button type="button" key={day} className={`fm2-d${extra ? ' ' + extra : ''}`} aria-pressed={sel === day} aria-current={day === today ? 'date' : undefined} data-today={day === today || undefined} onClick={() => setSel(day)}>
         {label && <small>{label}</small>}
         <span>{num}</span>
         <i aria-hidden="true">{k.map((x) => <b key={x} data-hue={KIND[x].hue} />)}</i>
@@ -76,10 +106,14 @@ export default function Calendar() {
         <h2 className="fm2-h">Calendar · {monthName(selDate)}</h2>
         <button type="button" className="btn2 fm2-mon" aria-pressed={month} onClick={() => setMonth((m) => !m)}>{month ? 'Week' : 'Month'}</button>
       </div>
+      <div className="fm2-nav">
+        <button type="button" className="btn2" aria-label={month ? 'Previous month' : 'Previous week'} onClick={() => step(-1)}><Icon name="back" size={20} /></button>
+        <button type="button" className="btn2" aria-label={month ? 'Next month' : 'Next week'} onClick={() => step(1)}><Icon name="chev" size={20} /></button>
+      </div>
       {month ? (
         <div className="fm2-month" role="group" aria-label={`${monthName(selDate)} days`}>
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => <small key={d} className="fm2-dow">{d}</small>)}
-          {monthCells(selDate).map((c) => cell(c.day, c.num, '', c.inMonth ? undefined : 'out'))}
+          {cells.map((c) => cell(c.day, c.num, '', c.inMonth ? undefined : 'out'))}
         </div>
       ) : (
         <div className="fm2-week" role="group" aria-label="Days of this week">
@@ -87,22 +121,32 @@ export default function Calendar() {
         </div>
       )}
       <ul className="fm2-day" aria-label={dayLabel(sel, now)}>
-        {rows.map((r) => (
-          <li key={r.key} data-kind={r.kind}>
-            <span className="grow"><b className={r.done ? 'done' : ''}>{r.title}</b><span className="sub">{r.sub}</span></span>
-            <span className="fm2-tag" data-hue={KIND[r.kind].hue}><Icon name={KIND[r.kind].icon} size={16} />{KIND[r.kind].label}</span>
-          </li>
-        ))}
+        {rows.map(line)}
         {rows.length === 0 && <li className="fm2-none sub">{sel < today ? `Nothing on ${dayLabel(sel, now)}.` : emptyHint(readable)}</li>}
       </ul>
-      <div className="fm2-two">
-        {locked
-          ? <button type="button" className="btn2" disabled aria-label="Add, view only"><Icon name="lock" size={20} />View only</button>
-          : <button type="button" className="btn2" onClick={() => setOpen('item')}><Icon name="plus" size={20} />Add</button>}
-        <a className="btn2" href="#family/plan">Full plan</a>
-      </div>
-      {open === 'item' && <ItemSheet start={{ kind: 'task' }} day={addDay(sel, today)} people={readable} onClose={() => setOpen(null)} onNote={() => setOpen('note')} />}
-      {open === 'note' && <NoteSheet onClose={() => setOpen(null)} />}
+      {other.length > 0 && (
+        <>
+          <h3 className="fm2-sub">No date</h3>
+          <ul className="fm2-day" aria-label="Notes and reminders with no date" data-testid="cal-nodate">{other.map(line)}</ul>
+        </>
+      )}
+      {later.length > 0 && (
+        <>
+          <h3 className="fm2-sub">Later</h3>
+          <ul className="fm2-day" aria-label="Later" data-testid="cal-later">{later.map(line)}</ul>
+        </>
+      )}
+      {done.length > 0 && (
+        <details className="fm2-done" data-testid="cal-done">
+          <summary>Done ({done.length})</summary>
+          <ul className="fm2-day" aria-label="Done in the last 30 days">{done.map(line)}</ul>
+        </details>
+      )}
+      {locked
+        ? <button type="button" className="btn2 fm2-add" disabled aria-label="Add, view only"><Icon name="lock" size={20} />View only</button>
+        : <button type="button" className="btn2 fm2-add" onClick={() => setOpen({ t: 'item', item: { kind: 'task' } })}><Icon name="plus" size={20} />Add event, reminder or note</button>}
+      {open?.t === 'item' && <ItemSheet start={open.item} day={addDay(sel, today)} people={family} onClose={() => setOpen(null)} onNote={() => setOpen({ t: 'note' })} />}
+      {open?.t === 'note' && <NoteSheet note={open.note} onClose={() => setOpen(null)} />}
     </section>
   )
 }

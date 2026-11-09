@@ -29,7 +29,7 @@ export default function HourlyStrip({ slots }: { slots: Slot[] }) {
           <span className="td-hs-t">{s.time}</span>
           <span className="td-hs-i" aria-hidden="true"><Icon name={s.kind} size={22} /></span>
           {s.temp != null && <span className="td-hs-d">{deg(s.temp)}</span>}
-          {s.pct != null && <span className="td-hs-p">{Math.round(s.pct)}%<span className="td-vh"> chance of rain</span></span>}
+          {s.pct != null && <span className="td-hs-p">{Math.round(s.pct)}% rain</span>}
         </li>
       ))}
     </ul>
