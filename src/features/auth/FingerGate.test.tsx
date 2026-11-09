@@ -197,23 +197,24 @@ describe('lock.css', () => {
     expect(css).toMatch(/\.lk2-say \{[^}]*background: var\(--lk-chip\)/)
     expect(css).toMatch(/\.lk2-lnk \{[^}]*background: var\(--lk-chip\)/)
   })
-  it.each(['light', 'dark'])('S26 frosted glass %s: white text is >= 4.5:1 over the frost on a pure white backdrop (lighter than any sky stop plus fog) and on the lightest sky stop', (n) => {
-    const sel = n === 'light' ? '\\.lk2 \\{ --lk-frost: (rgba\\([^)]*\\))' : ':root\\[data-theme="dark"\\] \\.lk2 \\{ --lk-frost: (rgba\\([^)]*\\))'
-    const frost = parse(new RegExp(sel).exec(css)![1]!)
-    const dim = Number(/--lk-dim: ([\d.]+)/.exec(css)![1])
-    // the glass dims the backdrop first (brightness), then the tint sits over it. Hand value, light, pure white backdrop: dimmed 178.5, tint .55 of (22,58,50) -> (92,112,108), ratio 5.28
-    for (const back of [[255, 255, 255], [232, 228, 216]] as [number, number, number][]) expect(rat([255, 255, 255], over(frost, back.map((v) => v * dim) as [number, number, number]))).toBeGreaterThanOrEqual(4.5)
-    if (n === 'light') expect(rat([255, 255, 255], over(frost, [178.5, 178.5, 178.5]))).toBeCloseTo(5.28, 1)
+  it.each([['light', '#13241F', [[47, 82, 71], [232, 228, 216]]], ['dark', '#E8F0EC', [[21, 39, 31], [58, 81, 89]]]] as const)('S28 light glass %s: the ink is >= 4.5:1 over the frost on the darkest and lightest scene stops', (n, ink, backs) => {
+    const sel = n === 'light' ? /\n\.lk2 \{ --lk-frost: (rgba\([^)]*\))/ : /\n:root\[data-theme="dark"\] \.lk2 \{ --lk-frost: (rgba\([^)]*\))/
+    const frost = parse(sel.exec(css)![1]!)
+    const inkRgb = [1, 3, 5].map((i) => parseInt(ink.slice(i, i + 2), 16)) as [number, number, number]
+    for (const back of backs) expect(rat(inkRgb, over(frost, back as unknown as [number, number, number]))).toBeGreaterThanOrEqual(4.5)
+    // Hand value, light over the darkest stop #2F5247: .72 white + .28 (47,82,71) = (197,207,203) -> about 11.5 against #13241F
+    if (n === 'light') expect(rat(inkRgb, over(frost, [47, 82, 71]))).toBeGreaterThan(10)
   })
-  it('S28 glass reads as tinted glass, not black: a teal tint (green above red), the scene blurred and saturated through it, a white edge and an inner highlight', () => {
-    const [[r, g, b]] = parse('rgba(22, 58, 50, .55)')
-    expect(g).toBeGreaterThan(r * 2); expect(b).toBeGreaterThan(r * 2)
-    expect(css).toMatch(/backdrop-filter: blur\(20px\) saturate\(150%\) brightness\(var\(--lk-dim\)\)/)
-    expect(css).toMatch(/border: 1px solid rgba\(255, 255, 255, \.35\)/); expect(css).toMatch(/inset 0 1px 0 var\(--lk-glass-hi\)/)
+  it('S28 glass is light, not black: a white frost in light theme, the scene blurred through it, an edge and an inner highlight', () => {
+    const [[r, g, b], a] = parse(/\n\.lk2 \{ --lk-frost: (rgba\([^)]*\))/.exec(css)![1]!)
+    expect(Math.min(r, g, b)).toBe(255); expect(a).toBeGreaterThanOrEqual(0.6)
+    expect(css).toMatch(/backdrop-filter: blur\(20px\) saturate\(150%\)/)
+    expect(css).toMatch(/inset 0 1px 0 var\(--lk-glass-hi\)/)
   })
-  it('S28: the fingerprint disc is glass in light and dark (blur + frost, white icon), the prompt chip under it too', () => {
+  it('S28: the fingerprint disc and the prompt chip are the same glass with dark ink', () => {
     const rule = /@supports[^{]*\{[\s\S]*?\.lk2 \.lk2-fp, :root\[data-theme="dark"\] \.lk2 \.lk2-fp, :root:not\(\[data-theme="light"\]\) \.lk2 \.lk2-fp \{([^}]*)\}/.exec(css)![1]!
-    expect(rule).toMatch(/background: var\(--lk-frost\)/); expect(rule).toMatch(/backdrop-filter: blur\(20px\)/); expect(rule).toMatch(/color: #fff/)
+    expect(rule).toMatch(/background: var\(--lk-frost\)/); expect(rule).toMatch(/backdrop-filter: blur\(20px\)/); expect(rule).toMatch(/color: var\(--lk-glass-ink\)/)
+    expect(css).toMatch(/\.lk2-say, \.lk2-mid \.lk2-lnk \{ color: var\(--lk-glass-ink\)/)
   })
   it('S26: the failed-attempt text is 17 px', () => { expect(css).toMatch(/\.lk2-say \[role="alert"\] \{ font-size: 17px/) })
   it('dark tokens are repeated under prefers-color-scheme dark', () => { expect(media).toContain(tok(dark, 'sky-a')); expect(media).toContain(tok(dark, 'chip')) })

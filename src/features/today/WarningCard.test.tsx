@@ -65,7 +65,7 @@ describe('WarningCard', () => {
     await db.kv.put({ key: ALERTS_KEY, value: [stale, other] })
     render(<WarningCard />)
     const card = await screen.findByRole('region', { name: 'Active warning' })
-    expect(card.textContent).toContain('Checked 21 h ago')
+    expect(card.textContent).toMatch(/Checked 21\shours ago/)
     expect(card.textContent).not.toContain('Checked just now')
     expect(card.textContent).toMatch(/About \d+ km away\. Follow the steps below\./)
     expect(card.textContent).not.toMatch(/km away\. Follow the steps below\.\s*\(\d+ km away\)/)

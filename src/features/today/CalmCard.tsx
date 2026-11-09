@@ -26,7 +26,7 @@ export default function CalmCard() {
         <BreathOrb moment={momentAt(p, 1, elapsed)} reduced={reduced} size={84} floor={0.78} />
         <span className="td-grow"><b>Breathe for 1 minute</b><span>{p.tag}. {done ? 'Done today.' : 'Not done yet today.'}</span></span>
       </a>
-      <GroupedList icons><Row icon="play" tint="teal" title="Relaxing radio" sub="Soft music and talks" href="#discover/listen/radio" /></GroupedList>
+      <GroupedList icons><Row icon="play" tint="teal" title="Relaxing radio" sub="Philippine radio: music, pop and news" href="#discover/listen/radio" /></GroupedList>
     </Section>
   )
 }

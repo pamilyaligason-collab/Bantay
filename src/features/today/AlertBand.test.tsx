@@ -27,7 +27,7 @@ describe('AlertBand: does it affect us, and how fresh', () => {
     expect(await screen.findByText('Near you. Follow the steps below.')).toBeTruthy()
     expect(screen.getByText(/\(89 km away\)/)).toBeTruthy()
     expect(screen.getByText('Drop, cover and hold on.')).toBeTruthy()
-    expect(screen.getByText('Checked 5 min ago')).toBeTruthy()
+    expect(screen.getByText('Checked 5 minutes ago')).toBeTruthy()
     expect(screen.queryByText(/no action needed/i)).toBeNull()
   })
   it('an 89 km M3.0 quake is beyond its 50 km radius: the band still shows it with the distance and the steps, and never says no action needed', async () => {
@@ -73,12 +73,12 @@ describe('AlertBand: does it affect us, and how fresh', () => {
   })
   it('over an hour since the last check shows the amber line even when no row is marked stale', async () => {
     await show([quake({ lat: 6.2015121 + 0.27, checkedAt: minAgo(61), stale: false })])
-    expect(await screen.findByText('Checked 1 h ago')).toBeTruthy()
+    expect(await screen.findByText('Checked 1 hour ago')).toBeTruthy()
     expect(screen.getByText(/They may be out of date\. Check PAGASA or listen to the radio\./)).toBeTruthy()
   })
   it('exactly 60 minutes is still fine', async () => {
     await show([quake({ lat: 6.2015121 + 0.27, checkedAt: minAgo(60) })])
-    expect(await screen.findByText('Checked 1 h ago')).toBeTruthy()
+    expect(await screen.findByText('Checked 1 hour ago')).toBeTruthy()
     expect(screen.queryByText(/may be out of date/)).toBeNull()
   })
   it('no check time at all reads as never checked with the amber line', async () => {

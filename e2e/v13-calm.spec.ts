@@ -260,12 +260,12 @@ test('reduced motion: no looping animation while the radio plays', async ({ page
   expect(await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running' && a.effect?.getComputedTiming().iterations === Infinity).length)).toBe(0)
 })
 
-test('Today radio row lands on Listen and watch, not the page top', async ({ page }) => {
+test('Today radio row opens Philippine radio in Listen (D-178)', async ({ page }) => {
   await page.goto('/#today')
   await page.getByRole('link', { name: /Relaxing radio/ }).click()
-  await expect(page.getByTestId('calm-media')).toBeVisible()
-  await expect.poll(() => page.evaluate(() => { const r = document.querySelector('[data-testid="calm-media"]')!.getBoundingClientRect(); return r.top < window.innerHeight / 2 && r.bottom > 0 })).toBe(true)
-  expect(await page.evaluate(() => document.querySelector('.bt .scroll')!.scrollTop)).toBeGreaterThan(0)
+  await expect(page).toHaveURL(/#discover\/listen\/radio$/)
+  await expect(page.getByTestId('radio')).toBeVisible()
+  await expect(page.getByTestId('radio-sec-music')).toBeVisible()
 })
 
 test('nothing from YouTube or a station loads before a tap; only the video posters (i.ytimg.com)', async ({ page }) => {
