@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { kindsOn, monthCells, rowsOn, weekSun, type CalSource } from './calendarLogic'
+import { kindsOn, monthCells, otherRows, rowsOn, weekSun, type CalSource } from './calendarLogic'
 
 // Fri 30 Oct 2026 is the day under test (hand-computed: 25 Oct 2026 is a Sunday).
 const FRI = '2026-10-30'
@@ -23,6 +23,24 @@ describe('weekSun / monthCells', () => {
   })
   it('a month that spills into a sixth week gets 42 cells (Aug 2026 starts Saturday)', () => {
     expect(monthCells(new Date(2026, 7, 15)).length).toBe(42)
+  })
+})
+
+describe('otherRows (what the old Plan held that no day shows)', () => {
+  it('lists unpinned notes, then undated tasks (open before done); dated tasks and pinned notes stay on their days', () => {
+    const s = src({
+      tasks: [
+        { clientId: 'a', title: 'Renew PhilHealth', due: null, assigneePersonId: 'j', done: false },
+        { clientId: 'b', title: 'Old chore', due: null, assigneePersonId: null, done: true },
+        { clientId: 'c', title: 'Buy rice', due: FRI, assigneePersonId: null, done: false }
+      ],
+      notes: [{ clientId: 'n1', body: 'Gate code 1234\nsecond line', pinned: false }, { clientId: 'n2', body: 'Pinned one', pinned: true }]
+    })
+    expect(otherRows(s).map((r) => [r.key, r.title, r.sub, r.done])).toEqual([
+      ['note|n1', 'Gate code 1234', 'Note', false],
+      ['task|a', 'Renew PhilHealth', 'Ate · No date', false],
+      ['task|b', 'Old chore', 'Everyone · No date', true]
+    ])
   })
 })
 

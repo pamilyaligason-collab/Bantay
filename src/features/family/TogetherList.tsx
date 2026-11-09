@@ -9,20 +9,14 @@ import { familyFeedOn } from './flags'
 import { listMessages, type Msg } from './messagesApi'
 import { messagesPreview } from './messagesPreview'
 import { PaperActions } from './Papers'
-import { dayLabel, dayRows, groupPlan, progressOf } from './planList'
+import { dayLabel } from './planList'
 import { useFamilyPeople } from './roster'
-import { usePlan } from './usePlan'
 import type { FamilyEvent } from './store'
 import type { DocBundle } from '../records/api'
 import './family.css'
 import './v13-family.css'
 
 export const SEEN = 'family.msgs.seen' // kv: ISO time the family chat was last opened on this phone
-
-const planSub = (rows: ReturnType<typeof dayRows>) => {
-  const prog = progressOf(rows)
-  return prog.total > 0 ? `${prog.done} of ${prog.total} done today` : rows.length > 0 ? `${rows.length} ${rows.length === 1 ? 'thing' : 'things'} today` : 'Nothing planned'
-}
 
 /** The Calendar tile's line: the first event from today on, by the phone's local day (an all-day event starts the evening before in UTC, so never slice the ISO string). */
 export function calSummary(events: FamilyEvent[], now: Date): string {
@@ -80,10 +74,9 @@ export function PapersSection() {
   )
 }
 
-/** Plan, Calendar, Messages, Memories as a 2x2 grid of soft-gradient cards (board S25Family, D-152). */
+/** Messages and Memories as soft-gradient cards (board S25Family, D-152). S26 (D-168): Plan folded into the Calendar card, which sits right under this. */
 export function TogetherList() {
   const { people } = useFamilyPeople()
-  const { tasks, events, notes } = usePlan()
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [seen, , seenLoaded] = useKv<string | null>(SEEN, null)
   useEffect(() => {
@@ -91,17 +84,10 @@ export function TogetherList() {
     void listMessages(20).then((r) => { if (live && r.ok) setMsgs(r.data) })
     return () => { live = false }
   }, [])
-  const now = new Date()
-  const todayRows = dayRows(groupPlan(tasks, events, notes, now), dayKey(now), now)
-  const prog = progressOf(todayRows)
-  const planOpen = prog.total > 0 ? prog.total - prog.done : todayRows.length
   const m = messagesPreview(msgs, people, seenLoaded ? seen : new Date().toISOString())
-  const calSub = calSummary(events, now)
   return (
     <Section title="Together" link={familyFeedOn() ? { href: '#family/feed', label: 'Updates' } : undefined} testId="together">
         <div className="fm-tiles" data-testid="together-list">
-          <Tile testId="planrow" href="#family/plan" icon="calendar" tint="amber" title="Plan" sub={planOpen > 0 ? `${planOpen} open · ${planSub(todayRows)}` : planSub(todayRows)} />
-          <Tile testId="calrow" href="#family/calendar" icon="calendar" tint="blue" title="Calendar" sub={calSub} />
           <Tile testId="msgs" href="#family/messages" icon="msg" tint="green" title="Messages" sub={m.sub} badge={m.unread} />
           <Tile testId="memoriesrow" href="#family/memories" icon="photo" tint="purple" title="Memories" sub="Family photos, kept private" />
         </div>

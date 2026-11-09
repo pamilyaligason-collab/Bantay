@@ -73,9 +73,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('group', { name: 'Quick replies' })).toBeVisible()
       await shot(page, 'messages', scheme)
       await page.getByRole('link', { name: 'Back to Family' }).click()
-      await page.getByTestId('planrow').click()
-      await expect(page).toHaveURL(/#family\/plan$/)
+      await expect(page.getByTestId('planrow')).toHaveCount(0) // D-168: Plan is part of the one Calendar card
+      await page.goto('/#family/plan')
+      await expect(page).toHaveURL(/#family\/calendar$/)
       await page.goto('/#plan')
+      await expect(page).toHaveURL(/#family\/calendar$/)
       await expect(page.getByRole('link', { name: 'Back to Family' })).toBeVisible()
       await page.goto('/#family/people')
       await expect(page.locator('h1').first()).toHaveText('Family') // v13: the roster is on the root; the ID card moved to #medid
@@ -88,7 +90,7 @@ for (const scheme of ['light', 'dark'] as const) {
     })
 
     // House convention for 200% text: a 195 px wide viewport (e2e/health-labs.spec.ts), because the app's CSS uses px font sizes.
-    test('200% text zoom (195 px wide): no sideways scroll on Home, Messages and Plan', async ({ page }) => {
+    test('200% text zoom (195 px wide): no sideways scroll on Home, Messages and the old Plan link (now the Calendar)', async ({ page }) => {
       await page.setViewportSize({ width: 195, height: 844 })
       for (const h of ['#family', '#family/messages', '#family/plan']) {
         await page.goto('/' + h)
@@ -101,7 +103,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('200% text zoom (195 px wide): the done check-in card does not overflow', async ({ page }) => {
       await page.setViewportSize({ width: 195, height: 844 })
       await page.goto('/#family')
-      await expect(page.getByTestId('person-card').first()).toBeVisible() // Family has drawn, so the count below can fail
+      await expect(page.getByTestId('people-row').first()).toBeVisible() // Family has drawn, so the count below can fail
       await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0) // F4: the action moved to My day on Today
       await page.goto('/')
       const row = page.getByTestId('myday-checkin')

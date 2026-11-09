@@ -87,6 +87,17 @@ export function rowsOn(day: string, s: CalSource, today: string = dayKey(new Dat
   return out.sort((a, b) => a.sort.localeCompare(b.sort) || a.title.localeCompare(b.title))
 }
 
+/** What the old Plan list showed that no day holds: tasks with no date and notes that are not pinned (pinned ones sit on today). Notes first, then open tasks, then done (D-168: nothing saved under Plan may disappear). */
+export function otherRows(s: Pick<CalSource, 'tasks' | 'notes' | 'nameOf'>): CalRow[] {
+  const out: CalRow[] = []
+  for (const t of s.tasks) {
+    if (t.due) continue
+    out.push({ key: `task|${t.clientId}`, kind: 'task', title: t.title, sub: `${t.assigneePersonId ? given(s.nameOf(t.assigneePersonId)) : 'Everyone'} · No date`, sort: t.done ? '2' : '1', done: t.done })
+  }
+  for (const n of s.notes) if (!n.pinned) out.push({ key: `note|${n.clientId}`, kind: 'note', title: n.body.split('\n')[0] ?? '', sub: 'Note', sort: '0', done: false })
+  return out.sort((a, b) => a.sort.localeCompare(b.sort) || a.title.localeCompare(b.title))
+}
+
 /** The kinds present on a day (the dots under the date), in the fixed KIND_ORDER. */
 export function kindsOn(day: string, s: CalSource, today: string = dayKey(new Date())): CalKind[] {
   const have = new Set(rowsOn(day, s, today).map((r) => r.kind))

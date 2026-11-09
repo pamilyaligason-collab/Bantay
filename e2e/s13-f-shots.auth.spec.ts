@@ -78,12 +78,12 @@ for (const scheme of ['light', 'dark'] as const) {
       await seed(page, 'bantay-health', 'readings', [{ id: 1, personId: 'lo', takenAt: at(7, 40), test: 'bp_systolic', value: 150, unit: 'mmHg' }, { id: 2, personId: 'lo', takenAt: at(7, 40), test: 'bp_diastolic', value: 95, unit: 'mmHg' }])
       await seed(page, 'bantay-log', 'activity', [{ personId: 'pa', kind: 'check-in', minutes: null, steps: null, startedAt: at(6, 55), source: 'manual' }, { personId: 'lo', kind: 'check-in', minutes: null, steps: null, startedAt: at(7, 40), source: 'manual' }])
       await page.reload()
-      await expect(page.getByTestId('person-card').first()).toBeVisible() // v13: person cards replaced the faces row
+      await expect(page.getByTestId('people-row').first()).toBeVisible() // S26 (D-168): People cards carry the status
     })
 
     test("people: I'm OK before and after", async ({ page }) => {
       await shot(page, 'people-before', scheme)
-      await expect(page.getByTestId('person-card').first()).toBeVisible() // Family has drawn, so the count below can fail
+      await expect(page.getByTestId('people-row').first()).toBeVisible() // Family has drawn, so the count below can fail
       await expect(page.getByRole('button', { name: "I'm OK" })).toHaveCount(0) // F4: Family has no I'm OK; it lives in My day on Today
       await page.goto('/')
       const row = page.getByTestId('myday-checkin')
@@ -92,17 +92,18 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(row.getByText('Checked in')).toBeVisible()
       await shot(page, 'im-ok-after', scheme)
       await page.goto('/#family')
-      await expect(page.getByTestId('person-card').first()).toBeVisible()
+      await expect(page.getByTestId('people-row').first()).toBeVisible()
       await shot(page, 'people-after', scheme)
       await expect(page.locator('.toast')).toHaveCount(0, { timeout: 8000 }) // the note clears itself; a shot must not catch it
       // Learn together moved to Discover (PLAN 1.4, L3); its shot is taken there
     })
 
     test('sheet: mid-drag follows the pointer, a long drag closes it', async ({ page }) => {
-      await page.getByTestId('planrow').click()
+      await page.goto('/#family/plan') // D-168: the old Plan link opens the Calendar
+      await expect(page).toHaveURL(/#family\/calendar$/)
       await expect(page.getByText(/^Add a reminder for /).first()).toBeVisible()
       await shot(page, 'plan-empty', scheme)
-      await page.getByRole('button', { name: 'Add', exact: true }).first().click()
+      await page.getByRole('button', { name: 'Add event, reminder or note' }).click()
       const dlg = page.getByRole('dialog')
       await expect(dlg).toBeVisible()
       await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))))

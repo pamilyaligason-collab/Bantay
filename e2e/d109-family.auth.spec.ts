@@ -61,7 +61,7 @@ async function open(page: Page, scheme: 'light' | 'dark', height: number, readOn
     { personId: 'ti', test: 'bp_systolic', value: 168, unit: 'mmHg', takenAt: at(d, 7, 8) }, { personId: 'ti', test: 'bp_diastolic', value: 98, unit: 'mmHg', takenAt: at(d, 7, 8) }
   ]))
   await page.reload()
-  await expect(page.getByTestId('person-card').first()).toBeVisible()
+  await expect(page.getByTestId('people-row').first()).toBeVisible() // S26 (D-168): the Family Today list is gone, People cards carry the status
   await setScheme(page, scheme)
 }
 
@@ -73,10 +73,9 @@ for (const scheme of ['light', 'dark'] as const) {
     test(`default: Family opens on Me, nobody else is named except Ma's missed medicine (${scheme})`, async ({ page }) => {
       await open(page, scheme, 1060) // the board is 1060 tall
       await expect(pill(page, 'Me')).toBeVisible()
-      const cards = page.getByTestId('person-card')
-      await expect(cards).toHaveCount(1)
-      await expect(cards.first()).toHaveAttribute('aria-label', /^Rey Villar \(you\)\./)
-      await expect(page.getByTestId('facesrow')).not.toContainText('checked in') // no "N of M checked in"
+      await expect(page.getByTestId('people-row').filter({ hasText: 'You' })).toHaveCount(1) // my status is on my People card
+      await expect(page.getByTestId('person-card')).toHaveCount(0) // no separate Today list
+      await expect(page.getByTestId('facesrow')).toHaveCount(0)
       await expect(page.locator('.lt-kicker')).not.toContainText('PEOPLE')
       // Needs: one line for Ma, no medicine name, no number
       const need = page.getByTestId('need-row')
@@ -85,8 +84,10 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('needs')).not.toContainText(/Nasal|\d dose/)
       // People: Rey and the people linked to Rey; Tita and Kuya (owner-only) are in the pill, not on the page
       await expect(page.getByTestId('people-row')).toHaveCount(3)
-      const text = (await page.locator('.bt .scroll').innerText()).replace(/\s+/g, ' ')
+      const cal = (await page.getByTestId('calendar').innerText()).replace(/\s+/g, ' ') // the Calendar card lists doses of the people you are linked to, as #family/calendar always did (D-109 helpers)
+      const text = (await page.locator('.bt .scroll').innerText()).replace(/\s+/g, ' ').replace(cal, '')
       expect(text).not.toMatch(/Tita|Kuya|Nasal spray/)
+      expect(cal).not.toMatch(/Tita|Kuya/)
       await expect(page.getByTestId('activity')).toContainText('You')
       await expect(page.getByTestId('activity')).not.toContainText('Ma ·')
       await assertNoSideways(page)
@@ -132,14 +133,16 @@ for (const scheme of ['light', 'dark'] as const) {
       })
     }
 
-    test(`Open on Ma's line puts Ma on show: her card, Activity and the pill follow (${scheme})`, async ({ page }) => {
+    test(`Open on Ma's line opens her page; picking Ma in the pill puts her Activity on show and her card has Mark taken (${scheme})`, async ({ page }) => {
       await open(page, scheme, 844)
+      const ma = page.getByTestId('people-row').filter({ hasText: 'Ma' }).first()
+      await expect(ma).toContainText('Missed a medicine') // today's status is on her card (no medicine name, D-109)
+      await expect(ma.getByRole('button', { name: /Mark taken for Ma/ })).toBeVisible() // Rey is her writer carer
       await page.getByTestId('need-row').getByRole('button', { name: 'Open Ma' }).click()
-      const card = page.getByTestId('person-card')
-      await expect(card).toHaveCount(1)
-      await expect(card).toHaveAttribute('aria-label', /^Ma\. Missed a medicine/)
-      await expect(card.getByRole('button', { name: /Mark taken for Ma/ })).toBeVisible() // Rey is her writer carer
-      await expect(card.getByRole('link', { name: 'Open Ma' })).toBeVisible()
+      await expect(page).toHaveURL(/#family\/people\/ma$/)
+      await page.goto('/#family')
+      await pill(page, 'Me').click()
+      await page.getByRole('dialog', { name: 'Who to show' }).getByRole('button', { name: /^Ma/ }).first().click()
       await expect(pill(page, 'Ma')).toBeVisible()
       const ac = page.getByTestId('activity')
       await expect(ac.getByTestId('week-chart')).toHaveAttribute('aria-label', /for Ma/)
@@ -154,7 +157,6 @@ for (const scheme of ['light', 'dark'] as const) {
       await page.goto('/#health')
       await page.goto('/#family')
       await expect(pill(page, 'Me')).toBeVisible()
-      await expect(page.getByTestId('person-card').first()).toHaveAttribute('aria-label', /^Rey Villar \(you\)\./)
     })
 
     test(`the Who to show sheet: Me, You care for, Everyone else; a view-only pick has no Mark taken (${scheme})`, async ({ page }) => {
@@ -174,9 +176,8 @@ for (const scheme of ['light', 'dark'] as const) {
       await sheet.getByRole('button', { name: /^Tita/ }).first().click()
       await expect(sheet).toHaveCount(0)
       await expect(pill(page, 'Tita')).toBeVisible()
-      const card = page.getByTestId('person-card')
-      await expect(card).toHaveAttribute('aria-label', /^Tita\. /)
-      await expect(card.getByRole('button', { name: /Mark taken|Answer/ })).toHaveCount(0)
+      await expect(page.getByTestId('person-card')).toHaveCount(0)
+      await expect(page.getByRole('button', { name: /Mark taken for Tita|Answer for Tita/ })).toHaveCount(0)
       await assertNoSideways(page)
     })
   })

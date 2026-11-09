@@ -16,9 +16,9 @@ test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light', reducedMotion: 'reduce' })
 })
 
-test('S25 Family order and no sideways scroller: Together, Papers, Where, Needs, People, Today, Activity', async ({ page }) => {
+test('S26 Family order and no sideways scroller: Calendar, Together, Papers, Where, Needs, People, Activity (no Today list)', async ({ page }) => {
   await openFamily(page)
-  const order = await page.evaluate(() => ['together', 'papers-section', 'where', 'needs', 'people', 'facesrow', 'activity'].map((id) => [id, document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? null] as const).filter((x) => x[1] !== null))
+  const order = await page.evaluate(() => ['calendar', 'together', 'papers-section', 'where', 'needs', 'people', 'activity'].map((id) => [id, document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect().top ?? null] as const).filter((x) => x[1] !== null))
   expect(order.length).toBeGreaterThanOrEqual(5)
   for (let i = 1; i < order.length; i++) expect(order[i]![1]!, `${order[i]![0]} below ${order[i - 1]![0]}`).toBeGreaterThan(order[i - 1]![1]!)
   expect(await noSideways(page)).toBe(true)
@@ -35,10 +35,10 @@ test('S25 Family order and no sideways scroller: Together, Papers, Where, Needs,
   }
 })
 
-test('S25 Family with another person selected: Open on a Needs line shows that person Today', async ({ page }) => {
+test('S26 Family: Open on a Needs line opens that person page (the Today list is gone)', async ({ page }) => {
   await openFamily(page)
   await page.getByTestId('need-row').first().getByRole('button', { name: /^Open/ }).click()
-  await expect(page.getByTestId('person-card').first()).toBeInViewport() // the pick brings Today into view, not the top of the page
+  await expect(page).toHaveURL(/#family\/people\/[^/]+$/)
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/root-selected-ate.png` })
 })
 

@@ -5,13 +5,18 @@ import { vdb, type Appointment } from '../health/visitsStore'
 import { ldb, type Medication } from '../log/store'
 import { Icon } from '../shell/Icon'
 import { useActing, useActingCan, useViewedVisibleIds } from '../viewas/viewAs'
-import { KIND, kindsOn, monthCells, monthName, rowsOn, weekSun, type CalSource } from './calendarLogic'
+import { KIND, kindsOn, monthCells, monthName, otherRows, rowsOn, weekSun, type CalRow, type CalSource } from './calendarLogic'
 import { dayKey } from './events'
 import { addDay, dayLabel, emptyHint } from './planList'
 import { ItemSheet, NoteSheet } from './PlanSheets'
+import type { FamilyEvent, FamilyNote, FamilyTask } from './store'
+import { toggleTask } from './tasks'
 import { useLinkedPeople } from './useFamilyScope'
 import { usePlan } from './usePlan'
 import './family.css'
+import './plan.css'
+
+type Open = { t: 'item'; item: { kind: 'task'; item?: FamilyTask } | { kind: 'event'; item?: FamilyEvent } } | { t: 'note'; note?: FamilyNote }
 
 const NO_MEDS: Medication[] = []
 const NO_APPTS: Appointment[] = []
@@ -44,7 +49,7 @@ export default function Calendar() {
   const today = dayKey(now)
   const [sel, setSel] = useState(today)
   const [month, setMonth] = useState(false)
-  const [open, setOpen] = useState<'item' | 'note' | null>(null)
+  const [open, setOpen] = useState<Open | null>(null)
   const ok = (id: string | null) => !id || ids.includes(id) // a row tied to someone outside you and your links is hidden; family-wide rows (no person) stay
   const src: CalSource = useMemo(() => ({
     events: events.filter((e) => ok(e.personId)),
@@ -57,12 +62,29 @@ export default function Calendar() {
   }), [events, tasks, notes, appts, meds, people, key, visible])
   const selDate = new Date(`${sel}T00:00:00`)
   const rows = rowsOn(sel, src, today)
+  const other = otherRows(src)
   const locked = acting && !can?.edit
+  const openRow = (r: CalRow) => { // the same sheets the old Plan list opened: edit a task, event or note in place
+    const id = r.key.slice(r.key.indexOf('|') + 1)
+    if (r.kind === 'task') { const t = tasks.find((x) => x.clientId === id); if (t) setOpen({ t: 'item', item: { kind: 'task', item: t } }) }
+    else if (r.kind === 'event') { const e = events.find((x) => x.clientId === id); if (e) setOpen({ t: 'item', item: { kind: 'event', item: e } }) }
+    else if (r.kind === 'note') { const n = notes.find((x) => x.clientId === id); if (n) setOpen({ t: 'note', note: n }) }
+  }
+  const editable = (r: CalRow) => !locked && (r.kind === 'task' || r.kind === 'event' || r.kind === 'note')
+  const line = (r: CalRow) => (
+    <li key={r.key} data-kind={r.kind}>
+      {r.kind === 'task' && !locked && <button type="button" className="fm-chk" role="checkbox" aria-checked={r.done} aria-label={r.title} onClick={() => { const t = tasks.find((x) => `task|${x.clientId}` === r.key); if (t) void toggleTask(t) }} />}
+      {editable(r)
+        ? <button type="button" className="fm-item press" onClick={() => openRow(r)}><span className="grow"><b className={r.done ? 'done' : ''}>{r.title}</b><span className="sub">{r.sub}</span></span></button>
+        : <span className="grow"><b className={r.done ? 'done' : ''}>{r.title}</b><span className="sub">{r.sub}</span></span>}
+      <span className="fm2-tag" data-hue={KIND[r.kind].hue}><Icon name={KIND[r.kind].icon} size={16} />{KIND[r.kind].label}</span>
+    </li>
+  )
   const dots = (day: string) => kindsOn(day, src, today)
   const cell = (day: string, num: number, label: string, extra?: string) => {
     const k = dots(day)
     return (
-      <button type="button" key={day} className={`fm2-d${extra ? ' ' + extra : ''}`} aria-pressed={sel === day} data-today={day === today || undefined} onClick={() => setSel(day)}>
+      <button type="button" key={day} className={`fm2-d${extra ? ' ' + extra : ''}`} aria-pressed={sel === day} aria-current={day === today ? 'date' : undefined} data-today={day === today || undefined} onClick={() => setSel(day)}>
         {label && <small>{label}</small>}
         <span>{num}</span>
         <i aria-hidden="true">{k.map((x) => <b key={x} data-hue={KIND[x].hue} />)}</i>
@@ -87,22 +109,20 @@ export default function Calendar() {
         </div>
       )}
       <ul className="fm2-day" aria-label={dayLabel(sel, now)}>
-        {rows.map((r) => (
-          <li key={r.key} data-kind={r.kind}>
-            <span className="grow"><b className={r.done ? 'done' : ''}>{r.title}</b><span className="sub">{r.sub}</span></span>
-            <span className="fm2-tag" data-hue={KIND[r.kind].hue}><Icon name={KIND[r.kind].icon} size={16} />{KIND[r.kind].label}</span>
-          </li>
-        ))}
+        {rows.map(line)}
         {rows.length === 0 && <li className="fm2-none sub">{sel < today ? `Nothing on ${dayLabel(sel, now)}.` : emptyHint(readable)}</li>}
       </ul>
-      <div className="fm2-two">
-        {locked
-          ? <button type="button" className="btn2" disabled aria-label="Add, view only"><Icon name="lock" size={20} />View only</button>
-          : <button type="button" className="btn2" onClick={() => setOpen('item')}><Icon name="plus" size={20} />Add</button>}
-        <a className="btn2" href="#family/plan">Full plan</a>
-      </div>
-      {open === 'item' && <ItemSheet start={{ kind: 'task' }} day={addDay(sel, today)} people={readable} onClose={() => setOpen(null)} onNote={() => setOpen('note')} />}
-      {open === 'note' && <NoteSheet onClose={() => setOpen(null)} />}
+      {other.length > 0 && (
+        <>
+          <h3 className="fm2-sub">No date</h3>
+          <ul className="fm2-day" aria-label="Notes and reminders with no date" data-testid="cal-nodate">{other.map(line)}</ul>
+        </>
+      )}
+      {locked
+        ? <button type="button" className="btn2 fm2-add" disabled aria-label="Add, view only"><Icon name="lock" size={20} />View only</button>
+        : <button type="button" className="btn2 fm2-add" onClick={() => setOpen({ t: 'item', item: { kind: 'task' } })}><Icon name="plus" size={20} />Add event, reminder or note</button>}
+      {open?.t === 'item' && <ItemSheet start={open.item} day={addDay(sel, today)} people={readable} onClose={() => setOpen(null)} onNote={() => setOpen({ t: 'note' })} />}
+      {open?.t === 'note' && <NoteSheet note={open.note} onClose={() => setOpen(null)} />}
     </section>
   )
 }

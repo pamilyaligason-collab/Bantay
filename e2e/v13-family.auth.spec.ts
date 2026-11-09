@@ -33,12 +33,10 @@ for (const scheme of ['light', 'dark'] as const) {
       expect(box.width).toBeGreaterThanOrEqual(44); expect(box.height).toBeGreaterThanOrEqual(44)
       await expect(add).toHaveAttribute('href', '#me/family')
       await expect(page.getByRole('button', { name: 'Who to show: Me' })).toBeVisible()
-      const cards = page.getByTestId('person-card')
-      await expect(cards).toHaveCount(1)
-      await expect(cards.first()).toContainText('You')
-      await expect(page.getByTestId('facesrow')).not.toContainText('checked in') // no "N of M checked in"
-      expect((await cards.first().boundingBox())!.height).toBeGreaterThanOrEqual(196)
-      expect(await short(page, '.pc a, .pc button, .ps-pill')).toEqual([])
+      await expect(page.getByTestId('person-card')).toHaveCount(0) // S26 (D-168): no separate Today list
+      await expect(page.getByTestId('facesrow')).toHaveCount(0)
+      await expect(page.getByTestId('people-row').first()).toContainText('You') // my status is on my People card
+      expect(await short(page, '.pp-card a, .pp-card button, .ps-pill')).toEqual([])
       // Needs holds Ate Joy's missed dose as one line (no medicine, no number) and Papa's phone
       const needs = page.getByTestId('need-row')
       await expect(needs).toHaveCount(2)
@@ -46,8 +44,9 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByTestId('needs')).not.toContainText('Nasal')
       await expect(needs.nth(1)).toContainText("Papa Ben's phone may miss alarms")
       await expect(page.getByTestId('people-row')).toHaveCount(4) // S25: a 2-column grid of four cards, no See all
-      await expect(page.getByTestId('together-list').getByRole('link')).toHaveCount(4)
-      await expect(page.getByTestId('planrow')).toBeVisible()
+      await expect(page.getByTestId('together-list').getByRole('link')).toHaveCount(2) // Messages and Memories; Plan is part of the one Calendar card
+      await expect(page.getByTestId('planrow')).toHaveCount(0)
+      await expect(page.getByTestId('calendar')).toBeVisible()
       expect(await noSideways(page)).toBe(true)
       expect(await lowContrast(page, '.pc-line, .pc-body, .rw-sub, .rw-value, .sec-meta')).toEqual([])
       if (SHOTS) {
@@ -58,10 +57,14 @@ for (const scheme of ['light', 'dark'] as const) {
       }
     })
 
-    test('Open on a missed-dose line puts that person on show; the pill and Activity follow, the hash stays', async ({ page }) => {
+    test('Open on a missed-dose line opens that person page; picking them in the pill puts their Activity on show, the hash stays', async ({ page }) => {
       await openFamily(page)
+      await expect(page.getByTestId('people-row').filter({ hasText: 'Ate' }).first()).toContainText('Missed a medicine') // today status on the People card
       await page.getByTestId('need-row').first().getByRole('button', { name: /^Open/ }).click()
-      await expect(page.getByTestId('person-card').first()).toHaveAttribute('aria-label', /^Ate Joy\. Missed a medicine/)
+      await expect(page).toHaveURL(/#family\/people\/[^/]+$/)
+      await page.goto('/#family')
+      await page.getByRole('button', { name: /^Who to show/ }).click()
+      await page.getByRole('dialog', { name: 'Who to show' }).getByRole('button', { name: /Ate Joy/ }).click()
       await expect(page.getByRole('button', { name: 'Who to show: Ate' })).toBeVisible()
       await expect(page.getByTestId('activity')).toContainText('Ate Joy · 142 high')
       await expect(page.getByTestId('activity')).not.toContainText('You')
@@ -80,15 +83,15 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(ac).toContainText(/No step readings for/)
     })
 
-    test('F-lane shape: People <= 296, plan rows <= 72, no im-ok row, one h1 on Memories, Messages has no empty strip', async ({ page }) => {
+    test('F-lane shape: People <= 296, the old Plan link opens the Calendar, no im-ok row, one h1 on Memories, Messages has no empty strip', async ({ page }) => {
       await openFamily(page)
       expect((await page.getByTestId('people').boundingBox())!.height).toBeLessThanOrEqual(296) // measured 286 at 390 x 844 (title, 3 rows, the 48 px foot row); a fourth row adds about 66, so the fold still fails here if it stops folding. Was 260 before the foot row.
       await expect(page.getByRole('button', { name: /I'm OK/ })).toHaveCount(0)
       await expect(page.getByTestId('papers-card')).toContainText('Labs, photos and documents'); await expect(page.getByTestId('papers-review')).toHaveCount(0) // the fixture queue is empty; the counts are unit tested (TogetherList)
       if (SHOTS) { await page.locator('.bt .scroll').evaluate((el) => { el.scrollTop = 0 }); await page.screenshot({ path: `docs/redesign-2026-10-31/shots/gaps-F/family-${scheme}.png` }) }
       await page.goto('/#family/plan')
+      await expect(page).toHaveURL(/#family\/calendar$/)
       await expect(page.locator('h1').first()).toBeVisible()
-      for (const h of await page.locator('.fm-rows .fm-row').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) expect(h).toBeLessThanOrEqual(72)
       await page.goto('/#family/memories')
       await expect(page.locator('h1')).toHaveCount(1)
       await expect(page.getByText('Off for now')).toHaveCount(0)

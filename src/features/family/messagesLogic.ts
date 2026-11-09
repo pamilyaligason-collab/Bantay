@@ -37,10 +37,17 @@ export function classifyFile(f: { type: string; name: string; size: number }): {
   return t ? { kind: 'file', ...t } : { error: 'type' }
 }
 
-/** The Messenger link for video. No Messenger name is saved for anyone, so unless one is given this opens Messenger itself. */
-export function messengerHref(handle?: string | null): { href: string; label: string } {
+/** The Messenger link for one person. No saved handle (or an unsafe one) = null = no button; it never falls back to messenger.com. */
+export function messengerHref(handle?: string | null): { href: string; label: string } | null {
   const h = (handle ?? '').trim()
-  return /^[A-Za-z0-9.]{5,50}$/.test(h) ? { href: `https://m.me/${h}`, label: 'Video call on Messenger' } : { href: 'https://www.messenger.com/', label: 'Use Messenger for video' }
+  return /^[A-Za-z0-9.]{5,50}$/.test(h) ? { href: `https://m.me/${h}`, label: 'Messenger' } : null
+}
+
+/** The WhatsApp chat link from a saved number written with its country code (+63...). A local 09... number has no country code, so it gets no button. */
+export function whatsappHref(phone?: string | null): { href: string; label: string } | null {
+  const raw = (phone ?? '').trim()
+  const d = raw.replace(/\D/g, '')
+  return raw.startsWith('+') && d.length >= 8 && d.length <= 15 ? { href: `https://wa.me/${d}`, label: 'WhatsApp' } : null
 }
 
 export const mmss = (s: number) => `${Math.floor(s / 60)}:${String(Math.max(0, Math.floor(s) % 60)).padStart(2, '0')}`

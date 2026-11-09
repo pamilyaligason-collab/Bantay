@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const person = (id: string, name: string, isMe = false) => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe })
+const person = (id: string, name: string, isMe = false, extra: { phone?: string; messenger?: string } = {}) => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe, ...extra })
 const h = vi.hoisted(() => ({ writable: ['ma'] as string[], acting: false, flags: { me: '1 to check', ma: '2 to check', pa: '3 to check' } as Record<string, string>, checked: ['me', 'ma', 'pa'] as string[] }))
 vi.mock('../auth/client', () => ({ supabase: {} })) // signed in
 vi.mock('./CarerCards', () => ({ useCarerIds: () => h.writable }))
@@ -70,3 +70,31 @@ describe('PeopleList flag word (D-109)', () => {
     expect(grid().lastElementChild).toBe(screen.getByTestId('people-add'))
   })
 })
+
+describe('PeopleList reach buttons and today status (D-168)', () => {
+  it('Message on everyone but you; Messenger only with a saved handle, WhatsApp only with a +country number', () => {
+    const list = [person('me', 'Rey Villar', true, { phone: '+63 917 000 0000', messenger: 'rey.villar' }), person('ma', 'Ma Villar', false, { phone: '+63 917 123 4567', messenger: 'ma.villar' }), person('pa', 'Papa Villar', false, { phone: '0917 123 4567' }), person('ti', 'Tita Cruz')]
+    render(<PeopleList people={list} />)
+    expect(within(row(/You/)).queryByRole('button', { name: 'Message' })).toBeNull() // not for yourself
+    const ma = within(row(/Ma/))
+    expect(ma.getByRole('button', { name: 'Message' })).toBeTruthy()
+    expect(ma.getByRole('link', { name: 'Messenger' }).getAttribute('href')).toBe('https://m.me/ma.villar')
+    expect(ma.getByRole('link', { name: 'WhatsApp' }).getAttribute('href')).toBe('https://wa.me/639171234567')
+    const pa = within(row(/Papa/)) // local number, no handle: neither app button
+    expect(pa.getByRole('button', { name: 'Message' })).toBeTruthy()
+    expect(pa.queryByRole('link', { name: 'Messenger' })).toBeNull()
+    expect(pa.queryByRole('link', { name: 'WhatsApp' })).toBeNull()
+    const ti = within(row(/Tita/)) // nothing saved: never a messenger.com link
+    expect(ti.queryByRole('link', { name: /Messenger|WhatsApp/ })).toBeNull()
+    expect(document.querySelector('a[href*="messenger.com"]')).toBeNull()
+  })
+
+  it('shows what needs a look from the focus on the card, for the people passed in only', () => {
+    const f = (id: string, kind: string, line: string) => ({ person: people.find((p) => p.id === id)!, focus: { kind, line, tint: 'red', body: '', action: { label: 'Open', kind: 'open' } }, missedDoses: [], alertIds: [], asks: [] }) as never
+    render(<PeopleList people={people} focus={[f('ma', 'missed', 'Missed a medicine'), f('me', 'ok', 'OK 7:40 AM')]} />)
+    expect(within(row(/Ma/)).getByTestId('pp-today').textContent).toBe('Missed a medicine')
+    expect(within(row(/You/)).queryByTestId('pp-today')).toBeNull() // an ok focus adds no second line
+    expect(within(row(/Papa/)).queryByTestId('pp-today')).toBeNull() // read-only link: not passed, nothing said
+  })
+})
+

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { ActivityCard } from '../features/family/ActivityCard'
 import FamilyFeed from '../features/family/FamilyFeed'
+import Calendar from '../features/family/Calendar'
 import CalendarPage from '../features/family/CalendarPage'
 import FamilyMessages from '../features/family/FamilyMessages'
 import { familyFeedOn, familyPlacesOn } from '../features/family/flags'
@@ -14,12 +15,10 @@ import { PeopleList } from '../features/family/PeopleList'
 import PlaceNotice from '../features/family/PlaceNotice'
 import { PlaceScreen, WhereCard } from '../features/family/PlaceSection'
 import { usePlaces } from '../features/family/placeApi'
-import PlanPage from '../features/family/PlanPage'
 import Report from '../features/family/Report'
 import { useCarerIds } from '../features/family/CarerCards'
 import { StormRollCall } from '../features/family/StormRollCall'
 import { PapersSection, SEEN, TogetherList } from '../features/family/TogetherList'
-import { TodayCarousel } from '../features/family/TodayCarousel'
 import '../features/family/s25-family.css'
 import { useFamilyScope, useLinkedPeople } from '../features/family/useFamilyScope'
 import { useFocuses } from '../features/family/useFocuses'
@@ -34,15 +33,15 @@ import '../features/family/family.css'
 
 export { messagesPreview } from '../features/family/messagesPreview'
 
-export type FamilySeg = 'home' | 'messages' | 'plan' | 'calendar' | 'papers' | 'memories' | 'feed' | 'map'
+export type FamilySeg = 'home' | 'messages' | 'calendar' | 'papers' | 'memories' | 'feed' | 'map'
 
-/** Which part of Family the hash names. #family and #family/people are Home, #family/messages the one shared chat, #family/plan and #plan the Plan, #family/papers the Papers screen
+/** Which part of Family the hash names. #family and #family/people are Home, #family/messages the one shared chat, #family/calendar the Calendar (#family/plan and #plan are the old Plan and open it, D-168), #family/papers the Papers screen
  *  (#records and #health/papers redirect there, routes.ts); #family/people/<id> is one member's page. The hash is the source of truth so deep links and Back work. */
 export function parseFamily(h: string): { seg: FamilySeg; member: string | null } {
   const [head, a, b] = h.replace(/^#/, '').split('/')
   if (head === 'family' && a === 'people' && b) return { seg: 'home', member: decodeURIComponent(b) }
   const k = head === 'family' ? a : head
-  return { seg: k === 'plan' ? 'plan' : head === 'family' && k === 'calendar' ? 'calendar' : head === 'family' && k === 'messages' ? 'messages' : head === 'family' && k === 'papers' ? 'papers' : head === 'family' && k === 'memories' ? 'memories' : head === 'family' && k === 'feed' ? 'feed' : head === 'family' && k === 'map' ? 'map' : 'home', member: null }
+  return { seg: k === 'plan' ? 'calendar' : head === 'family' && k === 'calendar' ? 'calendar' : head === 'family' && k === 'messages' ? 'messages' : head === 'family' && k === 'papers' ? 'papers' : head === 'family' && k === 'memories' ? 'memories' : head === 'family' && k === 'feed' ? 'feed' : head === 'family' && k === 'map' ? 'map' : 'home', member: null }
 }
 
 /** #family/people/<id>/report is that member's health report. */
@@ -58,7 +57,7 @@ function groupsOf(options: { id: string; isMe: boolean }[], writable: string[], 
   return out
 }
 
-/** The Family root (v13, D-109): large title with the "Who to show" pill and Add, then (S25 board) Together, Papers, Where everyone is, Needs you now, People, and last the shown person's Today and Activity. It opens on Me and shows one person at a time; only a writer carer's "missed a medicine" reaches the page for anyone else. Everything is read from this phone; nothing is invented. */
+/** The Family root (v13, D-109): large title with the "Who to show" pill and Add, then (S26 board, D-168) the one Calendar card (Plan folded in), Together (Messages, Memories), Papers, Where everyone is, Needs you now, People (each card carries today's status) and last the shown person's Activity. It opens on Me and shows one person at a time; only a writer carer's "missed a medicine" reaches the page for anyone else. Everything is read from this phone; nothing is invented. */
 function Root() {
   const { shown, options, select, isOwner } = useFamilyScope()
   const writable = useCarerIds()
@@ -66,9 +65,8 @@ function Root() {
   const linked = useLinkedPeople()
   const watch = useMemo(() => options.filter((p) => p.id === shown.id || (!acting && writable.includes(p.id))), [options, shown.id, acting, writable]) // the person on show, plus the people you care for so their missed doses stay in Needs you now
   const fx = useFocuses(watch)
-  const onShow = useMemo(() => ({ ...fx, items: fx.items.filter((i) => i.person.id === shown.id) }), [fx, shown.id])
   const needs = useMemo(() => ({ ...fx, items: fx.items.filter((i) => i.person.isMe || writable.includes(i.person.id)) }), [fx, writable]) // a view-only person on show must not raise "missed a medicine"
-  const pick = (id: string) => { select(id); const today = document.querySelector('[data-testid="facesrow"]'); if (today?.scrollIntoView) today.scrollIntoView({ block: 'start' }); else document.querySelector('.bt .scroll')?.scrollTo?.({ top: 0 }) } // S25: Today (the shown person) now sits under People, so show it
+  const pick = (id: string) => { select(id); document.querySelector('.bt .scroll')?.scrollTo?.({ top: 0 }) }
   const me = options.find((p) => p.isMe)
   const groups = useMemo(() => groupsOf(options, writable, isOwner), [options, writable, isOwner])
   const places = usePlaces() // null with the places flag off, offline, or before 0052 is applied
@@ -78,13 +76,13 @@ function Root() {
       <LargeTitle kicker=" " title="Family" actions={<HeadActions>{pill}<a className="btn-round" href="#me/family" aria-label="Add a family member"><Icon name="plus" size={20} /></a></HeadActions>} />
       <IncomingSos placement="family" />
       <StormRollCall /> {/* shows itself only while a PAGASA wind signal is live */}
+      <Calendar /> {/* the one Calendar card (Plan folded in) leads, as on the S26 board */}
       <TogetherList />
       <PapersSection />
       <PlaceNotice />
       <WhereCard places={places} />
-      <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} shownId={shown.id} onSelect={pick} />
-      <PeopleList people={linked} places={places} />
-      <TodayCarousel people={shown.id ? [shown] : []} fx={onShow} />
+      <NeedsList fx={needs} people={options} selfName={me?.name ?? ''} onSelect={(id) => { location.hash = `family/people/${id}` }} />
+      <PeopleList people={linked} places={places} focus={needs.items} selfName={me?.name ?? ''} />
       <ActivityCard people={shown.id ? [shown] : []} />
     </>
   )
@@ -108,7 +106,6 @@ export default function Family() {
   if (seg === 'map') return familyPlacesOn() ? (<><SubHeader title="Where everyone is" backHref="#family" backLabel="Back to Family" /><PlaceScreen /></>) : null
   if (seg === 'memories') return (<><LargeTitle back={{ href: '#family', label: 'Family' }} title="Memories" /><Memories /></>)
   if (seg === 'messages') return (<><SubHeader title="Messages" backHref="#family" backLabel="Back to Family" /><FamilyMessages /></>)
-  if (seg === 'plan') return <PlanPage />
   if (seg === 'calendar') return <CalendarPage />
   return <Root />
 }

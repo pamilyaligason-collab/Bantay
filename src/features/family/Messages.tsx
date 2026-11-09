@@ -71,14 +71,14 @@ export default function Messages({ who, people, onClose, onOpenPage, nudge, inli
 
   const nameOf = (m: Msg) => (m.mine ? 'You' : first(people.find((p) => p.id === m.senderPersonId)?.name ?? 'Family'))
   const tel = dial(who.phone)
-  const mess = messengerHref(null)
+  const mess = messengerHref(who.messenger)
 
   const body = (
     <>
       {inline ? <div><h2 className="h2">Family messages</h2>{people.length > 0 && <p className="sub msg-lead">{people.length} {people.length === 1 ? 'person' : 'people'}, one shared chat</p>}</div> : <p className="sub msg-lead">One private thread for the whole family on Bantay.</p>}
       <div className="msg-actions">
         {tel && !who.isMe && <a className="pill" href={`tel:${tel}`} aria-label={`Call ${first(who.name)}`}><Icon name="phone" size={20} />Call</a>}
-        <a className="pill" href={mess.href} target="_blank" rel="noreferrer"><Icon name="out" size={20} />{mess.label}</a>
+        {mess && <a className="pill" href={mess.href} target="_blank" rel="noreferrer"><Icon name="out" size={20} />{mess.label}</a>}
         {!who.isMe && <button type="button" className="pill" onClick={onOpenPage}>{first(who.name)}&apos;s page</button>}
       </div>
       {nudge && <a className="fm-nudge msg-nudge" href={nudge.href}>{nudge.text}</a>}

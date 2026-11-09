@@ -1,14 +1,16 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../auth/session', () => ({ getMember: async () => ({ userId: 'u1', personId: 'p1', role: 'member', handle: null }) }))
 const person = (id: string, name: string, isMe = false) => ({ id, name, photoPath: null, thumb: null, phone: null, birthdate: null, isMe })
 vi.mock('./useFamilyScope', () => ({ useLinkedPeople: () => [person('p1', 'Rey Villar', true), person('p2', 'Ma Villar')] })) // you and one link (invented); p3 is neither
+import { db } from '../../db'
 import Calendar from './Calendar'
+import { dayKey } from './events'
 import { fdb } from './store'
 
-beforeEach(async () => { await Promise.all([fdb.tasks.clear(), fdb.events.clear(), fdb.notes.clear()]) })
+beforeEach(async () => { await Promise.all([fdb.tasks.clear(), fdb.events.clear(), fdb.notes.clear(), db.outbox.clear()]) })
 afterEach(() => { cleanup(); vi.useRealTimers() })
 
 // ML-38: "today" is the phone's local day. Around midnight the clock is faked (Date only, so the databases keep working) to 23:30 and 00:30 local.
@@ -52,5 +54,78 @@ describe('Calendar rows by person', () => {
     await waitFor(() => expect(list.textContent).toContain('Family lunch'))
     for (const t of ['Own checkup', 'Ma dentist', 'Fetch Ma']) expect(list.textContent).toContain(t)
     for (const t of ['Tita clinic', 'Pay for Tita']) expect(list.textContent).not.toContain(t)
+  })
+})
+
+// D-168: Plan folded into the Calendar. Everything the old Plan list held stays visible, and the same add / tick / edit flows work.
+describe('Calendar holds the old Plan (D-168)', () => {
+  const add = () => fireEvent.click(screen.getByRole('button', { name: 'Add event, reminder or note' }))
+
+  it('today is aria-current=date; one Add button names all three kinds; the old Full plan link is gone', async () => {
+    render(<Calendar />)
+    const today = await screen.findByRole('button', { pressed: true })
+    expect(today.getAttribute('aria-current')).toBe('date')
+    expect(document.querySelectorAll('[aria-current="date"]')).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Add event, reminder or note' })).toBeTruthy()
+    expect(screen.queryByRole('link', { name: 'Full plan' })).toBeNull()
+  })
+
+  it('shows every saved Plan item: dated task, event, pinned note, an undated task and an unpinned note under No date', async () => {
+    const day = dayKey(new Date())
+    await fdb.tasks.bulkPut([
+      { clientId: 't1', title: 'Pay water bill', due: day, assigneePersonId: null, done: false },
+      { clientId: 't2', title: 'Renew PhilHealth', due: null, assigneePersonId: 'p2', done: false }
+    ])
+    await fdb.events.put({ clientId: 'e1', title: 'Family dinner', startsAt: new Date().toISOString(), endsAt: null, allDay: true, personId: null })
+    await fdb.notes.bulkPut([{ clientId: 'n1', body: 'Gate code 1234', pinned: true }, { clientId: 'n2', body: 'Wifi is in the drawer', pinned: false }])
+    render(<Calendar />)
+    await waitFor(() => expect(screen.getByTestId('cal-nodate').textContent).toContain('Renew PhilHealth'))
+    const text = screen.getByTestId('calendar').textContent ?? ''
+    for (const t of ['Pay water bill', 'Family dinner', 'Gate code 1234', 'Pinned note', 'Wifi is in the drawer', 'Renew PhilHealth']) expect(text).toContain(t)
+    expect(screen.getByTestId('cal-nodate').textContent).toContain('No date')
+    for (const k of ['Task', 'Event', 'Note']) expect(within(screen.getByTestId('calendar')).getAllByText(k).length).toBeGreaterThan(0) // each row carries its type tag
+  })
+
+  it('adds a task, ticks it and writes an outbox row each time', async () => {
+    render(<Calendar />)
+    await screen.findByRole('button', { pressed: true })
+    add()
+    fireEvent.change(screen.getByLabelText('What needs doing?'), { target: { value: 'Buy rice' } })
+    await waitFor(() => expect(within(screen.getByLabelText('Who does it?')).getAllByRole('option').length).toBe(3)) // Everyone + two people
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    const box = await screen.findByRole('checkbox', { name: 'Buy rice' })
+    expect(box.getAttribute('aria-checked')).toBe('false')
+    expect((await fdb.tasks.toArray())[0]).toMatchObject({ title: 'Buy rice', due: dayKey(new Date()) })
+    fireEvent.click(box)
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: 'Buy rice' }).getAttribute('aria-checked')).toBe('true'))
+    await waitFor(async () => expect(await db.outbox.count()).toBe(2))
+  })
+
+  it('refuses an empty title and saves nothing', async () => {
+    render(<Calendar />)
+    await screen.findByRole('button', { pressed: true })
+    add()
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Type a name first.')
+    expect(await db.outbox.count()).toBe(0)
+  })
+
+  it('opens a saved task, event or note from its row to edit it', async () => {
+    await fdb.notes.put({ clientId: 'n2', body: 'Wifi is in the drawer', pinned: false })
+    render(<Calendar />)
+    fireEvent.click(await screen.findByRole('button', { name: /Wifi is in the drawer/ }))
+    expect((await screen.findByLabelText('Note for the family') as HTMLTextAreaElement).value).toBe('Wifi is in the drawer')
+  })
+
+  it('adds a pinned note from the one Add button', async () => {
+    render(<Calendar />)
+    await screen.findByRole('button', { pressed: true })
+    add()
+    fireEvent.click(screen.getByRole('button', { name: 'Note' }))
+    fireEvent.change(screen.getByLabelText('Note for the family'), { target: { value: 'Gate code 1234' } })
+    fireEvent.click(screen.getByLabelText('Pin it to the top'))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    await waitFor(() => expect(screen.getByRole('list', { name: 'Today' }).textContent).toContain('Pinned note'))
+    expect((await fdb.notes.toArray())[0]).toMatchObject({ body: 'Gate code 1234', pinned: true })
   })
 })

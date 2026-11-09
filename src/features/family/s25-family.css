@@ -22,6 +22,20 @@
 .pp-st[data-k="look"] { color: var(--tint-amber-ink); }
 .pp-add { align-items: center; justify-content: center; text-align: center; gap: 8px; background: transparent; box-shadow: none; border: 1.5px dashed var(--tab-accent, var(--green)); color: var(--tab-accent, var(--green)); }
 
+/* S26 (D-168): the person card is a wrapper (link + reach buttons + carer actions), today's status sits inside it */
+.pp-main { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; min-width: 0; color: inherit; text-decoration: none; }
+.pp-today { font-weight: 600; color: var(--tint-amber-ink); }
+.pp-card .pc-btn, .pc-focus .pc-btn { min-height: 44px; padding: 0 14px; border-radius: 999px; font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 0; background: var(--soft); color: var(--green); }
+.pc-focus { display: grid; gap: 8px; width: 100%; margin-top: 4px; }
+.pc-focus .pc-primary { flex: 1; background: var(--btn); color: var(--btn-fg); }
+.pp-reach { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+/* Jack peeks over the right 48 px of the viewport: on the Family root the Papers buttons stop short of him (ML-44); at 200% text there is no room to spare, so the strip is left alone there */
+@media (min-width: 300px) { .fm-papers .fm-pa { margin-right: 52px; } }
+/* Calendar card on the Family root: "No date" group and the one Add button */
+.fm2-sub { margin: 12px 0 0; font-size: 15px; font-weight: 700; color: var(--muted); }
+.fm2-add { width: 100%; min-height: 48px; margin-top: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-sizing: border-box; }
+.fm2-day .fm-item { flex: 1; min-width: 0; min-height: 44px; }
+
 /* Memories and the Jack strip */
 .mem-tile { width: auto; }
 .mem-img { width: 100%; height: auto; aspect-ratio: 1; }

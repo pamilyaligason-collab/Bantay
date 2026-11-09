@@ -8,6 +8,8 @@ const REDIRECT: [RegExp, string][] = [
   [/^#discover\/learn\/library$/, '#health/library'], // S25 (D-155): the library lives in Health again
   [/^#discover\/learn\/library\/(.+)$/, '#health/library/$1'],
   [/^#health\/videos$/, '#health'], // S25: Health videos are a section of the Health overview
+  // S26 W4F (D-168): Plan folded into the Calendar. The old links open the calendar page, which lists the same saved items.
+  [/^#(family\/)?plan$/, '#family/calendar'],
   [/^#family\/people$/, '#family'],
   [/^#people$/, '#family']
 ]
