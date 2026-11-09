@@ -7,7 +7,11 @@ Node 24 built-ins only. One request at a time, 3 s gap, backoff on 429/5xx, raw 
 - Regions: `admin_level=3` relations inside `ISO3166-1=PH` (18). A region that times out is split by province (`admin_level=4`).
 - Barangay relations: `boundary=administrative` + `admin_level=10`, `out center`.
 - Barangay nodes: OSM has relations for only about 5,000 of the roughly 42,000 barangays; most are nodes tagged `admin_type:PH=barangay` (or `special_barangay`). Puroks and sitios carry `admin_level=10` too, so `admin_type:PH` is the filter. Untagged `place=village` nodes fill gaps. `place=neighbourhood` nodes are left out (puroks and subdivisions, about 3x too many). A node is dropped when a relation of the same name lies within about 2 km.
-- Town: the tag `is_in:city` / `is_in:municipality` / `addr:city` when present, else the municipality or city relation (`admin_level=6|7`) that lists the barangay as a member, else the smallest municipality bounding box holding the point. Empty string when none matches.
+- Town: admin_level 6 city or municipality only. admin_level 7 relations in PH OSM are city districts ("Sixth District", mostly Metro Manila): each is mapped to the level-6 city that lists it as a member, else the smallest level-6 box that holds its box. The tag `is_in:city` / `is_in:municipality` / `addr:city` / `addr:municipality` wins when present (and is ignored when it names a district); else the level-6 or mapped-district relation that lists the barangay as a member; else the smallest such bounding box holding the point. Empty string when none matches. The build fails if any town matches /district/i and prints the count.
+- Rows named `Purok ...` or `Sitio ...` are dropped (not barangays), at the build.
+
+## How the app uses it
+`src/features/location/barangayPacks.ts` reads `index.json` once and fetches only tiles listed there (a non-JSON content type or HTTP error is empty for the session). A bare-number name reads "Barangay 670". `nearestPlace.ts` looks up each good GPS fix once (about 110 m key, a miss is asked again after 10 minutes) and `placeWords.ts` shows "<barangay>, <town>" (name only when the town is empty) once it lands, with the zone/area wording until then and when nothing is found. `src/sw.ts` caches `/geo/barangays/*.json` cache-first.
 
 ## Output
 - `<lat>_<lon>.json`: tile = floor of lat and lon, rows `[lat, lon, name, town]`, 4 decimals (about 11 m).

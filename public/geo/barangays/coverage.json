@@ -14,7 +14,7 @@
  {
   "region": "Ilocos Region",
   "barangays": 156,
-  "placeNodes": 2710,
+  "placeNodes": 2708,
   "splitByProvince": false
  },
  {
@@ -26,13 +26,13 @@
  {
   "region": "Cagayan Valley",
   "barangays": 92,
-  "placeNodes": 1780,
+  "placeNodes": 1776,
   "splitByProvince": false
  },
  {
   "region": "Central Luzon",
   "barangays": 911,
-  "placeNodes": 1841,
+  "placeNodes": 1840,
   "splitByProvince": false
  },
  {
@@ -44,13 +44,13 @@
  {
   "region": "Bicol Region",
   "barangays": 63,
-  "placeNodes": 2861,
+  "placeNodes": 2860,
   "splitByProvince": false
  },
  {
   "region": "Western Visayas",
   "barangays": 165,
-  "placeNodes": 2831,
+  "placeNodes": 2822,
   "splitByProvince": false
  },
  {
@@ -62,7 +62,7 @@
  {
   "region": "Eastern Visayas",
   "barangays": 278,
-  "placeNodes": 3563,
+  "placeNodes": 3562,
   "splitByProvince": false
  },
  {
@@ -80,7 +80,7 @@
  {
   "region": "Soccsksargen",
   "barangays": 72,
-  "placeNodes": 1015,
+  "placeNodes": 1014,
   "splitByProvince": false
  },
  {

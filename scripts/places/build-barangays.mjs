@@ -54,7 +54,7 @@ async function scan(id, label) {
 // Untagged place=village nodes are kept as a gap filler; neighbourhood nodes are puroks/subdivisions and are left out.
 const isBrgy = (t) => !t['admin_type:PH'] || /^(special_)?barangay$/.test(t['admin_type:PH'])
 const placeNodes = (id) => overpass('nodes2-' + id, q(id, '(node(area.r)["admin_type:PH"~"^(special_)?barangay$"]["name"];node(area.r)["place"="village"][!"admin_type:PH"]["name"];)', '')).then((j) => j.elements)
-const hint = (t) => (t?.['is_in:city'] || t?.['is_in:municipality'] || t?.['addr:city'] || t?.['addr:municipality'] || '').trim()
+const hint = (t) => { const h = (t?.['is_in:city'] || t?.['is_in:municipality'] || t?.['addr:city'] || t?.['addr:municipality'] || '').trim(); return /\bdistrict\b/i.test(h) ? '' : h }
 
 async function main() {
   const ph = await overpass('regions', '[out:json][timeout:120];area["ISO3166-1"="PH"]->.ph;rel(area.ph)["boundary"="administrative"]["admin_level"="3"];out tags;')
@@ -74,13 +74,23 @@ async function main() {
     }
     let nB = 0, nN = 0
     for (const d of scans) {
-      // town: membership in a municipality relation first, else the smallest municipality bbox holding the point
+      // town = admin_level 6 city/municipality only. admin_level 7 relations in PH OSM are city districts ("Sixth District"): each is mapped to the level-6 city that lists it as a member, else to the smallest level-6 box that holds its box.
+      const l6 = d.towns.filter((t) => t.tags?.admin_level === '6' && t.bounds && nm(t.tags))
+      const inside = (b, o) => b.minlat >= o.minlat - 0.001 && b.maxlat <= o.maxlat + 0.001 && b.minlon >= o.minlon - 0.001 && b.maxlon <= o.maxlon + 0.001
+      const area = (b) => (b.maxlat - b.minlat) * (b.maxlon - b.minlon)
+      const parentOf = (t) => {
+        const listed = d.towns.find((p) => p.tags?.admin_level === '6' && nm(p.tags) && (p.members ?? []).some((m) => m.type === 'relation' && m.ref === t.id))
+        if (listed) return nm(listed.tags)
+        const box = t.bounds ? l6.filter((p) => inside(t.bounds, p.bounds)).sort((x, y) => area(x.bounds) - area(y.bounds))[0] : undefined
+        return box ? nm(box.tags) : ''
+      }
+      const townOfRel = new Map(d.towns.filter((t) => nm(t.tags)).map((t) => [t.id, t.tags.admin_level === '6' ? nm(t.tags) : parentOf(t) || '']))
       const byMember = new Map()
-      for (const t of d.towns) for (const m of t.members ?? []) if (m.type === 'relation') byMember.set(m.ref, nm(t.tags))
-      const bbs = d.towns.filter((t) => t.bounds).map((t) => ({ n: nm(t.tags), b: t.bounds, a: (t.bounds.maxlat - t.bounds.minlat) * (t.bounds.maxlon - t.bounds.minlon) })).sort((x, y) => x.a - y.a)
+      for (const t of d.towns) { const tn = townOfRel.get(t.id); if (tn) for (const m of t.members ?? []) if (m.type === 'relation') byMember.set(m.ref, tn) }
+      const bbs = d.towns.filter((t) => t.bounds && townOfRel.get(t.id)).map((t) => ({ n: townOfRel.get(t.id), b: t.bounds, a: area(t.bounds) })).sort((x, y) => x.a - y.a)
       const townAt = (lat, lon) => bbs.find((t) => lat >= t.b.minlat && lat <= t.b.maxlat && lon >= t.b.minlon && lon <= t.b.maxlon)?.n ?? ''
       const add = (lat, lon, name, town) => {
-        if (!name || typeof lat !== 'number' || typeof lon !== 'number') return false
+        if (!name || /^(purok|sitio)\b/i.test(name) || typeof lat !== 'number' || typeof lon !== 'number') return false
         const la = lat.toFixed(4), lo = lon.toFixed(4)
         rows.set(`${la}|${lo}|${name}`, [Number(la), Number(lo), name, town])
         return true
@@ -97,6 +107,9 @@ async function main() {
     coverage.push({ region: label, barangays: nB, placeNodes: nN, splitByProvince: scans.length > 1 })
     console.log(`${label}: ${nB} barangays, ${nN} place nodes`)
   }
+  const districts = [...rows.values()].filter((r) => /\bdistrict\b/i.test(r[3])).length
+  console.log(`towns matching /district/: ${districts}`)
+  if (districts > 0) { console.error(`FAIL: ${districts} rows have a district as town`); process.exit(1) }
   const tiles = new Map()
   for (const r of rows.values()) {
     const k = `${Math.floor(r[0])}_${Math.floor(r[1])}`
