@@ -55,7 +55,7 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [195, 844
       await setScheme(page, scheme)
       const talk = page.getByTestId('today-talk'), fx = page.getByTestId('today-fx'), card = page.getByTestId('today-lotto')
       await expect(talk).toBeVisible()
-      await expect(talk.getByRole('link', { name: /Talk to someone/ })).toHaveAttribute('href', '#calm')
+      await expect(talk.getByRole('link', { name: /See hotlines/ })).toHaveAttribute('href', '#calm')
       expect((await talk.getByRole('link').boundingBox())!.height).toBeGreaterThanOrEqual(47.5)
       expect(await talk.evaluate((el) => getComputedStyle(el).boxShadow), 'not the hero: resting shadow, not --shadow-hero').not.toBe(await page.evaluate(() => { const d = document.createElement('div'); d.style.boxShadow = 'var(--shadow-hero)'; document.body.appendChild(d); const v = getComputedStyle(d).boxShadow; d.remove(); return v }))
       await expect(fx).toBeVisible()

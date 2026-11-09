@@ -4,8 +4,8 @@ import { Icon } from '../shell/Icon'
 import { crisisLines, telHref, type HotlineRow } from './crisis'
 import './calm.css'
 
-/** S26 (D-164), softened S27: a quiet Today card below Calm. Calm teal (never SOS red, never the 911 button style), no hero depth. "Open" opens #calm, where the numbers are (CrisisCard below);
- *  911 stays first in the words. Tracks card_talk when shown and when Talk is tapped. */
+/** S26 (D-164), softened S27: a quiet Today card below Calm. Calm teal (never SOS red, never the 911 button style), no hero depth. "See hotlines" opens #calm, where the numbers are (CrisisCard below);
+ *  911 stays first in the words. Tracks card_talk on tap only. */
 export function TalkCard() {
   // card_talk is recorded on tap only (D-160)
   return (
@@ -15,7 +15,7 @@ export function TalkCard() {
         <h2 id="cm-talk-h" className="cm-talk-t">Here if you need to talk</h2>
         <p className="cm-talk-s">Hotlines and calming tools, any time. In an emergency, call 911.</p>
       </div>
-      <a className="cm-talk-btn" href="#calm" aria-label="Talk to someone: open hotline numbers" onClick={() => void track('action', 'card_talk')}>Open</a>
+      <a className="cm-talk-btn" href="#calm" aria-label="See hotlines and calming tools" onClick={() => void track('action', 'card_talk')}>See hotlines</a>
     </section>
   )
 }

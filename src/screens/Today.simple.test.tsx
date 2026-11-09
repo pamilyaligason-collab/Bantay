@@ -73,7 +73,7 @@ describe('Today simple mode', () => {
     expect((await screen.findByRole('link', { name: 'Medicines' })).getAttribute('href')).toBe('#health/meds')
     expect(screen.getByRole('button', { name: 'Check my blood pressure' })).toBeTruthy()
   })
-  it('full page order: weather, warning, family alert card, Talk, My day, Calm, Your numbers, then More', async () => {
+  it('full page order: weather, warning, family alert card, My day, Calm, Talk, Your numbers, then More', async () => {
     const { container } = render(<Today />)
     await screen.findByTestId('myday')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).filter((id) => !id!.startsWith('head-')) // the bell and avatar in the title row

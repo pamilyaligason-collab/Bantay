@@ -36,12 +36,12 @@ describe('CrisisCard', () => {
 })
 
 describe('TalkCard (quiet Today card, S27)', () => {
-  it('names the card, leads with 911 in words, and Open opens #calm with a 48 px target; tracks card_talk on tap only', () => {
+  it('names the card, leads with 911 in words, and See hotlines opens #calm with a 48 px target; tracks card_talk on tap only', () => {
     tr.mockClear()
     render(<TalkCard />)
     expect(screen.getByRole('heading', { name: 'Here if you need to talk' })).toBeTruthy()
     expect(screen.getByText(/In an emergency, call 911\./)).toBeTruthy()
-    const talk = screen.getByRole('link', { name: /Talk to someone/ })
+    const talk = screen.getByRole('link', { name: /See hotlines/ })
     expect(talk.getAttribute('href')).toBe('#calm')
     expect(tr).not.toHaveBeenCalled()
     fireEvent.click(talk)
@@ -56,7 +56,7 @@ describe('TalkCard (quiet Today card, S27)', () => {
   const pick = (block: string, name: string) => parse(new RegExp(`--talk-${name}: (#[0-9A-Fa-f]{6})`).exec(block)![1]!)[0]
   const light = /\.cm-talk \{ (--talk-bg[^}]*?);\s*display/.exec(css)![1]!
   const dark = /:root\[data-theme="dark"\] \.cm-talk \{([^}]*)\}/.exec(css)![1]!
-  it.each([['light', light], ['dark', dark]])('%s: title, sub line and Open button text are >= 4.5:1 on their fill', (_n, b) => {
+  it.each([['light', light], ['dark', dark]])('%s: title, sub line and See hotlines button text are >= 4.5:1 on their fill', (_n, b) => {
     expect(ratio(pick(b, 'ink'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
     expect(ratio(pick(b, 'sub'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
     expect(ratio(pick(b, 'btn'), pick(b, 'bg'))).toBeGreaterThanOrEqual(4.5)
