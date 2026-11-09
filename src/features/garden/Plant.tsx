@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Section } from '../look'
 import { SubHeader } from '../shell/SubHeader'
 import type { ClimateType } from '../../data/provinceClimate'
-import { CLIMATE_TYPES, cropsFor, MONTH_NAMES, useClimate } from './climate'
+import { CLIMATE_TYPES, cropsFor, MONTH_NAMES, useClimate, useMonth } from './climate'
 import { priceDay, priceFor, priceText, useDaPrices, type DaPrices, type DaRow } from './daPrices'
 import { guideFor, LICENCE_URL, VEG_GUIDE, type VegGuide } from './vegGuide'
 import './garden.css'
@@ -38,7 +38,7 @@ export function ClimatePicker({ suggested, current, onPick }: { suggested?: Clim
 export function PlantCard() {
   const c = useClimate()
   const d = useDaPrices()
-  const month = new Date().getMonth() + 1
+  const month = useMonth()
   if (!c.ready) return null
   if (!c.type) return <Section title="Plant this month" testId="today-plant"><div className="card gpl-card"><ClimatePicker suggested={c.suggested} onPick={c.pick} /></div></Section>
   const { guided, others } = plantList(c.type, month)
@@ -50,7 +50,7 @@ export function PlantCard() {
   return (
     <Section title="Plant this month" link={{ href: '#garden/plant', label: total > 3 ? `See all ${total}` : 'See more' }} testId="today-plant">
       <a className="card gpl-card" href="#garden/plant" data-testid="plant-card">
-        <span className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
+        <span className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
         <span className="gpl-tiles">
           {tiles.map((t) => 'g' in t ? (
             <span key={t.g.name} className="gpl-tile"><img src={t.g.img} alt={t.g.alt} loading="lazy" /><span className="gpl-tn">{t.g.name}{priceOf(t.g, d) && <small>{priceText(priceOf(t.g, d)!)}</small>}</span></span>
@@ -92,7 +92,7 @@ export function PlantPoster() {
   const c = useClimate()
   const d = useDaPrices()
   const [change, setChange] = useState(false)
-  const month = new Date().getMonth() + 1
+  const month = useMonth()
   const head = <SubHeader title="Plant this month" backHref="#today" backLabel="Today" />
   if (!c.ready) return <section className="gpl-page">{head}</section>
   const picker = !c.type || change
