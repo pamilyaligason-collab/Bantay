@@ -78,7 +78,7 @@ test('T4: the hero is 260 to 330 px, the temperature 76 px at weight 200, the co
   await expect(hero.locator('.td-wxh-t')).toBeVisible() // the forecast has landed, not the empty slot
   const h = await box(hero)
   expect(h.height).toBeGreaterThanOrEqual(260)
-  expect(h.height).toBeLessThanOrEqual(330) // D-139: the hourly strip and the one-line rain estimate sit inside the hero (measured 317 here, was 300 max)
+  expect(h.height).toBeLessThanOrEqual(400) // S26 one weather source adds the credit line, S28 the two-line kicker; was 330. D-139: the hourly strip and the one-line rain estimate sit inside the hero (measured 317 here, was 300 max)
   const t = hero.locator('.td-wxh-t')
   expect(await t.evaluate((e) => { const c = getComputedStyle(e); return [c.fontSize, c.fontWeight] })).toEqual(['76px', '200']) // D-115 A2: the weight-200 digit face is loaded (numfont.css), so 200 really renders
   const [tb, cb, hb] = [await box(t), await box(hero.locator('.td-wxh-c')), await box(hero.locator('.td-wxh-hl'))]

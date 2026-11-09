@@ -41,6 +41,7 @@
 .dc-more { align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 4px; border: 0; background: none; font: inherit; font-size: 16px; font-weight: 600; color: var(--link); }
 .nw-off { min-height: 52px; }
 .dc-lgrid, .dc-rgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 299px) { .dc-lgrid, .dc-rgrid { grid-template-columns: minmax(0, 1fr); } } /* 200% text: two 80 px cards cannot hold a title */
 .card.dc-lc { position: relative; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; min-height: 120px; padding: 14px; text-decoration: none; background: var(--tint-fill); color: var(--tint-ink); }
 .dc-lc[data-tint="green"] { --tint-fill: var(--tint-green); --tint-ink: var(--tint-green-ink); }
 .dc-lc[data-tint="amber"] { --tint-fill: var(--tint-amber); --tint-ink: var(--tint-amber-ink); }

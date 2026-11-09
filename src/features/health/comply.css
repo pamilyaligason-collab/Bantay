@@ -62,3 +62,5 @@ a.btn.vs-prep { display: flex; box-sizing: border-box; width: 100%; min-height: 
 .lb-added { margin-right: 12px; font-weight: 600; opacity: 1; color: var(--ink2); }
 :root[data-narrow] .vs-page { display: none; } /* a drawing only: at 195 px it squeezes the words out of the card */
 :root[data-narrow] .vs-hero [data-testid=no-visit] > .grow > b, :root[data-narrow] .vs-nextrow .grow > b { font-size: 17px; }
+.vs-nextrow .grow { min-width: 0; }
+@media (max-width: 299px) { .vs-nextrow .vs-ic { display: none; } } /* 200% text: the icon's 38 px let "appointment" run 1 px off a 195 px screen */

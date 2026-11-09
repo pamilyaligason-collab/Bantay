@@ -246,7 +246,7 @@ for (const [name, withFix] of [['home area', false], ['last known', true]] as co
       }
       await expect.poll(async () => (await titleRow(page)).chipText, { message: 'the chip shows its words' }).toMatch(withFix ? /last known/ : /your home area/)
       const m = await titleRow(page)
-      expect(m.chipH, 'chip is one line (48 px)').toBeLessThanOrEqual(48)
+      expect(m.chipH, 'chip is at most three lines (64 px) at 320; one or two lines wider').toBeLessThanOrEqual(64) // S28: long-form ages ("3 hours ago") and barangay names make the words longer
       expect(m.rowH, 'title row stays one line').toBeLessThanOrEqual(56)
       expect(m.rowOverflow, 'row does not overflow sideways').toBeLessThanOrEqual(0)
       expect(m.docOverflow, 'page does not overflow sideways').toBeLessThanOrEqual(0)

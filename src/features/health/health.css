@@ -260,7 +260,7 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .rc-add { width: 100%; min-height: 48px; }
 
 /* S22-D Browse: two-column animated cards */
-.hb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hb-grid { padding-right: var(--jack-clear, 72px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .card.hb { --tint-fill: var(--card2); --tint-ink: var(--ink); display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 150px; padding: 14px; box-sizing: border-box; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; animation: hb-rise .6s ease-out both; animation-delay: calc(var(--i, 0) * 80ms); }
 .card.hb[data-wide] { grid-column: span 2; min-height: 96px; }
 @media (max-width: 300px) { .hb-grid { grid-template-columns: minmax(0, 1fr); } .card.hb[data-wide] { grid-column: auto; } } /* 200% text zoom: one column, as the old grid did */

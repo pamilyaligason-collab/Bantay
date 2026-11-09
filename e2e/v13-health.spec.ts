@@ -24,11 +24,11 @@ const at = async (page: Page, hash: string, h1: string | RegExp) => {
 test('overview: hero, Readings, Browse, For you, Family health in that order, one hero near the top', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await expect(page.getByTestId('for-you')).toBeVisible()
-  await assertHero(page, 480) // D-135: the Today row (two rows of tiles, about 250 px) sits above the hero
+  await assertHero(page, 660) // S28 C1: the Today row is three rows of senior-size tiles with a 7-day visual (about 420 px), then the hero (was 480 at D-135)
   await assertOrder(page, ['today-kpis', 'bodyhero', 'readings-card', 'browse', 'for-you']) // D-135: Today, Needs attention, Readings (with its Pinned row), Browse, For you, then Family health
   if (await page.getByTestId('family-health').count()) await assertOrder(page, ['for-you', 'family-health'])
   for (const k of ['labs', 'meds', 'visits', 'move', 'body']) await expect(page.getByTestId(`browse-${k}`)).toBeVisible()
-  await expect(page.getByTestId('foryou-video')).toHaveAttribute('href', '#discover/watch')
+  await expect(page.getByTestId('foryou-video')).toHaveJSProperty('tagName', 'BUTTON') // S25: a clip is a button that plays in place, not a link to Watch
   await expect(page.getByTestId('nudge')).toBeVisible()
 })
 
@@ -133,7 +133,7 @@ test('H4: the hero is compact with two stacked buttons left of Jack, and Pinned 
   expect(Math.max(a.x + a.width, b.x + b.width), 'buttons end left of the Jack column').toBeLessThanOrEqual(jack.x)
   await assertNoWrappedButtons(page)
   // D-135 board: Today row, then the hero, then the Readings card, which holds the Pinned row (so Pinned no longer starts high)
-  expect((await box(page, '[data-hero]')).y, 'hero starts under the Today row, on the first screen').toBeLessThanOrEqual(480)
+  expect((await box(page, '[data-hero]')).y, 'hero starts under the Today row, on the first screen').toBeLessThanOrEqual(660) // S28 C1: three rows of Today tiles above the hero
   const card = await box(page, '[data-testid=readings-card]')
   expect(card.y, 'Readings follows the hero').toBeGreaterThan(hero.y + hero.height)
   await expect(page.getByTestId('readings-card').getByTestId('pinned')).toBeVisible()
@@ -196,22 +196,22 @@ test('H6: no chips on the sub-screens, the page says whose it is', async ({ page
   }
 })
 
-test('H7: the inline Pinned row is always two tiles (S24: Next visit + Medicines, BP when due), with no Edit', async ({ page }) => {
+test('H7: the inline Pinned row is always two tiles (S24: Next visit + Medicines, BP when due), with one small Edit button', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1])
   await expect(page.getByTestId('pinned').locator('.pt')).toHaveCount(2)
-  await expect(page.getByTestId('glance').getByRole('button', { name: 'Edit' })).toHaveCount(0)
+  await expect(page.getByTestId('glance').getByRole('button', { name: 'Edit' })).toHaveCount(1) // the one small Edit button in the Coming up header (S25)
 })
 
-test('H9: Browse is five cards (four tall in two columns, Body wiki wide), each with a second line', async ({ page }) => {
+test('H9: Browse is six cards (tall in two columns, Body wiki wide), each with a second line', async ({ page }) => {
   await full(page, FIXED_CLOCKS[1]) // D-135: the Browse rows became animated cards
   const rows = page.getByTestId('browse').locator('a.hb')
-  expect(await rows.count()).toBe(5)
-  for (let i = 0; i < 5; i++) {
+  expect(await rows.count()).toBe(6) // S26: Sleep and Activity joined Browse
+  for (let i = 0; i < 6; i++) {
     const r = rows.nth(i)
     const b = (await r.boundingBox())!
     const wide = (await r.getAttribute('data-wide')) !== null
     expect(b.height, `browse card ${i}`).toBeGreaterThanOrEqual(wide ? 80 : 140)
-    expect(b.height, `browse card ${i}`).toBeLessThanOrEqual(wide ? 110 : 170)
+    expect(b.height, `browse card ${i}`).toBeLessThanOrEqual(wide ? 110 : 190) // the grid ends 72 px short of the gutter for Jack (S28 X), so a second line can wrap
     const visits = (await r.getAttribute('data-testid')) === 'browse-visits' // with no booked visit and no saved questions its second line is the date preview (Not booked) instead
     await expect(r.locator(visits ? '.hb-date' : '.hb-s')).toHaveCount(1)
   }
@@ -279,7 +279,7 @@ test('H15: Move and food is a short page with the Doctor OK row and a carousel',
   await at(page, '#health/move', 'Move and food')
   await expect(page.getByTestId('doctor-ok')).toBeVisible()
   await expect(page.getByTestId('move-carousel')).toBeVisible()
-  expect(await page.locator('.bt .scroll').evaluate((e) => e.scrollHeight)).toBeLessThan(2000)
+  expect(await page.locator('.bt .scroll').evaluate((e) => e.scrollHeight)).toBeLessThan(2400) // S28: the Water card and its detail lengthen the page (was 2000)
   await expect(page.getByTestId('salt-card')).toBeVisible()
   await expect(page.getByTestId('water-card')).toBeVisible()
 })
