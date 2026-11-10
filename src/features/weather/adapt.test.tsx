@@ -11,7 +11,7 @@ vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
 const NOW = new Date('2026-11-03T04:00:00Z') // 12:00 in Manila
 const calls = { n: 0 }
-const serve = (o: FixtureOpts) => vi.stubGlobal('fetch', vi.fn(async () => { calls.n++; return new Response(JSON.stringify(openMeteoFixture({ now: NOW, ...o })), { status: 200 }) }))
+const serve = (o: FixtureOpts) => vi.stubGlobal('fetch', vi.fn(async (u: unknown) => { if (String(u).includes('air-quality')) return new Response('{}'); calls.n++; return new Response(JSON.stringify(openMeteoFixture({ now: NOW, ...o })), { status: 200 }) }))
 const DRY: FixtureOpts = { code: 0, temp: 28, humidity: 50, hourlyProb: () => 5 }
 const names = () => screen.getAllByRole('region').map((r) => r.getAttribute('aria-label') ?? document.getElementById(r.getAttribute('aria-labelledby')!)?.textContent)
 const before = (a: string, b: string) => { const n = names(); return n.indexOf(a) >= 0 && n.indexOf(a) < n.indexOf(b) }

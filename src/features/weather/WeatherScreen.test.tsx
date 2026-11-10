@@ -40,8 +40,8 @@ describe('WeatherScreen', () => {
     expect(heroes[0]).toBe(screen.getByRole('region', { name: 'Now' }))
     expect(document.querySelector('.wx')!.getAttribute('data-contrast-bg')).toMatch(/^#[0-9a-f]{6}$/) // the page, not the hero, carries the pinned worst-case sky colour
     await screen.findByRole('region', { name: 'Live weather map' }) // appears once the position is known
-    const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label') ?? document.getElementById(r.getAttribute('aria-labelledby')!)?.textContent)
-    expect([...regions.slice(0, 4), ...regions.slice(4, 6).sort(), ...regions.slice(6, 10)]).toEqual(['Now', 'What to do', 'Next 2 hours', 'Live weather map', 'Next 48 hours', 'Rain chance', 'Storm check', '10 days', 'Details', 'Official']) // rain card and strip swap places with the weather (adapt.test.tsx)
+    const regions = screen.getAllByRole('region').map((r) => r.getAttribute('aria-label') ?? document.getElementById(r.getAttribute('aria-labelledby')!)?.textContent).filter((n) => n !== 'Air quality') // the air card arrives on its own request: its place is asserted in the S29 test below
+    expect([...regions.slice(0, 4), ...regions.slice(4, 6).sort(), ...regions.slice(6, 11)]).toEqual(['Now', 'What to do', 'Next 2 hours', 'Live weather map', 'Next 48 hours', 'Rain chance', 'Storm check', '10 days', 'Sun', 'Details', 'Official']) // rain card and strip swap places with the weather (adapt.test.tsx)
     const warnRow = screen.getByRole('link', { name: /Official warnings/ }) // directly under the hero, above What to do
     expect(heroes[0]!.compareDocumentPosition(warnRow) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(warnRow.compareDocumentPosition(screen.getByRole('region', { name: 'What to do' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

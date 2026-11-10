@@ -38,6 +38,8 @@ import { weatherWarning } from './warning'
 import { useNow } from '../safety/AlertCard'
 import '../today/weatherHero.css' // the Next 2 hours bars (td-rm) are drawn by Today's RainMini
 import { Next2hMini } from './Next2hMini'
+import AirCard from './AirCard'
+import SunArc from './SunArc'
 import { syncRainReminder } from './rainRemind'
 import './weather.css'
 import './wxs7w.css'
@@ -286,7 +288,11 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         {days.length > 5 && <button type="button" className="btn2 wx-more" aria-expanded={allDays} onClick={() => setAllDays((v) => !v)}>{allDays ? 'Show fewer days' : `Show all ${days.length} days`}</button>}
       </Section>}
 
+      <AirCard point={point} />
+
       {bl.blended && !offline && <AroundYou air={bl.aqi} />}
+
+      <SunArc fc={fc} now={now} />
 
       <section aria-label="Details" className="wx-tiles" data-testid="wx-details">
         <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
