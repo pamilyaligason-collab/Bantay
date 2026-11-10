@@ -4,7 +4,7 @@ import { track } from '../admin/events'
 import { latestPerGame, useLotto, type LottoRow, type NextJackpot } from './lottoApi'
 import './lotto.css'
 
-export const LOTTO_NOTE = 'Source: lottopcso.com (unofficial).'
+export const LOTTO_NOTE = 'Unofficial.'
 export const PCSO_URL = 'https://www.pcso.gov.ph/'
 const SHOWN = 3
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']

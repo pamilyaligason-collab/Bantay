@@ -64,7 +64,7 @@ export function OtherNotices({ alerts: all, now }: { alerts: WxAlert[]; now: num
   if (!alerts.length) return null
   return (
     <section aria-label="Other weather notices" className="card wx-other" data-testid="wx-other-alerts">
-      <span className="eyebrow">Other notices (OpenWeather). PAGASA above is the official word.</span>
+      <span className="eyebrow">Other notices (OpenWeather).</span>
       {alerts.map((a) => <p key={`${a.source}${a.event}${a.start}`}><b>{a.event}</b><span className="wx-sub">{a.source}</span></p>)}
     </section>
   )

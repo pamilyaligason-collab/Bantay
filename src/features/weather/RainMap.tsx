@@ -25,7 +25,7 @@ export default function RainMap({ fc, placeName, daily = null, nextRain = null }
               ))}
             </ul>
           )}
-          <p className="wx-sub">Chance of rain each hour at {placeName}, from Open-Meteo. For the live radar picture, open PAGASA.</p>
+          <p className="wx-sub">Chance of rain each hour at {placeName}. For the live radar picture, open PAGASA.</p>
           <a className="pill ghost block" href={PAGASA_RADAR_HREF} target="_blank" rel="noopener noreferrer">Radar images from PAGASA <Icon name="out" size={18} /></a>
         </>
       ) : null)}
