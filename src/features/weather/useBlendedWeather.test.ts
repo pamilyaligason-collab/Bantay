@@ -5,7 +5,7 @@ import type { Blended } from '../../../supabase/functions/weather-blend/blend.ts
 import { db } from '../../db'
 import { openMeteoFixture } from './fixture'
 import { forecastKey, readCached } from './forecast'
-import { loadBlended, useBlendedWeather, WEATHER_BLEND_ON } from './useBlendedWeather'
+import { BLEND_TIMEOUT_MS, loadBlended, useBlendedWeather, WEATHER_BLEND_ON } from './useBlendedWeather'
 
 const P = { lat: 9.645705, lon: 123.877951 }
 const NOW = { time: '2026-10-31T13:07', temp: 30.5, humidity: 75, feels: 37, code: 2, wind: 9, gust: 18, uv: 9 }
@@ -78,6 +78,15 @@ describe('useBlendedWeather', () => {
 })
 
 describe('loadBlended', () => {
+  it('a blend that hangs is given up after BLEND_TIMEOUT_MS, so the screens fall back to the direct forecast', async () => {
+    vi.useFakeTimers()
+    try {
+      const run = loadBlended({ lat: 6.11, lon: 125.11 }, () => new Promise(() => undefined))
+      const seen = expect(run).rejects.toThrow('timeout')
+      await vi.advanceTimersByTimeAsync(BLEND_TIMEOUT_MS)
+      await seen
+    } finally { vi.useRealTimers() }
+  })
   it('offline: throws before calling the function', async () => {
     const on = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
     await expect(loadBlended(P, good)).rejects.toThrow('offline')

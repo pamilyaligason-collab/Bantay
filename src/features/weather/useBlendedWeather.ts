@@ -13,10 +13,13 @@ export const WEATHER_BLEND_ON = false
 export type Invoke = (body: LatLon) => Promise<unknown>
 const invokeBlend: Invoke = async (body) => {
   if (!supabase) throw new Error('not_connected')
+  const { data: s } = await supabase.auth.getSession()
+  if (!s.session) throw new Error('signed_out') // the function only answers family members: skip the round trip, go straight to the direct forecast
   const { data, error } = await supabase.functions.invoke('weather-blend', { body })
   if (error) throw error
   return data
 }
+export const BLEND_TIMEOUT_MS = 10_000 // the direct forecast gives up after 8 s; the blend gets a little more (three providers server side), then the screens fall back
 const r2 = (n: number) => Math.round(n * 100) / 100 // the ~1 km cell is all that leaves the phone, as for Open-Meteo
 
 export type Loaded = Blended & { stale?: boolean } // stale: every provider was down, this is the function's last cached cell
@@ -32,7 +35,9 @@ export function loadBlended(p: LatLon, invoke: Invoke = invokeBlend): Promise<Lo
 const pending = new Map<string, { invoke: Invoke; run: Promise<Loaded> }>()
 async function loadBlendedOnce(p: LatLon, invoke: Invoke): Promise<Loaded> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) throw new Error('offline')
-  const d = (await invoke({ lat: r2(p.lat), lon: r2(p.lon) })) as (Loaded & { ok?: boolean }) | null
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<never>((_, no) => { timer = setTimeout(() => no(new Error('timeout')), BLEND_TIMEOUT_MS) })
+  const d = (await Promise.race([invoke({ lat: r2(p.lat), lon: r2(p.lon) }), late]).finally(() => clearTimeout(timer))) as (Loaded & { ok?: boolean }) | null
   if (!d?.ok || !d.now || !Array.isArray(d.hourly48) || !Array.isArray(d.daily10) || !Array.isArray(d.next2h)) throw new Error('bad_blend')
   if (!(Date.now() - Date.parse(d.fetchedAt) < KEEP_MS)) throw new Error('too_old') // as readCached: hourly rain older than a day would be wrong
   if (!d.stale) void db.kv.put({ key: forecastKey(p), value: toForecast(d) }).then(() => pruneForecasts()).catch(() => undefined)
@@ -90,5 +95,5 @@ export function useBlendedWeather(p: LatLon | null, o: { on?: boolean; invoke?: 
   }
   const none = { blended: false, next2h: [], aqi: null, alerts: [], sources: [], check: null }
   if (on && !(mine && b.failed)) return { fc: mine ? b.cached : null, offline: false, loading: true, ...none } // blend pending
-  return { ...direct, ...none }
+  return { ...direct, fc: direct.fc ?? (mine ? b.cached : null), ...none } // the cached reading stays on screen while the direct forecast reads its own
 }

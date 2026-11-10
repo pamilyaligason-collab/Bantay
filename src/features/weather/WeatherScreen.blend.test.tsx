@@ -10,7 +10,7 @@ import WeatherScreen from './WeatherScreen'
 const track = vi.hoisted(() => vi.fn(async () => true))
 vi.mock('../admin/events', () => ({ track }))
 const invoke = vi.hoisted(() => vi.fn())
-vi.mock('../auth/client', () => ({ supabase: { functions: { invoke } } }))
+vi.mock('../auth/client', () => ({ supabase: { functions: { invoke }, auth: { getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }) } } })) // signed in: the hook skips the call when there is no session
 
 const t = (m: number) => `2026-11-04T19:${String(m).padStart(2, '0')}`
 type Reply = { data: Blended & { ok: true; stale?: boolean }; error: null }
