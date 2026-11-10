@@ -13,7 +13,7 @@ import { Icon } from '../shell/Icon'
 import { JackArt } from '../look'
 import { openScan } from '../scan/open'
 import { weatherSummary } from './weather'
-import { CAUTION, clearHistory, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
+import { CAUTION, chatIsStale, clearHistory, loadHistory, saveHistory, trimHistory, useKeyboardInset } from './history'
 import { localGate, type Emergency } from './gateClient'
 import { EmergencyCard } from './EmergencyCard'
 import { OfflinePanel } from './OfflinePanel'
@@ -222,9 +222,13 @@ export default function Assistant() {
     const pop = () => setOpen(false)
     window.addEventListener('popstate', pop)
     hdb.people.toArray().then(setPeople, () => setPeople([]))
-    if (!restored.current) { // the last 20 messages come back from this phone, once per app start
+    if (!restored.current) { // the last 20 messages come back from this phone, once per app start (not once the chat is 30 minutes old)
       restored.current = true
       void loadHistory().then((h) => setItems((cur) => (cur.length ? cur : h)))
+    } else if (lastAt.current && chatIsStale(lastAt.current)) { // reopened 30 minutes after the last message: a fresh chat
+      lastAt.current = 0
+      setItems([])
+      void clearHistory()
     }
     input.current?.focus()
     const b = opener.current
@@ -254,6 +258,8 @@ export default function Assistant() {
   }, [items, people])
 
   const clearChat = () => { setItems([]); void clearHistory() }
+  const lastAt = useRef(0) // when the last message in this chat was added; the chat clears itself 30 minutes later
+  useEffect(() => { if (items.length) lastAt.current = Date.now() }, [items.length])
   const close = () => (history.state?.bantayAssistant ? history.back() : setOpen(false))
   const scan = () => { history.replaceState(null, ''); setOpen(false); openScan() }
   const go = (tab: string) => { history.replaceState(null, ''); setOpen(false); location.hash = tab }

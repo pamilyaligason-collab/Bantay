@@ -257,7 +257,9 @@ describe('Assistant round 3', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send' }))
     await screen.findByText('It means a 3 month sugar average.')
     await waitFor(async () => {
-      const kept = (await db.kv.get('assistant.history'))?.value as { content: string; cards?: unknown }[]
+      const box = (await db.kv.get('assistant.history'))?.value as { at: number; items: { content: string; cards?: unknown }[] }
+      expect(typeof box.at).toBe('number') // saved with the time of the last message, so it can clear itself 30 minutes later
+      const kept = box.items
       expect(kept).toHaveLength(20)
       expect(kept[19]).toEqual({ role: 'assistant', content: 'It means a 3 month sugar average.' })
       expect(kept[0]!.content).toBe('m2')

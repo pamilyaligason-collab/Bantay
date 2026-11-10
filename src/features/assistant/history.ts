@@ -3,6 +3,9 @@ import { db } from '../../db'
 import type { Msg } from './tools'
 
 export const HISTORY_MAX = 20
+/** A chat clears itself this long after its last message (Lloyd 2026-11-10: "chat should also auto clear after conversations"). */
+export const CHAT_IDLE_MS = 30 * 60_000
+export const chatIsStale = (lastAt: number, now = Date.now()) => now - lastAt >= CHAT_IDLE_MS
 const KEY = 'assistant.history'
 
 /** The caution line under the Ask title. */
@@ -18,16 +21,20 @@ export function trimHistory<T extends Saved>(items: T[], max = HISTORY_MAX): Sav
     .map((m) => (m.local ? { role: m.role, content: m.content, local: true } : { role: m.role, content: m.content }))
 }
 
-export async function loadHistory(): Promise<Saved[]> {
+/** The saved chat, or [] once it is CHAT_IDLE_MS old (then it is also deleted from the phone). A bare array is the pre-2026-11-10 shape and is read as before. */
+export async function loadHistory(now = Date.now()): Promise<Saved[]> {
   try {
-    const v = (await db.kv.get(KEY))?.value
+    const raw = (await db.kv.get(KEY))?.value as unknown
+    const box = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as { at?: unknown; items?: unknown }) : null
+    if (box && typeof box.at === 'number' && chatIsStale(box.at, now)) { await clearHistory(); return [] }
+    const v = box ? box.items : raw
     if (!Array.isArray(v)) return []
     return trimHistory((v as unknown[]).filter((m): m is Saved => !!m && typeof m === 'object' && ((m as Saved).role === 'user' || (m as Saved).role === 'assistant') && typeof (m as Saved).content === 'string'))
   } catch { return [] }
 }
 
-export async function saveHistory(items: Saved[]): Promise<void> {
-  try { await db.kv.put({ key: KEY, value: trimHistory(items) }) } catch { /* the chat still works without the copy */ }
+export async function saveHistory(items: Saved[], now = Date.now()): Promise<void> {
+  try { await db.kv.put({ key: KEY, value: { at: now, items: trimHistory(items) } }) } catch { /* the chat still works without the copy */ }
 }
 
 export async function clearHistory(): Promise<void> {
