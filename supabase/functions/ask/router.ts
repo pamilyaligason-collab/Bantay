@@ -1,7 +1,7 @@
 // Jack's model router (D-177): quick chat -> fast model; health context, harder reasoning or a long answer -> strong model; the monthly spend steps it down.
 // Pure: no network, no clock. logic.ts calls route() once per question; ask.test.ts and router.test.ts run it directly.
-export const FAST_TOKENS = 600
-export const STRONG_TOKENS = 900
+export const FAST_TOKENS = 1500 // room for the model's own thinking plus a ~200-word answer; 600 cut answers mid-sentence (finish "length", 2026-11-10)
+export const STRONG_TOKENS = 2000
 export const CAPPED_TOKENS = 300
 export const STEP_DOWN = 0.7 // from here: fast model only
 export const SQUEEZE = 0.9 // from here: fast model, short answers

@@ -156,13 +156,13 @@ describe('handleAsk', () => {
     expect((out.body as { reply: string }).reply).toContain('English or Tagalog')
     expect(p.chat).not.toHaveBeenCalled()
   })
-  it('asks the primary model with zdr, no reasoning, 600 tokens, the 6 tools, and adds the disclaimer', async () => {
+  it('asks the primary model with zdr, no reasoning, 1500 tokens, the 6 tools, and adds the disclaimer', async () => {
     const p = port()
     const out = await handleAsk(p, env, body('How much water should I drink?'))
     const [model, req, ms] = p.chat.mock.calls[0] as [string, Record<string, unknown>, number]
     expect(model).toBe('m1')
     expect(ms).toBe(20_000)
-    expect(req).toMatchObject({ max_tokens: 600, provider: { zdr: true, data_collection: 'deny' } })
+    expect(req).toMatchObject({ max_tokens: 1500, provider: { zdr: true, data_collection: 'deny' } })
     expect(req).not.toHaveProperty('reasoning') // require_parameters + reasoning = OpenRouter 404 for every model
     expect((req.tools as unknown[]).length).toBe(6)
     expect((out.body as { reply: string }).reply).toMatch(/Not medical advice; ask your doctor\.$/)
