@@ -134,6 +134,8 @@ describe('Jack prompt', () => {
   const sys = buildPrompt('health', 'en', [], [], none)
   it('answers directly and keeps the safety rules', () => {
     expect(sys).toContain('Answer the question first')
+    expect(sys).toContain('at most 5 bullets') // ADHD-friendly shape (Lloyd 2026-11-10)
+    expect(sys).toContain('"Next:"')
     expect(sys).toContain('do not open with a refusal')
     expect(sys).toContain('urgent signs are named first')
     expect(sys).toContain('grade 6')
