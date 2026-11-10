@@ -6,7 +6,7 @@ import { assertJackClear, expectJackAtRest, layoutStable } from './v13'
 // Shots only when S29_SHOTS=<dir>. Runs in the chromium project (no sign-in).
 declare const process: { env: Record<string, string | undefined> }
 const SHOTS = process.env.S29_SHOTS
-const SIZES = [{ width: 390, height: 844, full: true }, { width: 360, height: 780, full: true }, { width: 360, height: 740, full: false }, { width: 390, height: 720, full: false }] // full: false runs only the See all test (the other checks keep their two sizes)
+const SIZES = [{ width: 390, height: 844, full: true }, { width: 360, height: 780, full: true }, { width: 360, height: 740, full: false }, { width: 390, height: 720, full: false }] // S29: every screen is gated at all four sizes; full: false skips only the Jack slide test
 const SCREENS: [string, string][] = [['Today', '#today'], ['Health', '#health'], ['Family', '#family'], ['Discover', '#discover'], ['Discover Play', '#discover/play'], ['Discover Listen', '#discover/listen'], ['Safety', '#safety']]
 const GRIDS = '.tk-grid, .hb-grid, .fm-tiles, .pt-grid, .dc-rgrid, .dc-lgrid'
 
@@ -15,7 +15,7 @@ for (const size of SIZES) {
     test.use({ viewport: { width: size.width, height: size.height } })
     test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 
-    for (const [name, hash] of size.full ? SCREENS : []) {
+    for (const [name, hash] of SCREENS) {
       test(`${name}: centre point clear of Jack at rest and at the end; grids equal columns and equal gutters`, async ({ page }) => {
         await page.goto(`/${hash}`)
         await expect(page.locator('.bt .scroll')).toBeVisible()

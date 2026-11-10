@@ -103,8 +103,8 @@ test('assertJackHit centre rule: a wide allowed control that is mostly tappable 
     b.style.cssText = `position:absolute;left:${fab.offsetLeft + fab.offsetWidth / 2 + (dx as number) - w / 2}px;top:${fab.offsetTop}px;width:${w}px;height:${fab.offsetHeight}px;z-index:5`
     fab.parentElement!.append(b)
   }, [cls, dx] as const)
-  await put('wide', 0) // centre on Jack's centre; Jack's disc covers ~40 % of it, so it is ~60 % tappable and passes the old tappable rule
-  await expect(assertJackHit(page, [{ name: 'wide', sel: 'button.wide' }], 'wide allowed', 'keep')).rejects.toThrow(/centre under Jack/)
+  await put('wide', 0) // centre on Jack's centre; measured 54 % tappable, so it passes the old tappable rule; the regex pins >50 % so this cannot go vacuous if Jack grows
+  await expect(assertJackHit(page, [{ name: 'wide', sel: 'button.wide' }], 'wide allowed', 'keep')).rejects.toThrow(/(5[1-9]|[6-9]\d|100)% tappable, centre under Jack/)
   await page.evaluate(() => document.querySelector('.wide')?.remove())
   await put('wide-ctl', -50) // control: same size, centre 50 px left of Jack's centre (outside his disc), still touching him and mostly tappable: the allowance passes
   await assertJackHit(page, [{ name: 'wide', sel: 'button.wide-ctl' }], 'wide control', 'keep')

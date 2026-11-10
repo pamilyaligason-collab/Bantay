@@ -226,3 +226,4 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-fagrid .card.sf-fa { flex: 1 1 auto; }
 .sf-more { display: block; width: 100%; min-height: 44px; margin-top: 12px; border: 0; border-radius: var(--r-card); background: var(--fill); color: var(--ink); font: inherit; font-size: 16px; font-weight: 600; }
 .sf-more:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+@media (max-height: 760px) { section.sec > .sec-h a[href="#safety/sources"] { margin-right: 64px; } } /* S29 rule A: on short phones the Right now "Sources" link sits in Jack's row at rest; one control, short screens only */
