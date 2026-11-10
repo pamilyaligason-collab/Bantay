@@ -7,6 +7,8 @@ export const DOSE_RETRY_MS = 30 * 60_000 // D-145: how long an unproved FCM leg 
 export const WATCH_MAX_LATE_MIN = 6 * 60 // not before the function existed: never alert for a slot older than 6 h
 // D-145: one dose raises ONE missed-dose alert per carer. dose_watch_sent (claim) and the unique index carer_alerts(kind, ref, carer_user_id) from 0030 enforce it, so no count is needed here.
 
+import { DEFAULT_TZ, dayIn, safeZone, slotInstant as slotInstantIn } from '../_shared/tz.ts'
+
 export interface MedRow {
   id: string
   person_id: string
@@ -18,7 +20,7 @@ export interface MedRow {
   schedule: unknown
   started_on?: string | null // YYYY-MM-DD
   stopped_on?: string | null
-  people?: { archived_at: string | null } | null // embedded owner; an archived person is never watched
+  people?: { archived_at: string | null; tz?: string | null } | null // embedded owner; an archived person is never watched; tz = the person's IANA zone (0065, default Asia/Manila)
 }
 export interface TakenRow {
   person_id: string
@@ -29,7 +31,7 @@ export interface TakenRow {
 }
 export interface DueSlot {
   personId: string
-  day: string // Asia/Manila YYYY-MM-DD of the slot
+  day: string // YYYY-MM-DD of the slot on the PERSON's zone (people.tz, default Asia/Manila)
   slot: string // HH:MM
 }
 
@@ -38,8 +40,8 @@ const MANILA_OFFSET_MS = 8 * 3600_000 // Asia/Manila is UTC+8, no daylight savin
 
 /** Asia/Manila calendar day of an instant (ms). */
 export const manilaDay = (ms: number) => new Date(ms + MANILA_OFFSET_MS).toISOString().slice(0, 10)
-/** The instant (ms) of a Manila day + HH:MM. */
-const slotInstant = (day: string, hhmm: string) => Date.parse(`${day}T${hhmm}:00+08:00`)
+/** The zone a medicine's person lives on (people.tz), Asia/Manila when unknown. A bad name never reaches Intl. */
+export const zoneOfMed = (m: Pick<MedRow, 'people'>): string => safeZone(m.people?.tz ?? DEFAULT_TZ)
 
 /** Same rule as the app's normaliseDrug (health/meds.ts) and SQL normalise_drug: lower case, strength and form words removed. null when nothing is left. */
 const NON_ALNUM = /[^a-z0-9]+/g
@@ -68,15 +70,15 @@ export function scheduleTimes(raw: unknown): string[] {
 /** The medicine has not been confirmed "Yes, still taking it": schedule.review is true. */
 export const inReview = (raw: unknown) => !!raw && typeof raw === 'object' && !Array.isArray(raw) && (raw as Record<string, unknown>).review === true
 /** Whole Manila days since the review was asked (schedule.review_since), 0 = asked today. null when not in review or the date is missing or not a date (unknown is never 0, ML-05). */
-export function reviewAgeDays(raw: unknown, nowMs: number): number | null {
+export function reviewAgeDays(raw: unknown, nowMs: number, tz: string = DEFAULT_TZ): number | null {
   if (!inReview(raw)) return null
   const since = (raw as Record<string, unknown>).review_since
   if (typeof since !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(since)) return null
   const a = Date.parse(`${since.slice(0, 10)}T00:00:00Z`)
-  return Number.isNaN(a) ? null : Math.floor((Date.parse(`${manilaDay(nowMs)}T00:00:00Z`) - a) / 86_400_000)
+  return Number.isNaN(a) ? null : Math.floor((Date.parse(`${dayIn(tz, nowMs)}T00:00:00Z`) - a) / 86_400_000)
 }
 /** Watched for missed doses: confirmed medicines, and a review medicine once its question is more than a day old. A review with no date is not watched. */
-const watched = (raw: unknown, nowMs: number) => !inReview(raw) || (reviewAgeDays(raw, nowMs) ?? -1) >= REVIEW_WATCH_AFTER_DAYS
+const watched = (raw: unknown, nowMs: number, tz: string) => !inReview(raw) || (reviewAgeDays(raw, nowMs, tz) ?? -1) >= REVIEW_WATCH_AFTER_DAYS
 const needsTime = (raw: unknown) => !!raw && typeof raw === 'object' && !Array.isArray(raw) && (raw as Record<string, unknown>).needs_time === true
 
 interface OpenSlot { personId: string; day: string; slot: string; late: number }
@@ -84,12 +86,15 @@ interface OpenSlot { personId: string; day: string; slot: string; late: number }
  *  A row with a slot closes that slot of its medicine. A row with no slot (an older dose, matched by medication id or by the normalised name)
  *  closes ONE open slot of that day, the earliest, like the app's matchDoses.
  *  Skipped: paused, stopped, deleted, as needed, needing a time, not started yet, already stopped, and a review medicine less than a day into its question. */
-function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: string[]): OpenSlot[] {
+function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, daysFor: (tz: string) => string[]): OpenSlot[] {
   const out: OpenSlot[] = []
-  const rows = taken.flatMap((t) => { const at = Date.parse(t.taken_at); return Number.isNaN(at) ? [] : [{ ...t, day: manilaDay(at), key: normaliseDrug(t.name) }] })
+  const zoneBy = new Map(meds.map((m) => [m.person_id, zoneOfMed(m)] as const))
+  const rows = taken.flatMap((t) => { const at = Date.parse(t.taken_at); return Number.isNaN(at) ? [] : [{ ...t, day: dayIn(zoneBy.get(t.person_id) ?? DEFAULT_TZ, at), key: normaliseDrug(t.name) }] })
   for (const m of meds) {
+    const tz = zoneOfMed(m)
+    const days = daysFor(tz)
     if (m.people?.archived_at || m.deleted_at || (m.med_status ?? 'active') !== 'active' || m.as_needed || isVaccine(m)) continue
-    if (needsTime(m.schedule) || !watched(m.schedule, nowMs)) continue
+    if (needsTime(m.schedule) || !watched(m.schedule, nowMs, tz)) continue
     const key = normaliseDrug(m.name)
     for (const day of days) {
       if ((m.started_on && m.started_on.slice(0, 10) > day) || (m.stopped_on && m.stopped_on.slice(0, 10) < day)) continue
@@ -99,7 +104,7 @@ function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: strin
       for (const slot of scheduleTimes(m.schedule)) { // sorted ascending
         if (bySlot.has(slot)) continue
         if (loose > 0) { loose--; continue }
-        out.push({ personId: m.person_id, day, slot, late: nowMs - slotInstant(day, slot) })
+        out.push({ personId: m.person_id, day, slot, late: nowMs - slotInstantIn(tz, day, slot) })
       }
     }
   }
@@ -108,9 +113,9 @@ function openSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, days: strin
 
 /** Open slots at least `afterMin` past their time and not more than 6 h. One entry per person, day and slot (one open medicine keeps the person's slot open); sorted. */
 export function dueSlots(meds: MedRow[], taken: TakenRow[], nowMs: number, afterMin: number = WATCH_AFTER_MIN): DueSlot[] {
-  const days = [...new Set([manilaDay(nowMs - WATCH_MAX_LATE_MIN * 60_000), manilaDay(nowMs)])] // also yesterday, for a slot just before midnight
+  const daysFor = (tz: string) => [...new Set([dayIn(tz, nowMs - WATCH_MAX_LATE_MIN * 60_000), dayIn(tz, nowMs)])] // also yesterday, for a slot just before midnight (on the person's clock)
   const out = new Map<string, DueSlot>()
-  for (const o of openSlots(meds, taken, nowMs, days)) {
+  for (const o of openSlots(meds, taken, nowMs, daysFor)) {
     if (o.late < afterMin * 60_000 || o.late > WATCH_MAX_LATE_MIN * 60_000) continue
     out.set(`${o.personId}|${o.day}|${o.slot}`, { personId: o.personId, day: o.day, slot: o.slot })
   }
@@ -122,7 +127,7 @@ export const doseWatchPayload = (n?: number) => (n && n > 1 ? { t: 'dose_watch' 
 
 /** Q15: people with a dose today whose time has passed and is still open (an open compartment in the pillbox). Sorted. */
 export function openToday(meds: MedRow[], taken: TakenRow[], nowMs: number): string[] {
-  return [...new Set(openSlots(meds, taken, nowMs, [manilaDay(nowMs)]).filter((o) => o.late >= 0).map((o) => o.personId))].sort()
+  return [...new Set(openSlots(meds, taken, nowMs, (tz) => [dayIn(tz, nowMs)]).filter((o) => o.late >= 0).map((o) => o.personId))].sort()
 }
 
 /** The first half hour of 20:00 Manila: the digest is made on each cron tick in it, and its ref (person + day) keeps it to one row. */
@@ -207,7 +212,7 @@ export async function runDoseWatch(port: Port, nowMs: number, opts: { afterMin?:
     } catch { r.failed++; return false }
   }
   for (const m of meds) {
-    if (m.people?.archived_at || isVaccine(m) || (reviewAgeDays(m.schedule, nowMs) ?? -1) < REVIEW_WATCH_AFTER_DAYS) continue
+    if (m.people?.archived_at || isVaccine(m) || (reviewAgeDays(m.schedule, nowMs, zoneOfMed(m)) ?? -1) < REVIEW_WATCH_AFTER_DAYS) continue
     if (await row('review_open', m.person_id, `${m.id}:${today}`)) r.review++
   }
   if (inDigestWindow(nowMs)) for (const personId of openToday(meds, taken, nowMs)) if (await row('digest', personId, `${personId}:${today}`)) r.digest++

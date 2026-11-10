@@ -8,6 +8,7 @@ import { Icon } from '../shell/Icon'
 import { useActingCan, useActingPersonId } from '../viewas/viewAs'
 import type { MyTake } from '../today/useMyTakes'
 import { shortName } from './build'
+import { toE164 } from '../location/phoneRegion'
 
 /** The slot ("HH:MM") and Manila day a missed-dose row is about, read from its dedupe ref ("<id>:2026-10-26:09:00"); null parts when the ref has no such text. */
 export function doseRef(ref: string | null): { day: string | null; slot: string | null } {
@@ -40,7 +41,7 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
   return (
     <div className="in-actions" role="group" aria-label="What you can do">
       {person?.phone
-        ? <a className="btn in-act" href={`tel:${person.phone}`}>Call {name}</a>
+        ? <a className="btn in-act" href={`tel:${toE164(person.phone)}`}>Call {name}</a>
         : personId ? <a className="btn in-act" href={`#family/people/${personId}`}>Open {name}</a> : null}
       {done
         ? <span className="sh-sub" role="status">Marked as taken</span>

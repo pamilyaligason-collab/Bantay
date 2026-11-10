@@ -15,6 +15,7 @@ import TodayNews from '../features/today/TodayNews'
 import Lotto from '../features/today/Lotto'
 import FxCard from '../features/today/FxCard'
 import PricesCard from '../features/today/PricesCard'
+import { usePlaceRegion } from '../features/location/region'
 import PagasaToday from '../features/safety/PagasaCard'
 import ClimateCard from '../features/garden/ClimateCard'
 import { PlantCard } from '../features/garden/Plant'
@@ -58,6 +59,7 @@ export default function Today() {
     return () => window.removeEventListener('online', go)
   }, [notify])
   const warn = useWarnings()
+  const phOnly = usePlaceRegion() !== 'us' // S30 L8 (C1/C2): Climate, Plant, DA prices and Lotto are Philippine; a phone in the US does not see them (the PAGASA card stays, labelled Philippines)
   const [name, setName] = useState('')
   const viewing = useActing() // an admin viewing as someone: the greeting names that person; the avatar stays the admin's own (it opens the admin's settings)
   useEffect(() => {
@@ -88,8 +90,8 @@ export default function Today() {
       <CalmCard />
       <TalkCard />
       <YourNumbers />
-      <ClimateCard /><PlantCard /><PricesCard />{/* S29: PAGASA climate outlook, with Plant this month and Market prices grouped directly below it; all below every warning (D-50) */}
-      <TodayNews /><FxCard /><Lotto />
+      {phOnly && <><ClimateCard /><PlantCard /><PricesCard /></>}{/* S29: PAGASA climate outlook, with Plant this month and Market prices grouped directly below it; all below every warning (D-50) */}
+      <TodayNews /><FxCard />{phOnly && <Lotto />}
       {/* More: setup, update and install rows, nearby, the week line. D-50: the update row never sits above a warning. */}
       <NoticeStack />
       {toast && <div className="toast" role="status">{toast}</div>}

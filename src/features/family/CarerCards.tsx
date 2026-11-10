@@ -1,6 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { supabase } from '../auth/client'
+import { toE164 } from '../location/phoneRegion'
 import { isLive, manilaDay, matchDoses, reviewAgeDays, slotsFor } from '../health/meds'
 import { clock12 } from '../health/medActions'
 import { shortMedName } from '../health/medName'
@@ -130,7 +131,7 @@ function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPer
       </div>
     </div>
   )
-  const call = person?.phone ? <a className="btn in-act" href={`tel:${person.phone}`}>Call {name}</a> : <a className="btn in-act" href={`#family/people/${pid}`}>Open {name}</a>
+  const call = person?.phone ? <a className="btn in-act" href={`tel:${toE164(person.phone)}`}>Call {name}</a> : <a className="btn in-act" href={`#family/people/${pid}`}>Open {name}</a>
   return (
     <div className="card fm-need" data-kind="dose_missed">
       <Head person={person} title={shown.length === 1 ? `${name} missed a medicine` : `${name} missed ${shown.length} doses`} sub={shown.length === 1 ? what(shown[0]!) : 'Mark each one when you see it taken.'} />
