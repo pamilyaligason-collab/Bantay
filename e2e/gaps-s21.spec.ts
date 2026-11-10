@@ -3,7 +3,7 @@ import { skipOnboarding } from './helpers'
 import { openFamily } from './fixtures/v13/family'
 import { emptyNeeds } from './fixtures/s16/family'
 import { startToday } from './fixtures/s16/today'
-import { assertJackHit, assertNoSideways, DISCOVER_ALLOW, FAMILY_ALLOW, setScheme } from './v13'
+import { assertJackHit, assertNoSideways, DISCOVER_ALLOW, expectJackAtRest, FAMILY_ALLOW, setScheme } from './v13'
 
 declare const process: { env: Record<string, string | undefined> }
 
@@ -33,6 +33,9 @@ for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoo
     for (const h of HEIGHTS) {
       test(`discover ${day} ${w}x${h}: Learn first then Top story, links clear of Jack`, async ({ page }) => {
         await discover(page, w, h, day)
+        await expect(page.getByTestId('dc-learn').getByRole('link', { name: 'All topics' })).toBeVisible()
+        await expect(page.locator('.sh-jackfab')).toBeVisible()
+        await expectJackAtRest(page, `discover ${day} ${w}x${h}`)
         const m = await page.evaluate(() => {
           ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
           const b = (q: string) => document.querySelector(q)!.getBoundingClientRect()
@@ -62,14 +65,16 @@ for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoo
   }
 }
 
-test('discover: every section link stays left of Jack at rest, and a video card opens Watch', async ({ page }) => {
+test('discover: no section link has its centre under Jack at rest, and a video card opens Watch', async ({ page }) => {
   await discover(page, 390, 844, '2026-10-31')
+  await expectJackAtRest(page, 'discover section links')
   const bad = await page.evaluate(() => {
     ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
     const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
-    return Array.from(document.querySelectorAll('section.sec[data-testid^="dc-"] > .sec-h a')).filter((a) => a.getBoundingClientRect().right > fab.left - 4).map((a) => a.textContent)
+    // S29 (D-184): the links run flush right (Jack may cover their edge); what must stay clear is their centre point
+    return Array.from(document.querySelectorAll('section.sec[data-testid^="dc-"] > .sec-h a')).filter((a) => { const r = a.getBoundingClientRect(); const x = (r.left + r.right) / 2, y = (r.top + r.bottom) / 2; return x >= fab.left && x <= fab.right && y >= fab.top && y <= fab.bottom }).map((a) => a.textContent)
   })
-  expect(bad, "section links in Jack's column").toEqual([])
+  expect(bad, "section links with their centre under Jack").toEqual([])
   await page.getByTestId('dc-farm').locator('a.md').first().click()
   await expect(page).toHaveURL(/#discover\/watch/)
 })

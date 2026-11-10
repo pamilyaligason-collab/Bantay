@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { skipOnboarding } from './helpers'
 import { empty, full, seed } from './fixtures/s16/health'
-import { assertHero, assertJackClear, assertJackHit, type JackAllow, assertNarrow, assertNoSideways, assertNoWrappedButtons, assertOrder, assertTargets, assertTextContrast, FIXED_CLOCKS, fullPageShot, setScheme, shotsLightDark } from './v13'
+import { assertHero, assertJackClear, assertJackHit, type JackAllow, assertNarrow, assertNoSideways, assertNoWrappedButtons, assertOrder, assertTargets, assertTextContrast, expectJackAtRest, FIXED_CLOCKS, fullPageShot, setScheme, shotsLightDark } from './v13'
 
 // v13 lane H: the Health overview (hero, Pinned, Family health, Browse, For you), the view-only member page and the six sub-screens.
 // Signed in as the made-up member `me` (health-auth-mock); all data is invented. V13_SHOTS=<dir> also writes the 390x844 light and dark set (docs/redesign-2026-10-31/shots/health).
@@ -129,8 +129,12 @@ test('H4: the hero is compact with two stacked buttons left of Jack, and Pinned 
   expect(b.y, 'stacked: the second button is below the first').toBeGreaterThanOrEqual(a.y + a.height) // D-128: one row would put the right button under Jack (two 140 px buttons do not fit left of his column)
   expect(a.height).toBeGreaterThanOrEqual(44)
   expect(a.width).toBeGreaterThanOrEqual(140)
+  await expectJackAtRest(page, 'health hero')
   const jack = (await page.locator('.sh-jackfab').boundingBox())!
-  expect(Math.max(a.x + a.width, b.x + b.width), 'buttons end left of the Jack column').toBeLessThanOrEqual(jack.x)
+  for (const r of [a, b]) { // S29 (D-184): the cards run the full width, so a button may reach under Jack's column; its centre point may not be under him
+    const cx = r.x + r.width / 2, cy = r.y + r.height / 2
+    expect(cx >= jack.x && cx <= jack.x + jack.width && cy >= jack.y && cy <= jack.y + jack.height, `hero button centre (${Math.round(cx)}, ${Math.round(cy)}) under Jack`).toBe(false)
+  }
   await assertNoWrappedButtons(page)
   // D-135 board: Today row, then the hero, then the Readings card, which holds the Pinned row (so Pinned no longer starts high)
   expect((await box(page, '[data-hero]')).y, 'hero starts under the Today row, on the first screen').toBeLessThanOrEqual(660) // S28 C1: three rows of Today tiles above the hero

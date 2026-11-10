@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertJackHit, assertJackHitRestAndEnd, DISCOVER_ALLOW, FIXED_CLOCKS, settled, type JackAllow } from './v13'
+import { assertJackHitRestAndEnd, DISCOVER_ALLOW, FIXED_CLOCKS, settled, type JackAllow } from './v13'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
@@ -52,18 +52,9 @@ async function sweep(page: Page, tag: string) {
   const more = page.locator('button.more-grid-btn', { hasText: /Show \d+ more/ })
   for (let i = 0; i < 20 && (await more.count()) > 0; i++) await more.first().click() // each click may reveal the next Show more, so the button is looked up again
   await expect(page.locator('button.more-grid-btn', { hasText: /Show \d+ more/ })).toHaveCount(0)
-  // The worst case for each control is when its centre is level with Jack: scroll every named control there in turn (a half-scrolled card shows only a sliver, which is no fair measure).
+  // S29 (D-184): the gate is Jack at rest (top) and at the end. The old per-control pass scrolled every control level with Jack and measured it there; Jack now slides away while the page scrolls down, so a control passing under him mid-scroll is not a failure, and a flush-right section link level with him would fail by construction.
   const n = await page.locator(TARGETS).count()
   expect(n, 'controls to measure').toBeGreaterThan(20)
-  for (let i = 0; i < n; i++) {
-    await page.evaluate(([sel, k]) => {
-      const sc = document.querySelector('.bt .scroll') as HTMLElement
-      const fab = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
-      const r = document.querySelectorAll<HTMLElement>(sel)[k]!.getBoundingClientRect()
-      sc.scrollTop += (r.top + r.bottom) / 2 - (fab.top + fab.bottom) / 2
-    }, [TARGETS, i] as const)
-    await assertJackHit(page, ALLOW, `${tag} control ${i}`, 'keep')
-  }
   await assertJackHitRestAndEnd(page, ALLOW, tag)
 }
 

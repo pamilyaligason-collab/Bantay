@@ -87,7 +87,8 @@ test('T4: the hero is 260 to 330 px, the temperature 76 px at weight 200, the co
   expect(hb.y, 'High/Low is under the condition').toBeGreaterThanOrEqual(cb.y + cb.height - 1)
 })
 
-test('T6: no cloud crosses the words and every cloud sits in the top 40% of the hero (still sky)', async ({ page }) => {
+for (const width of [390, 360]) test(`T6: no cloud crosses the words and every cloud sits in the top 40% of the hero (still sky) at ${width}`, async ({ page }) => {
+  await page.setViewportSize({ width, height: 844 })
   await page.emulateMedia({ reducedMotion: 'reduce' })
   await page.reload()
   const hero = page.getByTestId('weather-hero')
