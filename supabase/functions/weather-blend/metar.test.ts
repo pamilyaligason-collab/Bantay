@@ -1,7 +1,7 @@
 // @vitest-environment node
 // METAR shape from aviationweather.gov, 2026-10-31 (RPVM 13:00Z: 28 °C).
 import { describe, expect, it, vi } from 'vitest'
-import { nearestStation, parseMetar, type StationPort, type StationRow, stationCheck } from './metar.ts'
+import { checkOf, memoJson, nearestStation, parseMetar, rainObserved, type StationPort, type StationRow, stationCheck, stationObs } from './metar.ts'
 
 const NOW = Date.parse('2026-10-31T13:30:00Z')
 const rpvm = [{ icaoId: 'RPVM', obsTime: Date.parse('2026-10-31T13:00:00Z') / 1000, temp: 28, rawOb: 'METAR RPVM 311300Z 23005KT 9999 TS FEW018CB 28/25 Q1014' }]
@@ -42,5 +42,24 @@ describe('METAR check', () => {
     const { p, writes } = port(null, [])
     expect(await stationCheck(p, { lat: 9.65, lon: 123.88 }, 30, NOW)).toBeNull()
     expect(writes).toEqual([])
+  })
+  it('rain reading and station check share ONE fetch of the same METAR, each with its own age rule', async () => {
+    const raw = vi.fn(async () => rpvm) // 30 min old: fresh for both rules
+    const fetchJson = memoJson(raw)
+    const { p } = port(null)
+    p.fetchJson = fetchJson
+    const [rain, obs] = await Promise.all([rainObserved(fetchJson, LAPU, NOW), stationObs(p, LAPU, NOW)])
+    expect(raw).toHaveBeenCalledTimes(1)
+    expect(rain).toMatchObject({ value: true, source: 'observed', ageMin: 30, station: 'Mactan-Cebu airport' }) // TS group
+    expect(checkOf(obs, 29.4)?.bias).toBe(-1.4)
+    // 2 h old: too old for rain (90 min), still fine for the temperature check (3 h)
+    const later = NOW + 90 * 60_000
+    const f2 = memoJson(vi.fn(async () => rpvm))
+    expect(await rainObserved(f2, LAPU, later)).toBeNull()
+    expect(checkOf(await stationObs({ ...port(null).p, fetchJson: f2 }, LAPU, later), 30)?.observedTemp).toBe(28)
+  })
+  it('checkOf is null without a row or a forecast temperature', () => {
+    expect(checkOf(null, 30)).toBeNull()
+    expect(checkOf({ station: 'RPVM', name: 'x', observed_at: 'x', temp_c: 28, updated_at: 'x' }, null)).toBeNull()
   })
 })

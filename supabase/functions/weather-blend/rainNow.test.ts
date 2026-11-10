@@ -96,8 +96,11 @@ describe('blend() sets the model rain now (contract rule B: METAR, then model, t
   })
   it('index.ts really uses that order and fetches each METAR once', () => {
     const src = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
-    expect(src).toContain('b.rainingNow = (await rainObserved(fetchJson, cell, now).catch(() => null)) ?? b.rainingNow')
-    expect(src).toContain('seen.has(u)')
+    expect(src).toContain('b.rainingNow = (await rainP) ?? b.rainingNow')
+    expect(src).toContain('const rainP = rainObserved(fetchJson, cell, now)') // started before gather(), so the airport report never waits for the providers
+    expect(src).toContain('memoJson(')
+    expect(src.indexOf('const rainP =')).toBeLessThan(src.indexOf('await gather(')) // order, not just presence: the airport report starts before the providers are awaited
+    expect(src.indexOf('const obsP =')).toBeLessThan(src.indexOf('await gather('))
   })
 })
 

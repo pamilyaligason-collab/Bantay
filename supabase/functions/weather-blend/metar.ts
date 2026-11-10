@@ -32,14 +32,32 @@ export interface StationPort { read(id: string): Promise<StationRow | null>; wri
 export async function stationCheck(port: StationPort, cell: Cell, forecastTemp: number | null, nowMs: number): Promise<Check | null> {
   const st = nearestStation(cell)
   if (!st || forecastTemp == null) return null
+  return checkOf(await stationObs(port, cell, nowMs), forecastTemp)
+}
+
+/** The station's last observation for this cell (refreshed at most hourly, stored per station), or null when none is near or nothing recent is known. It needs no forecast, so it can run while the providers are fetched. */
+export async function stationObs(port: StationPort, cell: Cell, nowMs: number): Promise<StationRow | null> {
+  const st = nearestStation(cell)
+  if (!st) return null
   let row = await port.read(st.id)
   if (!row || nowMs - Date.parse(row.updated_at) >= REFRESH_MS) {
     const obs = parseMetar(await port.fetchJson(metarUrl(st.id)).catch(() => null), nowMs)
     if (obs) { row = { station: st.id, name: st.name, observed_at: obs.at, temp_c: obs.temp, updated_at: new Date(nowMs).toISOString() }; await port.write(row) }
   }
-  if (!row || nowMs - Date.parse(row.observed_at) > MAX_AGE_MS) return null
+  return !row || nowMs - Date.parse(row.observed_at) > MAX_AGE_MS ? null : row
+}
+
+/** The observation against this cell's own forecast temperature; null when either is unknown. */
+export function checkOf(row: StationRow | null, forecastTemp: number | null): Check | null {
+  if (!row || forecastTemp == null) return null
   const t = Number(row.temp_c)
   return { station: row.station, name: row.name, observedAt: row.observed_at, observedTemp: t, forecastTemp, bias: Math.round((t - forecastTemp) * 10) / 10 }
+}
+
+/** One fetch per URL per request: the rain reading and the station check share the same METAR payload (each applies its own age rule). */
+export function memoJson(fetchJson: (url: string) => Promise<unknown>): (url: string) => Promise<unknown> {
+  const seen = new Map<string, Promise<unknown>>()
+  return (u) => { if (!seen.has(u)) seen.set(u, fetchJson(u)); return seen.get(u)! }
 }
 
 // S29 B: "raining now" from the airport's present weather. shortcut: three listed stations only; add a station to STATIONS to cover another city.
