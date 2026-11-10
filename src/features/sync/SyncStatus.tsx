@@ -65,6 +65,15 @@ export function queuedNote(r: { tries: number; lastCode?: string; lastStatus?: n
   if (r.lastCode === 'insert-queued') return `${tried}${reasonText(r.lastCode)}` // an internal wait, not a server code
   return r.lastCode ? `${tried}${reasonText(r.lastCode, r.lastStatus)} Code ${r.lastCode}.` : tried.trim() || 'Not tried yet.'
 }
+/** Why the queued rows wait, in plain words with a count each (S30 L4): the header number alone does not say whether they are untried, offline or refused. Never a value. */
+export function queuedReasons(rows: Pick<OutboxRow, 'tries' | 'lastCode' | 'lastStatus' | 'stuck'>[]): string {
+  const m = new Map<string, number>()
+  for (const r of rows) {
+    const why = r.stuck ? 'Could not be sent, kept for another try' : !r.lastCode ? 'Not tried yet' : r.lastCode === 'net' ? 'Waiting for a connection' : r.lastCode === 'insert-queued' ? 'Waiting for an earlier change' : reasonText(r.lastCode, r.lastStatus).replace(/\.$/, '')
+    m.set(why, (m.get(why) ?? 0) + 1)
+  }
+  return [...m].map(([w, n]) => `${w}: ${n}`).join('; ') + '.'
+}
 const fields = (p: unknown) => (p && typeof p === 'object' ? Object.keys(p as object).join(', ') : '')
 const timeText = (at: number) => new Date(at).toLocaleString('en-PH', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 
@@ -103,6 +112,7 @@ export function DeadSheet({ onClose }: { onClose: () => void }) {
             <h3 className="sh-h2" style={{ fontSize: 16 }}>Queued</h3>
             <p className="sh-sub">{queued.length === 1 ? 'This change is' : `These ${queued.length} changes are`} saved on this phone and not sent yet.{paused && ' Sign in again to send them.'}</p>
             <p className="sh-sub" data-testid="queued-summary">{groups.map(([t, rows]) => `${rows.length} ${tableWords(t)}`).join(', ')}.</p>
+            <p className="sh-sub" data-testid="queued-reasons">Why: {queuedReasons(queued)}</p>
             {groups.map(([table, rows]) => (
               <div className="sh-card" key={table} data-testid="queued-group">
                 <b>{tableWords(table)} ({rows.length})</b>

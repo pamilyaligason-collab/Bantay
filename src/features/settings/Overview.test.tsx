@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-const acct = { member: null as null | { userId: string; personId: string; role: 'member' }, loaded: true }
+const acct = { member: null as null | { userId: string; personId: string; role: 'member' | 'admin' }, loaded: true }
 vi.mock('../auth/client', () => ({ supabase: {} })) // sign-in is set up on this copy
 vi.mock('./useAccount', () => ({ useAccount: () => ({ ...acct, who: 'Rey', passkey: false, photo: null }) }))
 vi.mock('../privacy/ConsentNotice', () => ({ ConsentNotice: () => null }))
@@ -34,5 +34,18 @@ describe('Settings overview: rows that need an account', () => {
     render(<Overview />)
     expect(screen.getByRole('link', { name: /Family and sharing/ })).toBeTruthy()
     acct.loaded = true
+  })
+})
+
+describe('Settings overview: Admin dashboard row (S30 L4)', () => {
+  it('an admin gets a link straight to the members page of the web admin', () => {
+    acct.member = { userId: 'u1', personId: 'p1', role: 'admin' }
+    render(<Overview />)
+    expect(screen.getByRole('link', { name: /Admin dashboard/ }).getAttribute('href')).toBe('/admin#/members')
+  })
+  it('a member does not see it', () => {
+    acct.member = { userId: 'u1', personId: 'p1', role: 'member' }
+    render(<Overview />)
+    expect(screen.queryByRole('link', { name: /Admin dashboard/ })).toBeNull()
   })
 })
