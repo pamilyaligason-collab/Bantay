@@ -7,7 +7,7 @@ import { JackArt, SceneHero, type JackName } from '../look'
 import { clockIn, kindOf } from '../weather/forecast'
 import { condOf, feelsLike, isHot, pastSunset, todOf } from '../weather/scene'
 import WeatherScene from '../weather/WeatherScene'
-import { rainOutlook, skyOf, weatherActionLine, wxLocal, type Wx } from './heroCards'
+import { rainOutlook, skyOf, underRainChip, weatherActionLine, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
 import { placeLineOf, placeNameOf } from './placeName'
 import { noBreak } from './timeWords'
@@ -16,7 +16,7 @@ import { stormSlots, type Slot } from './stormView'
 import HourlyStrip, { hourlySlots } from './HourlyStrip'
 import { ForecastNote } from '../weather/ForecastNote'
 import RainNowChip from '../weather/RainNowChip'
-import { isRainingNow, locationOffNote, reconcileNow } from '../weather/rainNow'
+import { isRainingNow, locationOffNote, rainNowChip, reconcileNow } from '../weather/rainNow'
 import { zoneLabel } from '../location/nearestPlace'
 import RainMini, { miniSlots } from './RainMini'
 import './weatherHero.css'
@@ -108,7 +108,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const rn = reconcileNow(wx)
   const line = storm ? null : weatherActionLine(gx, now, null, isRainingNow(gx))
   const rainHero = !storm && gx.hourly ? heroRainLine(gx.hourly.time.map((time, i) => ({ time, prob: gx.hourly!.prob[i] ?? null })), wxLocal(wx, now)) : null // T5: from 30%, not only when the action line says rain
-  const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(gx, now) ?? line.text : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
+  const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(gx, now) ?? (rainNowChip(wx.rainingNow) ? underRainChip(line.text) : line.text) : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
   // Jack only on an everyday rain or heat tip, in the expanded card. Never on a storm, an air alert or the Danger heat bands and above (rank 80+, D-91), and never when `noJack`.
   const jack: JackName | null = noJack || storm || !expanded ? null : line?.id === 'rain' ? 'ready-for-rain' : line?.id === 'heat' && line.rank < 80 ? 'drink-water' : null
   const href = line ? WEATHER_ACTION_HREF : WEATHER_HREF

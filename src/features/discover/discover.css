@@ -69,6 +69,15 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 .dc-sh { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
 .dc-sh h2 { margin: 0; }
 .dc-player { display: grid; gap: 4px; }
+/* S30 L6: the topic chips sit above the videos they swap; the panel crossfades in on a new pick */
+.dc-wchips { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 4px; }
+.dc-wchips button { min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 22px; background: var(--card); font: inherit; font-size: 16px; font-weight: 500; color: var(--ink); white-space: nowrap; }
+.dc-wchips button[aria-selected="true"] { background: var(--green); border-color: var(--green); color: var(--on-green); font-weight: 600; }
+.dc-wchips button:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
+.dc-wpanel { display: flex; flex-direction: column; gap: 12px; animation: dc-wfade .2s ease-out; }
+@keyframes dc-wfade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dc-wpanel { animation: none; } }
+.dc-vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .dc-prows { padding: 0 16px; }
 .dc-prows > .rw + .rw { border-top: 1px solid var(--line); }
 

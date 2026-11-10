@@ -65,7 +65,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
   const saved = useKv<unknown>(CHECKED_KEY, null)
   const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
   const stale = feedStale(official, saved, down) // the same test as Safety: no "none" wording without a fresh check
-  const NOT_SAID = `${neverChecked(official, saved, down) ? 'Warnings have not been checked yet' : 'Not checked lately'}, so Bantay cannot say there is none.` // ML-51: same never-checked split as Weather
+  const NOT_SAID = `${neverChecked(official, saved, down) ? 'Warnings have not been checked yet' : 'Not checked lately'}, so Bantay cannot say there is none.` // ML-51: same never-checked split as Weather; S30 L6: the banner below uses the same words
   const prefs = readPrefs(useKv<unknown>(ALERT_KEY, undefined))
   const [filter, setFilter] = useState<Filter>('all')
   const [managing, setManaging] = useState(false)
@@ -82,7 +82,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
   return (
     <>
       <SafetyHead view="world" actions={<ZonePicker loc={l} />} />
-      {stale && <p className="sf-note" role="status">{outdatedLine(shownCheck(official, saved, down))}</p>}
+      {stale && <p className="sf-note" role="status">{outdatedLine(shownCheck(official, saved, down)).replace('Alerts have not been checked on this phone yet.', 'Warnings have not been checked yet.')}</p>}
       {/* above the map: below it, Jack's corner covered the last segment (D-128 allows whole-card links only) */}
       <Segmented label="Filter" value={filter} onChange={setFilter} options={[{ id: 'all', label: 'All' }, { id: 'near', label: 'Near family' }, { id: 'ph', label: 'Philippines' }, { id: 'world', label: 'World' }]} />
       <div className="wd-bleed"><LazyMap height={300} center={[12, 122]} zoom={4} label="Map of active alerts" testId="world-map" depKey={`${pins.map((p) => p.id).join()}|${here?.lat}|${here?.lon}`}

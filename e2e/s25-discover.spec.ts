@@ -90,7 +90,7 @@ test('shots: Discover top to bottom, then Watch', async ({ page }) => {
     if (y >= total) break
   }
   await page.goto('/#discover/watch')
-  await expect(page.getByRole('heading', { name: 'Checked videos' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Watch · All videos' })).toBeVisible()
   await take('watch')
   await page.getByRole('button', { name: /^Video, / }).first().click()
   await take('watch-picked')
