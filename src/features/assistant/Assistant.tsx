@@ -319,12 +319,13 @@ export default function Assistant() {
 
   // The model path: counts one message, asks, shows the reply. Anything typed while offline waits in `queued` and comes here when signal returns.
   const deliver = async (content: string) => {
-    if (!(await aiOn())) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: AI_OFF, local: true }]) // privacy.ai: before the daily count is used; the local emergency gate runs before this
-    if (!(await takeMessage(CAP))) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }])
+    const g = chatGen.current // the chat this message belongs to; closing Jack starts a new one
+    if (!(await aiOn())) return g === chatGen.current ? setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: AI_OFF, local: true }]) : undefined // privacy.ai: before the daily count is used; the local emergency gate runs before this
+    if (!(await takeMessage(CAP))) return g === chatGen.current ? setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }]) : undefined
+    if (g !== chatGen.current) return
     const next: Item[] = [...items.filter((m) => !m.queued), { role: 'user', content }]
     setItems(next)
     setBusy(true)
-    const g = chatGen.current
     const r = await ask(next.filter((m) => !m.local), location.hash.slice(1) || 'today')
     setBusy(false)
     if (g !== chatGen.current) return // Jack was closed while it thought: the conversation is over, nothing comes back or is saved
