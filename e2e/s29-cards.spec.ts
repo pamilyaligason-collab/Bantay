@@ -51,12 +51,12 @@ for (const size of SIZES) {
       await expect(page.locator('[data-testid="dc-top-story"] > .sec-h a')).toHaveCount(0) // no header link: nothing sits in Jack's corner
       await expect(page.getByTestId('dc-top-all')).toBeVisible()
       await layoutStable(page)
-      // 'row': the row scrolled to the bottom edge of the view, in Jack's row, Jack back at rest (S29 TD round 2, ML-44); 'top': scrollTop 0; 'page end': the very end
-      for (const at of ['row', 'top', 'page end'] as const) {
+      // 'row': the row scrolled to the bottom edge of the view, in Jack's row, Jack back at rest (S29 TD round 2, ML-44); 'top': scrollTop 0. No 'page end' step: the row is off screen there, so it would prove nothing; 'row' and 'top' cover rule A for this row
+      for (const at of ['row', 'top'] as const) {
         await page.evaluate((to) => {
           const s = document.querySelector('.bt .scroll') as HTMLElement
           if (to === 'row') { const r = document.querySelector('[data-testid="dc-top-all"]')!; r.scrollIntoView({ block: 'end' }); const tabs = document.querySelector('.sh-tabs'); if (tabs) s.scrollTop += r.getBoundingClientRect().bottom - tabs.getBoundingClientRect().top } // the tab bar covers the scroll box's bottom edge: park the row just above it, in Jack's row
-          else s.scrollTop = to === 'top' ? 0 : s.scrollHeight
+          else s.scrollTop = 0
         }, at)
         await expectJackAtRest(page, `top stories ${at}`)
         const m = await page.evaluate(() => {

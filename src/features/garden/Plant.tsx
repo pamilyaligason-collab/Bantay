@@ -49,7 +49,7 @@ export function plantList(type: ClimateType, month: number, dry = false): { guid
   const guided = VEG_GUIDE.filter((g) => names.has(g.calendar)), others = crops.filter((c) => !guideFor(c.name))
   return dry ? { guided: tolerantFirst(guided, (g) => g.calendar), others: tolerantFirst(others, (o) => o.name) } : { guided, others }
 }
-/** The dry period in this province's PAGASA outlook for this month and the next two (null = none, or no current outlook). */
+/** The first dry month in this province's PAGASA outlook among the months the Climate card shows (null = none, or no current outlook). */
 function useDry(province: string | null | undefined): Dry | null {
   const d = useDrought(province ?? null)
   const nowYm = manilaYm()

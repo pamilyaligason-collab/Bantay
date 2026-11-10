@@ -65,7 +65,7 @@ const span = (ms: string[]) => (ms.length === 1 ? `in ${monthName(ms[0]!)}` : `$
 
 /** One plain sentence from the upcoming outlook months (PAGASA's outlook, never a forecast of ours). */
 export function outlookSentence(months: readonly DroughtMonth[], nowYm: string): string {
-  const ahead = months.filter((m) => m.kind === 'outlook' && m.month >= nowYm)
+  const ahead = shownOutlook(months, nowYm) // the months the chips show, so card, chips and Plant tell one story (S29 A4)
   if (!ahead.length) return 'Climate outlook not available yet.'
   const of = (l: Level) => ahead.filter((m) => m.level === l).map((m) => m.month)
   const spell = of('dry_spell'), drought = of('drought'), dry = of('dry_condition')
