@@ -1,5 +1,5 @@
 -- S29: daily PAGASA drought outlook (pagasa-drought). Same vault secret as pagasa-warnings.
--- timeout 150 s: one run can take about 110 s (100 s budget + last fetch + heartbeat).
+-- timeout 150 s: one run can take about 130 s (100 s budget + 1 s gap + 25 s fetch + upsert + heartbeat).
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
 

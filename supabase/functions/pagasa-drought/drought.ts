@@ -2,8 +2,8 @@
 // PAGASA stays the authority: the app shows one sentence and month chips and links to PAGASA. Nothing is guessed: a status or month that is not recognised is dropped, and an answer with no usable outlook month stores nothing.
 export const DROUGHT_URL = 'https://droughtcaster.pagasa.dost.gov.ph/proxy.php?endpoint=drought&location='
 export const REQUEST_GAP_MS = 1000
-export const BUDGET_MS = 100_000 // Supabase Free edge functions stop at 150 s: reserve one worst-case province (8 s fetch + write) and the heartbeat (ML-24)
-export const FETCH_TIMEOUT_MS = 8000
+export const BUDGET_MS = 100_000 // Supabase Free edge functions stop at 150 s: reserve one worst-case province (25 s fetch + write) and the heartbeat (ML-24): 100 + 25 + ~2 s stays under 150
+export const FETCH_TIMEOUT_MS = 25_000 // PAGASA's proxy takes 15-20 s for a province it has not served lately (measured 10 Nov 2026: Bohol 15 s cold, 0.16 s warm); 8 s failed every cold one
 
 export type Level = 'not_affected' | 'dry_condition' | 'dry_spell' | 'drought'
 export interface Month { month: string; level: Level; kind: 'assessment' | 'outlook' }

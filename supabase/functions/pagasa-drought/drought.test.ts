@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import provinceClimate from '../../../src/data/provinceClimate.json'
-import { BUDGET_MS, DROUGHT_URL, type DroughtRow, parseDrought, runDrought } from './drought.ts'
+import { BUDGET_MS, DROUGHT_URL, FETCH_TIMEOUT_MS, REQUEST_GAP_MS, type DroughtRow, parseDrought, runDrought } from './drought.ts'
 import { PROVINCES } from './provinces.ts'
 
 const fx = (n: string) => JSON.parse(readFileSync(new URL(`./fixtures/${n}`, import.meta.url), 'utf8')) as unknown
@@ -145,4 +145,9 @@ describe('migration 0063', () => {
     const down = readFileSync(new URL('../../migrations/0063_pagasa_drought.down.sql', import.meta.url), 'utf8')
     expect(down).toContain('drop table if exists public.pagasa_drought')
   })
+})
+
+it('a cold PAGASA answer (15-20 s) fits the per-request timeout, and the budget plus one last request stays under the 150 s platform limit', () => {
+  expect(FETCH_TIMEOUT_MS).toBeGreaterThanOrEqual(20_000)
+  expect(BUDGET_MS + REQUEST_GAP_MS + FETCH_TIMEOUT_MS + 5_000).toBeLessThan(150_000) // 5 s: upsert, heartbeat, boot
 })
