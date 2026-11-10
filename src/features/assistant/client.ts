@@ -6,10 +6,10 @@ export type AskResult = ReturnType<typeof parseReply> | { error: 'off' | 'unconf
 
 type Env = { VITE_ASSISTANT_PROVIDER?: string; VITE_ASSISTANT_URL?: string; VITE_SUPABASE_URL?: string }
 
-/** Ask goes to the Supabase function `ask` (gate, router, monthly spend cap; default since Lloyd's 2026-11-10 switch). VITE_ASSISTANT_PROVIDER='n8n' keeps the old n8n webhook in VITE_ASSISTANT_URL as a rollback. Same request and reply shape. */
+/** VITE_ASSISTANT_PROVIDER='edge' sends Ask to the Supabase function `ask`; anything else (default) keeps the n8n webhook in VITE_ASSISTANT_URL. Same request and reply shape. */
 export function assistantUrl(env: Env = import.meta.env as Env): string | undefined {
-  if (env.VITE_ASSISTANT_PROVIDER === 'n8n') return env.VITE_ASSISTANT_URL || undefined
-  return env.VITE_SUPABASE_URL ? `${env.VITE_SUPABASE_URL.replace(/\/$/, '')}/functions/v1/ask` : undefined
+  if (env.VITE_ASSISTANT_PROVIDER === 'edge') return env.VITE_SUPABASE_URL ? `${env.VITE_SUPABASE_URL.replace(/\/$/, '')}/functions/v1/ask` : undefined
+  return env.VITE_ASSISTANT_URL || undefined
 }
 
 export async function ask(messages: Msg[], screen: string, url = assistantUrl(), f: typeof fetch = fetch): Promise<AskResult> {
@@ -20,8 +20,7 @@ export async function ask(messages: Msg[], screen: string, url = assistantUrl(),
     const res = await f(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(buildRequest(messages, screen)),
-      signal: AbortSignal.timeout(65_000) // the function may try up to three models in turn (about 60 s worst case); never wait forever
+      body: JSON.stringify(buildRequest(messages, screen))
     })
     if (res.status === 401) return { error: 'signin' }
     if (res.status === 429) return { error: 'limit' }
