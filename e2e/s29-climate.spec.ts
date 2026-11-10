@@ -59,7 +59,7 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [360, 780
     // Climate directly above Plant, as one group: Plant starts right below Climate (one section gap)
     const pl = page.getByTestId('today-plant')
     await expect(pl).toBeVisible()
-    await expect(pl).toContainText('Because of the dry spell in Bohol, these crops cope with less water.')
+    await expect(pl).toContainText('Because of the dry spell in Bohol, Sitaw copes with less water.')
     const a = (await cl.boundingBox())!, b = (await pl.boundingBox())!
     expect(b.y).toBeGreaterThan(a.y + a.height - 1)
     expect(b.y - (a.y + a.height)).toBeLessThanOrEqual(40)

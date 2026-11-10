@@ -16,17 +16,22 @@ const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
  *  yardlong bean, Vigna unguiculata), pigeon pea, hyacinth bean (lablab), lima bean and okra; FAO crop water notes for watermelon (deep roots). Extend only from a named source. */
 export const DROUGHT_TOLERANT = ['Cowpea', 'Yardlong bean', 'Pigeon pea', 'Hyacinth bean', 'Lima bean', 'Okra', 'Watermelon']
 const tolerantFirst = <T,>(xs: T[], name: (x: T) => string): T[] => [...xs.filter((x) => DROUGHT_TOLERANT.includes(name(x))), ...xs.filter((x) => !DROUGHT_TOLERANT.includes(name(x)))]
-export const dryNote = (province: string) => `Because of the dry spell in ${province}, these crops cope with less water.`
+const tolerant = (n: string) => DROUGHT_TOLERANT.includes(n)
+const names2 = (xs: string[]) => (xs.length > 1 ? `${xs[0]} and ${xs[1]} cope` : `${xs[0]} copes`)
+export const dryNote = (province: string, crops: string[]) => `Because of the dry spell in ${province}, ${names2(crops.slice(0, 2))} with less water.`
 export const dryTip = (province: string) => `Dry spell in ${province}: water early in the morning and mulch to keep the soil damp.`
 type Tile = { g: VegGuide } | { name: string }
 const tileName = (t: Tile) => ('g' in t ? t.g.calendar : t.name)
-/** Today's tiles. In a dry spell, crops that cope with less water lead across both groups. */
-export function plantTiles(guided: VegGuide[], others: { name: string }[], dry: boolean, n = 3): Tile[] {
-  const all: Tile[] = [...guided.map((g) => ({ g })), ...others.map((o) => ({ name: o.name }))]
-  return (dry ? tolerantFirst(all, tileName) : all).slice(0, n)
+const shownName = (t: Tile) => ('g' in t ? t.g.name : t.name)
+/** Today's tiles: the plantList order (in a dry spell, crops that cope with less water lead inside each group), so guided crops with a photo come before "Guide coming" ones. */
+export function plantTiles(guided: VegGuide[], others: { name: string }[], n = 3): Tile[] {
+  return [...guided.map((g): Tile => ({ g })), ...others.map((o): Tile => ({ name: o.name }))].slice(0, n)
 }
-export const anyTolerant = (tiles: Tile[]) => tiles.some((t) => DROUGHT_TOLERANT.includes(tileName(t)))
-const DryNote = ({ province, tiles }: { province: string; tiles: Tile[] }) => <>{anyTolerant(tiles) ? dryNote(province) : dryTip(province)}</>
+/** The dry-spell line for the tiles on screen: names only the tolerant ones shown (max 2), else a watering tip. */
+export const dryText = (province: string, shown: Tile[]) => {
+  const t = shown.filter((x) => tolerant(tileName(x))).map(shownName)
+  return t.length ? dryNote(province, t) : dryTip(province)
+}
 
 /** Crops in the bulletin for this type and month: the ones with a written guide first (poster order), then the rest. `dry`: crops that cope with less water go first in each group. */
 export function plantList(type: ClimateType, month: number, dry = false): { guided: VegGuide[]; others: { name: string; tagalog: string | null }[] } {
@@ -65,16 +70,16 @@ export function PlantCard() {
   if (!c.ready) return null
   if (!c.type) return <Section title="Plant this month" testId="today-plant"><div className="card gpl-card"><ClimatePicker onPick={c.pick} /></div></Section>
   const { guided, others } = plantList(c.type, month, !!dryIn)
-  const tiles = plantTiles(guided, others, !!dryIn)
+  const tiles = plantTiles(guided, others)
   const total = guided.length + others.length
   if (!tiles.length) return null
-  const first = guided[0]
+  const first = tiles.find((t): t is { g: VegGuide } => 'g' in t)?.g
   const anyPrice = tiles.some((t) => 'g' in t && priceOf(t.g, d))
   return (
     <Section title="Plant this month" link={{ href: '#garden/plant', label: total > 3 ? `See all ${total}` : 'See more' }} testId="today-plant">
       <a className="card gpl-card" href="#garden/plant" data-testid="plant-card">
         <span className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
-        {dryIn && <span className="gpl-dry" data-testid="plant-dry"><DryNote province={dryIn} tiles={tiles} /></span>}
+        {dryIn && <span className="gpl-dry" data-testid="plant-dry">{dryText(dryIn, tiles)}</span>}
         <span className="gpl-tiles">
           {tiles.map((t) => 'g' in t ? (
             <span key={t.g.name} className="gpl-tile"><img src={t.g.img} alt={t.g.alt} loading="lazy" /><span className="gpl-tn" data-contrast-bg="#0A190F">{t.g.name}{priceOf(t.g, d) && <small>{priceText(priceOf(t.g, d)!)}</small>}</span></span>
@@ -84,7 +89,7 @@ export function PlantCard() {
         </span>
         <span className="gpl-line">{first ? <><b>{first.name}</b>: first harvest in {lower(first.harvest)}. Tap for variety, land prep and price.</> : <>Tap to see what to plant in {MONTH_NAMES[month - 1]}.</>}</span>
       </a>
-      {guided.length > 0 && <p className="gpl-credit"><a href="#garden/plant" data-testid="plant-photos">Photos: Wikimedia Commons, see credits</a></p>}
+      {!!first && <p className="gpl-credit"><a href="#garden/plant" data-testid="plant-photos">Photos: Wikimedia Commons, see credits</a></p>}
     </Section>
   )
 }
@@ -127,7 +132,7 @@ export function PlantPoster() {
     <section className="gpl-page" data-testid="plant-page">
       {head}
       {c.type && <p className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}.{priced && d ? ` Prices: Metro Manila markets, DA, ${priceDay(d.date)}.` : ''}</p>}
-      {c.type && dryIn && list && <p className="gpl-sub gpl-dry" data-testid="plant-dry"><DryNote province={dryIn} tiles={[...list.guided.map((g) => ({ g })), ...list.others.map((o) => ({ name: o.name }))]} /></p>}
+      {c.type && dryIn && list && <p className="gpl-sub gpl-dry" data-testid="plant-dry">{dryText(dryIn, (list.guided.length ? list.guided.map((g): Tile => ({ g })) : list.others.map((o): Tile => ({ name: o.name }))))}</p>}
       {picker && <div className="card gpl-card"><ClimatePicker current={c.type} onPick={(t) => { c.pick(t); setChange(false) }} /></div>}
       {list && list.guided.map((g, i) => <Poster key={g.name} g={g} price={priceOf(g, d)} date={d ? d.date : null} hero={i === 0} />)}
       {list && list.others.length > 0 && (
