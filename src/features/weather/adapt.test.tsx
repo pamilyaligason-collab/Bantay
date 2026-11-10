@@ -134,21 +134,21 @@ describe('Weather stays fresh', () => {
 })
 
 describe('Weather follows the conditions', () => {
-  it('raining now: the rain card leads the 48-hour strip, Rain next 12 h replaces Sunrise, the scene rains', async () => {
+  it('raining now: the rain card leads the 48-hour strip, no rain tile repeats it (A7), the scene rains', async () => {
     serve({ code: 63, temp: 27, humidity: 90, hourlyProb: () => 85 })
     render(<WeatherScreen />)
     await screen.findByText('Rainy')
     expect(before('Rain chance', 'Next 48 hours')).toBe(true)
-    expect(screen.getByText('Rain next 12 h')).toBeTruthy()
-    expect(screen.queryByText('Sunrise')).toBeNull()
+    expect(screen.queryByText('Rain next 12 h')).toBeNull()
+    expect(screen.getByText('Sunrise')).toBeTruthy()
     expect(document.querySelector('.wxs')?.getAttribute('data-cond')).toBe('rain')
   })
-  it.each([[63, 'rain'], [95, 'storm']])('code %i falling now with a low chance still counts as wet: rain card first, tile shows the figure', async (code, cond) => {
+  it.each([[63, 'rain'], [95, 'storm']])('code %i falling now with a low chance still counts as wet: rain card first, its figures line says low chance', async (code, cond) => {
     serve({ code, temp: 27, humidity: 90, hourlyProb: () => 5 })
     render(<WeatherScreen />)
     await waitFor(() => expect(document.querySelector('.wxs')?.getAttribute('data-cond')).toBe(cond))
     expect(before('Rain chance', 'Next 48 hours')).toBe(true)
-    expect(screen.getByText('Rain next 12 h').parentElement?.textContent).toContain('Low chance')
+    expect(screen.getByTestId('wx-rain-figures').textContent).toContain('Next 12 h low chance')
   })
   it.each([[63, 'Raining now'], [95, 'Thunderstorm now']])('code %i with a low chance and strong sun: the What to do card says it is falling, no calm line, no sun tip', async (code, words) => {
     serve({ code, temp: 27, humidity: 90, uvMax: 10, hourlyProb: () => 5 })
@@ -163,28 +163,28 @@ describe('Weather follows the conditions', () => {
       return new Response(JSON.stringify(j), { status: 200 })
     }))
     render(<WeatherScreen />)
-    const tile = (await screen.findByText('Rain next 12 h')).parentElement!
-    expect(tile.textContent).toContain('n/a')
-    expect(tile.textContent).not.toContain('0%')
+    const figures = (await screen.findByTestId('wx-rain-figures')).textContent ?? ''
+    expect(figures).not.toContain('Next 12 h') // unknown is left out, never 0%
+    expect(figures).not.toMatch(/(^|\D)0%/)
   })
-  it.each([1, 5, 7, 11])('rain likely %i h from now: the rain line and the Rain next 12 h tile never disagree', async (ahead) => {
+  it.each([1, 5, 7, 11])('rain likely %i h from now: the rain line and the rain card figures never disagree', async (ahead) => {
     const h = (NOW.getUTCHours() + 8 + ahead) % 24
     serve({ code: 0, temp: 28, humidity: 50, hourlyProb: (x) => (x === h ? 85 : 5) })
     render(<WeatherScreen />)
     await screen.findByText('Clear')
     const line = screen.getByTestId('wx-advice').textContent ?? ''
     expect(line).toContain('Rain likely') // the line looks 12 h ahead ...
-    expect(screen.getByText('Rain next 12 h').parentElement?.textContent).toContain('85%') // ... so the tile does too
+    expect(screen.getByTestId('wx-rain-figures').textContent).toContain('Next 12 h 85%') // ... so the card does too
   })
-  it('no rain likely in the next 12 h: the tile never claims a high chance', async () => {
+  it('no rain likely in the next 12 h: the card never claims a high chance', async () => {
     const h = (NOW.getUTCHours() + 8 + 13) % 24 // 13 h away, outside both windows
     serve({ code: 63, temp: 27, humidity: 90, hourlyProb: (x) => (x === h ? 90 : 5) })
     render(<WeatherScreen />)
     await screen.findByText('Rainy')
     expect(screen.getByTestId('wx-advice').textContent).not.toContain('Rain likely')
-    expect(screen.getByText('Rain next 12 h').parentElement?.textContent).toContain('Low chance')
+    expect(screen.getByTestId('wx-rain-figures').textContent).toContain('Next 12 h low chance')
   })
-  it('clear and dry: the strip comes first, Sunrise stays, no rain tile, the sky is clear', async () => {
+  it('clear and dry: the strip comes first, Sunrise stays, no rain tile (A7: never, wet or dry), the sky is clear', async () => {
     serve(DRY)
     render(<WeatherScreen />)
     await screen.findByText('Clear')
@@ -193,13 +193,21 @@ describe('Weather follows the conditions', () => {
     expect(screen.queryByText('Rain next 12 h')).toBeNull()
     expect(document.querySelector('.wxs')?.getAttribute('data-cond')).toBe('clear')
   })
-  it('dry now but rain likely later today: rain card first, tile follows', async () => {
+  it('A9: the 48-hour strip says Low (one line) for under 10%, and keeps the long words in the accessible name', async () => {
+    serve({ code: 0, temp: 28, humidity: 50, hourlyProb: () => 5 })
+    render(<WeatherScreen />)
+    await screen.findByText('Clear')
+    const cells = Array.from(document.querySelectorAll('.wx-strip .wx-rp'))
+    expect(cells.length).toBeGreaterThan(3)
+    expect(cells.every((c) => c.textContent === 'Low' && c.getAttribute('aria-label') === 'Low chance of rain')).toBe(true)
+  })
+  it('dry now but rain likely later today: rain card first', async () => {
     const h = (NOW.getUTCHours() + 8 + 2) % 24 // two hours from now, place-local (14:00)
     serve({ code: 0, temp: 28, humidity: 50, hourlyProb: (x) => (x === h || x === (h + 1) % 24 ? 85 : 5) })
     render(<WeatherScreen />)
     await screen.findByText('Clear')
     expect(before('Rain chance', 'Next 48 hours')).toBe(true)
-    expect(screen.getByText('Rain next 12 h')).toBeTruthy()
+    expect(screen.getByTestId('wx-rain-figures').textContent).toContain('Next 12 h 85%')
   })
   it('a storm is listed: the storm track sits above What to do and the rain card', async () => {
     await db.kv.put({ key: 'alerts:checkedAt', value: NOW.toISOString() })

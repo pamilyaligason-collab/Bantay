@@ -19,14 +19,14 @@ const STILL_STREAKS = 8
 /** The picture behind the weather text: sky gradient for the time of day, then the layers for the condition. Decorative (aria-hidden).
  *  Motion is CSS only. It is still (static positions: sun/moon in place, clouds at 20% and 60%, 8 streaks, no flash) under reduced motion, while an SOS is up
  *  or on #safety*, and it is paused while the card is off screen or the page is hidden. */
-export default function WeatherScene({ tod, cond, hot = false, lite = false }: { tod: Tod; cond: Cond; hot?: boolean; lite?: boolean }) {
+export default function WeatherScene({ tod, cond, hot = false, lite = false, afterSunset = false }: { tod: Tod; cond: Cond; hot?: boolean; lite?: boolean; afterSunset?: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   const [reduced, sosScreen, sosBanner, safety] = [useReducedMotion(), useSosScreenOpen(), useSosActive(), useSafetyHash()]
   const still = reduced || sosScreen || sosBanner || safety
   const [onScreen, pageVisible] = [useOnScreen(ref), usePageVisible()] // both hooks every render (no short-circuit)
   const paused = !onScreen || !pageVisible
   const [a, b] = SKY[tod]
-  const L = layersFor(tod, cond, hot)
+  const L = layersFor(tod, cond, hot, afterSunset)
   const drops = DROPS(L.rain).slice(0, still ? STILL_STREAKS : undefined)
   const scrim = scrimFor(tod, lite, L.moon)
   return (

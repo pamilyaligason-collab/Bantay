@@ -18,7 +18,7 @@ export default function AirCard({ point }: { point: LatLon | null }) {
             <span className="wx-sub wx-aqi-n">Fine dust (PM2.5): {mean} µg/m³</span>
           </>
         ) : <p className="wx-sub">Air quality is not available now.</p>}
-        <span className="wx-sub">Air quality (DENR scale), PM2.5 24-hour average.{stale ? ' Older reading; could not refresh.' : ''}</span>
+        <span className="wx-sub">DENR scale, 24-hour average.{stale ? ' Older reading; could not refresh.' : ''}</span>
       </div>
     </Section>
   )

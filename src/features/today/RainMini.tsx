@@ -4,6 +4,7 @@ import { interp as at } from '../../../supabase/functions/weather-blend/blend'
 export const MINI_SLOTS = 8 // 8 bars of 15 minutes = the next 2 hours
 const STEP = 15 * 60_000
 const WET_PCT = 30 // same threshold as the hero's own rain line (heroRain.ts)
+const MM_FULL = 2.5 // a full bar in millimetre mode: 2.5 mm in 15 minutes = 10 mm an hour, heavy rain (A2: fixed, not the day's own maximum)
 /** mm: millimetres in this 15 minutes, from the forecast's real hourly millimetres; null when the forecast has none (then pct, the rain chance, is what the bar shows). */
 export interface MiniSlot { time: string; mm: number | null; pct: number | null; wet: boolean }
 
@@ -54,9 +55,9 @@ export default function RainMini({ slots, raining = false }: { slots: MiniSlot[]
   const summary = miniSummary(slots)
   if (!summary) return <p className="td-rm-none" data-testid="rain-mini">{raining ? 'No more rain expected in the next 2 hours' : 'No rain in the next 2 hours'}</p>
   const chance = slots[0]!.mm == null
-  const val = (s: MiniSlot) => (s.wet ? (chance ? s.pct : s.mm) ?? 0 : 0)
-  const max = Math.max(...slots.map(val), chance ? 1 : 0.01)
-  const top = slots.findIndex((s) => val(s) === max)
+  const val = (s: MiniSlot) => (chance ? s.pct : s.mm) ?? 0
+  const top = slots.reduce((a, s, i) => (val(s) > val(slots[a]!) ? i : a), 0) // the tallest bar carries the number
+  const frac = (s: MiniSlot) => Math.min(1, val(s) / (chance ? 100 : MM_FULL)) // A2: a fixed scale (0-100% chance; MM_FULL mm per 15 min), never the highest slot, so a flat 20% does not look like a flat 90%
   return (
     <div className="td-rm" data-testid="rain-mini">
       <span className="td-vh">{summary}</span>
@@ -64,8 +65,8 @@ export default function RainMini({ slots, raining = false }: { slots: MiniSlot[]
         {slots.map((s, i) => (
           <li key={s.time}>
             <span className="td-rm-v">{i === top ? (chance ? `${s.pct}%` : `${s.mm} mm`) : ' '}</span>
-            <i style={{ height: `${s.wet ? Math.max(3, (val(s) / max) * 36) : 2}px` }} />
-            <span className="td-rm-l">{i === 0 ? 'Now' : i === 4 ? clock(s.time) : ' '}</span>
+            <i style={{ height: `${Math.max(2, frac(s) * 36)}px` }} />
+            <span className="td-rm-l">{i === 0 ? 'Now' : i === 4 ? '+1 h' : ' '}</span>
           </li>
         ))}
       </ul>

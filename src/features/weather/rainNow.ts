@@ -1,5 +1,4 @@
 import type { RainingNow } from '../../../supabase/functions/weather-blend/blend'
-import { zoneLabel } from '../location/nearestPlace'
 
 /** A rain chance in words: under 10% is "Low chance", never "0%" (a chance is not a promise of dry). null stays null. */
 export const rainChanceText = (pct: number | null | undefined): string | null => (pct == null ? null : pct < 10 ? 'Low chance' : `${Math.round(pct)}%`)
@@ -23,7 +22,7 @@ export function reconcileNow(w: { words: string; code?: number | null; precip?: 
   return { words: w.words, code, hideSun: false }
 }
 
-/** "Location off: showing <place>" when no fix was found and no zone was picked by hand (the home zone is only the fallback); else null. */
+/** "Location off: showing your home area" (the place itself is the header pill's, so it is not said twice) when no fix was found and no zone was picked by hand (the home zone is only the fallback); else null. */
 export function locationOffNote(place: { source: string; zone: string; picked?: boolean; settled?: boolean } | null): string | null {
-  return place && place.settled !== false && place.source === 'zone' && place.picked === false ? `Location off: showing ${zoneLabel(place.zone)}` : null
+  return place && place.settled !== false && place.source === 'zone' && place.picked === false ? 'Location off: showing your home area' : null
 }

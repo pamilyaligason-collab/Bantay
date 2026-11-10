@@ -194,7 +194,8 @@ export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning:
     hourly: (w.hourly?.time ?? []).map((time, i) => ({ time, prob: w.hourly!.prob[i] ?? null })),
     nowLocal: wxLocal(w, now),
     uvMax: w.uvMax ?? null,
-    warning
+    warning,
+    raining
   })
   // While it rains, sun and heat tips are wrong ("avoid the noon sun"): drop the UV tip and every heat line under Danger (rank 80+). Danger and Extreme danger stay.
   return (raining ? lines.filter((l) => l.id !== 'uv' && (l.id !== 'heat' || l.rank >= 80)) : lines)[0] ?? null

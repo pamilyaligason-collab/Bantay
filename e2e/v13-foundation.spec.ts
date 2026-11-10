@@ -244,7 +244,7 @@ for (const [name, withFix] of [['home area', false], ['last known', true]] as co
         await seed(page, 'bantay', 'kv', [{ key: 'loc.last', value: { ...LAST_FIX, at: new Date(FIXED_CLOCKS[1]).getTime() - 3 * 3_600_000 } }])
         await page.reload()
       }
-      await expect.poll(async () => (await titleRow(page)).chipText, { message: 'the chip shows its words' }).toMatch(withFix ? /last known/ : /your home area/)
+      await expect.poll(async () => (await titleRow(page)).chipText, { message: 'the chip shows its words' }).toMatch(withFix ? /last known/ : /^[^·]+$/) // A6: the pill shows the place only; "your home area" is in its accessible name
       const m = await titleRow(page)
       expect(m.chipH, 'chip is at most three lines (64 px) at 320; one or two lines wider').toBeLessThanOrEqual(64) // S28: long-form ages ("3 hours ago") and barangay names make the words longer
       expect(m.rowH, 'title row stays one line').toBeLessThanOrEqual(56)

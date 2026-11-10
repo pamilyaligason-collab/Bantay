@@ -29,7 +29,7 @@ import { creditIds, ForecastNote } from './ForecastNote'
 import { wxFlag } from './flags'
 import { Credits, Next2h, OtherNotices } from './BlendCards'
 import { useBlendedWeather, type BlendedState } from './useBlendedWeather'
-import { condOf, feelsLike, isHot, SCRIM, SKY, todOf } from './scene'
+import { condOf, feelsLike, isHot, pastSunset, SCRIM, SKY, todOf } from './scene'
 import WeatherScene from './WeatherScene'
 import { LiveMapCard, StormLineCard, StormsNear, useWxPause } from './WxLive'
 import { hasAdvisory } from './advisory'
@@ -203,7 +203,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
   const rn = reconcileNow({ words: conditionWords(c.code), code: c.code, precip: c.precip, rainingNow: fc.rainingNow }) // S29: an airport or model "raining now" wins over a dry-looking code
   const cond = condOf(rn.code)
   const raining = cond === 'drizzle' || cond === 'rain' || cond === 'storm'
-  let lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn })
+  let lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn, raining })
   if (raining) { // it is falling now: never "nothing to plan around" or a strong-sun tip under a rainy hero, even when the hourly chances are low
     lines = lines.filter((x) => x.id !== 'uv' && (x.id !== 'heat' || x.rank >= 80)) // same rule as the Today card: Danger heat stays
     if (!lines.some((x) => x.id === 'rain')) lines = [...lines, { id: 'rain' as const, rank: 50, text: cond === 'storm' ? 'Thunderstorm now' : 'Raining now' }].sort((a, b) => b.rank - a.rank)
@@ -223,10 +223,10 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
   const leftToday = fc.hourly.filter((h) => h.time.slice(0, 10) === nl.slice(0, 10) && h.time.slice(0, 13) >= nl.slice(0, 13)).map((h) => h.prob ?? 0)
   const advice = adviceLine(leftToday.length ? Math.max(...leftToday) : null, rainNext, lines, fc.daily[1]?.prob ?? null)
 
-  // A3: the page follows the weather. Wet (raining now, or rain likely in the next 12 h): the rain card leads and Rain next 12 h takes the Sunrise tile. Dry: the 48-hour strip leads and Sunrise stays.
+  // A3: the page follows the weather. Wet (raining now, or rain likely in the next 12 h): the rain card leads (the details grid is the same either way, A7). Dry: the 48-hour strip leads and Sunrise stays.
   const wet = raining || lines.some((x) => x.id === 'rain')
   const storms = hasAdvisory(alerts, now)
-  const rainCard = <RainMap key="rain" fc={fc} placeName={name} daily={daily} nextRain={rainNext} />
+  const rainCard = <RainMap key="rain" fc={fc} daily={daily} nextRain={rainNext} />
   const stripCard = strip.length > 0 && (
     <Section key="48" title="Next 48 hours" meta="every 3 h · rain chance" testId="wx-48">
       <div className="card wx-stripbox">
@@ -236,7 +236,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
             const kind = now0 && (rn.code !== (c.code ?? null) || fc.rainingNow?.value) ? kindOf(rn.code) : kindOf(h.code)
             const rainingNow = now0 && fc.rainingNow?.value === true
             return (
-              <li key={h.time}><span>{now0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kind} /><b>{deg(now0 ? c.temp : h.temp)}</b>{rainingNow ? <span className="wx-rp">Raining</span> : <span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : (h.prob < 10 ? 'Low chance of rain' : `${Math.round(h.prob)} percent chance of rain`)}>{h.prob == null ? 'n/a' : h.prob < 10 ? rainChanceText(h.prob) : `${Math.round(h.prob)}% rain`}</span>}</li>
+              <li key={h.time}><span>{now0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kind} /><b>{deg(now0 ? c.temp : h.temp)}</b>{rainingNow ? <span className="wx-rp">Raining</span> : <span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : (h.prob < 10 ? 'Low chance of rain' : `${Math.round(h.prob)} percent chance of rain`)}>{h.prob == null ? 'n/a' : h.prob < 10 ? 'Low' : `${Math.round(h.prob)}% rain`}</span>}</li>
             )
           })}
         </ul>
@@ -247,7 +247,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
   return (
     <>
       <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-testid="wx-hero">
-        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={cond} hot={isHot(c.temp, c.humidity)} />
+        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={cond} hot={isHot(c.temp, c.humidity)} afterSunset={pastSunset(nl, today?.sunset)} />
         <span className="wx-sub wx-stamp">{offline ? `as of ${asOf}, ${online ? 'could not refresh' : 'offline'}` : `Updated ${asOf}`}</span>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(rn.words)}</b>
@@ -306,7 +306,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
         <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
         <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
         <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
-        {wet ? <div className="wx-tile"><span className="eyebrow">Rain next 12 h</span><b>{rainNext == null ? 'n/a' : rainChanceText(rainNext)}</b><span className="wx-sub">{rainNext == null ? 'No data' : 'Highest chance'}</span></div> : <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>}
+        <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>
       </section>
     </>
   )

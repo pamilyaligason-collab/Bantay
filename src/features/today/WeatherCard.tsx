@@ -5,7 +5,7 @@ import { placeTimezone } from '../location/place'
 import { Icon } from '../shell/Icon'
 import { JackArt, SceneHero, type JackName } from '../look'
 import { clockIn, kindOf } from '../weather/forecast'
-import { condOf, feelsLike, isHot, todOf } from '../weather/scene'
+import { condOf, feelsLike, isHot, pastSunset, todOf } from '../weather/scene'
 import WeatherScene from '../weather/WeatherScene'
 import { rainOutlook, skyOf, weatherActionLine, wxLocal, type Wx } from './heroCards'
 import { MedsCheck } from './NextUp'
@@ -120,7 +120,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const feelsBand = !storm && feelsOn ? fl.label || null : null // its own pill: a text separator let a line start with a dot
   const drink = !storm && !!fl.label // N5: "Drink water" from Extreme caution up
   const clock = clockIn(wx.at, placeTimezone(place.weather, wx.tz))
-  const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(rn.code)} hot={!storm && isHot(wx.temp, wx.humidity)} lite />
+  const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(rn.code)} hot={!storm && isHot(wx.temp, wx.humidity)} afterSunset={pastSunset(wxLocal(wx, now), wx.sunset)} lite />
   const next = storm ? stormSlots(slots(wx, now)) : slots(wx, now) // T16: under a storm the slots agree with the title // both sizes: 56 px expanded, 40 px compact (PLAN 1.1 row 2)
   const locationOff = locationOffNote(place)
   const kicker = noBreak(`${locationOff ? zoneLabel(place.zone) : whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`)

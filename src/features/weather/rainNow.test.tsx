@@ -80,7 +80,7 @@ describe('reconcileNow: one story for the card', () => {
 
 describe('no location fix', () => {
   it('names the home place it is showing; a picked zone or a real fix says nothing', () => {
-    expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: true })).toBe('Location off: showing Dampas, Tagbilaran')
+    expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: true })).toBe('Location off: showing your home area')
     expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: true, settled: true })).toBeNull()
     expect(locationOffNote({ source: 'gps', zone: 'dampas', picked: false, settled: true })).toBeNull()
     expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: false })).toBeNull() // still looking

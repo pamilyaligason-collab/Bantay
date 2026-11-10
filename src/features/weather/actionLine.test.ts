@@ -16,6 +16,13 @@ describe('rain watch', () => {
     expect(rainWatch(hours((d, hr) => (d === 1 && hr >= 3 && hr <= 4 ? 65 : 0)), '2026-10-20T20:00')?.text).toBe('Rain likely tomorrow 3-5 AM (65%)')
     expect(rainWatch(hours((d, hr) => (d === 0 && hr >= 13 && hr <= 15 ? 90 : 0)), NOW)?.text).toBe('Rain likely now until 4 PM (90%)')
   })
+  it('A3: raining now says Raining now, until about 4 PM (no likely, no percent); a later window keeps its own words', () => {
+    const h = hours((d, hr) => (d === 0 && hr >= 13 && hr <= 15 ? 90 : 0))
+    expect(rainWatch(h, NOW, true)?.text).toBe('Raining now, until about 4 PM')
+    expect(actionLines({ ...base, hourly: h, raining: true }).find((l) => l.id === 'rain')?.text).toBe('Raining now, until about 4 PM')
+    expect(actionLines({ ...base, hourly: h }).find((l) => l.id === 'rain')?.text).toBe('Rain likely now until 4 PM (90%)')
+    expect(rainWatch(hours((d, hr) => (d === 0 && hr === 17 ? 90 : 0)), NOW, true)?.text).toBe('Rain likely 5-6 PM (90%)') // not falling this hour in the hourly: unchanged
+  })
   it('59% is not a watch; 60% is', () => {
     expect(rainWatch(hours((d, hr) => (d === 0 && hr === 15 ? 59 : 0)), NOW)).toBeNull()
     expect(rainWatch(hours((d, hr) => (d === 0 && hr === 15 ? 60 : 0)), NOW)?.peak).toBe(60)

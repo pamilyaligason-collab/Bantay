@@ -6,7 +6,7 @@ const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${
 
 /** The Weather screen's rain card (no layer chips). Rain is the Open-Meteo hourly chance bars plus a PAGASA radar link until RainViewer coverage of the
  *  Philippines is confirmed (rainBars.ts, M1); nothing loads from a map provider. Everything shown comes from the saved forecast, so it works offline. */
-export default function RainMap({ fc, placeName, daily = null, nextRain = null }: { fc: Forecast; placeName: string; daily?: number | null; nextRain?: number | null }) {
+export default function RainMap({ fc, daily = null, nextRain = null }: { fc: Forecast; daily?: number | null; nextRain?: number | null }) {
   const bars = rainBars(fc, 12)
   const raining = fc.rainingNow?.value === true
   return (
@@ -20,13 +20,13 @@ export default function RainMap({ fc, placeName, daily = null, nextRain = null }
               {bars.map((b, i) => (
                 <li key={b.time} data-level={b.level} aria-label={`${i === 0 ? 'Now' : hourLabel(b.time)}: ${i === 0 && raining ? 'raining' : b.pct == null ? 'not known' : b.pct < 10 ? 'low chance' : `${Math.round(b.pct)}%`}`}>
                   <em><i style={{ height: `${Math.max(4, b.pct ?? 0)}%` }} /></em>
-                  <b aria-hidden="true" data-show={i % 2 === 0 ? '1' : '0'}>{i === 0 && raining ? 'Rain' : b.pct == null ? '–' : b.pct < 10 ? 'Low' : `${Math.round(b.pct)}%`}</b>
+                  <b aria-hidden="true" data-show={i % 3 === 0 ? '1' : '0'}>{i === 0 && raining ? 'Rain' : b.pct == null ? '–' : b.pct < 10 ? 'Low' : `${Math.round(b.pct)}%`}</b>
                   <span aria-hidden="true" data-show={i % 3 === 0 ? '1' : '0'}>{i === 0 ? 'Now' : hourLabel(b.time)}</span>
                 </li>
               ))}
             </ul>
           )}
-          <p className="wx-sub">Chance of rain each hour at {placeName}. For the live radar picture, open PAGASA.</p>
+          <p className="wx-sub">Chance of rain each hour.</p>
           <a className="pill ghost block" href={PAGASA_RADAR_HREF} target="_blank" rel="noopener noreferrer">Radar images from PAGASA <Icon name="out" size={18} /></a>
         </>
       ) : null)}

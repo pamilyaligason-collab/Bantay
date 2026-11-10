@@ -47,7 +47,7 @@ export function LiveMapCard({ point, pause }: { point: LatLon; pause: Pause }) {
       <WindyMap title={`Windy ${layer} map for your place`} src={windySrc(layer, point.lat, point.lon)} online={online} pause={pause} />
       <div className="wx-pad">
       <Credit />
-      <p className="sub">Forecast map, not radar. Needs internet. For radar pictures, open PAGASA.</p>
+      <p className="sub">Forecast map, not radar. Needs internet.</p>
       <div className="wx-pause">
         <span className="wx-pause-t"><b>Pause on mobile data</b><span className="sub">Phones that cannot report their connection always load it.</span></span>
         <button type="button" role="switch" aria-checked={pause.pref} aria-label="Pause on mobile data" className="st-sw" onClick={() => void putKv(WX_PAUSE_KEY, !pause.pref)}><span /></button>
@@ -94,11 +94,14 @@ export function StormsNear({ alerts, point, place, pause }: { alerts: Alert[]; p
 export function StormLineCard({ alerts, point, place }: { alerts: Alert[]; point: LatLon; place: string }) {
   const saved = useKv<unknown>(CHECKED_KEY, null)
   const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
-  const line = calmLine(cyclones(alerts), point, place, !feedStale(alerts, saved, down), liveSignals(alerts).length)
+  const checkedAt = shownCheck(alerts, saved, down)
+  const base = calmLine(cyclones(alerts), point, place, !feedStale(alerts, saved, down), liveSignals(alerts).length)
+  const never = freshness(checkedAt).ageMin === null && base.tone === 'watch' && base.text.startsWith('Storms have not been checked lately')
+  const line = never ? { ...base, text: 'Storms have not been checked yet. Check the map and PAGASA.' } : base // A7: "lately" over "Never checked" contradicted itself
   return (
     <section aria-label="Storm check" className="card wx-rain" data-testid="wx-storms-none">
       <p className="wx-note wx-calmline" role="status"><i className="wx-dot" data-tone={line.tone} aria-hidden="true" /><b>{line.text}</b></p>
-      <p className="sub wx-checked">{freshText(freshness(shownCheck(alerts, saved, down)))}</p>
+      <p className="sub wx-checked">{freshText(freshness(checkedAt))}</p>
       <GoRow href="#safety/storms">Storm tracker</GoRow>
     </section>
   )
