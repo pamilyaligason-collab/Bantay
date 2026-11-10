@@ -40,6 +40,7 @@ describe('placeWords', () => {
   })
   it('abroad: Away', () => {
     expect(placeWords({ source: 'gps-abroad', zone: 'conel', weather: { lat: 35.68, lon: 139.76 } }, NOW).title).toBe('Away · Conel, General Santos')
+    expect(placeWords({ source: 'gps-abroad', zone: 'dampas', weather: { lat: 29.76, lon: -95.37 } }, NOW).title).toBe('Texas') // S30 L8: Houston reads Texas, never the Philippine home zone
   })
   it('unsettled (first position still being found): where you are, never a home zone', () => {
     expect(placeWords({ source: 'zone', zone: 'conel', picked: false, settled: false }, NOW)).toEqual({ title: 'where you are', stale: false })

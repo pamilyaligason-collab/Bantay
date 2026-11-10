@@ -27,7 +27,10 @@ export function placeWords(place: PlaceLike | null, now: number = Date.now()): P
   switch (place.source) {
     case 'gps': return { title: exactOf(place, now), approx: roughOf(place) || undefined, stale: false }
     case 'last': { const a = place.fixAt == null ? '' : agoWords((now - place.fixAt) / 60_000); return { title: `${exactOf(place, now)} · last known${a ? `, ${a}` : ''}`, approx: roughOf(place) || undefined, stale: true } }
-    case 'gps-abroad': return { title: `Away · ${short(place.zone)}`, stale: false }
+    case 'gps-abroad': { // S30 L8 (F3): a phone inside a named area abroad (Texas) says that area, not the Philippine home zone; elsewhere abroad keeps 'Away · <home zone>'
+      const s = place.weather ? pickLocalSet(place.weather) : null
+      return { title: s?.where === 'area' ? s.area.name : `Away · ${short(place.zone)}`, stale: false }
+    }
     default: return { title: place.picked === false ? `${short(place.zone)} · your home area` : short(place.zone), stale: false }
   }
 }

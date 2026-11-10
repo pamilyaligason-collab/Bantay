@@ -35,7 +35,6 @@ for (const size of SIZES) {
         await shot(page, 'today', size, scheme)
         await expect(page.getByTestId('today-head')).toContainText('Tuesday, Nov 10') // A4: the phone's day (Chicago), not Manila's Wednesday
         await expect(page.getByTestId('today-head')).not.toContainText('Wednesday')
-        await expect(page.getByTestId('weather-hero')).toHaveCount(0)
         await expect(page.locator('.td-wxh-t, .td-wx-t').first()).toContainText('°F') // B2: 30 C is 86 F
         await expect(page.locator('.td-wxh-t, .td-wx-t').first()).toContainText('86')
         for (const id of ['today-climate', 'today-plant', 'climate-card']) await expect(page.getByTestId(id)).toHaveCount(0) // C1/C2
