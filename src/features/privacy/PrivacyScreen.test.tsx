@@ -66,10 +66,11 @@ describe('Privacy screen', () => {
     expect(PROCESSORS.map((p) => p.name)).toEqual(['Supabase', 'Open-Meteo and Windy', 'ExchangeRate-API (open.er-api.com)', 'Wikipedia', 'Wikimedia Commons and news sites', 'YouTube', 'Love Radio, Easy Rock, DZRH, Home Radio and Magic 89.9', 'OpenStreetMap', 'Ventusky, HazardHunterPH and PAGASA Panahon', 'MedlinePlus', 'OpenRouter', 'Google Drive', 'Firebase Cloud Messaging (Google)', 'Cloudflare Pages'])
     const text = (await screen.findByText('Where your data goes')).parentElement!.textContent!
     expect(text).toMatch(/about 1 km/)
+    expect(text).toContain('air quality (air-quality-api.open-meteo.com)') // S29 F: the phone asks this host directly
     expect(text).toMatch(/zero data retention/)
     expect(text).toContain('YouTube: picture previews load when a video card shows, so YouTube sees your internet address; the video loads only when you tap')
     expect(text).toContain('Love Radio, Easy Rock, DZRH, Home Radio and Magic 89.9: only when you tap Play on a radio card; the station sees your internet address. Love Radio, Easy Rock and DZRH stream from their own servers, Home Radio from radioca.st and Magic 89.9 from Triton (streamtheworld.com)')
-    expect(text).toContain('PAGASA Panahon also loads when you tap Load the map on the Today map card')
+    expect(text).not.toContain('Load the map') // S29: the Today map card (and its frame) is gone
     expect(text).toContain('ExchangeRate-API (open.er-api.com): the US dollar rate on Today, once a day')
     expect(text).not.toMatch(/Radio Paradise|Radio Swiss/)
     expect(text).toContain('Wikipedia: the "On this day" facts in Discover; it receives today\'s date only, never your name or place')

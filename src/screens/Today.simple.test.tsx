@@ -21,6 +21,8 @@ vi.mock('../features/today/MyDay', () => stub('myday'))
 vi.mock('../features/today/CalmCard', () => stub('calm'))
 vi.mock('../features/today/YourNumbers', () => stub('numbers'))
 vi.mock('../features/today/NearbyList', () => stub('nearby'))
+vi.mock('../features/garden/ClimateCard', () => stub('today-climate'))
+vi.mock('../features/garden/Plant', async (orig) => ({ ...(await orig<typeof import('../features/garden/Plant')>()), PlantCard: () => <div data-testid="today-plant" /> }))
 vi.mock('../features/today/actions', async (orig) => ({ ...(await orig<typeof import('../features/today/actions')>()), logFeeling: async (f: string) => { feel.calls.push(f); return feel.r } }))
 vi.mock('../features/setup/useProfile', async (orig) => ({ ...(await orig<typeof import('../features/setup/useProfile')>()), useSelfPersonId: () => 'me' }))
 const lock = vi.hoisted(() => ({ can: null as null | { log: boolean; edit: boolean; rollcall: boolean; mood: boolean; reason: string | null } }))
@@ -74,11 +76,11 @@ describe('Today simple mode', () => {
     expect((await screen.findByRole('link', { name: 'Medicines' })).getAttribute('href')).toBe('#health/meds')
     expect(screen.getByRole('button', { name: 'Check my blood pressure' })).toBeTruthy()
   })
-  it('full page order: weather, warning, family alert card, PAGASA, My day, Calm, Talk, Your numbers, then More', async () => {
+  it('full page order: weather, warning, family alert card, PAGASA, My day, Calm, Talk, Your numbers, Climate outlook then Plant this month, then More', async () => {
     const { container } = render(<Today />)
     await screen.findByTestId('myday')
     const ids = [...container.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')).filter((id) => !id!.startsWith('head-')) // the bell and avatar in the title row
-    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'pagasa', 'myday', 'calm', 'today-talk', 'numbers', 'pagasa-map-section', 'pagasa-map-card', 'alerts', 'nearby'])
+    expect(ids).toEqual(['today-head', 'weather', 'alertband', 'alertcard', 'pagasa', 'myday', 'calm', 'today-talk', 'numbers', 'today-climate', 'today-plant', 'alerts', 'nearby'])
   })
   it('the weather hero is always expanded and My day carries the medicines count', async () => {
     meds.due = false; meds.review = 3

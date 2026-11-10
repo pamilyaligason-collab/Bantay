@@ -56,3 +56,5 @@ a.gpl-card:active { box-shadow: var(--shadow-press); transform: scale(.98); }
 .gpl-pr small { display: block; font-size: 15px; line-height: 20px; color: var(--muted); }
 .gpl-pr b { font-variant-numeric: tabular-nums; white-space: nowrap; margin-left: auto; }
 @media (prefers-reduced-motion: reduce) { a.gpl-card:active { transform: none; } }
+/* S29 lane C: the dry-spell line under the Plant card sub-line */
+.gpl-dry { margin: 0; font-size: 16px; line-height: 22px; font-weight: 600; color: var(--tint-amber-ink); }
