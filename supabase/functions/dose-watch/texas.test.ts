@@ -2,6 +2,7 @@
 // S30 L8 Texas: a person's dose day and slot instant are read on THEIR zone (people.tz). Hand-computed values:
 // America/Chicago winter 2026-12-01 08:00 = 14:00Z = 22:00 Manila; summer 2026-07-01 08:00 = 13:00Z = 21:00 Manila;
 // clock changes 2026-03-08 (CST to CDT) and 2026-11-01 (CDT to CST).
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { dayIn, hourIn, offsetMs, safeZone, slotInstant } from '../_shared/tz.ts'
 import { channelFor, inQuietHours } from '../_shared/fcm.ts'
@@ -94,5 +95,18 @@ describe('A2: quiet hours follow the recipient\'s zone', () => {
     expect(channelFor(o, new Date('2026-12-01T04:00:00Z'))).toBe('carer_alerts')
     // a missed dose is always loud, whatever the hour or zone
     expect(channelFor({ kind: 'dose_missed', template: 'dose_missed', tone: 'normal' }, new Date('2026-12-01T04:00:00Z'), CHI)).toBe('carer_alerts')
+  })
+})
+
+// ML-30: the Deno entry cannot run under vitest, so its wiring is guarded by reading the source.
+const src = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
+describe('index.ts wiring guard', () => {
+  it('reads the person zone with a fallback for a database without 0065', () => {
+    expect(src).toContain("try { return await read('people!inner(archived_at,tz)') } catch { return await read('people!inner(archived_at)') }")
+  })
+  it('the dose-due ping and the push quiet hours are zone aware, and no fixed +08:00 is left in the entry', () => {
+    expect(src).toContain('slotInstant(tz, day, t)')
+    expect(src).toContain('fcmMessageFor(r, now, zoneByUser.get(r.carer_user_id))')
+    expect(src).not.toContain('+08:00')
   })
 })
