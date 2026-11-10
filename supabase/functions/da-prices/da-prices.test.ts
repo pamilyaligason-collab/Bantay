@@ -3,7 +3,7 @@
 // Expected values are hand-read from the PDF page, not copied from the parser.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
-import { type Item, newestPdf, parseRows, runDaPrices, SOURCE_URL, titleDate } from './prices.ts'
+import { getSameSite, type Item, newestPdf, parseRows, runDaPrices, SOURCE_URL, titleDate } from './prices.ts'
 
 const items = JSON.parse(readFileSync(new URL('./fixtures/items-nov8.json', import.meta.url), 'utf8')) as Item[]
 const URL8 = 'https://www.da.gov.ph/wp-content/uploads/2026/11/Daily-Price-Index-November-8-2026.pdf'
@@ -97,6 +97,24 @@ describe('titleDate and newestPdf', () => {
   })
 })
 
+describe('getSameSite (2026-11-10: the listing answered 302 to http://127.0.0.1)', () => {
+  const redirect = (to: string) => new Response(null, { status: 302, headers: { location: to } })
+  it('a redirect to loopback, plain http or another host is "blocked"', async () => {
+    for (const to of ['http://127.0.0.1', 'https://evil.example/x', 'http://www.da.gov.ph/price-monitoring/', '']) {
+      await expect(getSameSite(async () => redirect(to), SOURCE_URL)).rejects.toThrow('blocked')
+    }
+  })
+  it('follows a redirect inside https://www.da.gov.ph/ and returns a normal answer; gives up after 3 hops', async () => {
+    const get = vi.fn(async (u: string) => (u === SOURCE_URL ? redirect('/price-monitoring/?x=1') : new Response('ok', { status: 200 })))
+    expect(await (await getSameSite(get, SOURCE_URL)).text()).toBe('ok')
+    expect(get).toHaveBeenLastCalledWith('https://www.da.gov.ph/price-monitoring/?x=1')
+    await expect(getSameSite(async () => redirect('/loop'), SOURCE_URL)).rejects.toThrow('blocked')
+  })
+  it('a 404 is returned to the caller (res.ok check), not treated as a block', async () => {
+    expect((await getSameSite(async () => new Response('', { status: 404 }), SOURCE_URL)).status).toBe(404)
+  })
+})
+
 describe('index.ts wiring (source guard; the Deno entry cannot load under vitest)', () => {
   const src = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
   it('checks the secret before any work, upserts on the table key, never chains .catch on a supabase builder, and records the run', () => {
@@ -105,6 +123,8 @@ describe('index.ts wiring (source guard; the Deno entry cannot load under vitest
     expect(src).toContain("from('da_prices')")
     expect(src).toContain("heartbeat(sb, 'da-prices'")
     expect(src).not.toMatch(/\.(catch|finally)\(/)
+    expect(src).toContain("redirect: 'manual'")
+    expect(src).toContain('blocked })')
   })
 })
 

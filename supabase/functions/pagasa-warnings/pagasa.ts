@@ -72,7 +72,10 @@ export function parseBulletins(html: unknown): Parsed | null {
   let errors = 0
   if (!heads.length) {
     // no tabs: only "no cyclone" when no tab control or signal block is left over either (a layout change must not read as all clear)
-    return /data-toggle="tab"|panel-heading">\s*Wind Signal/i.test(html) ? { rows, errors: 1 } : { rows, errors }
+    // The page's own "Archive" section (past cyclones, tabs "tcwb__<Name>") has tabs and a signal block too: only the part above it counts (live since 2026-11-09, every run failed before this)
+    const archive = html.search(/article-header">\s*<span[^>]*>\s*Archive\b/i)
+    const live = archive > 0 ? html.slice(0, archive) : html
+    return /data-toggle="tab"|panel-heading">\s*Wind Signal/i.test(live) ? { rows, errors: 1 } : { rows, errors }
   }
   heads.forEach((h, i) => {
     const panel = html.slice(h.index!, i + 1 < heads.length ? heads[i + 1]!.index! : html.length)
