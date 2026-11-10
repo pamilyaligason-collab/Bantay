@@ -144,7 +144,7 @@ export function buildChat(model: string, system: string, messages: Msg[], maxTok
     tools: TOOLS,
     tool_choice: 'auto',
     provider: { zdr: true, data_collection: 'deny', require_parameters: true },
-    reasoning: { effort: 'none' },
+    // no `reasoning` field: with require_parameters no provider of these models accepts it, so OpenRouter answered 404 for every model (live, 2026-11-10)
     temperature: 0.2,
     max_tokens: maxTokens,
     usage: { include: true }

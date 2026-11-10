@@ -125,7 +125,8 @@ describe('handleAsk with the router', () => {
   it('the request keeps zdr, no data collection, require_parameters, no reasoning, and asks for usage cost', async () => {
     const p = port()
     await handleAsk(p, env, body('good morning'))
-    expect(p.chat.mock.calls[0]![1]).toMatchObject({ provider: { zdr: true, data_collection: 'deny', require_parameters: true }, reasoning: { effort: 'none' }, usage: { include: true } })
+    expect(p.chat.mock.calls[0]![1]).toMatchObject({ provider: { zdr: true, data_collection: 'deny', require_parameters: true }, usage: { include: true } })
+    expect(p.chat.mock.calls[0]![1]).not.toHaveProperty('reasoning')
   })
 })
 
