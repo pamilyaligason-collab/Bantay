@@ -85,23 +85,54 @@ describe('JackFab visibility', () => {
   })
 })
 
-describe('JackFab peek', () => {
-  it('slides to the edge once the page is scrolled, returns at the top, on focus and on tap, and stays one labelled button', () => {
+describe('JackFab hide on scroll', () => {
+  it('slides out on scroll down, returns on scroll up, after 600 ms of rest and at the top', () => {
+    vi.useFakeTimers()
     const bt = document.createElement('div'); bt.className = 'bt'; const sc = document.createElement('div'); sc.className = 'scroll'; bt.append(sc); document.body.append(bt)
     render(<JackFab tab="today" hash="#today" />)
     const scrollTo = (y: number) => { sc.scrollTop = y; act(() => { sc.dispatchEvent(new Event('scroll')) }) }
-    expect(fab()!.hasAttribute('data-peek')).toBe(false)
-    scrollTo(30); expect(fab()!.hasAttribute('data-peek')).toBe(false) // inside the dead zone
-    scrollTo(200); expect(fab()!.hasAttribute('data-peek')).toBe(true)
-    scrollTo(20); expect(fab()!.hasAttribute('data-peek')).toBe(true) // hysteresis
-    scrollTo(0); expect(fab()!.hasAttribute('data-peek')).toBe(false)
-    scrollTo(200)
+    const away = () => fab()!.hasAttribute('data-away')
+    expect(away()).toBe(false)
+    scrollTo(200); expect(away()).toBe(true)
+    scrollTo(150); expect(away()).toBe(false) // scroll up
+    scrollTo(400); expect(away()).toBe(true)
+    act(() => { vi.advanceTimersByTime(599) }); expect(away()).toBe(true)
+    act(() => { vi.advanceTimersByTime(2) }); expect(away()).toBe(false) // stopped
+    scrollTo(900); expect(away()).toBe(true)
+    scrollTo(0); expect(away()).toBe(false) // top
+    scrollTo(300); expect(away()).toBe(true)
     const f = fab()!; const real = f.matches.bind(f)
-    ;(f as { matches: unknown }).matches = (q: string) => (q === ':focus-visible' ? false : real(q)); fireEvent.focus(f); expect(f.hasAttribute('data-peek')).toBe(true) // a press focuses the button: he must not move from under the finger
-    ;(f as { matches: unknown }).matches = (q: string) => (q === ':focus-visible' ? true : real(q)); fireEvent.focus(f); expect(f.hasAttribute('data-peek')).toBe(false) // keyboard focus brings him back
-    scrollTo(300); expect(fab()!.hasAttribute('data-peek')).toBe(true)
-    fireEvent.click(fab()!); expect(screen.getByRole('dialog', { name: 'Jack' })).toBeTruthy(); expect(fab()!.hasAttribute('data-peek')).toBe(false)
-    bt.remove()
+    ;(f as { matches: unknown }).matches = (q: string) => (q === ':focus-visible' ? true : real(q)); fireEvent.focus(f); expect(away()).toBe(false) // keyboard focus brings him back
+    scrollTo(900); fireEvent.click(fab()!); expect(screen.getByRole('dialog', { name: 'Jack' })).toBeTruthy(); expect(away()).toBe(false)
+    bt.remove(); vi.useRealTimers()
+  })
+  it('S29: a route change while he is slid away brings him back (the effect cleanup drops the 600 ms timer)', () => {
+    vi.useFakeTimers()
+    const bt = document.createElement('div'); bt.className = 'bt'; const sc = document.createElement('div'); sc.className = 'scroll'; bt.append(sc); document.body.append(bt)
+    const { rerender } = render(<JackFab tab="family" hash="#family" />)
+    sc.scrollTop = 300; act(() => { sc.dispatchEvent(new Event('scroll')) })
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    rerender(<JackFab tab="family" hash="#family/people" />)
+    expect(fab()!.hasAttribute('data-away')).toBe(false)
+    act(() => { vi.advanceTimersByTime(5000) })
+    expect(fab()!.hasAttribute('data-away')).toBe(false)
+    bt.remove(); vi.useRealTimers()
+  })
+})
+
+describe('JackFab coach mark with scroll', () => {
+  it('the bubble is hidden while Jack is away and shown again when he is back', () => {
+    vi.useFakeTimers()
+    const bt = document.createElement('div'); bt.className = 'bt'; const sc = document.createElement('div'); sc.className = 'scroll'; bt.append(sc); document.body.append(bt)
+    render(<JackFab tab="today" hash="#today" />)
+    const hint = () => screen.getByRole('status', { hidden: true }) as HTMLElement
+    expect(hint().style.visibility).toBe('')
+    sc.scrollTop = 300; act(() => { sc.dispatchEvent(new Event('scroll')) })
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    expect(hint().style.visibility).toBe('hidden')
+    act(() => { vi.advanceTimersByTime(601) })
+    expect(hint().style.visibility).toBe('')
+    bt.remove(); vi.useRealTimers()
   })
 })
 
@@ -134,6 +165,24 @@ describe('JackFab coach mark', () => {
     tick(1)
     expect(store.get('askHintSeen')).toBe(true)
     expect(screen.queryByRole('status')).toBeNull()
+  })
+  it('S29: the 8 s clock stops while Jack is away (bubble hidden) and starts again when he is back', () => {
+    const bt = document.createElement('div'); bt.className = 'bt'; const sc = document.createElement('div'); sc.className = 'scroll'; bt.append(sc); document.body.append(bt)
+    render(<JackFab tab="today" hash="#today" />)
+    const scrollTo = (y: number) => { sc.scrollTop = y; act(() => { sc.dispatchEvent(new Event('scroll')) }) }
+    tick(5000)
+    scrollTo(200) // away: 600 ms rest timer runs, the hint is hidden
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    tick(599)
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    tick(7000) // would have passed 8 s in total if the clock had kept running
+    expect(fab()!.hasAttribute('data-away')).toBe(false)
+    expect(store.get('askHintSeen')).toBeUndefined()
+    tick(7999)
+    expect(store.get('askHintSeen')).toBeUndefined()
+    tick(1)
+    expect(store.get('askHintSeen')).toBe(true)
+    bt.remove()
   })
   it('viewing as someone: no hint (it would sit on the locked Log) and it is not counted as seen', () => {
     viewing.on = true
