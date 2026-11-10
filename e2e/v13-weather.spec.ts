@@ -50,7 +50,8 @@ test('X5: no heat strip, no Home 1/2 switch; the zone chip names the place', asy
   await expect(page.locator('.wx-scale')).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Home [12]$/ })).toHaveCount(0)
   await expect(page.getByRole('button', { name: /^Place: / })).toBeVisible()
-  await expect(page.locator('.wx-k')).toHaveText(/\S/)
+  await expect(page.getByRole('button', { name: /^Place: / })).toHaveText(/\S/) // S29: the place is said once, in the header pill
+  await expect(page.locator('.wx-k')).toHaveCount(0)
 })
 
 test('X4: every percentage on the page has a word that says what it is', async ({ page }) => {

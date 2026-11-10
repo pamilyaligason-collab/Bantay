@@ -38,13 +38,15 @@ for (const [w, scheme] of [[390, 'light'], [390, 'dark'], [195, 'light']] as con
     const hero = page.getByTestId('weather-hero')
     await expect(hero).toContainText('29°')
     await expect(hero.getByTestId('forecast-note')).toHaveText(/^Weather data by Open-Meteo\.com$/) // no fix: the card says "Location off: showing <place>" once, so its credit has no place
-    await expect(page.locator('.td-hs-p, .td-wxh-sp').first()).toHaveText(/^\d+% rain$/)
+    await expect(page.locator('.td-hs-p, .td-wxh-sp').first()).toHaveText('Raining') // S29: code 61 is raining now, so the first slot says Raining, not a percent
+    await expect(page.locator('.td-hs-p, .td-wxh-sp').filter({ hasText: /^\d+% rain$/ }).first()).toBeAttached() // later slots keep NN% rain
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/today-${w}-${scheme}.png`, fullPage: true })
     await page.goto('/#weather')
     await expect(page.locator('.wx-temp')).toHaveText('29°')
     await expect(page.locator('.wx-hero').getByTestId('forecast-note')).toBeVisible()
     expect((await noteStyle(page)).size).toBeGreaterThanOrEqual(15)
-    await expect(page.locator('.wx-strip .wx-rp').first()).toHaveText(/^\d+% rain$/)
+    await expect(page.locator('.wx-strip .wx-rp').first()).toHaveText('Raining') // S29: raining-now chip in the Now cell
+    await expect(page.locator('.wx-strip .wx-rp').filter({ hasText: /^\d+% rain$/ }).first()).toBeAttached()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/weather-${w}-${scheme}.png`, fullPage: true })
     await page.goto('/#safety')
