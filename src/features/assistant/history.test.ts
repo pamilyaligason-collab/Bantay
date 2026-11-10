@@ -38,7 +38,9 @@ describe('Ask history', () => {
   it('a restored chat reports the time of its last message, so its 30-minute clock does not restart on reload', async () => {
     const t0 = Date.parse('2026-11-10T10:00:00Z')
     await saveHistory(msgs(2), t0)
-    expect(await loadHistoryAt(t0 + 60_000)).toEqual({ items: expect.any(Array), at: t0 })
+    const r = await loadHistoryAt(t0 + 60_000)
+    expect(r.at).toBe(t0)
+    expect(r.items).toHaveLength(2) // fake-indexeddb returns arrays from another realm, so expect.any(Array) cannot match
   })
   it('has the new caution line', () => {
     expect(CAUTION).toBe('I can be wrong. Check with your doctor for medical decisions.')
