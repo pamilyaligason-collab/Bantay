@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db, enqueue } from '../../db'
 import { DEAD_KEY, getSyncState, resetSyncForTests, retryStuck, startSync, syncCounts, syncNow, WAIT_LIMIT_MS, MAX_TRIES } from './sync'
-import { DeadSheet, queuedNote, statusText, tableWords } from './SyncStatus'
+import { DeadSheet, queuedNote, queuedReasons, statusText, tableWords } from './SyncStatus'
 
 vi.mock('../admin/events', () => ({ track: vi.fn(async () => true) }))
 
@@ -132,5 +132,21 @@ describe('D: the sheet shows what the waiting rows are', () => {
     render(<DeadSheet onClose={() => undefined} />)
     fireEvent.click(await screen.findByRole('button', { name: 'Try again, SOS alerts' }))
     await waitFor(async () => expect((await db.outbox.get(id))?.stuck).toBeFalsy())
+  })
+})
+
+describe('E: why the waiting rows wait (S30 L4)', () => {
+  it('tallies the reasons in plain words with no values', () => {
+    expect(queuedReasons([
+      { tries: 0 }, { tries: 0 }, { tries: 1, lastCode: 'net' }, { tries: 2, lastCode: 'PGRST205', lastStatus: 404 }, { tries: 1, lastCode: 'insert-queued' }, { tries: 5, lastCode: 'HTTP403', stuck: true },
+    ])).toBe('Not tried yet: 2; Waiting for a connection: 1; The server is missing the place to keep it. An admin needs to update the database: 1; Waiting for an earlier change: 1; Could not be sent, kept for another try: 1.')
+  })
+  it('the sheet shows the line above the table groups', async () => {
+    await db.outbox.bulkAdd([
+      { table: 'readings', op: 'insert', payload: { value: 987654 }, createdAt: 1, tries: 0 },
+      { table: 'readings', op: 'insert', payload: {}, createdAt: 2, tries: 1, lastCode: 'net' },
+    ])
+    render(<DeadSheet onClose={() => undefined} />)
+    expect((await screen.findByTestId('queued-reasons')).textContent).toBe('Why: Not tried yet: 1; Waiting for a connection: 1.')
   })
 })
