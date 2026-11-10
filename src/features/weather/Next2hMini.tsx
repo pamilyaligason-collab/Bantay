@@ -32,13 +32,13 @@ export function RainRemindSwitch() {
 }
 
 /** The 15-minute rain block for everyone (X3), when the blended forecast is off: the same bars as Today, from the real hourly millimetres, labelled estimated. */
-export function Next2hMini({ fc, offline, now }: { fc: Forecast; offline: boolean; now: number }) {
+export function Next2hMini({ fc, offline, now, raining = false }: { fc: Forecast; offline: boolean; now: number; raining?: boolean }) {
   const slots = offline ? null : miniSlots(toWx(fc), new Date(now))
   return (
     <Section title="Next 2 hours" meta="estimated" testId="wx-next2h-est">
       {slots ? (
         <div className="card wx-n2h">
-          <RainMini slots={slots} />
+          <RainMini slots={slots} raining={raining} />
           <RainRemindSwitch />
         </div>
       ) : <EmptyState title="Not available now" body={offline ? 'Rain for the next 2 hours needs a fresh forecast.' : 'No rain numbers for the next 2 hours.'} />}

@@ -115,7 +115,8 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   // The same single "Feels like" and danger label as the Weather screen (scene.ts feelsLike): heat index when it applies, else the forecast's apparent temperature.
   const fl = feelsLike(wx.temp, wx.humidity, wx.feels)
   const feelsOn = fl.value != null && Math.round(fl.value) > Math.round(wx.temp)
-  const feels = storm ? (fl.value != null ? `Feels ${deg(fl.value)}` : null) : feelsOn ? [`Feels ${deg(fl.value!)}`, fl.label].filter(Boolean).join(' · ') : null
+  const feels = storm ? (fl.value != null ? `Feels ${deg(fl.value)}` : null) : feelsOn ? `Feels ${deg(fl.value!)}` : null
+  const feelsBand = !storm && feelsOn ? fl.label || null : null // its own pill: a text separator let a line start with a dot
   const drink = !storm && !!fl.label // N5: "Drink water" from Extreme caution up
   const clock = clockIn(wx.at, placeTimezone(place.weather, wx.tz))
   const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(rn.code)} hot={!storm && isHot(wx.temp, wx.humidity)} lite />
@@ -124,7 +125,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const kicker = noBreak(`${locationOff ? zoneLabel(place.zone) : whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`)
   const range = expanded ? [wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ') : '' // live parity: today's range (V11 section B)
   const pills = (feels || drink) && (
-    <span className="td-wxh-pills">{feels && <span className="td-wxh-pill">{feels}</span>}{drink && <span className="td-wxh-pill">Drink water</span>}</span>
+    <span className="td-wxh-pills">{feels && <span className="td-wxh-pill">{feels}</span>}{feelsBand && <span className="td-wxh-pill">{feelsBand}</span>}{drink && <span className="td-wxh-pill">Drink water</span>}</span>
   )
   const box = expanded && text && (
     <span className="td-act-box"><b>{text}</b>{jack && <JackArt name={jack} size={56} decorative className="td-wx-jack" />}</span>

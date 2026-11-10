@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import type { Alert } from '../safety/alerts'
@@ -147,7 +147,7 @@ describe('Weather follows the conditions', () => {
     render(<WeatherScreen />)
     await waitFor(() => expect(document.querySelector('.wxs')?.getAttribute('data-cond')).toBe(cond))
     expect(before('Rain chance', 'Next 48 hours')).toBe(true)
-    expect(screen.getByText('Rain next 12 h').parentElement?.textContent).toContain('5%')
+    expect(screen.getByText('Rain next 12 h').parentElement?.textContent).toContain('Low chance')
   })
   it.each([[63, 'Raining now'], [95, 'Thunderstorm now']])('code %i with a low chance and strong sun: the What to do card says it is falling, no calm line, no sun tip', async (code, words) => {
     serve({ code, temp: 27, humidity: 90, uvMax: 10, hourlyProb: () => 5 })
@@ -181,7 +181,7 @@ describe('Weather follows the conditions', () => {
     render(<WeatherScreen />)
     await screen.findByText('Rainy')
     expect(screen.getByTestId('wx-advice').textContent).not.toContain('Rain likely')
-    expect(screen.getByText('Rain next 12 h').parentElement?.textContent).toContain('5%')
+    expect(screen.getByText('Rain next 12 h').parentElement?.textContent).toContain('Low chance')
   })
   it('clear and dry: the strip comes first, Sunrise stays, no rain tile, the sky is clear', async () => {
     serve(DRY)
@@ -238,5 +238,27 @@ describe('Weather follows the conditions', () => {
     render(<WeatherScreen />)
     await screen.findByText('Clear')
     expect(screen.queryByText(/typhoon season/i)).toBeNull()
+  })
+})
+
+describe('S29 W: the Weather screen tells one rain story while it rains', () => {
+  it('Now cell: the current temperature and "Raining", never the hourly 34 degrees and "Low chance"; Next 2 hours does not say "No rain"; the place is said once', async () => {
+    serve({ code: 63, temp: 27, humidity: 90, hourlyProb: () => 5 })
+    render(<WeatherScreen />)
+    await screen.findByText('Rainy')
+    const first = within(screen.getByRole('list', { name: /Next 48 hours/ })).getAllByRole('listitem')[0]!
+    expect(first.textContent).toContain('Now')
+    expect(first.textContent).toContain('27°')
+    expect(first.textContent).toContain('Raining')
+    expect(first.textContent).not.toContain('Low chance')
+    expect(screen.getByTestId('wx-next2h-est').textContent ?? '').not.toMatch(/No rain in the next/)
+    expect(screen.getByTestId('wx-hero').querySelector('.wx-k')).toBeNull()
+    expect(screen.getByTestId('forecast-note').textContent).toBe('Weather data by Open-Meteo.com')
+  })
+  it('no fix: the hero says "Location off: showing <place>" like Today', async () => {
+    serve(DRY)
+    render(<WeatherScreen />)
+    await screen.findByText('Clear')
+    expect(screen.getByTestId('location-off').textContent).toMatch(/^Location off: showing /)
   })
 })

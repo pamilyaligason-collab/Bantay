@@ -21,6 +21,13 @@ describe('AirCard', () => {
     expect(screen.getByText(/limit hard activity outdoors/)).toBeTruthy()
     expect(screen.getByText(/Air quality \(DENR scale\), PM2.5 24-hour average/)).toBeTruthy()
   })
+  it('S29 W: the words lead; the number is a smaller line labelled fine dust (PM2.5); level 5 is a strong fill with white ink', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(body(60))))
+    render(<AirCard point={P} />)
+    expect(await screen.findByText('Acutely Unhealthy')).toBeTruthy()
+    expect(screen.getByText('Fine dust (PM2.5): 60 µg/m³').className).toContain('wx-sub')
+    expect((document.querySelector('.wx-aqi-chip') as HTMLElement).style.color).toBe('rgb(255, 255, 255)')
+  })
   it('Good has no caution', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(body(10))))
     render(<AirCard point={P} />)

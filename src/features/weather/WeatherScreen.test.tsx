@@ -86,7 +86,7 @@ describe('WeatherScreen', () => {
     for (const a of links) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('details')).toBeNull()
     expect(screen.getByText('How this is made')).toBeTruthy()
-    expect(screen.getByText('Forecast for your spot (rounded to about 1 km). The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeTruthy()
+    expect(screen.getByText(/^Forecast for [^·]+, your home area \(rounded to about 1.km\)\. The global weather models behind it work on a grid of roughly 10.km, so a shower over one street can be missed\. Official warnings: PAGASA\.$/)).toBeTruthy() // S29: no fix, so the home area is named
     expect(screen.getByText('Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.')).toBeTruthy()
   })
 
@@ -150,7 +150,7 @@ describe('WeatherScreen', () => {
     await db.kv.put({ key: 'loc.last', value: { lat: 10.3157, lon: 123.8854, at: Date.now() } })
     render(<WeatherScreen />)
     expect((await screen.findByTestId('place-last')).textContent).toContain('last known') // the zone chip
-    await waitFor(() => expect(document.querySelector('.wx-k')?.textContent).toContain('last known'), { timeout: 5000 })
+    expect(document.querySelector('.wx-k')).toBeNull() // S29: the place is said once, in the header chip
     await waitFor(() => { // the forecast for the last fix replaces the first one, so read the settled hero
       const now = within(screen.getByRole('region', { name: 'Now' }))
       now.getByText(/^Updated \d{1,2}:\d\d [AP]M$/); now.getByText(/^Feels like \d+°$/); now.getByText(/^H:\d+°\s+L:\d+°$/)
@@ -159,7 +159,8 @@ describe('WeatherScreen', () => {
     await db.kv.clear(); resetRefresh()
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
-    expect(document.querySelector('.wx-k')!.textContent).toBe('Dampas, Tagbilaran · your home area')
+    expect(screen.getByRole('button', { name: /^Place: Dampas, Tagbilaran · your home area\. Change$/ })).toBeTruthy() // the header chip says the place; the hero does not repeat it
+    expect(document.querySelector('.wx-k')).toBeNull()
   })
 
   it('blend plug point is absent by default; with bantay.flag.wx.blend an empty state and no numbers', async () => {
@@ -199,7 +200,7 @@ describe('WeatherScreen', () => {
     await screen.findByText('Partly cloudy')
     await waitFor(() => expect(calls.some((u) => u.includes('latitude=6.2&'))).toBe(true))
     expect(calls.some((u) => u.includes('latitude=10.3'))).toBe(false)
-    expect(document.querySelector('.wx-k')!.textContent).not.toContain('last known')
+    expect(document.querySelector('.wx-k')).toBeNull()
     expect(screen.queryByTestId('place-last')).toBeNull()
     const map = within(screen.getByRole('region', { name: 'Live weather map' }))
     expect(map.queryByText(/not known yet/)).toBeNull() // a picked zone is a point: the map centres on it, no empty card (D-125)

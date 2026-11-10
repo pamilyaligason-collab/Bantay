@@ -37,7 +37,8 @@ describe('Today weather card', () => {
     expect(screen.getByText('31°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText(/^Dampas, Tagbilaran · as of\s/)).toBeTruthy()
-    expect(screen.getByText(/^Feels 3\d° · Extreme caution$/)).toBeTruthy()
+    expect(screen.getByText(/^Feels 3\d°$/)).toBeTruthy()
+    expect(screen.getByText('Extreme caution')).toBeTruthy()
     expect(screen.getByText('Drink water')).toBeTruthy()
     expect(container.querySelector('.td-wx-chev svg')).toBeTruthy()
     expect(container.textContent).not.toContain('›')
@@ -53,7 +54,8 @@ describe('Today weather card', () => {
   it('one feels like and one danger label: the heat index (same as the action line and the Weather screen), not the forecast apparent temperature', () => {
     m.wx = { ...base, temp: 33, humidity: 70, feels: 42 }
     render(<WeatherCard />)
-    expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()
+    expect(screen.getByText('Feels 43°')).toBeTruthy()
+    expect(screen.getByText('Danger')).toBeTruthy()
   })
   it('no heat index (no humidity): the forecast apparent temperature, no label, no Drink water', () => {
     m.wx = { ...base, temp: 33, humidity: null, feels: 38 }
@@ -174,7 +176,8 @@ describe('Today weather card, expanded', () => {
     expect(screen.getByText(/^Dampas, Tagbilaran · as of\s/)).toBeTruthy()
     expect(container.querySelector('.td-wxh-t')!.textContent).toBe('33°')
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()
+    expect(screen.getByText('Feels 43°')).toBeTruthy()
+    expect(screen.getByText('Danger')).toBeTruthy()
     expect(screen.getByText('High 34° · Low 26°')).toBeTruthy() // live parity: today's range stays on the expanded card
     expect(container.querySelector('[data-size="expanded"]')).toBeTruthy()
     expect(container.querySelectorAll('.td-hs li')).toHaveLength(12)

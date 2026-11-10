@@ -10,9 +10,9 @@ export const BANDS: Band[] = [
   { id: 1, label: 'Good', max: 25, bg: '#CDEBD8', ink: '#0F4D33', say: null },
   { id: 2, label: 'Fair', max: 35, bg: '#FBE9A6', ink: '#5C4400', say: null },
   { id: 3, label: 'Unhealthy for Sensitive Groups', max: 45, bg: '#FFD3A8', ink: '#7A3500', say: 'People with asthma or other breathing problems should limit hard activity outdoors.' },
-  { id: 4, label: 'Very Unhealthy', max: 55, bg: '#FFC9C4', ink: '#8C1A12', say: 'Avoid heavy traffic areas. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.' },
-  { id: 5, label: 'Acutely Unhealthy', max: 90, bg: '#E2D2FA', ink: '#4B2A93', say: 'Everyone should limit hard activity outdoors. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.' },
-  { id: 6, label: 'Emergency', max: Infinity, bg: '#F3C1CF', ink: '#6E0F2E', say: 'Everyone should stay indoors with windows and doors closed, unless it is too hot.' }
+  { id: 4, label: 'Very Unhealthy', max: 55, bg: '#B3261E', ink: '#FFFFFF', say: 'Avoid heavy traffic areas. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.' },
+  { id: 5, label: 'Acutely Unhealthy', max: 90, bg: '#6A2FA3', ink: '#FFFFFF', say: 'Everyone should limit hard activity outdoors. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.' },
+  { id: 6, label: 'Emergency', max: Infinity, bg: '#7A1230', ink: '#FFFFFF', say: 'Everyone should stay indoors with windows and doors closed, unless it is too hot.' }
 ]
 export const MIN_HOURS = 18 // fewer readings than this in the 24 hours: unknown, not a guess
 

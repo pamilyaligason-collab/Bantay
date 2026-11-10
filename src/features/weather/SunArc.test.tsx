@@ -35,6 +35,7 @@ describe('SunArc', () => {
     render(<SunArc fc={fc} now={at('12:00')} />)
     expect(screen.getByRole('img').getAttribute('aria-label')).toBe('Sun: rose 5:41 AM, sets 5:32 PM, now up')
     expect(screen.getByTestId('wx-sun-dot').getAttribute('data-state')).toBe('up')
+    expect(screen.getByRole('heading', { level: 2, name: 'Sun' })).toBeTruthy() // S29 W: same Section head as Air quality
   })
   it('night reads "now down" and nothing renders without sun times', () => {
     const { rerender } = render(<SunArc fc={fc} now={at('22:00')} />)
