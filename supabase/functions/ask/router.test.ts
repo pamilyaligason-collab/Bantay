@@ -75,39 +75,39 @@ function port(over: Partial<Port> = {}) {
 const calls = (p: { chat: ReturnType<typeof vi.fn> }) => p.chat.mock.calls.map((c) => [c[0], (c[1] as { max_tokens: number }).max_tokens, c[2]])
 
 describe('handleAsk with the router', () => {
-  it('quick chat: fast model, 600 tokens; the call cost is added to the month', async () => {
+  it('quick chat: fast model, 1500 tokens; the call cost is added to the month', async () => {
     const p = port()
     const out = await handleAsk(p, env, body('good morning'))
-    expect(calls(p)).toEqual([['fast', 600, 20_000]])
+    expect(calls(p)).toEqual([['fast', 1500, 25_000]])
     expect(out.meta).toMatchObject({ model: 'fast', tier: 'fast', fallback: false })
     expect(p.addSpend).toHaveBeenCalledWith(0.002)
   })
-  it('health question with reference hits: strong model, 900 tokens, 25 s', async () => {
+  it('health question with reference hits: strong model, 2000 tokens, 25 s', async () => {
     const p = port({ knowledge: async () => know })
     const out = await handleAsk(p, env, body('what is metformin for'))
-    expect(calls(p)).toEqual([['strong', 900, 25_000]])
+    expect(calls(p)).toEqual([['strong', 2000, 35_000]])
     expect(out.meta.tier).toBe('strong')
   })
-  it('a failed strong call falls to fast at 600 tokens, then to the fallback', async () => {
+  it('a failed strong call falls to fast at 1500 tokens, then to the fallback', async () => {
     const chat = vi.fn().mockRejectedValueOnce(new Error('t')).mockRejectedValueOnce(new Error('t')).mockResolvedValueOnce(ok())
     const p = port({ chat, knowledge: async () => know })
     const out = await handleAsk(p, env, body('is rest good for a fever'))
-    expect(calls({ chat })).toEqual([['strong', 900, 25_000], ['fast', 600, 15_000], ['fb', 600, 15_000]])
+    expect(calls({ chat })).toEqual([['strong', 2000, 35_000], ['fast', 1500, 12_000], ['fb', 1500, 12_000]])
     expect(out.meta).toMatchObject({ model: 'fb', fallback: true })
   })
-  it('over 90%: fast model, 300 tokens; at 80%: fast model, 600 tokens', async () => {
+  it('over 90%: fast model, 1000 tokens; at 80%: fast model, 1500 tokens', async () => {
     const hi = port({ spendUsd: async () => 9.5, knowledge: async () => know })
     await handleAsk(hi, env, body('what is metformin for'))
-    expect(calls(hi)).toEqual([['fast', 300, 20_000]])
+    expect(calls(hi)).toEqual([['fast', 1000, 25_000]])
     const mid = port({ spendUsd: async () => 8, knowledge: async () => know })
     await handleAsk(mid, env, body('what is metformin for'))
-    expect(calls(mid)).toEqual([['fast', 600, 20_000]])
+    expect(calls(mid)).toEqual([['fast', 1500, 25_000]])
   })
   it('spend unreadable or unwritable: the answer still comes, on the fast model', async () => {
     const p = port({ spendUsd: async () => { throw new Error('x') }, addSpend: vi.fn(async () => { throw new Error('x') }), knowledge: async () => know })
     const out = await handleAsk(p, env, body('what is metformin for'))
     expect(out.status).toBe(200)
-    expect(calls(p)).toEqual([['fast', 600, 20_000]])
+    expect(calls(p)).toEqual([['fast', 1500, 25_000]])
   })
   it('a missing cost is counted by estimate, not as 0', async () => {
     const p = port({ chat: vi.fn(async () => ok(null)) })
@@ -125,7 +125,8 @@ describe('handleAsk with the router', () => {
   it('the request keeps zdr, no data collection, require_parameters, no reasoning, and asks for usage cost', async () => {
     const p = port()
     await handleAsk(p, env, body('good morning'))
-    expect(p.chat.mock.calls[0]![1]).toMatchObject({ provider: { zdr: true, data_collection: 'deny', require_parameters: true }, reasoning: { effort: 'none' }, usage: { include: true } })
+    expect(p.chat.mock.calls[0]![1]).toMatchObject({ provider: { zdr: true, data_collection: 'deny', require_parameters: true }, usage: { include: true } })
+    expect(p.chat.mock.calls[0]![1]).not.toHaveProperty('reasoning')
   })
 })
 

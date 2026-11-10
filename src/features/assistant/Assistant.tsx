@@ -17,6 +17,7 @@ import { CAUTION, chatIsStale, clearHistory, loadHistoryAt, saveHistory, trimHis
 import { localGate, type Emergency } from './gateClient'
 import { EmergencyCard } from './EmergencyCard'
 import { OfflinePanel } from './OfflinePanel'
+import ReplyText from './ReplyText'
 import SosScreen from '../sos/SosScreen'
 import { startSos, SOS_CONTACTS_KEY } from '../sos/active'
 import { normalizeContacts } from '../sos/contacts'
@@ -224,7 +225,8 @@ export default function Assistant() {
     hdb.people.toArray().then(setPeople, () => setPeople([]))
     if (!restored.current) { // the last 20 messages come back from this phone, once per app start (not once the chat is 30 minutes old)
       restored.current = true
-      void loadHistoryAt().then(({ items: h, at }) => setItems((cur) => { if (cur.length || !h.length) return cur; restoredAt.current = at ?? Date.now(); return h }))
+      const g = chatGen.current
+      void loadHistoryAt().then(({ items: h, at }) => { if (g === chatGen.current) setItems((cur) => { if (cur.length || !h.length) return cur; restoredAt.current = at ?? Date.now(); return h }) })
     } else if (lastAt.current && chatIsStale(lastAt.current)) { // reopened 30 minutes after the last message: a fresh chat
       lastAt.current = 0
       setItems([])
@@ -258,6 +260,19 @@ export default function Assistant() {
   }, [items, people])
 
   const clearChat = () => { setItems([]); void clearHistory() }
+  // Closing Jack ends the conversation: the chat clears (Lloyd 2026-11-10). A message still waiting for signal stays so it is not lost.
+  const wasOpen = useRef(false)
+  const chatGen = useRef(0)
+  const keepChat = useRef(false)
+  useEffect(() => {
+    if (open) { wasOpen.current = true; return }
+    if (!wasOpen.current) return // first render, Jack not opened yet: nothing to end
+    wasOpen.current = false
+    if (keepChat.current) { keepChat.current = false; return } // a card sent them to another screen or to Scan: the answer stays for when they come back
+    chatGen.current++ // a reply or restore still on its way belongs to the ended chat and is dropped
+    setItems((i) => (i.some((m) => !m.queued) ? i.filter((m) => m.queued) : i))
+    void clearHistory()
+  }, [open])
   const lastAt = useRef(0) // when the last message in this chat was added; the chat clears itself 30 minutes later
   const restoredAt = useRef(0) // a chat restored from the phone keeps the time of its own last message
   useEffect(() => {
@@ -266,8 +281,8 @@ export default function Assistant() {
     restoredAt.current = 0
   }, [items])
   const close = () => (history.state?.bantayAssistant ? history.back() : setOpen(false))
-  const scan = () => { history.replaceState(null, ''); setOpen(false); openScan() }
-  const go = (tab: string) => { history.replaceState(null, ''); setOpen(false); location.hash = tab }
+  const scan = () => { keepChat.current = true; history.replaceState(null, ''); setOpen(false); openScan() }
+  const go = (tab: string) => { keepChat.current = true; history.replaceState(null, ''); setOpen(false); location.hash = tab }
   const onKey = (e: KeyboardEvent) => {
     if (e.key === 'Escape') return close()
     if (e.key !== 'Tab' || !dlg.current) return
@@ -304,13 +319,16 @@ export default function Assistant() {
 
   // The model path: counts one message, asks, shows the reply. Anything typed while offline waits in `queued` and comes here when signal returns.
   const deliver = async (content: string) => {
-    if (!(await aiOn())) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: AI_OFF, local: true }]) // privacy.ai: before the daily count is used; the local emergency gate runs before this
-    if (!(await takeMessage(CAP))) return setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }])
+    const g = chatGen.current // the chat this message belongs to; closing Jack starts a new one
+    if (!(await aiOn())) return g === chatGen.current ? setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: AI_OFF, local: true }]) : undefined // privacy.ai: before the daily count is used; the local emergency gate runs before this
+    if (!(await takeMessage(CAP))) return g === chatGen.current ? setItems((i) => [...i.filter((m) => !m.queued), { role: 'user', content }, { role: 'assistant', content: ERR.limit, local: true }]) : undefined
+    if (g !== chatGen.current) return
     const next: Item[] = [...items.filter((m) => !m.queued), { role: 'user', content }]
     setItems(next)
     setBusy(true)
     const r = await ask(next.filter((m) => !m.local), location.hash.slice(1) || 'today')
     setBusy(false)
+    if (g !== chatGen.current) return // Jack was closed while it thought: the conversation is over, nothing comes back or is saved
     if ('error' in r && r.error === 'failed') void track('error', 'assistant_failed')
     let done: Item[]
     if ('emergency' in r && r.emergency) { // the server gate fired: same card as the local one, and this exchange never goes back to the model or onto the phone
@@ -352,7 +370,7 @@ export default function Assistant() {
               {items.length === 0 && <p className="sub">Try: "I took my losartan" or "What is HbA1c?"</p>}
               {items.map((m, i) => (
                 <div key={i} className={`as-msg ${m.role}`}>
-                  {m.content && <p>{m.content}</p>}
+                  {m.content && (m.role === 'assistant' && !m.local ? <ReplyText text={m.content} /> : <p>{m.content}</p>)}
                   {m.queued && <span className="sub as-wait" role="status">Waiting for signal</span>}
                   {m.emergency && <EmergencyCard e={m.emergency} onSos={tellFamily} />}
                   {m.cards?.map((c) => <CardView key={c.id} card={c} people={people} go={go} />)}

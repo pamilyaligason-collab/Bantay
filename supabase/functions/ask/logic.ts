@@ -13,10 +13,10 @@ export const DEFAULT_MODEL = 'anthropic/claude-haiku-5.5'
 export const DEFAULT_FALLBACK = 'google/gemini-3.5-flash-lite'
 export const DEFAULT_STRONG = 'anthropic/claude-sonnet-5.5'
 export const DEFAULT_CAP_USD = 10
-export const PRIMARY_MS = 20_000
-export const STRONG_MS = 25_000
-export const FALLBACK_MS = 15_000
-export const MAX_TOKENS = 600
+export const PRIMARY_MS = 25_000
+export const STRONG_MS = 35_000 // Sonnet ran 522 tokens in 8.4 s live; 2000 tokens need ~32 s. Worst chain 35 + 12 + 12 = 59 s < the app's 65 s ceiling
+export const FALLBACK_MS = 12_000
+export const MAX_TOKENS = 1500
 
 export interface Msg { role: 'user' | 'assistant'; content: string }
 /** model = the fast model. strong empty = no router, everything goes to model. capUsd = ASSISTANT_MONTHLY_CAP_USD. */
@@ -102,6 +102,7 @@ const SYSTEM = [
   'You are Jack, the helper inside a private family health and safety app used by one family in the Philippines. The person asking is a family member or their carer, and this is personal family use, not a clinic. Talk like a knowledgeable, calm relative: plain words, no jargon, kind, and direct.',
   'Answer the question first, in the first sentence, unless rule 3 applies: urgent signs are named first, before anything else. Then give the real context and the practical steps they can do now (what to check, what to do at home, what to watch for, what to ask the doctor). Otherwise do not open with a refusal, a warning or "I am not a doctor". Do not hedge every line. Short for a simple question; for a bigger one use short steps, up to about 200 words.',
   'Write for an older adult: short sentences, everyday words, about a grade 6 reading level. Explain any medical word the first time you use it.',
+  'Format: plain sentences. For a list of steps or options, put each item on its own line starting with "- ", and you may bold the item\'s key words with **double stars**. No headings, no tables, no numbered sub-lists, no other markdown.',
   'You may explain what a condition, symptom, lab test, medicine or procedure is, how it usually works, common causes, what a high or low result generally means, usual side effects, and what to ask the doctor or pharmacist. General medical knowledge is welcome. Use the REFERENCE and RECORDS blocks first when they cover the question; when you go beyond them, say it is general information and do not invent numbers, brands or facts.',
   'Safety rules you never break:',
   '1. Never diagnose the person. Do not say they have or probably have a condition ("you have X", "this is X"), and never say a symptom is nothing to worry about or that they can skip or delay a doctor visit, a test or what the doctor advised. You can say what could cause it and what to check or ask.',
@@ -144,8 +145,7 @@ export function buildChat(model: string, system: string, messages: Msg[], maxTok
     tools: TOOLS,
     tool_choice: 'auto',
     provider: { zdr: true, data_collection: 'deny', require_parameters: true },
-    reasoning: { effort: 'none' },
-    temperature: 0.2,
+    // no `reasoning` field: with require_parameters no provider of these models accepts it, so OpenRouter answered 404 for every model (live, 2026-11-10)
     max_tokens: maxTokens,
     usage: { include: true }
   }
@@ -174,19 +174,27 @@ export const tokensOf = (text: string): string[] => (text.toLowerCase().match(/\
 export function postCheck(text: string, allowed: Iterable<string>, lang: Lang): { text: string; changed: number } {
   const ok = new Set(allowed)
   let changed = 0
-  const parts = String(text ?? '').replace(/\s*[—–]\s*/g, ', ').split(/(?<=[.!?])\s+|\n+/)
+  // checked sentence by sentence, but line breaks survive so '- ' bullets still render as a list in the app
+  const lines = String(text ?? '').replace(/[ \t]*[—–][ \t]*/g, ', ').split(/\n+/)
   const out: string[] = []
-  for (const p of parts) {
-    if (!p.trim()) continue
-    const n = p.toLowerCase().replace(/['’]/g, '')
-    let note = ''
-    for (const m of p.matchAll(DOSE)) if (!ok.has(numKey(m[1] ?? m[2] ?? ''))) { note = NOTE_DOSE[lang]; break }
-    if (!note && DIAG.some((re) => re.test(n))) note = NOTE_DIAG[lang]
-    if (note) changed++
-    const s = note || p.trim()
-    if (out[out.length - 1] !== s) out.push(s)
+  let last = ''
+  for (const line of lines) {
+    const row: string[] = []
+    const bullet = /^\s*(?:[-*\u2022]|\d+[.)])\s+/.exec(line)?.[0].trim() ?? ''
+    for (const p of line.split(/(?<=[.!?])\s+/)) {
+      if (!p.trim()) continue
+      const n = p.toLowerCase().replace(/['’]/g, '')
+      let note = ''
+      for (const m of p.matchAll(DOSE)) if (!ok.has(numKey(m[1] ?? m[2] ?? ''))) { note = NOTE_DOSE[lang]; break }
+      if (!note && DIAG.some((re) => re.test(n))) note = NOTE_DIAG[lang]
+      if (note) changed++
+      const s = note ? (bullet && !row.length ? `${bullet} ${note}` : note) : p.trim()
+      if (last !== s) row.push(s)
+      last = s
+    }
+    if (row.length) out.push(row.join(' '))
   }
-  return { text: out.join(' '), changed }
+  return { text: out.join('\n'), changed }
 }
 
 // ---------------- the flow ----------------

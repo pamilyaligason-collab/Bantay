@@ -81,8 +81,13 @@ function makePort(req: Request, key: string): Port {
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(timeoutMs)
       })
-      if (!res.ok) throw Object.assign(new Error('http'), { status: res.status })
-      return parseCompletion(await res.json())
+      if (!res.ok) {
+        const code = await res.json().then((j) => (typeof j?.error?.code === 'number' ? j.error.code : null), () => null)
+        console.error(JSON.stringify({ fn: 'ask', upstream: res.status, code, model })) // numbers and the model id only, never the error text (B-7)
+        throw Object.assign(new Error('http'), { status: res.status })
+      }
+      const out = await res.json()
+      try { return parseCompletion(out) } catch (e) { console.error(JSON.stringify({ fn: 'ask', upstream: 200, parse_failed: true, model })); throw e }
     },
     now: () => Date.now()
   }
