@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import cropCalendar from '../../data/cropCalendar.json'
 import { climateTypeFor, type ClimateResult, type ClimateType } from '../../data/provinceClimate'
 import { useLocation } from '../location/useLocation'
-import { loadUnits, unitAt, type Unit } from '../safety/unitAt'
+import { provinceFromUnits } from '../location/province'
+import { loadUnits } from '../safety/unitAt'
 import { useKv } from '../shell/useKv'
 
 export const CLIMATE_KEY = 'garden.climate'
@@ -15,13 +16,8 @@ export const CLIMATE_TYPES: { type: ClimateType; line: string }[] = [
   { type: 4, line: 'Rain is spread fairly evenly through the year.' }
 ]
 
-/** The province to look up: a city inside a province (General Santos in South Cotabato) uses the province. */
-export function provinceNameAt(p: { lat: number; lon: number }, units: readonly Unit[]): string | null {
-  const code = unitAt(p, units)
-  const u = units.find((x) => x.code === code)
-  if (!u) return null
-  return units.find((x) => x.code === u.parent)?.name ?? u.name
-}
+/** The province to look up (PAGASA's name): a city inside a province uses the province, and City of Manila / NCR cities read Metro Manila. */
+export const provinceNameAt = provinceFromUnits
 
 /** A hand-picked type, tied to the province it was made in (null = made where no province was known; old saves were a bare number). */
 export type Pick = { type: ClimateType; province: string | null }
