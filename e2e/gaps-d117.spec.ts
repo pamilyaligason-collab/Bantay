@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertJackHit, assertJackHitRestAndEnd, assertNoSideways, assertNoWrappedButtons, assertTargets, DISCOVER_ALLOW, FIXED_CLOCKS, setScheme } from './v13'
+import { assertJackHit, assertJackHitRestAndEnd, expectJackAtRest, assertNoSideways, assertNoWrappedButtons, assertTargets, DISCOVER_ALLOW, FIXED_CLOCKS, setScheme } from './v13'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
@@ -93,6 +93,9 @@ for (const day of ['2026-10-31', '2026-11-01', '2026-11-04', '2026-11-06', '2026
       await page.setViewportSize({ width: w, height: h })
       await page.reload()
       await expect(page.getByTestId('dc-learn')).toBeVisible()
+      await expect(page.getByTestId('dc-learn').getByRole('link', { name: 'All topics' })).toBeVisible()
+      await expect(page.locator('.sh-jackfab')).toBeVisible()
+      await expectJackAtRest(page, `d117 ${day} ${w}x${h}`)
       // A small link is the hazard: a full-width card beside Jack stays tappable, a link under him does not. The link now sits left, beside its title (D-124), so measure this link, not every control.
       const m = await page.evaluate(() => {
         ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0

@@ -33,6 +33,9 @@ for (const day of ['2026-10-31', '2026-11-10', '2027-02-10']) { // Undas, typhoo
     for (const h of HEIGHTS) {
       test(`discover ${day} ${w}x${h}: Learn first then Top story, links clear of Jack`, async ({ page }) => {
         await discover(page, w, h, day)
+        await expect(page.getByTestId('dc-learn').getByRole('link', { name: 'All topics' })).toBeVisible()
+        await expect(page.locator('.sh-jackfab')).toBeVisible()
+        await expectJackAtRest(page, `discover ${day} ${w}x${h}`)
         const m = await page.evaluate(() => {
           ;(document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0
           const b = (q: string) => document.querySelector(q)!.getBoundingClientRect()

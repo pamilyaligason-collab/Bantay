@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertHero, assertJackClear, assertNoSideways, assertTargets, assertTextContrast } from './v13'
+import { assertHero, assertJackClear, assertJackHit, assertNoSideways, assertTargets, assertTextContrast } from './v13'
 
 // Self-test of the v13 helpers: each must FAIL on a bad page, otherwise every lane gate is vacuous.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
@@ -70,4 +70,22 @@ test('assertJackClear at rest catches a button that only sits under Jack at scro
   })
   await expect(assertJackClear(page, { at: 'rest' })).rejects.toThrow(/at rest:.*rest-trap/s)
   await assertJackClear(page, { at: 'end' })
+})
+
+test('assertJackHit fails a control whose centre is under Jack (allowed or not) and passes one that is clear', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#today')
+  await expect(page.locator('.sh-jackfab')).toBeVisible()
+  await page.evaluate(() => { // a button under Jack's disc, z-index 0 so Jack is the top element
+    const f = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
+    const b = document.createElement('button')
+    b.className = 'trap'
+    b.textContent = 'trap'
+    b.style.cssText = `position:fixed;left:${f.left}px;top:${f.top}px;width:${f.width}px;height:${f.height}px;z-index:0`
+    document.body.append(b)
+  })
+  await expect(assertJackHit(page, [], 'trap plain', 'keep')).rejects.toThrow(/centre under Jack/)
+  await expect(assertJackHit(page, [{ name: 'trap', sel: 'button.trap' }], 'trap allowed', 'keep')).rejects.toThrow(/centre under Jack/)
+  await page.evaluate(() => document.querySelector('.trap')?.remove())
+  await assertJackHit(page, [], 'clear', 'keep')
 })

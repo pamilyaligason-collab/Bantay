@@ -113,7 +113,8 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 /* S25 fix 1: Show more / Show less keep a symmetric 64 px each side so the floating Jack button (right edge, 56 px) never covers any part of it */
 .dc-panel .more-grid-btn { display: block; width: max(calc(100% - 128px), min(100%, 160px)); margin-inline: auto; } /* centred, so Jack (right) never covers it */
 
-/* S29 (D-184, owner ruling): Top stories' See all is flush right like every other header at every size; no height-band margin. Jack may sit over the subtitle at rest and slides away on the first scroll. */
+/* S29 (D-184, contract rule A): Top stories' See all is the one bottom-right control that can land under Jack at rest (the section sits low on short phones), so it carries a right margin that keeps its centre left of him at every size. */
+.dc-panel [data-testid="dc-top-story"] > .sec-h a { margin-right: 64px; }
 /* S28 (D-180): sections are not cards; --sp-5 (24 px) above each section is the panel's own gap (today.css), --card-gap between the video cards inside one (look/media/media.css). Title left, See all right comes from Section. */
 .dc-panel [data-testid="dc-play"] .pt-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .dc-panel .card.dc-guided { padding: 0 0 12px; overflow: hidden; }
