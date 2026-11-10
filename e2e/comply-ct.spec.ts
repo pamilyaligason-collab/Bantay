@@ -126,7 +126,7 @@ test('Today hero, Water row and Calm follow board Main (measured)', async ({ pag
   expect(under.every((u) => !u.now), 'no My day button is under Jack at rest').toBe(true)
   console.log('CT-MEASURE', JSON.stringify(m))
   expect(m.fullBorder, 'no divider above Full forecast').toBe('0px')
-  expect(m.fullSize).toBe('13px')
+  expect(m.fullSize, 'S29 15px meta floor').toBe('15px')
   expect(m.fullH, 'Full forecast keeps a 44 px target').toBeGreaterThanOrEqual(44)
   const hit = await page.evaluate(() => { const l = document.querySelector('.td-wxh-full')!; const r = l.getBoundingClientRect(); const x = r.left + 20; return [r.top + 2, r.bottom - 2].map((y) => document.elementFromPoint(x, y)?.closest('.td-wxh-full') === l) })
   expect(hit, 'both ends of the 44 px target hit the link (not clipped)').toEqual([true, true])

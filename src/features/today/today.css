@@ -555,7 +555,7 @@
 .td-todo-main { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; min-height: 44px; }
 /* T6: clouds drift in the right half only, below the kicker, so no cloud runs through the words (still sky included) */
 .td-wxs .wxs-cloud { left: 56%; animation-name: td-cloud; }
-.td-wxs .wxs[data-still] .wxs-cloud { left: 56%; } .td-wxs .wxs[data-still] .wxs-cloud:nth-of-type(2n) { left: 64%; }
+.td-wxs .wxs[data-still] .wxs-cloud { left: 44%; } .td-wxs .wxs[data-still] .wxs-cloud:nth-of-type(2n) { left: 51%; } /* S29 (15 px floor): the condition line is wider and sits right under the cloud row, so the still clouds stay left of it (e2e T6) */
 @keyframes td-cloud { from { transform: translateX(0); } to { transform: translateX(260%); } }
 .td-wxs .td-act-box b { font-size: 15px; }
 .td-wxs .td-act-box { padding: 6px 16px; }
