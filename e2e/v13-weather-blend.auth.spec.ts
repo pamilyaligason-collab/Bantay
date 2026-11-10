@@ -34,7 +34,7 @@ async function open(page: Page, flag: boolean) {
   await mock(page, FIXED_CLOCKS[1])
   await page.addInitScript((on) => {
     localStorage.setItem('bantay.onboarded', '1')
-    if (on) localStorage.setItem('bantay.flag.wx.blend', '1')
+    localStorage.setItem('bantay.flag.wx.blend', on ? '1' : '0') // on by default since 2026-11-10; '0' is the Labs opt-out
   }, flag)
   await page.route('**/api.open-meteo.com/**', (r) => r.fulfill({ json: openMeteoFixture({ now: new Date(FIXED_CLOCKS[1]), temp: 26, humidity: 70, feels: 27, code: 2 }) }))
   await page.route('**/embed.windy.com/**', (r) => r.fulfill({ body: '<html></html>', contentType: 'text/html' }))
@@ -78,6 +78,6 @@ test('flag off: the function is never called and the screen has no blend cards',
   await expect(page.locator('.wx-temp')).toHaveText('26°', { timeout: 20_000 })
   await expect(page.getByTestId('wx-next2h')).toHaveCount(0)
   await expect(page.getByTestId('wx-air')).toHaveCount(0)
-  await expect(page.getByText('Forecast for your spot (rounded to about 1 km). The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeVisible()
+  await expect(page.getByText(/^Forecast for .+rounded to about 1.km.+roughly 10.km/) /* the place is named since S28 */).toBeVisible()
   expect(calls).toHaveLength(0)
 })

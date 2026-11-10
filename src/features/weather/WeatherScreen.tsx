@@ -9,7 +9,6 @@ import { track } from '../admin/events'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, type Alert, type StaleSources } from '../safety/alerts'
 import { putKv, useKv } from '../safety/store'
 import { useOnline } from '../safety/LiveMaps'
-import { EmptyState } from '../look/EmptyState'
 import { Icon, type IconName } from '../shell/Icon'
 import { GroupedList } from '../look/GroupedList'
 import { LargeTitle } from '../look/LargeTitle'
@@ -275,7 +274,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
         ) : <b className={`wx-act-t${advice === CALM_LINE ? ' calm' : ''}`}>{advice}</b>}
       </section>
 
-      {wxFlag('blend') ? (bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} raining={raining} /> : <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>) : <Next2hMini fc={fc} offline={offline} now={now} raining={raining} />}
+      {bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} raining={raining} /> : <Next2hMini fc={fc} offline={offline} now={now} raining={raining} />} {/* blend down (offline, signed out, function error): the estimate from hourly data, never an empty block */}
 
       <LiveMapCard point={point} pause={pause} />
 

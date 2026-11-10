@@ -19,6 +19,7 @@ beforeEach(async () => {
   await forecastWritesSettled() // a late cache write from the last test would otherwise land after the clear
   await db.kv.clear()
   calls.length = 0
+  localStorage.setItem('bantay.flag.wx.blend', '0') // the blend is on by default since 2026-11-10; these tests cover the direct Open-Meteo path
   track.mockClear()
   vi.stubGlobal('fetch', vi.fn(async (u: string) => {
     calls.push(String(u))
@@ -163,21 +164,16 @@ describe('WeatherScreen', () => {
     expect(document.querySelector('.wx-k')).toBeNull()
   })
 
-  it('blend plug point is absent by default; with bantay.flag.wx.blend an empty state and no numbers', async () => {
-    render(<WeatherScreen />)
-    await screen.findByText('Partly cloudy')
-    expect(screen.getByTestId('wx-next2h-est').querySelector('.empty-state')).toBeNull() // flag off: the 15-minute block from hourly data (X3), not the blend's empty state
-    cleanup()
-    localStorage.setItem('bantay.flag.wx.blend', '1')
-    try {
+  it('Next 2 hours is the estimate from hourly data with the flag off, and also with the flag on when the blend cannot load (never an empty block)', async () => {
+    for (const flag of ['0', '1']) {
+      localStorage.setItem('bantay.flag.wx.blend', flag)
       render(<WeatherScreen />)
       await screen.findByText('Partly cloudy')
-      for (const n of ['Next 2 hours']) {
-        const card = screen.getByRole('heading', { level: 2, name: n }).closest('section')!.querySelector('.empty-state')!
-        expect(card.textContent).not.toMatch(/\d/)
-        expect(card.textContent!.length).toBeGreaterThan(0)
-      }
-    } finally { localStorage.clear() }
+      expect(screen.getByTestId('wx-next2h-est').querySelector('.empty-state')).toBeNull()
+      expect(screen.queryByText('Not available yet')).toBeNull()
+      cleanup()
+    }
+    localStorage.clear()
   })
 
   it('X5: no Home 1 / Home 2 switch and no heat strip; the zone chip names the place and picks a home zone', async () => {

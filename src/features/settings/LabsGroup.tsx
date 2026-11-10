@@ -23,7 +23,7 @@ export function setFlag(k: keyof Flags, on: boolean, reload: () => void = () => 
 const KEYED: [key: string, title: string, sub: string, defOn: boolean][] = [
   ['bantay.flag.places', 'Family map (place sharing)', 'Your place on the family map', true],
   ['bantay.flag.feed', 'Family feed', 'What each person shares, in Family', false],
-  ['bantay.flag.wx.blend', 'Weather blend (beta)', 'Blended forecast, beta', false]
+  ['bantay.flag.wx.blend', 'Weather blend (beta)', 'Blended forecast, beta', true]
 ]
 const defOnOf = (k: string) => KEYED.find(([key]) => key === k)?.[3] ?? false
 const keyedOn = (k: string) => { const d = defOnOf(k); try { const v = localStorage.getItem(k); return d ? v !== '0' : v === '1' } catch { return d } }

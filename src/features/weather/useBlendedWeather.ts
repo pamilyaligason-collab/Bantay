@@ -6,7 +6,7 @@ import type { LatLon } from '../location/geo'
 import { type Forecast, forecastKey, KEEP_MS, pruneForecasts, readCached, REFRESH_MS, useForecast } from './forecast'
 
 // The server-side blend (lane Q: Open-Meteo + MET Norway + OpenWeather, median per hour, see supabase/functions/weather-blend).
-// Off by default: v13 Phase 1 lane W switches it on once 0047 is applied and the function is deployed.
+// On for everyone through wxFlag('blend') (weather/flags.ts, Labs opt-out); this constant is only the hook's own default when no `on` is passed.
 // Offline, not signed in, or the function down: the app's direct Open-Meteo forecast (forecast.ts), exactly as today.
 export const WEATHER_BLEND_ON = false
 
