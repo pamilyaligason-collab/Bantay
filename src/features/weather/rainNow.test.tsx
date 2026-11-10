@@ -24,6 +24,11 @@ describe('rain chance words', () => {
     expect(screen.getByText('40% rain')).toBeTruthy()
     expect(screen.queryByText(/^0%/)).toBeNull()
   })
+  it('S29 W: the Now cell of a raining slot says Raining, not a chance; the next hour keeps its own', () => {
+    render(<HourlyStrip slots={[{ time: 'Now', kind: 'rain', pct: 5, temp: 27, raining: true }, { time: '1 PM', kind: 'cloud', pct: 5, temp: 34 }]} />)
+    expect(screen.getByText('Raining')).toBeTruthy()
+    expect(screen.getAllByText('Low chance')).toHaveLength(1)
+  })
 })
 
 describe('Raining now chip', () => {
@@ -45,7 +50,7 @@ describe('rain bars while it rains', () => {
   it('says so instead of "No rain" when the forecast shows none', () => {
     const dry = Array.from({ length: 8 }, (_, i) => ({ time: `2026-11-10T12:${String(i * 15 % 60).padStart(2, '0')}`, mm: 0, pct: null, wet: false }))
     render(<RainMini slots={dry} raining />)
-    expect(screen.getByTestId('rain-mini').textContent).toMatch(/raining now/)
+    expect(screen.getByTestId('rain-mini').textContent).toBe('No more rain expected in the next 2 hours') // S29 W: the chip and the condition already say it is raining
   })
 })
 

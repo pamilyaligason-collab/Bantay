@@ -11,7 +11,9 @@ const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${
 
 /** The next 12 hours from the place-local current hour, current hour first, from the hourly forecast the hero already loaded. Fewer when the forecast is shorter (nothing invented); empty without hourly data.
  *  The first item uses the current temperature so it matches the big number. */
-export function hourlySlots(wx: Wx, now: Date, storm = false): Slot[] {
+/** `raining`: the Now cell says "Raining" instead of a chance (the hourly chance for this hour can read low while it pours). */
+export type HourSlot = Slot & { raining?: boolean }
+export function hourlySlots(wx: Wx, now: Date, storm = false): HourSlot[] {
   const h = wx.hourly
   if (!h) return []
   const at = wxLocal(wx, now).slice(0, 13)
@@ -19,12 +21,12 @@ export function hourlySlots(wx: Wx, now: Date, storm = false): Slot[] {
   if (from < 0) return []
   const rn = reconcileNow(wx) // the Now cell tells the card's story: rain icon while it rains, not a cloud beside "Light rain"
   const nowKind = rn.code !== (wx.code ?? null) || wx.rainingNow?.value ? kindOf(rn.code) : null
-  const out = h.time.slice(from, from + STRIP_HOURS).map((t, k): Slot => ({ time: k === 0 ? 'Now' : hourLabel(t), kind: k === 0 && nowKind ? nowKind : kindOf(h.code?.[from + k] ?? null), pct: h.prob[from + k] ?? null, temp: k === 0 ? wx.temp ?? h.temp?.[from] ?? null : h.temp?.[from + k] ?? null }))
+  const out = h.time.slice(from, from + STRIP_HOURS).map((t, k): HourSlot => ({ time: k === 0 ? 'Now' : hourLabel(t), kind: k === 0 && nowKind ? nowKind : kindOf(h.code?.[from + k] ?? null), pct: h.prob[from + k] ?? null, temp: k === 0 ? wx.temp ?? h.temp?.[from] ?? null : h.temp?.[from + k] ?? null, ...(k === 0 && wx.rainingNow?.value ? { raining: true } : {}) }))
   return storm ? stormSlots(out) : out // T16: under a storm the strip agrees with the title
 }
 
 /** A horizontally scrollable strip of the next 12 hours: time, icon, temperature, rain chance. Focusable so the arrow keys scroll it; each item is 44 px or more. */
-export default function HourlyStrip({ slots }: { slots: Slot[] }) {
+export default function HourlyStrip({ slots }: { slots: HourSlot[] }) {
   if (!slots.length) return null
   return (
     <ul className="td-hs" aria-label="Next 12 hours" tabIndex={0} data-testid="hourly-strip">
@@ -33,7 +35,7 @@ export default function HourlyStrip({ slots }: { slots: Slot[] }) {
           <span className="td-hs-t">{s.time}</span>
           <span className="td-hs-i" aria-hidden="true"><Icon name={s.kind} size={22} /></span>
           {s.temp != null && <span className="td-hs-d">{deg(s.temp)}</span>}
-          {s.pct != null && <span className={s.pct < 10 ? 'td-hs-p rn-low' : 'td-hs-p'}>{s.pct < 10 ? rainChanceText(s.pct) : `${Math.round(s.pct)}% rain`}</span>}
+          {s.raining ? <span className="td-hs-p">Raining</span> : s.pct != null && <span className={s.pct < 10 ? 'td-hs-p rn-low' : 'td-hs-p'}>{s.pct < 10 ? rainChanceText(s.pct) : `${Math.round(s.pct)}% rain`}</span>}
         </li>
       ))}
     </ul>

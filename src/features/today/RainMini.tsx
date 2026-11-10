@@ -52,7 +52,7 @@ export function miniSummary(slots: MiniSlot[]): string | null {
 export default function RainMini({ slots, raining = false }: { slots: MiniSlot[] | null; raining?: boolean }) {
   if (!slots) return null
   const summary = miniSummary(slots)
-  if (!summary) return <p className="td-rm-none" data-testid="rain-mini">{raining ? 'It is raining now. The forecast shows no more in the next 2 hours' : 'No rain in the next 2 hours'}</p>
+  if (!summary) return <p className="td-rm-none" data-testid="rain-mini">{raining ? 'No more rain expected in the next 2 hours' : 'No rain in the next 2 hours'}</p>
   const chance = slots[0]!.mm == null
   const val = (s: MiniSlot) => (s.wet ? (chance ? s.pct : s.mm) ?? 0 : 0)
   const max = Math.max(...slots.map(val), chance ? 1 : 0.01)

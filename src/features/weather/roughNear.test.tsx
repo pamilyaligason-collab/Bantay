@@ -31,6 +31,6 @@ describe('S22 G: a rough fix on the real Weather screen', () => {
     const row = (await screen.findByTestId('wx-warn')).textContent ?? ''
     expect(row).toContain('PAGASA: no warning near Tagbilaran')
     expect(row).not.toMatch(/around/)
-    expect(screen.getByRole('region', { name: 'Now' }).textContent).toContain('around Tagbilaran') // the kicker is the place line
+    expect(screen.getByRole('region', { name: 'Now' }).textContent).not.toContain('Tagbilaran') // S29 W: the place is said once, in the header chip (ZonePicker, mocked here)
   })
 })

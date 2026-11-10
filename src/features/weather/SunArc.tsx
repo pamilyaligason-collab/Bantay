@@ -1,3 +1,4 @@
+import { Section } from '../look/Section'
 import { clockIn, nowLocal, type Forecast } from './forecast'
 
 const asUtc = (t: string) => Date.parse(`${t.slice(0, 16)}:00Z`) // place-local "YYYY-MM-DDTHH:MM" read as a plain clock, so the phone's own zone never matters
@@ -23,13 +24,15 @@ export default function SunArc({ fc, now }: { fc: Forecast; now: number }) {
   const up = p.state === 'up'
   const ang = Math.PI * (1 - p.f) // 180 degrees at sunrise, 0 at sunset
   return (
-    <section aria-label="Sun" className="card wx-sun" data-testid="wx-sun">
-      <svg viewBox="0 0 300 120" role="img" aria-label={`Sun: rose ${rise}, sets ${set}, now ${up ? 'up' : 'down'}`} className="wx-sun-svg">
-        <path d={`M ${CX - RX} ${CY} A ${RX} ${RY} 0 0 1 ${CX + RX} ${CY}`} fill="none" stroke="currentColor" strokeOpacity=".4" strokeWidth="2" strokeDasharray="4 5" />
-        <line x1={CX - RX - 10} y1={CY} x2={CX + RX + 10} y2={CY} stroke="currentColor" strokeOpacity=".4" strokeWidth="1.5" />
-        <circle data-testid="wx-sun-dot" data-state={p.state} cx={up ? CX + RX * Math.cos(ang) : p.state === 'before' ? CX - RX : CX + RX} cy={up ? CY - RY * Math.sin(ang) : CY} r={up ? 9 : 6} fill={up ? '#F5B301' : 'currentColor'} fillOpacity={up ? 1 : 0.8} />
-      </svg>
-      <div className="wx-sun-t"><span><b>{rise}</b><span className="wx-sub">Sun rises</span></span><span><b>{set}</b><span className="wx-sub">Sun sets</span></span></div>
-    </section>
+    <Section title="Sun" testId="wx-sun">
+      <div className="card wx-sun">
+        <svg viewBox="0 0 300 120" role="img" aria-label={`Sun: rose ${rise}, sets ${set}, now ${up ? 'up' : 'down'}`} className="wx-sun-svg">
+          <path d={`M ${CX - RX} ${CY} A ${RX} ${RY} 0 0 1 ${CX + RX} ${CY}`} fill="none" stroke="currentColor" strokeOpacity=".4" strokeWidth="2" strokeDasharray="4 5" />
+          <line x1={CX - RX - 10} y1={CY} x2={CX + RX + 10} y2={CY} stroke="currentColor" strokeOpacity=".4" strokeWidth="1.5" />
+          <circle data-testid="wx-sun-dot" data-state={p.state} cx={up ? CX + RX * Math.cos(ang) : p.state === 'before' ? CX - RX : CX + RX} cy={up ? CY - RY * Math.sin(ang) : CY} r={up ? 9 : 6} fill={up ? '#F5B301' : 'currentColor'} fillOpacity={up ? 1 : 0.8} />
+        </svg>
+        <div className="wx-sun-t"><span><b>{rise}</b><span className="wx-sub">Sun rises</span></span><span><b>{set}</b><span className="wx-sub">Sun sets</span></span></div>
+      </div>
+    </Section>
   )
 }

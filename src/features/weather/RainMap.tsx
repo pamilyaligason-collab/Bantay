@@ -19,7 +19,7 @@ export default function RainMap({ fc, placeName, daily = null, nextRain = null }
               {bars.map((b, i) => (
                 <li key={b.time} data-level={b.level}>
                   <em><i style={{ height: `${Math.max(4, b.pct ?? 0)}%` }} /></em>
-                  <b>{b.pct == null ? '–' : `${Math.round(b.pct)}%`}</b>
+                  <b data-show={i % 2 === 0 ? '1' : '0'}>{b.pct == null ? '–' : b.pct < 10 ? 'Low' : `${Math.round(b.pct)}%`}</b>
                   <span data-show={i % 3 === 0 ? '1' : '0'}>{i === 0 ? 'Now' : hourLabel(b.time)}</span>
                 </li>
               ))}

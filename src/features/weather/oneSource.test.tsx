@@ -43,7 +43,8 @@ async function threeScreens(): Promise<string> {
   await waitFor(() => expect(screen.getByTestId('weather-hero').textContent).toContain('33°'))
   await waitFor(() => expect(screen.getAllByTestId('forecast-note')).toHaveLength(3))
   const notes = screen.getAllByTestId('forecast-note').map((n) => n.textContent)
-  expect(new Set(notes).size).toBe(1) // same 'Forecast for <place>' and credit on Today, Safety and Weather
+  expect(new Set(notes.slice(0, 2)).size).toBe(1) // same 'Forecast for <place>' and credit on Today and Safety
+  expect(notes[2]).toBe('Weather data by Open-Meteo.com') // S29 W: the Weather header chip names the place, the note is the credit only
   const rain = screen.getByTestId('right-now').textContent ?? ''
   expect(rain).toContain('Today up to 30%') // the fixture's daily rain chance (daily[0].prob = 30)
   return notes[0]!
@@ -82,7 +83,7 @@ describe('D-163 one weather source', () => {
     await waitFor(() => expect(screen.getAllByTestId('forecast-note')).toHaveLength(2))
     const [today, screenNote] = screen.getAllByTestId('forecast-note')
     expect(today!.textContent).toBe('Weather data by Open-Meteo.com') // no fix: the card's one place line is "Location off: showing <place>", so the credit drops the place
-    expect(screenNote!.textContent).toMatch(/^Forecast for .+ · Weather data by Open-Meteo\.com$/)
+    expect(screenNote!.textContent).toBe('Weather data by Open-Meteo.com') // S29 W: the header chip names the place once
     for (const n of [today!, screenNote!]) expect(n.textContent).not.toMatch(/\d+\.\d{3}/) // a place name, never coordinates
   })
 

@@ -17,7 +17,8 @@ import { Row } from '../look/Row'
 import { Section } from '../look/Section'
 import ZonePicker from '../location/ZonePicker'
 import { placeName } from '../safety/warningsLogic'
-import { placeLineOf, placeNameOf } from '../today/placeName'
+import { placeNameOf } from '../today/placeName'
+import { zoneLabel } from '../location/nearestPlace'
 import { adviceLine, CALM_LINE } from './advice'
 import { tempTint } from './tempTint'
 import { alertRef, placeTimezone } from '../location/place'
@@ -42,7 +43,7 @@ import AirCard from './AirCard'
 import SunArc from './SunArc'
 import { syncRainReminder } from './rainRemind'
 import RainNowChip from './RainNowChip'
-import { rainChanceText, reconcileNow } from './rainNow'
+import { locationOffNote, rainChanceText, reconcileNow } from './rainNow'
 import './weather.css'
 import './wxs7w.css'
 
@@ -144,7 +145,7 @@ export default function WeatherScreen() {
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<ZonePicker loc={l} />} />
       {oldFix && fixAt != null && <p className="wx-note" role="status" data-testid="wx-fix-old">{oldFixNote(fixAt, Date.now())} <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Update my location'}</button></p>}
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={placeNameOf(place)} line={placeLineOf(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
+      {fc && point ? <Body fc={fc} name={placeNameOf(place)} locationOff={locationOffNote(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
         <>
           {warnAt && <WarnRow warn={warn} unchecked={unchecked} name={placeNameOf(place)} />}
           {warnAt && hasAdvisory(alerts) && <StormCard alerts={alerts} point={warnAt} place={place ? placeName(place) : placeNameOf(place)} />}
@@ -167,7 +168,7 @@ export default function WeatherScreen() {
         </div>
         <div className="card wx-made">
           <h3>How this is made</h3>
-          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your spot (rounded to about 1 km). The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
+          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">{place?.source === 'zone' ? `Forecast for ${zoneLabel(place.zone)}, your home area (rounded to about 1 km).` : 'Forecast for your spot (rounded to about 1 km).'} The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
           <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services. The map gets the same rounded location." : 'Your rounded location is sent only to the weather and map services.'}</p>
           <p className="wx-sub">Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.</p>
         </div>
@@ -190,7 +191,7 @@ function WarnRow({ warn, unchecked, name }: { warn: ReturnType<typeof weatherWar
   )
 }
 
-function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; line: string; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
+function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; locationOff: string | null; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
@@ -231,9 +232,14 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
     <Section key="48" title="Next 48 hours" meta="every 3 h · rain chance" testId="wx-48">
       <div className="card wx-stripbox">
         <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
-          {strip.map((h, i) => (
-            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : h.prob < 10 ? rainChanceText(h.prob) : `${Math.round(h.prob)}% rain`}</span></li>
-          ))}
+          {strip.map((h, i) => {
+            const now0 = i === 0 // the Now cell tells the hero's story: the rain icon, the current temperature and "Raining", not the hourly cloud, temperature and chance
+            const kind = now0 && (rn.code !== (c.code ?? null) || fc.rainingNow?.value) ? kindOf(rn.code) : kindOf(h.code)
+            const rainingNow = now0 && fc.rainingNow?.value === true
+            return (
+              <li key={h.time}><span>{now0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kind} /><b>{deg(now0 ? c.temp : h.temp)}</b>{rainingNow ? <span className="wx-rp">Raining</span> : <span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : h.prob < 10 ? rainChanceText(h.prob) : `${Math.round(h.prob)}% rain`}</span>}</li>
+            )
+          })}
         </ul>
       </div>
     </Section>
@@ -243,14 +249,14 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
     <>
       <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-testid="wx-hero">
         <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={cond} hot={isHot(c.temp, c.humidity)} />
-        <div className="wx-k">{line}</div>
         <span className="wx-sub wx-stamp">{offline ? `as of ${asOf}, ${online ? 'could not refresh' : 'offline'}` : `Updated ${asOf}`}</span>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(rn.words)}</b>
         <RainNowChip rain={fc.rainingNow} />
+        {locationOff && <p className="rn-off" data-testid="location-off">{locationOff}</p>}
         <span className="wx-sub">Feels like {deg(fl.value)}</span>
         <span className="wx-sub">H:{deg(today?.max ?? null)}  L:{deg(today?.min ?? null)}</span>
-        <ForecastNote className="wx-sub wx-fnote" place={name} link sources={creditIds(bl)} />
+        <ForecastNote className="wx-sub wx-fnote" link sources={creditIds(bl)} />
       </section>
 
       <WarnRow warn={warn} unchecked={unchecked} name={name} />
@@ -269,7 +275,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         ) : <b className={`wx-act-t${advice === CALM_LINE ? ' calm' : ''}`}>{advice}</b>}
       </section>
 
-      {wxFlag('blend') ? (bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} /> : <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>) : <Next2hMini fc={fc} offline={offline} now={now} />}
+      {wxFlag('blend') ? (bl.blended ? <Next2h slots={bl.next2h} offline={offline} now={now} raining={raining} /> : <Section title="Next 2 hours"><EmptyState title="Not available yet" body="Minute-by-minute rain needs the blended forecast." /></Section>) : <Next2hMini fc={fc} offline={offline} now={now} raining={raining} />}
 
       <LiveMapCard point={point} pause={pause} />
 

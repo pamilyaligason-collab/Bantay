@@ -14,8 +14,8 @@ export default function AirCard({ point }: { point: LatLon | null }) {
         {b && mean != null ? (
           <>
             <span className="wx-aqi-chip" style={{ background: b.bg, color: b.ink }}><b>{b.label}</b><span>Level {b.id} of 6</span></span>
-            <p className="wx-aqi-n"><b>{mean}</b> µg/m³ PM2.5</p>
             {b.say && <p className="wx-aqi-say">{b.say}</p>}
+            <span className="wx-sub wx-aqi-n">Fine dust (PM2.5): {mean} µg/m³</span>
           </>
         ) : <p className="wx-sub">Air quality is not available now.</p>}
         <span className="wx-sub">Air quality (DENR scale), PM2.5 24-hour average.{stale ? ' Older reading; could not refresh.' : ''}</span>

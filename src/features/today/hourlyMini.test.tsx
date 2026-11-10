@@ -37,6 +37,8 @@ describe('hourly strip data', () => {
     const s = hourlySlots(wx, NOW)
     expect(s[0]!.kind).toBe(kindOf(61))
     expect(s[0]!.kind).not.toBe(kindOf(3))
+    expect(s[0]!.raining).toBe(true) // S29 W: the Now cell says Raining, not the hour's chance
+    expect(s[1]!.raining).toBeUndefined()
     expect(s[1]!.kind).toBe(kindOf(3)) // later hours keep their own code
   })
   it('null data shows nothing invented', () => {
