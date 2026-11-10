@@ -1,14 +1,15 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Drought } from './drought'
+const useType = vi.hoisted(() => ({ t: 4 as 1 | 2 | 3 | 4 }))
 const h = vi.hoisted(() => ({ province: 'Bohol' as string | null, dr: null as Drought | null | undefined }))
-vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: 4, guess: false, ready: true, pick: vi.fn(), picked: null, province: h.province }) }))
+vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: useType.t, guess: false, ready: true, pick: vi.fn(), picked: null, province: h.province }) }))
 vi.mock('./daPrices', async (orig) => ({ ...(await orig<typeof import('./daPrices')>()), useDaPrices: () => null }))
 vi.mock('./drought', async (orig) => ({ ...(await orig<typeof import('./drought')>()), useDrought: () => h.dr }))
-import { PlantCard, PlantPoster, plantList } from './Plant'
+import { anyTolerant, DROUGHT_TOLERANT, PlantCard, PlantPoster, plantList, plantTiles } from './Plant'
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 10, 9, 12, 0, 0)) }) // local midday, 9 Nov 2026 (ML-38)
-afterEach(() => { vi.useRealTimers(); cleanup(); h.dr = null; h.province = 'Bohol' })
+afterEach(() => { vi.useRealTimers(); cleanup(); h.dr = null; h.province = 'Bohol'; useType.t = 4 })
 
 const row = (issued: string, levels: [string, Drought['months'][number]['level']][]): Drought => ({
   province: 'Bohol', issued_at: issued, saved: false, months: levels.map(([month, level], i) => ({ month, level, kind: i === 0 ? 'assessment' : 'outlook' as const }))
@@ -52,5 +53,25 @@ describe('S29 C: dry spell in the outlook', () => {
     h.dr = row('2026-02-03', [['2026-01', 'not_affected'], ['2026-02', 'dry_spell'], ['2026-03', 'drought']])
     const { container } = render(<PlantCard />)
     expect(container.querySelector('.gpl-tile')!.textContent).toBe('OkraGuide coming')
+  })
+})
+
+describe('S29 C fix: the dry note never claims tolerance falsely', () => {
+  const names = (type: 1 | 2 | 3 | 4, month: number) => { const l = plantList(type, month, true); return plantTiles(l.guided, l.others, true).map((t) => ('g' in t ? t.g.calendar : t.name)) }
+  it('every climate type and month: a tolerant crop in season always shows among the three tiles, and none shows when none is in season', () => {
+    for (const type of [1, 2, 3, 4] as const) for (let m = 1; m <= 12; m++) {
+      const l = plantList(type, m, true), tiles = plantTiles(l.guided, l.others, true)
+      const inSeason = [...l.guided.map((g) => g.calendar), ...l.others.map((o) => o.name)]
+      expect(anyTolerant(tiles), `type ${type} month ${m}`).toBe(inSeason.some((n) => DROUGHT_TOLERANT.includes(n)))
+    }
+  })
+  it('type 2 in February: a tolerant crop leads; type 1 in August: the tip, not the claim', () => {
+    expect(names(2, 2)[0]).toBe('Cowpea')
+    expect(names(1, 8).some((n) => DROUGHT_TOLERANT.includes(n))).toBe(false)
+    vi.setSystemTime(new Date(2026, 7, 9, 12, 0, 0))
+    h.dr = row('2026-08-03', [['2026-07', 'not_affected'], ['2026-08', 'dry_spell'], ['2026-09', 'drought']])
+    useType.t = 1
+    render(<PlantCard />)
+    expect(screen.getByTestId('plant-dry').textContent).toBe('Dry spell in Bohol: water early in the morning and mulch to keep the soil damp.')
   })
 })

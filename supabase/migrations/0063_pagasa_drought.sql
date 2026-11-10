@@ -10,6 +10,7 @@
 
 create table if not exists public.pagasa_drought (
   province text primary key check (length(province) between 1 and 80),
+  -- NOT NULL on purpose (the contract allows null): the parser always sets it.
   issued_at date not null,
   months jsonb not null check (
     jsonb_typeof(months) = 'array'
