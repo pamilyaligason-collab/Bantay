@@ -45,7 +45,7 @@ export function addMonths(ym: string, n: number): string {
   const t = Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7)) - 1 + n
   return `${Math.floor(t / 12)}-${String((t % 12) + 1).padStart(2, '0')}`
 }
-const monthName = (ym: string) => MONTH_NAMES[Number(ym.slice(5, 7)) - 1]!
+export const monthName = (ym: string) => MONTH_NAMES[Number(ym.slice(5, 7)) - 1]!
 export const shortMonth = (ym: string) => monthName(ym).slice(0, 3)
 
 export const isStale = (issued: string, now: number = Date.now()): boolean => now - Date.parse(issued) > STALE_DAYS * 86_400_000
@@ -73,11 +73,13 @@ export function outlookSentence(months: readonly DroughtMonth[], nowYm: string):
   return 'No dry spell or drought expected in the coming months.'
 }
 
-/** True when PAGASA's outlook for this month and the next two has a dry spell or drought: the Plant card then favours crops that cope with less water. */
-export function dryAhead(months: readonly DroughtMonth[] | null | undefined, nowYm: string): boolean {
+/** The first dry month (dry spell or drought) in PAGASA's outlook for this month and the next two, or null: the Plant card then favours crops that cope with less water and says when. */
+export function dryWhen(months: readonly DroughtMonth[] | null | undefined, nowYm: string): { ym: string; level: 'dry_spell' | 'drought' } | null {
   const last = addMonths(nowYm, 2)
-  return !!months?.some((m) => m.kind === 'outlook' && m.month >= nowYm && m.month <= last && (m.level === 'dry_spell' || m.level === 'drought'))
+  const m = months?.find((x) => x.kind === 'outlook' && x.month >= nowYm && x.month <= last && (x.level === 'dry_spell' || x.level === 'drought'))
+  return m ? { ym: m.month, level: m.level as 'dry_spell' | 'drought' } : null
 }
+export const dryAhead = (months: readonly DroughtMonth[] | null | undefined, nowYm: string): boolean => !!dryWhen(months, nowYm)
 
 let memo: { at: number; p: Promise<Omit<Drought, 'saved'>[] | null> } | null = null
 export const resetDrought = () => { memo = null } // tests

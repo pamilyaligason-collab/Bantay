@@ -41,7 +41,7 @@ for (const [w, h] of [[390, 844], [360, 780]] as const) {
     await page.reload()
     const pl = page.getByTestId('today-plant')
     await expect(pl).toBeVisible()
-    await expect(pl).toContainText('climate type 2')
+    await expect(pl).toContainText('No dry season')
     await expect(page.getByTestId('plant-dry')).toBeVisible()
     await pl.scrollIntoViewIfNeeded()
     const dir = process.env.S29_C_SHOTS
@@ -49,7 +49,7 @@ for (const [w, h] of [[390, 844], [360, 780]] as const) {
     // after the fix: photo tiles first, the tip (no tolerant crop with a guide), and a credit for the photos shown
     if (process.env.S29_C_AFTER) {
       await expect(pl.locator('.gpl-tile img')).toHaveCount(3)
-      await expect(page.getByTestId('plant-dry')).toHaveText('Dry spell in Bohol: water early in the morning and mulch to keep the soil damp.')
+      await expect(page.getByTestId('plant-dry')).toHaveText('Bohol is in a dry spell. Water early in the morning and mulch to keep the soil damp.')
       await expect(page.getByTestId('plant-photos')).toBeVisible()
     }
   })
