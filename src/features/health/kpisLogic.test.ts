@@ -51,6 +51,11 @@ describe('My KPIs: the latest reading, not the average', () => {
     expect(k.find((x) => x.code === 'steps')).toMatchObject({ value: '4,210', when: 'today so far', sub: 'Goal 6,000' })
     expect(k.find((x) => x.code === 'doses')).toMatchObject({ value: '2 of 2', when: 'last 7 days' })
   })
+  it('steps tile merges an overlapping pair per source: 1,500, not 2,000', () => {
+    const w = (min: number) => ({ kind: 'steps', steps: 1000, minutes: 10, source: 'health-connect', startedAt: at(0, 9, min), personId: 'p1' })
+    const k = computeKpis({ personId: 'p1', readings: [], now: NOW, ...none, activity: [w(0), w(5)] })
+    expect(k.find((x) => x.code === 'steps')).toMatchObject({ value: '1,500' })
+  })
   it('a measure with no data is not drawn, never a zero', () => {
     expect(computeKpis({ personId: 'p1', readings: [], now: NOW, ...none })).toEqual([])
     expect(computeKpis({ personId: 'other', readings, now: NOW, ...none })).toEqual([])

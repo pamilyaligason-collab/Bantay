@@ -238,6 +238,16 @@ describe('midnight: lastNight, stepsSummary, FamilyToday and the clock hook', ()
     await waitFor(() => expect(screen.getByTestId('family-today').textContent).toContain('1,111'))
     expect(screen.getByTestId('family-today').textContent).not.toContain('4,321')
   })
+  it('FamilyToday equals the tile for the same person and day: an overlapping pair is 1,500, not 2,000 (ML-51)', async () => {
+    await ldb.activity.clear()
+    await ldb.activity.bulkAdd([
+      { personId: 'me', kind: 'steps', minutes: 10, steps: 1000, startedAt: at(10, 10, 9, 0), source: 'manual' },
+      { personId: 'me', kind: 'steps', minutes: 10, steps: 1000, startedAt: at(10, 10, 9, 5), source: 'manual' }
+    ])
+    render(<FamilyToday now={D(10, 12, 0)} />)
+    await waitFor(() => expect(screen.getByTestId('family-today').textContent).toContain('1,500'))
+    expect(screen.getByTestId('family-today').textContent).not.toContain('2,000')
+  })
   it('useNow ticks over at local midnight', () => {
     vi.useFakeTimers()
     vi.setSystemTime(D(9, 23, 30))

@@ -149,6 +149,43 @@ export function sleepWakeDay(a: Activity): { day: string; nap: boolean } {
   if (h >= 9 && h < 18 && (a.minutes ?? 0) < 180) return { day: localDay(a.startedAt), nap: true }
   return { day: localDay(new Date(t + 6 * 3_600_000).toISOString()), nap: false }
 }
+export interface Night { day: string; minutes: number; napMinutes: number; bedAt: string | null }
+
+/** Minutes covered by the union of [start, start + minutes] spans: two rows for the same sleep (watch and phone, or a re-synced night) count once, never twice. */
+export function unionMinutes(rows: { startedAt: string; minutes: number }[]): number {
+  const iv = rows.map((r) => [Date.parse(r.startedAt), Date.parse(r.startedAt) + r.minutes * 60_000] as const).sort((a, b) => a[0] - b[0])
+  let total = 0
+  let from = NaN, to = NaN
+  for (const [s, e] of iv) {
+    if (Number.isNaN(to) || s > to) { if (!Number.isNaN(to)) total += to - from; from = s; to = e } else if (e > to) to = e
+  }
+  return Number.isNaN(to) ? 0 : (total + (to - from)) / 60_000
+}
+
+/** The one place sleep rows become nights: grouped by wake day (sleepWakeDay), overlapping spans counted once, a manual row (no real start) added as logged. A day with only naps has minutes 0.
+ *  Bed time is the earliest real start among the night rows; a night made only of manual rows has none (null). Every surface that shows a night of sleep reads this. */
+export function sleepNights(acts: Activity[]): Map<string, Night> {
+  const g = new Map<string, { real: { startedAt: string; minutes: number }[]; manual: number; nap: { startedAt: string; minutes: number }[]; bedAt: string | null }>()
+  for (const a of acts) {
+    if (a.kind !== 'sleep' || typeof a.minutes !== 'number' || !(a.minutes > 0) || Number.isNaN(Date.parse(a.startedAt))) continue
+    const { day, nap } = sleepWakeDay(a)
+    const cur = g.get(day) ?? { real: [], manual: 0, nap: [], bedAt: null }
+    const row = { startedAt: a.startedAt, minutes: a.minutes }
+    if (nap) cur.nap.push(row)
+    else if (hasRealStart(a)) { cur.real.push(row); if (cur.bedAt == null || Date.parse(a.startedAt) < Date.parse(cur.bedAt)) cur.bedAt = a.startedAt }
+    else cur.manual += a.minutes
+    g.set(day, cur)
+  }
+  return new Map([...g].map(([day, v]) => [day, { day, minutes: unionMinutes(v.real) + v.manual, napMinutes: unionMinutes(v.nap), bedAt: v.bedAt }]))
+}
+
+/** The latest night on file (never later than today). Tiles, the Sleep detail hero and the charts all come from sleepNights, so they cannot disagree. */
+export function lastNight(acts: Activity[], now: Date): Night | null {
+  const today = localDay(now.toISOString())
+  const nights = [...sleepNights(acts).values()].filter((n) => n.minutes > 0 && n.day <= today).sort((a, b) => a.day.localeCompare(b.day))
+  return nights.pop() ?? null
+}
+
 export interface NodeView { id: NodeId; label: string; value: string; note: string; state: Position; code: string; empty: boolean }
 export const MOOD_WORD: Record<string, string> = { 'mood-good': 'Good', 'mood-ok': 'OK', 'mood-low': 'Low' }
 const stateNote = (kind: VerdictKind, pos: Position, bp?: BpArg) => verdictFor(kind, pos, bp)?.word ?? ''
@@ -156,10 +193,36 @@ const stateNote = (kind: VerdictKind, pos: Position, bp?: BpArg) => verdictFor(k
 export const hoursMinutes = (min: number) => `${Math.floor(min / 60)}h ${String(Math.round(min % 60)).padStart(2, '0')}`
 const sameDay = (a: string, b: Date) => new Date(a).toDateString() === b.toDateString()
 
-/** Sum of a day's activity numbers, or null when there was nothing that day (never 0 for no data). */
-function dayTotal(acts: Activity[], kind: string, field: 'minutes' | 'steps', day: Date): number | null {
-  const v = acts.filter((a) => a.kind === kind && sameDay(a.startedAt, day)).map((a) => a[field]).filter(isNum)
-  return v.length ? v.reduce((s, n) => s + n, 0) : null
+/** Steps per local day, the one place step rows become a day total. Per source, rows that overlap in time count once (a later row adds only the part of its span not already covered, in proportion);
+ *  a zero-length row (minutes 0 or null) inside a span already counted adds nothing, a standalone one counts, and an exact repeat of it counts once; then the day takes the source with the most steps, never the sum of two sources (a watch and a phone count the same walk). No entry for a day with no steps row (never 0 from no data). */
+export function stepDayTotals(acts: { kind: string; steps: number | null; startedAt: string; minutes?: number | null; source?: string }[]): Map<string, number> {
+  const by = new Map<string, Map<string, { t: number; end: number; steps: number }[]>>()
+  for (const a of acts) {
+    if (a.kind !== 'steps' || !isNum(a.steps) || a.steps < 0 || !a.startedAt) continue
+    const t = Date.parse(a.startedAt)
+    if (Number.isNaN(t)) continue
+    const day = localDay(a.startedAt), src = a.source ?? 'manual'
+    const m = by.get(day) ?? new Map<string, { t: number; end: number; steps: number }[]>()
+    m.set(src, [...(m.get(src) ?? []), { t, end: t + (isNum(a.minutes) && a.minutes > 0 ? a.minutes : 0) * 60_000, steps: a.steps }])
+    by.set(day, m)
+  }
+  const out = new Map<string, number>()
+  for (const [day, srcs] of by) {
+    let best = 0
+    for (const rows of srcs.values()) {
+      rows.sort((x, y) => x.t - y.t || y.end - x.end)
+      let total = 0, reach = -Infinity
+      const seen = new Set<string>()
+      for (const r of rows) {
+        if (r.end <= r.t) { if (r.t < reach) continue; const k = `${r.t}|${r.steps}`; if (!seen.has(k)) { seen.add(k); total += r.steps } continue } // a zero-length row inside a span already counted adds nothing; a standalone one (manual entry) counts
+        total += r.steps * (Math.max(0, r.end - Math.max(r.t, reach)) / (r.end - r.t))
+        reach = Math.max(reach, r.end)
+      }
+      best = Math.max(best, total)
+    }
+    out.set(day, Math.round(best))
+  }
+  return out
 }
 
 export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, familyOf: (r: Reading) => Range | undefined = () => undefined): NodeView[] {
@@ -168,7 +231,8 @@ export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, fami
   const yesterday = new Date(now.getTime() - DAY)
   const nodes: NodeView[] = []
 
-  const sleepMin = dayTotal(acts, 'sleep', 'minutes', now) ?? dayTotal(acts, 'sleep', 'minutes', yesterday)
+  const night = lastNight(acts, now) // the same night the Sleep detail shows; older than yesterday is no news
+  const sleepMin = night && night.day >= localDay(yesterday.toISOString()) ? night.minutes : null
   nodes.push({ id: 'sleep', label: 'Sleep', value: sleepMin == null ? '--' : hoursMinutes(sleepMin), note: sleepMin == null ? 'No data yet' : 'last night', state: 'none', code: 'sleep', empty: sleepMin == null })
 
   const mood = acts.filter((a) => a.kind in MOOD_WORD).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))[0]
@@ -189,7 +253,7 @@ export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, fami
   const w = last('weight')
   nodes.push({ id: 'weight', label: 'Weight', value: w ? `${formatNumber(w.value)} kg` : '--', note: w ? shortDate(w.takenAt) : 'No data yet', state: 'none', code: 'weight', empty: !w })
 
-  const steps = dayTotal(acts, 'steps', 'steps', now)
+  const steps = stepDayTotals(acts).get(localDay(now.toISOString())) ?? null
   nodes.push({ id: 'steps', label: 'Steps', value: steps == null ? '--' : steps.toLocaleString('en-PH'), note: steps == null ? 'No data yet' : 'today', state: 'none', code: 'steps', empty: steps == null })
   return nodes
 }
@@ -203,15 +267,20 @@ export const isActivityCode = (c: string): c is (typeof ACTIVITY_CODES)[number] 
 
 /** One point per day: steps summed, sleep summed (hours), mood 1..3. Days with no data have no point. */
 export function activitySeries(acts: Activity[], code: 'steps' | 'sleep' | 'mood'): Point[] {
+  if (code === 'sleep') { // one point per wake day from sleepNights (night plus naps, hours to 0.1)
+    return [...sleepNights(acts).values()].filter((n) => n.minutes + n.napMinutes > 0)
+      .map((n) => ({ takenAt: `${n.day}T12:00:00.000Z`, value: Math.round(((n.minutes + n.napMinutes) / 60) * 10) / 10 }))
+      .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
+  }
+  if (code === 'steps') return [...stepDayTotals(acts)].map(([day, value]) => ({ takenAt: `${day}T12:00:00.000Z`, value })).sort((a, b) => a.takenAt.localeCompare(b.takenAt))
   const byDay = new Map<string, number[]>()
   for (const a of acts) {
     if (!a.startedAt || Number.isNaN(Date.parse(a.startedAt))) continue
-    const day = code === 'sleep' && a.kind === 'sleep' ? sleepWakeDay(a).day : localDay(a.startedAt)
-    const v = code === 'steps' ? (a.kind === 'steps' ? a.steps : null) : code === 'sleep' ? (a.kind === 'sleep' && isNum(a.minutes) ? Math.round((a.minutes / 60) * 10) / 10 : null) : a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
-    if (isNum(v) && a.startedAt) byDay.set(day, [...(byDay.get(day) ?? []), v])
+    const v = a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
+    if (v != null) byDay.set(localDay(a.startedAt), [...(byDay.get(localDay(a.startedAt)) ?? []), v])
   }
   return [...byDay.entries()]
-    .map(([day, v]) => ({ takenAt: `${day}T12:00:00.000Z`, value: code === 'mood' ? Math.round((v.reduce((s, n) => s + n, 0) / v.length) * 10) / 10 : v.reduce((s, n) => s + n, 0) }))
+    .map(([day, v]) => ({ takenAt: `${day}T12:00:00.000Z`, value: Math.round((v.reduce((s, n) => s + n, 0) / v.length) * 10) / 10 }))
     .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
 }
 

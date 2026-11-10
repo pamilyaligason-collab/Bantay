@@ -26,6 +26,10 @@ describe('weekSeries', () => {
     const a = (steps: number): Activity => ({ personId: 'a', kind: 'steps', minutes: null, steps, startedAt: at('2026-10-26'), source: 'manual' } as Activity)
     expect(stepSeries([a(1000), a(2000)], ['a'], now)[0]!.points[5]).toBe(3000)
   })
+  it('steps use the one shared selector: a half overlapping pair is 1,500, not 2,000', () => {
+    const w = (hm: string): Activity => ({ personId: 'a', kind: 'steps', minutes: 10, steps: 1000, startedAt: at('2026-10-27', hm), source: 'health-connect' })
+    expect(stepSeries([w('08:00'), w('08:05')], ['a'], now)[0]!.points[6]).toBe(1500)
+  })
   it('dose percent is taken over all slots, null on a day with none, all-null is empty', () => {
     const med = { personId: 'a', name: 'Losartan', serverId: 'm1', schedule: { v: 1, times: ['08:00', '20:00'] } } as unknown as Medication
     const take = { personId: 'a', name: 'Losartan', medicationId: 'm1', slot: '08:00', takenAt: at('2026-10-26') } as MedTaken

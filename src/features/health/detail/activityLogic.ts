@@ -1,11 +1,7 @@
-import { localDay, type Activity } from '../model'
+import { localDay, stepDayTotals, type Activity } from '../model'
 
 /** Steps per local day (days with no steps row have no entry). */
-export function stepDays(acts: Activity[]): Map<string, number> {
-  const m = new Map<string, number>()
-  for (const a of acts) if (a.kind === 'steps' && typeof a.steps === 'number' && Number.isFinite(a.steps) && !Number.isNaN(Date.parse(a.startedAt))) m.set(localDay(a.startedAt), (m.get(localDay(a.startedAt)) ?? 0) + a.steps)
-  return m
-}
+export const stepDays = (acts: Activity[]): Map<string, number> => stepDayTotals(acts)
 const mean = (v: number[]) => (v.length ? Math.round(v.reduce((s, n) => s + n, 0) / v.length) : null)
 
 export interface StepsSummary { today: number | null; avg30: number | null; month: number | null; year: number | null; monthDays: number }

@@ -1,4 +1,5 @@
 import { manilaDay, matchDoses, slotsFor } from '../health/meds'
+import { stepDayTotals } from '../health/model'
 import { manilaDaysEnding } from '../today/nextPick'
 import { GUIDE, type Reading } from '../health/ranges'
 import { BP_WORDS, bpPairLevel, type BpArg } from '../health/verdict'
@@ -30,8 +31,8 @@ export function bpSeries(readings: Reading[], ids: string[], now: Date): Series[
 export function stepSeries(acts: Activity[], ids: string[], now: Date): Series[] {
   const keys = dayKeys(now)
   return ids.map((id) => finish(id, keys.map((k) => {
-    const v = acts.filter((a) => a.personId === id && a.kind === 'steps' && typeof a.steps === 'number' && manilaDay(a.startedAt) === k).map((a) => a.steps!)
-    return v.length ? v.reduce((a, b) => a + b, 0) : null
+    const t = [...stepDayTotals(acts.filter((a) => a.personId === id && manilaDay(a.startedAt) === k)).values()] // the one shared selector (an overlapping pair counts once); a device-zone split of one Manila day adds back up
+    return t.length ? t.reduce((a, b) => a + b, 0) : null
   })))
 }
 
