@@ -10,7 +10,8 @@ export const USER_AGENT = 'FamilyBantay/1.0 (+https://github.com/pamilyaligason-
 
 export type ProviderId = 'open-meteo' | 'met-norway' | 'openweather'
 export interface Cell { lat: number; lon: number }
-export interface Now { time: string; temp: number | null; humidity: number | null; feels: number | null; code: number | null; wind: number | null; gust: number | null; uv: number | null } // wind, gust km/h
+export interface RainingNow { value: boolean; source: 'observed' | 'model'; ageMin: number | null; station?: string } // S29 B: observed = airport METAR, model = Open-Meteo current
+export interface Now { precip?: number | null; time: string; temp: number | null; humidity: number | null; feels: number | null; code: number | null; wind: number | null; gust: number | null; uv: number | null } // wind, gust km/h
 export interface Hour { time: string; temp: number | null; prob: number | null; code: number | null; rain: number | null } // rain: mm in that hour
 export interface Day { date: string; code: number | null; min: number | null; max: number | null; prob: number | null; uvMax: number | null; sunrise: string | null; sunset: string | null }
 export interface Alert { source: string; event: string; start: string; end: string; description: string }
@@ -19,7 +20,7 @@ export interface Slot { time: string; mmh: number | null; estimated: boolean } /
 export interface Series { id: ProviderId; now: Now | null; hours: Hour[]; days: Day[]; minutely?: { ms: number; mm: number }[]; alerts?: Alert[] }
 export interface Source { id: ProviderId; ok: boolean; reason?: 'no_key' | 'key_inactive' | 'http' | 'unreachable' | 'bad_data'; credit: string; url: string }
 export interface Check { station: string; name: string; observedAt: string; observedTemp: number; forecastTemp: number; bias: number } // METAR vs blended now
-export interface Blended { cell: Cell; fetchedAt: string; tz: string; utcOffset: number; now: Now; next2h: Slot[]; hourly48: Hour[]; daily10: Day[]; aqi: Air | null; alerts: Alert[]; sources: Source[]; check: Check | null }
+export interface Blended { cell: Cell; fetchedAt: string; tz: string; utcOffset: number; now: Now; next2h: Slot[]; hourly48: Hour[]; daily10: Day[]; aqi: Air | null; alerts: Alert[]; sources: Source[]; check: Check | null; rainingNow?: RainingNow | null }
 export interface MetCache { expires: string; series: Series }
 export interface Gathered { series: Series[]; sources: Source[]; aqi: Air | null; met?: MetCache | null }
 
@@ -52,7 +53,7 @@ export function cellOf(b: unknown): Cell | null {
 export const openMeteoUrl = (c: Cell) =>
   'https://api.open-meteo.com/v1/forecast' +
   `?latitude=${c.lat}&longitude=${c.lon}` +
-  '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,uv_index' +
+  '&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,wind_gusts_10m,uv_index,precipitation,rain' +
   '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code' +
   '&daily=weather_code,temperature_2m_min,temperature_2m_max,precipitation_probability_max,uv_index_max,sunrise,sunset' +
   `&forecast_days=10&timezone=${encodeURIComponent(TZ)}`
@@ -68,7 +69,7 @@ export function parseOpenMeteo(j: unknown): Series | null {
   const at = (k: string, i: number, src = h) => num(arr(src[k])[i])
   return {
     id: 'open-meteo',
-    now: { time: str(c.time), temp: num(c.temperature_2m), humidity: num(c.relative_humidity_2m), feels: num(c.apparent_temperature), code: num(c.weather_code), wind: num(c.wind_speed_10m), gust: num(c.wind_gusts_10m), uv: num(c.uv_index) },
+    now: { time: str(c.time), precip: num(c.precipitation) ?? num(c.rain), temp: num(c.temperature_2m), humidity: num(c.relative_humidity_2m), feels: num(c.apparent_temperature), code: num(c.weather_code), wind: num(c.wind_speed_10m), gust: num(c.wind_gusts_10m), uv: num(c.uv_index) },
     hours: arr(h.time).map((t, i) => ({ time: str(t), temp: at('temperature_2m', i), prob: at('precipitation_probability', i), code: at('weather_code', i), rain: at('precipitation', i) })),
     days: arr(d.time).map((t, i) => ({ date: str(t), code: at('weather_code', i, d), min: at('temperature_2m_min', i, d), max: at('temperature_2m_max', i, d), prob: at('precipitation_probability_max', i, d), uvMax: at('uv_index_max', i, d), sunrise: str(arr(d.sunrise)[i]) || null, sunset: str(arr(d.sunset)[i]) || null }))
   }
@@ -132,6 +133,13 @@ export function parseAir(j: unknown): Air | null {
   return { index: i, label: AQI_WORDS[i - 1], pm25: num(c.pm2_5), pm10: num(c.pm10) }
 }
 
+/** Open-Meteo's current reading as "raining now": more than 0.1 mm, or a rain/shower/storm weather code. Neither known: null (unknown is never dry). */
+export function modelRaining(n: { precip?: number | null; code: number | null } | null | undefined): RainingNow | null {
+  if (!n || (n.precip == null && n.code == null)) return null
+  const wet = (n.precip ?? 0) > 0.1 || (n.code != null && ((n.code >= 51 && n.code <= 67) || n.code >= 80))
+  return { value: wet, source: 'model', ageMin: null }
+}
+
 const vals = (xs: (number | null)[]) => xs.filter((x): x is number => x != null).sort((a, b) => a - b)
 /** Median of the providers that have a value; null when none does. */
 const mid = (xs: (number | null)[]) => { const v = vals(xs); const m = v.length >> 1; return !v.length ? null : v.length % 2 ? v[m] : r1((v[m - 1] + v[m]) / 2) }
@@ -173,6 +181,12 @@ export function next2h(minutely: Series['minutely'], hours: Hour[], nowMs: numbe
   })
 }
 
+/** Rain chance for an hour: with two or more sources that report millimetres, the share of them wet (>= 0.1 mm); otherwise the median model probability. */
+const chance = (hs: Hour[]): number | null => {
+  const w = hs.filter((h) => h.rain != null)
+  return w.length >= 2 ? Math.round((100 * w.filter((h) => h.rain! >= 0.1).length) / w.length) : mid(hs.map((h) => h.prob))
+}
+
 /** Per-hour and per-day median over whatever providers answered (at least one). */
 export function blend(g: Gathered, cell: Cell, nowMs: number): Blended {
   const s = g.series
@@ -181,7 +195,7 @@ export function blend(g: Gathered, cell: Cell, nowMs: number): Blended {
   const today = local(nowMs).slice(0, 10)
   // from local midnight, so today's earlier hours stay (Today's "rain came earlier" reads them), then 48 hours ahead
   const hourly48 = groups(s.flatMap((x) => x.hours), (h) => h.time, `${today}T00:00`, Number(local(nowMs).slice(11, 13)) + 48).map((hs) => ({
-    time: hs[0].time, temp: mid(hs.map((h) => h.temp)), prob: mid(hs.map((h) => h.prob)), code: midCode(hs.map((h) => h.code)), rain: mid(hs.map((h) => h.rain))
+    time: hs[0].time, temp: mid(hs.map((h) => h.temp)), prob: chance(hs), code: midCode(hs.map((h) => h.code)), rain: mid(hs.map((h) => h.rain))
   }))
   const daily10 = groups(s.flatMap((x) => x.days), (d) => d.date, today, 10).map((ds) => ({
     date: ds[0].date, code: midCode(ds.map((d) => d.code)), min: mid(ds.map((d) => d.min)), max: mid(ds.map((d) => d.max)), prob: mid(ds.map((d) => d.prob)), uvMax: mid(ds.map((d) => d.uvMax)), sunrise: first(ds.map((d) => d.sunrise)), sunset: first(ds.map((d) => d.sunset))
@@ -189,7 +203,7 @@ export function blend(g: Gathered, cell: Cell, nowMs: number): Blended {
   const ow = s.find((x) => x.id === 'openweather')
   return {
     cell, fetchedAt: new Date(nowMs).toISOString(), tz: TZ, utcOffset: UTC_OFFSET,
-    now: { time: local(nowMs), temp: pick('temp'), humidity: pick('humidity'), feels: pick('feels'), code: midCode(nows.map((n) => n.code)), wind: pick('wind'), gust: pick('gust'), uv: pick('uv') },
+    now: { time: local(nowMs), precip: pick('precip'), temp: pick('temp'), humidity: pick('humidity'), feels: pick('feels'), code: midCode(nows.map((n) => n.code)), wind: pick('wind'), gust: pick('gust'), uv: pick('uv') },
     next2h: next2h(ow?.minutely, hourly48, nowMs), hourly48, daily10, aqi: g.aqi, alerts: ow?.alerts ?? [], sources: g.sources, check: null
   }
 }

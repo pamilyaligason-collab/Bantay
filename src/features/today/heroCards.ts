@@ -24,6 +24,7 @@ export interface Wx {
   feels?: number | null // Open-Meteo apparent temperature, the same 'Feels like' the Weather screen shows
   uvMax?: number | null
   sunrise?: string | null; sunset?: string | null // today's, place-local; the weather scene's time of day
+  rainingNow?: { value: boolean; source: 'observed' | 'model'; ageMin: number | null; station?: string } | null // S29 B
   offline?: boolean // the forecast is the last good one from the cache, not a fresh reading
 }
 export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip' | 'plan'
@@ -148,8 +149,9 @@ export function rainBody(w: Wx, rain: ReturnType<typeof rainOutlook> | undefined
   if (rain) return rainWords(rain)
   if (w.rainPct == null) return 'No rain chance number yet.'
   const pct = Math.round(w.rainPct)
-  if (rain === null) return rainPassed(w, nowLocal) ? 'No more rain expected for now.' : `Today up to ${pct}%.`
-  return rainy ? `Bring an umbrella. Today up to ${pct}%.` : `Today up to ${pct}%.`
+  const upTo = pct < 10 ? 'Low chance of rain today.' : `Today up to ${pct}%.` // never "0%"
+  if (rain === null) return rainPassed(w, nowLocal) ? 'No more rain expected for now.' : upTo
+  return rainy ? `Bring an umbrella. ${upTo}` : upTo
 }
 
 /** The rain sentence, worked out at render time (the cached reading can be hours old). Shared by the hero card and the one-line weather helper. */

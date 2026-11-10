@@ -29,6 +29,7 @@ export function toWx(fc: Forecast, offline = false, sources?: string[]): Wx {
     sunrise: fc.daily[0]?.sunrise ?? null,
     sunset: fc.daily[0]?.sunset ?? null,
     offline,
+    rainingNow: fc.rainingNow ?? null,
     ...(sources ? { sources } : {})
   }
 }

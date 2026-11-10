@@ -5,7 +5,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { corsHeaders } from '../_shared/http.ts'
 import { blend, type Blended, cellOf, gather, type MetCache, TTL_MS, USER_AGENT } from './blend.ts'
-import { type StationRow, stationCheck } from './metar.ts'
+import { rainObserved, type StationRow, stationCheck } from './metar.ts'
 
 Deno.serve(async (req) => {
   const cors = corsHeaders(Deno.env.get('ALLOWED_ORIGIN'), req.headers.get('Origin'))
@@ -35,10 +35,12 @@ Deno.serve(async (req) => {
   if (!got.series.length) return row ? reply(200, { ok: true, cached: true, stale: true, ...(row.payload as Blended) }) : reply(502, { ok: false, error: 'no_source', sources: got.sources })
 
   const b = blend(got, cell, now)
+  const fetchJson = async (u: string) => { const r = await fetch(u, { signal: AbortSignal.timeout(8_000), headers: { 'User-Agent': USER_AGENT } }); if (!r.ok) throw new Error(`HTTP${r.status}`); return r.json() }
+  b.rainingNow = (await rainObserved(fetchJson, cell, now).catch(() => null)) ?? b.rainingNow // an airport report within 25 km and 90 minutes beats the model
   b.check = await stationCheck({
     async read(id) { const { data } = await sb.from('weather_stations').select('*').eq('station', id).maybeSingle(); return (data as StationRow | null) ?? null },
     async write(r) { await sb.from('weather_stations').upsert(r, { onConflict: 'station' }) },
-    async fetchJson(u) { const r = await fetch(u, { signal: AbortSignal.timeout(8_000), headers: { 'User-Agent': USER_AGENT } }); if (!r.ok) throw new Error(`HTTP${r.status}`); return r.json() }
+    fetchJson
   }, cell, b.now.temp, now).catch(() => null) // the check is a nice-to-have; it never fails the forecast
   const { error: writeErr } = await sb.from('weather_cells').upsert({
     lat: cell.lat, lon: cell.lon, payload: b, met: got.met ?? null, sources: got.sources.filter((s) => s.ok).map((s) => s.id),

@@ -39,7 +39,7 @@ async function loadBlendedOnce(p: LatLon, invoke: Invoke): Promise<Loaded> {
   return d
 }
 
-export const toForecast = (b: Blended): Forecast => ({ fetchedAt: b.fetchedAt, tz: b.tz, utcOffset: b.utcOffset, current: b.now, hourly: b.hourly48, daily: b.daily10 })
+export const toForecast = (b: Blended): Forecast => ({ fetchedAt: b.fetchedAt, tz: b.tz, utcOffset: b.utcOffset, current: b.now, rainingNow: b.rainingNow ?? null, hourly: b.hourly48, daily: b.daily10 })
 
 export interface BlendedState {
   fc: Forecast | null

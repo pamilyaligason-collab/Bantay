@@ -82,15 +82,15 @@ describe('blend', () => {
   it('takes the per-hour median and drops providers with no value; keeps the earlier hours of today', () => {
     const b = blend({ series: all, aqi: parseAir(air), sources: [] }, CELL, NOW)
     expect(b.hourly48.map((h) => h.time)).toEqual(['2026-10-31T12:00', '2026-10-31T13:00', '2026-10-31T14:00']) // 12:00 is past but today
-    // 14:00: temps 31, 30, 32 -> 31; prob 60, (MET none), 80 -> 70; rain 2, 4, 5 -> 4; codes 61, 95, 65 -> 65
-    expect(b.hourly48[2]).toEqual({ time: '2026-10-31T14:00', temp: 31, prob: 70, code: 65, rain: 4 })
+    // 14:00: temps 31, 30, 32 -> 31; prob is the share of sources with >= 0.1 mm: rain 2, 4, 5 -> all three wet -> 100; rain -> 4; codes 61, 95, 65 -> 65
+    expect(b.hourly48[2]).toEqual({ time: '2026-10-31T14:00', temp: 31, prob: 100, code: 65, rain: 4 })
     expect(b.now).toMatchObject({ time: '2026-10-31T13:07', temp: 30, humidity: 75, feels: 37 })
     expect(b.daily10[0]).toMatchObject({ date: '2026-10-31', min: 25.5, max: 32, prob: 70, code: 63, sunrise: '2026-10-31T05:45' })
     expect(b).toMatchObject({ tz: 'Asia/Manila', utcOffset: 28800, cell: CELL, alerts: [{ event: 'Heavy rainfall warning' }], aqi: { index: 2 } })
   })
   it('two providers: the more severe weather code, the mean of the two numbers', () => {
     const b = blend({ series: all.slice(0, 2), aqi: null, sources: [] }, CELL, NOW)
-    expect(b.hourly48[2]).toEqual({ time: '2026-10-31T14:00', temp: 30.5, prob: 60, code: 95, rain: 3 })
+    expect(b.hourly48[2]).toEqual({ time: '2026-10-31T14:00', temp: 30.5, prob: 100, code: 95, rain: 3 }) // rain 2 and 4, both wet: 100
     expect(b.alerts).toEqual([])
   })
 })

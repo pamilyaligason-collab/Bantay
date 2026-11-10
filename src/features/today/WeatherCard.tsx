@@ -15,6 +15,8 @@ import { heroRainLine } from './heroRain'
 import { stormSlots, type Slot } from './stormView'
 import HourlyStrip, { hourlySlots } from './HourlyStrip'
 import { ForecastNote } from '../weather/ForecastNote'
+import RainNowChip from '../weather/RainNowChip'
+import { locationOffNote } from '../weather/rainNow'
 import RainMini, { miniSlots } from './RainMini'
 import './weatherHero.css'
 
@@ -32,7 +34,7 @@ function rainSummary(wx: Wx, now: Date): string | null {
   if (!wx.hourly) return null
   const sky = skyOf(wx)
   const nowLocal = wxLocal(wx, now)
-  const raining = sky === 'rain' || sky === 'storm'
+  const raining = sky === 'rain' || sky === 'storm' || wx.rainingNow?.value === true // an airport report of rain beats a dry-looking code
   const out = rainOutlook(wx.hourly.time, wx.hourly.prob, nowLocal, raining)
   if (!out || out.tomorrow) return null
   if (out.now) return out.endH < 0 ? 'Rain likely to last. Bring an umbrella.' : `Rain until ${hour12(out.endH)}. Bring an umbrella.`
@@ -68,7 +70,7 @@ export function WeatherStrip() {
   const { place, point } = useWeatherPlace()
   const wx = useWeather(point)
   if (!wx || wx.temp == null || !place) return null
-  const rain = wx.rainPct == null ? null : `Rain chance ${Math.round(wx.rainPct)}%`
+  const rain = wx.rainPct == null ? null : (wx.rainPct < 10 ? 'Low chance of rain' : `Rain chance ${Math.round(wx.rainPct)}%`)
   return (
     <a className="card td-wx" href={WEATHER_HREF} aria-label="Weather">
       <span className="td-wx-row">
@@ -116,6 +118,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const clock = clockIn(wx.at, placeTimezone(place.weather, wx.tz))
   const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(wx.code)} hot={!storm && isHot(wx.temp, wx.humidity)} lite />
   const next = storm ? stormSlots(slots(wx, now)) : slots(wx, now) // T16: under a storm the slots agree with the title // both sizes: 56 px expanded, 40 px compact (PLAN 1.1 row 2)
+  const locationOff = locationOffNote(place)
   const kicker = noBreak(`${whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`)
   const range = expanded ? [wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ') : '' // live parity: today's range (V11 section B)
   const pills = (feels || drink) && (
@@ -135,13 +138,15 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
         title={<span className="td-wxh-top"><span className="td-wxh-t">{deg(wx.temp)}</span><span className="td-wxh-r"><span className="td-wxh-c">{cond}</span>{(range || pills) && <span className="td-wxh-sub">{range && <span className="td-wxh-hl">{range}</span>}{pills}</span>}</span></span>}
         body={(
           <>
+            <RainNowChip rain={storm ? null : wx.rainingNow} />
+            {locationOff && <p className="rn-off" data-testid="location-off">{locationOff}</p>}
             {!expanded && text && <span className="td-wxh-line">{text}</span>}
             {box}
-            {expanded && <RainMini slots={miniSlots(wx, now, storm)} />}
+            {expanded && <RainMini slots={miniSlots(wx, now, storm)} raining={wx.rainingNow?.value === true} />}
             {expanded && <HourlyStrip slots={hourlySlots(wx, now, storm)} />}
             {!expanded && next.length > 0 && (
               <ul className="td-wxh-hrs" aria-label="Next hours">
-                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
+                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{s.pct < 10 ? 'Low chance' : <>{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</>}</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>
             )}
             <ForecastNote className="td-wxh-credit" link place={placeNameOf(place)} sources={wx.sources} />
