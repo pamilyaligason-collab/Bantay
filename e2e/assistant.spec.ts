@@ -3,9 +3,9 @@ import { openChat, skipOnboarding } from './helpers'
 
 declare const process: { env: Record<string, string | undefined> } // no @types/node in this repo
 
-// The build must know the webhook URL: VITE_ASSISTANT_URL=https://assistant.test/hook PW_PORT=4325 npm run e2e
+// The build must know the webhook URL: VITE_ASSISTANT_PROVIDER=n8n VITE_ASSISTANT_URL=https://assistant.test/hook PW_PORT=4325 npm run e2e
 const HOOK = 'https://assistant.test/hook'
-const configured = process.env.VITE_ASSISTANT_URL === HOOK
+const configured = process.env.VITE_ASSISTANT_URL === HOOK && process.env.VITE_ASSISTANT_PROVIDER === 'n8n' // the webhook path is the rollback since 2026-11-10; edge is the default
 
 const count = (page: Page, dbName: string, store: string) =>
   page.evaluate(
@@ -65,7 +65,7 @@ test('focus stays inside the sheet and the Back gesture closes it', async ({ pag
 })
 
 test.describe('with a mocked webhook', () => {
-  test.skip(!configured, `build with VITE_ASSISTANT_URL=${HOOK}`)
+  test.skip(!configured, `build with VITE_ASSISTANT_PROVIDER=n8n VITE_ASSISTANT_URL=${HOOK}`)
 
   test('Confirm saves one record, Discard saves none', async ({ page }) => {
     let auth: string | undefined
