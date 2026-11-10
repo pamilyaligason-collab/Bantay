@@ -22,15 +22,19 @@ export function trimHistory<T extends Saved>(items: T[], max = HISTORY_MAX): Sav
 }
 
 /** The saved chat, or [] once it is CHAT_IDLE_MS old (then it is also deleted from the phone). A bare array is the pre-2026-11-10 shape and is read as before. */
-export async function loadHistory(now = Date.now()): Promise<Saved[]> {
+export async function loadHistory(now = Date.now()): Promise<Saved[]> { return (await loadHistoryAt(now)).items }
+
+/** loadHistory plus when its last message was saved (null for the old bare-array shape), so a restored chat keeps its own 30-minute clock. */
+export async function loadHistoryAt(now = Date.now()): Promise<{ items: Saved[]; at: number | null }> {
   try {
     const raw = (await db.kv.get(KEY))?.value as unknown
     const box = raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw as { at?: unknown; items?: unknown }) : null
-    if (box && typeof box.at === 'number' && chatIsStale(box.at, now)) { await clearHistory(); return [] }
+    const at = box && typeof box.at === 'number' ? box.at : null
+    if (at !== null && chatIsStale(at, now)) { await clearHistory(); return { items: [], at: null } }
     const v = box ? box.items : raw
-    if (!Array.isArray(v)) return []
-    return trimHistory((v as unknown[]).filter((m): m is Saved => !!m && typeof m === 'object' && ((m as Saved).role === 'user' || (m as Saved).role === 'assistant') && typeof (m as Saved).content === 'string'))
-  } catch { return [] }
+    if (!Array.isArray(v)) return { items: [], at: null }
+    return { at, items: trimHistory((v as unknown[]).filter((m): m is Saved => !!m && typeof m === 'object' && ((m as Saved).role === 'user' || (m as Saved).role === 'assistant') && typeof (m as Saved).content === 'string')) }
+  } catch { return { items: [], at: null } }
 }
 
 export async function saveHistory(items: Saved[], now = Date.now()): Promise<void> {

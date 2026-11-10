@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../db'
-import { CAUTION, CHAT_IDLE_MS, chatIsStale, HISTORY_MAX, keyboardInset, loadHistory, saveHistory, trimHistory } from './history'
+import { CAUTION, CHAT_IDLE_MS, chatIsStale, HISTORY_MAX, keyboardInset, loadHistory, loadHistoryAt, saveHistory, trimHistory } from './history'
 
 beforeEach(async () => { await db.kv.clear() })
 
@@ -34,6 +34,11 @@ describe('Ask history', () => {
     expect((await db.kv.get('assistant.history'))?.value).toBeUndefined()
     expect(chatIsStale(t0, t0 + CHAT_IDLE_MS - 1)).toBe(false)
     expect(chatIsStale(t0, t0 + CHAT_IDLE_MS)).toBe(true)
+  })
+  it('a restored chat reports the time of its last message, so its 30-minute clock does not restart on reload', async () => {
+    const t0 = Date.parse('2026-11-10T10:00:00Z')
+    await saveHistory(msgs(2), t0)
+    expect(await loadHistoryAt(t0 + 60_000)).toEqual({ items: expect.any(Array), at: t0 })
   })
   it('has the new caution line', () => {
     expect(CAUTION).toBe('I can be wrong. Check with your doctor for medical decisions.')
