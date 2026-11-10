@@ -19,9 +19,9 @@ export default function IntegrityCard({ tick }: { tick: number }) {
   const [busy, setBusy] = useState<Kind | null>(null)
   const [failed, setFailed] = useState(false)
   useEffect(() => { setMore({}); setFailed(false) }, [d]) // a fresh load starts the lists over
-  const showMore = async (k: Kind, have: number) => {
+  const showMore = async (k: Kind, lastId: number) => {
     setBusy(k)
-    const r = await loadMore(k, have)
+    const r = await loadMore(k, lastId)
     setBusy(null)
     if (r.ok) { setFailed(false); setMore((m) => ({ ...m, [k]: [...(m[k] ?? []), ...r.data.filter((x) => !(m[k] ?? []).some((y) => y.id === x.id))] })) } else setFailed(true)
   }
@@ -37,7 +37,7 @@ export default function IntegrityCard({ tick }: { tick: number }) {
               <div className="sy-grow">
                 <b>{d.run ? `Last check ${clock(d.run.ran_at)}` : 'Every record, every night'}</b>
                 <div className="sy-sub">
-                  {sum && typeof sum.checked === 'number' ? `${sum.checked.toLocaleString('en-PH')} records checked · ${sum.dupes ?? 0} possible duplicates · ${sum.impossible ?? 0} cannot be right · ${sum.mismatched ?? 0} unit or total mismatches` : 'Looks for duplicates, impossible values, wrong units and day totals that disagree. It only reports; it never changes a record.'}
+                  {sum && typeof sum.checked === 'number' ? `${sum.checked.toLocaleString('en-PH')} records checked · ${sum.dupes ?? 0} extra duplicate rows (in ${d.counts.duplicate} groups) · ${sum.impossible ?? 0} cannot be right · ${sum.mismatched ?? 0} unit or total mismatches` : 'Looks for duplicates, impossible values, wrong units and day totals that disagree. It only reports; it never changes a record.'}
                 </div>
               </div>
               <span className={`sy-st ${st.tone}`}>{WORD[st.tone] && <span className="wa-sr">{WORD[st.tone]}: </span>}{st.text}</span>
@@ -45,13 +45,14 @@ export default function IntegrityCard({ tick }: { tick: number }) {
           </ul>
           {d.open === 0 ? <div className="dk-card-b"><Empty>{d.run ? 'No open findings.' : 'Nothing yet.'}</Empty></div> : (
             <>
-              <p className="sy-foot" aria-label="Open findings by kind">{KIND_ORDER.filter((k) => d.counts[k] > 0).map((k) => `${KIND_LABEL[k]} ${d.counts[k].toLocaleString('en-PH')}`).join(' · ')}</p>
+              <p className="sy-foot">{KIND_ORDER.filter((k) => d.counts[k] > 0).map((k) => `${KIND_LABEL[k]} ${d.counts[k].toLocaleString('en-PH')}`).join(' · ')}</p>
               {KIND_ORDER.filter((k) => d.counts[k] > 0).map((k) => {
                 const rows = [...d.byKind[k], ...(more[k] ?? [])]
                 const left = d.counts[k] - rows.length
                 return (
-                  <section key={k} aria-label={`${KIND_LABEL[k]}, ${d.counts[k]}`}>
-                    <ul className="sy-list" aria-label={k === KIND_ORDER[0] ? 'Open findings' : `Open findings: ${KIND_LABEL[k]}`}>
+                  <section key={k} aria-labelledby={`sy-int-${k}`}>
+                    <h3 id={`sy-int-${k}`} className="sy-foot">{KIND_LABEL[k]} ({d.counts[k].toLocaleString('en-PH')})</h3>
+                    <ul className="sy-list" aria-labelledby={`sy-int-${k}`}>
                       {rows.map((f) => {
                         const l = findingLine(f)
                         return (
@@ -62,7 +63,7 @@ export default function IntegrityCard({ tick }: { tick: number }) {
                         )
                       })}
                     </ul>
-                    {left > 0 && <p className="sy-foot"><button type="button" className="dk-b" disabled={busy === k} onClick={() => void showMore(k, rows.length)}>Show more {KIND_LABEL[k].toLowerCase()} ({Math.min(left, PAGE_SIZE)} of {left.toLocaleString('en-PH')} left)</button></p>}
+                    {left > 0 && <p className="sy-foot"><button type="button" className="dk-b" disabled={busy === k} onClick={() => void showMore(k, rows[rows.length - 1]!.id)}>Show more {KIND_LABEL[k].toLowerCase()} ({Math.min(left, PAGE_SIZE)} of {left.toLocaleString('en-PH')} left)</button></p>}
                   </section>
                 )
               })}

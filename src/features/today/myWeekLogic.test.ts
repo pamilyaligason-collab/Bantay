@@ -37,6 +37,10 @@ describe('computeMyWeek', () => {
     const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 4000, startedAt: dayL(1) }, { kind: 'steps', steps: 8000, startedAt: dayL(2) }, { kind: 'steps', steps: null, startedAt: dayL(3) }, { kind: 'walk', steps: 500, startedAt: dayL(3) }] })
     expect(find(t, 'steps')).toMatchObject({ value: '6,000', sub: 'goal 6,000, reached' })
   })
+  it('steps a day use the shared selector: a half overlapping pair is 1,500, not 2,000', () => {
+    const w = (min: number) => ({ kind: 'steps', steps: 1000, minutes: 10, source: 'health-connect', startedAt: new Date(2026, 9, 19, 9, min).toISOString() })
+    expect(find(computeMyWeek({ ...base, activity: [w(0), w(5)] }), 'steps')).toMatchObject({ value: '1,500' })
+  })
   it('a 0 steps row is a real day, as on Move and the 7-day average: 3000, 3000, 0 averages 2,000 and the spark keeps the 0', () => {
     const t = computeMyWeek({ ...base, activity: [{ kind: 'steps', steps: 3000, startedAt: dayL(2) }, { kind: 'steps', steps: 3000, startedAt: dayL(1) }, { kind: 'steps', steps: 0, startedAt: dayL(0) }] })
     expect(find(t, 'steps')).toMatchObject({ value: '2,000', sub: 'goal 6,000', spark: [null, null, null, null, 3000, 3000, 0] })

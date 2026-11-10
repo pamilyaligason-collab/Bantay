@@ -85,6 +85,8 @@ export function checkValue(test: string | null, unitRaw: string | null, valueIn:
 }
 
 // ---------- grouping: one finding per group, never one per row ----------
+/** sample_ids (max SAMPLE_IDS) by kind: value groups (impossible, unit_mismatch, no_unit and the like) list the group's earliest rows INCLUDING the first row (sample_ids[0] === first_row);
+ *  duplicates list the EXTRA rows only (the keeper is first_row and is not in sample_ids; count = extra rows + 1). */
 export const SAMPLE_IDS = 5
 const dayKey = (iso: string | null | undefined, off: number) => (iso && !Number.isNaN(Date.parse(iso)) ? dayOf(iso, off) : '')
 interface Item { table: Table; id: string; person: string | null; at: number; kind: Kind; detail: Detail; gkey: string }
@@ -183,7 +185,7 @@ export function shownSteps(rows: { t: number; end: number; steps: number }[]): {
   let total = 0, overlaps = 0, reach = -Infinity
   const seen = new Set<string>()
   for (const r of sorted) {
-    if (r.end <= r.t) { const k = `${r.t}|${r.steps}`; if (!seen.has(k)) { seen.add(k); total += r.steps } else overlaps++; continue }
+    if (r.end <= r.t) { const k = `${r.t}|${r.steps}`; if (r.t < reach || seen.has(k)) { overlaps++; continue } seen.add(k); total += r.steps; continue } // zero-length row inside a counted span adds nothing (mirrors stepDayTotals)
     if (r.t < reach) overlaps++
     total += r.steps * (Math.max(0, r.end - Math.max(r.t, reach)) / (r.end - r.t))
     reach = Math.max(reach, r.end)
@@ -204,10 +206,11 @@ export function stepsFindings(rows: ActivityRow[], skip: ReadonlySet<string>, of
       const reason = steps < 0 ? 'negative' : 'over_250_a_minute'
       items.push({ table: 'activity', id: r.id, person: r.person_id, at: t, kind: 'impossible', detail: { metric: 'steps', reason, steps, minutes: min, day }, gkey: `activity|${r.person_id}|impossible|steps|${reason}|${day}|${src}` })
     }
+    if (steps < 0) continue // a negative row is flagged above and dropped from both totals, as in the app
     const d = g.get(k) ?? { person: r.person_id, day, total: 0, by: new Map() }
-    d.total += Math.max(steps, 0)
+    d.total += steps
     const l = d.by.get(src) ?? []
-    l.push({ t, end: t + min * MIN, steps: Math.max(steps, 0) })
+    l.push({ t, end: t + min * MIN, steps })
     d.by.set(src, l)
     g.set(k, d)
   }

@@ -48,10 +48,10 @@ async function mock(page: Page, opts: { missing?: boolean; empty?: boolean } = {
     if (t === 'integrity_findings') {
       if (opts.missing) return reply({ code: '42P01', message: 'relation does not exist' }, 404)
       const kind = (url.searchParams.get('kind') ?? '').replace('eq.', '')
-      const off = Number(url.searchParams.get('offset') ?? 0), lim = Number(url.searchParams.get('limit') ?? 1000)
+      const lim = Number(url.searchParams.get('limit') ?? 1000), before = Number((url.searchParams.get('id') ?? '').replace('lt.', '')) || Infinity // keyset paging: id < last shown
       const all = (opts.empty ? [] : FINDINGS).filter((x) => !kind || x.kind === kind)
-      const list = all.slice(off, off + lim)
-      return rows(list, { 'content-range': list.length ? `${off}-${off + list.length - 1}/${all.length}` : `*/${all.length}` })
+      const list = all.filter((x) => x.id < before).slice(0, lim)
+      return rows(list, { 'content-range': list.length ? `0-${list.length - 1}/${all.length}` : `*/${all.length}` })
     }
     return rows([])
   })
@@ -70,8 +70,11 @@ for (const [w, h] of [[390, 844], [1280, 900]] as const) {
       const card = page.getByRole('region', { name: 'Data integrity check' })
       await expect(card.getByText(/12,345 records checked/)).toBeVisible()
       await expect(card.getByText('5 to look at')).toBeVisible()
-      const list = card // the status line plus one finding per kind, worst kind first
-      await expect(list.getByRole('listitem')).toHaveCount(6)
+      await expect(card.getByText(/1 extra duplicate rows \(in 1 groups\)/)).toBeVisible()
+      // the status line plus one named list per kind (one finding each), worst kind first
+      const kinds = ['Cannot be right', 'Unit looks wrong', 'No unit', 'Totals disagree', 'Possible duplicate']
+      for (const k of kinds) await expect(card.getByRole('list', { name: `${k} (1)` }).getByRole('listitem')).toHaveCount(1)
+      const list = card
       await expect(card.getByText('Cannot be right 1 · Unit looks wrong 1 · No unit 1 · Totals disagree 1 · Possible duplicate 1')).toBeVisible()
       await expect(list.getByText(/Test Mama · Rows add up to 12 h 40 min, the app shows 6 h 40 min/)).toBeVisible()
       await expect(list.getByText(/Test Mama · Fits mmol\/l better than mg\/dL/)).toBeVisible()

@@ -256,4 +256,12 @@ describe('steps: the server count is the app count (parity with stepDayTotals)',
     expect(f.detail.shown_total).toBe(app)
     expect(app).toBeLessThan(rows.reduce((s, r) => s + Number(r.steps), 0))
   })
+  it('zero-length rows inside a covered span and negative rows: the same shown total on both sides', () => {
+    const rows = [st('a', L(9, 0), 1000, 10), st('b', L(9, 5), 400, null), st('c', L(9, 5), 400, 0), st('d', L(9, 10), 300, null), st('e', L(11), 250, null), st('f', L(12), -50, 10), st('g', L(12, 30), 600, 30)]
+    const app = stepDayTotals(rows.map((r) => ({ kind: 'steps', steps: r.steps as number, minutes: r.minutes as number, startedAt: r.started_at, source: r.source ?? undefined }))).get('2026-11-10')!
+    expect(app).toBe(2150) // 1000 + 300 (at the span end) + 250 + 600; the two inside the span and the negative add nothing
+    const f = stepsFindings(rows, new Set(), off)
+    expect(f.find((x) => x.kind === 'tile_mismatch')!.detail).toMatchObject({ shown_total: app, rows_total: 2950 }) // the negative row is dropped from the rows total too
+    expect(f.some((x) => x.detail.reason === 'negative')).toBe(true) // and still flagged
+  })
 })

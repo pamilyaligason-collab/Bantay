@@ -2,14 +2,14 @@ import { formatNumber } from '../../lib/labFormat'
 import { countDoses, ON_TIME_MIN } from '../health/doseCount'
 import { dayOf } from '../health/meds'
 import { manilaDaysEnding } from './nextPick'
-import { readingPosition } from '../health/model'
+import { readingPosition, stepDayTotals } from '../health/model'
 import { rangeState, toCanonicalReading, type RangeState } from '../health/ranges'
 import type { Position, Reading } from '../health/ranges'
 import type { MedTaken, Medication } from '../log/store'
 import type { BpArg } from '../health/verdict'
 
 /** A step row; personId is absent on rows already filtered to one person. */
-export interface StepRow { kind: string; steps: number | null; startedAt: string; personId?: string }
+export interface StepRow { kind: string; steps: number | null; startedAt: string; minutes?: number | null; source?: string; personId?: string }
 
 /** "My week": the last 7 days of the signed-in person's own numbers, as tiles. Pure: no React, no storage.
  *  A tile with no data is not returned (never a zero). Days with no reading are gaps in the sparkline. */
@@ -98,13 +98,9 @@ export function computeMyWeek(i: { personId: string; readings: Reading[]; activi
 
   // steps a day, against the goal. A 0 row is true data, the same as Move, the KPI and the 7-day average
   const steps = new Map<string, number[]>()
-  for (const a of i.activity) {
-    if ((a.personId != null && a.personId !== i.personId) || a.kind !== 'steps' || !isNum(a.steps) || a.steps < 0) continue
-    const d = dayOf(a.startedAt)
-    if (days.includes(d)) steps.set(d, [...(steps.get(d) ?? []), a.steps])
-  }
+  for (const [d, total] of stepDayTotals(i.activity.filter((a) => a.personId == null || a.personId === i.personId))) if (days.includes(d)) steps.set(d, [total]) // the one shared selector: overlaps and a second source count once
   if (steps.size) {
-    const daily = sparkOf(days, steps, (v) => v.reduce((s, n) => s + n, 0))
+    const daily = sparkOf(days, steps, (v) => v[0]!)
     const got = daily.filter(isNum)
     const per = Math.round(avg(got))
     tiles.push({ code: 'steps', href: '#health/metric/steps', label: 'Steps a day', value: per.toLocaleString('en-US'), unit: 'steps', sub: `goal ${STEP_GOAL.toLocaleString('en-US')}${per >= STEP_GOAL ? ', reached' : ''}`, spark: daily })

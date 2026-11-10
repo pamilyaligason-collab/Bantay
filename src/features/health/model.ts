@@ -194,7 +194,7 @@ export const hoursMinutes = (min: number) => `${Math.floor(min / 60)}h ${String(
 const sameDay = (a: string, b: Date) => new Date(a).toDateString() === b.toDateString()
 
 /** Steps per local day, the one place step rows become a day total. Per source, rows that overlap in time count once (a later row adds only the part of its span not already covered, in proportion);
- *  an exact repeat of a zero-length row counts once; then the day takes the source with the most steps, never the sum of two sources (a watch and a phone count the same walk). No entry for a day with no steps row (never 0 from no data). */
+ *  a zero-length row (minutes 0 or null) inside a span already counted adds nothing, a standalone one counts, and an exact repeat of it counts once; then the day takes the source with the most steps, never the sum of two sources (a watch and a phone count the same walk). No entry for a day with no steps row (never 0 from no data). */
 export function stepDayTotals(acts: { kind: string; steps: number | null; startedAt: string; minutes?: number | null; source?: string }[]): Map<string, number> {
   const by = new Map<string, Map<string, { t: number; end: number; steps: number }[]>>()
   for (const a of acts) {
@@ -214,7 +214,7 @@ export function stepDayTotals(acts: { kind: string; steps: number | null; starte
       let total = 0, reach = -Infinity
       const seen = new Set<string>()
       for (const r of rows) {
-        if (r.end <= r.t) { const k = `${r.t}|${r.steps}`; if (!seen.has(k)) { seen.add(k); total += r.steps } continue }
+        if (r.end <= r.t) { if (r.t < reach) continue; const k = `${r.t}|${r.steps}`; if (!seen.has(k)) { seen.add(k); total += r.steps } continue } // a zero-length row inside a span already counted adds nothing; a standalone one (manual entry) counts
         total += r.steps * (Math.max(0, r.end - Math.max(r.t, reach)) / (r.end - r.t))
         reach = Math.max(reach, r.end)
       }

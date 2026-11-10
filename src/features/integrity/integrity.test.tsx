@@ -3,17 +3,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const h = vi.hoisted(() => {
   const tables: Record<string, { data: unknown[]; error?: boolean; count?: number }> = {}
-  // a fake PostgREST builder: eq('kind', k) filters, range(a, b) slices, count is the filtered total (like count: 'exact')
+  // a fake PostgREST builder: eq('kind', k) filters, lt('id', n) keyset-pages, limit(n) slices, count is the filtered total (like count: 'exact')
   const chain = (t: string) => {
     const c: Record<string, unknown> = {}
-    let kind: string | null = null, from = 0, to = 1e9
-    for (const m of ['select', 'order', 'limit']) c[m] = () => c
+    let kind: string | null = null, before = Infinity, n = 1e9
+    for (const m of ['select', 'order']) c[m] = () => c
+    c.limit = (x: number) => { n = x; return c }
     c.eq = (col: string, v: string) => { if (col === 'kind') kind = v; return c }
-    c.range = (a: number, b: number) => { from = a; to = b; return c }
+    c.lt = (col: string, v: number) => { if (col === 'id') before = v; return c }
     c.then = (res: (v: unknown) => unknown) => {
       const x = tables[t] ?? { data: [] }
-      const all = (x.data as { kind?: string; id?: number }[]).filter((r) => kind == null || r.kind === kind).sort((p, q) => (q.id ?? 0) - (p.id ?? 0))
-      return Promise.resolve(x.error ? { data: null, error: { code: 'x' }, count: null } : { data: t === 'integrity_findings' ? all.slice(from, to + 1) : x.data, error: null, count: t === 'integrity_findings' ? (x.count ?? all.length) : (x.count ?? null) }).then(res)
+      const all = (x.data as { kind?: string; id?: number }[]).filter((r) => kind == null || r.kind === kind).filter((r) => (r.id ?? 0) < before).sort((p, q) => (q.id ?? 0) - (p.id ?? 0))
+      return Promise.resolve(x.error ? { data: null, error: { code: 'x' }, count: null } : { data: t === 'integrity_findings' ? all.slice(0, n) : x.data, error: null, count: t === 'integrity_findings' ? (x.count ?? all.length) : (x.count ?? null) }).then(res)
     }
     return c
   }
@@ -80,7 +81,7 @@ describe('IntegrityCard', () => {
     const card = (await screen.findByRole('region', { name: 'Data integrity check' }))
     expect(await within(card).findByText(/12,000 records checked/)).toBeTruthy()
     expect(within(card).getByText('2 to look at')).toBeTruthy()
-    const list = within(card).getByRole('list', { name: 'Open findings' })
+    const list = within(card).getByRole('list', { name: 'Cannot be right (1)' })
     expect(within(list).getAllByRole('listitem')).toHaveLength(1)
     expect(within(list).getByText(/Mama · Outside what can be true/)).toBeTruthy()
     expect(within(card).getByText('Cannot be right 1 · Possible duplicate 1')).toBeTruthy()
@@ -95,13 +96,13 @@ describe('IntegrityCard', () => {
     render(<IntegrityCard tick={0} />)
     const card = await screen.findByRole('region', { name: 'Data integrity check' })
     expect(await within(card).findByText('Cannot be right 12 · Unit looks wrong 1 · Totals disagree 1 · Possible duplicate 25')).toBeTruthy()
-    const sections = within(card).getAllByRole('region').map((x) => x.getAttribute('aria-label'))
-    expect(sections).toEqual(['Cannot be right, 12', 'Unit looks wrong, 1', 'Totals disagree, 1', 'Possible duplicate, 25'])
-    const first = within(within(card).getByRole('region', { name: 'Cannot be right, 12' })).getAllByRole('listitem')
+    const sections = within(card).getAllByRole('region').map((x) => within(x).getByRole('heading').textContent)
+    expect(sections).toEqual(['Cannot be right (12)', 'Unit looks wrong (1)', 'Totals disagree (1)', 'Possible duplicate (25)'])
+    const first = within(within(card).getByRole('region', { name: 'Cannot be right (12)' })).getAllByRole('listitem')
     expect(first).toHaveLength(10) // 10 a page, not one cut of 50
     expect(first[0]!.textContent).toMatch(/Pulse 311 bpm/) // newest (highest id) first
     fireEvent.click(within(card).getByRole('button', { name: 'Show more cannot be right (2 of 2 left)' }))
-    await waitFor(() => expect(within(within(card).getByRole('region', { name: 'Cannot be right, 12' })).getAllByRole('listitem')).toHaveLength(12))
+    await waitFor(() => expect(within(within(card).getByRole('region', { name: 'Cannot be right (12)' })).getAllByRole('listitem')).toHaveLength(12))
     expect(within(card).queryByRole('button', { name: /Show more cannot be right/ })).toBeNull()
     expect(within(card).getByRole('button', { name: 'Show more possible duplicate (10 of 15 left)' })).toBeTruthy()
   })

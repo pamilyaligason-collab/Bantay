@@ -43,6 +43,10 @@ describe('stepDayTotals: overlapping step rows count once', () => {
   it('zero-length rows: an exact repeat counts once, different times both count', () => {
     expect(stepDayTotals([row(at(9), 700, null), row(at(9), 700, null), row(at(11), 300, null)]).get(DAY)).toBe(1000)
   })
+  it('a zero-length row inside a span already counted adds nothing; a standalone one (manual entry) counts (S30 live: 1,217 steps double counted)', () => {
+    expect(stepDayTotals([row(at(10, 0), 1000, 10), row(at(10, 5), 400, null), row(at(10, 5), 400, 0)]).get(DAY)).toBe(1000)
+    expect(stepDayTotals([row(at(10, 0), 1000, 10), row(at(10, 10), 400, null), row(at(12), 250, 0)]).get(DAY)).toBe(1650) // at the end of a span is not inside it
+  })
   it('days stay apart; 0 steps is true data; null steps and negative rows are no data; a day with no rows has no entry', () => {
     const t = stepDayTotals([row(at(9, 0, 9), 100, 5), row(at(9, 0, 10), 0, 5), row(at(10, 0, 11), null, 5), row(at(10, 0, 12), -5, 5)])
     expect(t.get('2026-11-09')).toBe(100)

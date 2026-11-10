@@ -64,15 +64,18 @@ export function integrityStatus(snap: Snapshot | null): { tone: Tone; text: stri
 }
 
 const COLS = 'id, kind, table_name, person_id, detail, checked_at'
-/** Open findings of one kind, newest first (the highest id is the one found last). */
-const page = (kind: Kind, from: number) => supabase!.from('integrity_findings').select(COLS, { count: 'exact' }).eq('status', 'open').eq('kind', kind).order('id', { ascending: false }).range(from, from + PAGE_SIZE - 1)
+/** Open findings of one kind, newest first (the highest id is the one found last). `before` is the last id already shown: keyset paging, so a row that closes or arrives between taps never skips or repeats one. */
+const page = (kind: Kind, before?: number) => {
+  const q = supabase!.from('integrity_findings').select(COLS, { count: 'exact' }).eq('status', 'open').eq('kind', kind)
+  return (before == null ? q : q.lt('id', before)).order('id', { ascending: false }).limit(PAGE_SIZE)
+}
 
 export const loadIntegrity = async (): Promise<Res<Snapshot>> => {
   if (!supabase) return NO
   try {
     const [runs, ...found] = await Promise.all([
       supabase.from('job_runs').select('ran_at, ok, summary').eq('job', JOB).order('ran_at', { ascending: false }).limit(1),
-      ...KIND_ORDER.map((k) => page(k, 0))
+      ...KIND_ORDER.map((k) => page(k))
     ])
     if (runs.error) return bad
     const r = ((runs.data ?? [])[0] ?? null) as { ran_at: string; ok: boolean; summary: Partial<RunSummary> | null } | null
@@ -84,11 +87,11 @@ export const loadIntegrity = async (): Promise<Res<Snapshot>> => {
   } catch { return bad }
 }
 
-/** The next page of one kind ("Show more"); `have` is how many rows of that kind are already shown. */
-export const loadMore = async (kind: Kind, have: number): Promise<Res<Finding[]>> => {
+/** The next page of one kind ("Show more"); `lastId` is the id of the last row of that kind already shown. */
+export const loadMore = async (kind: Kind, lastId: number): Promise<Res<Finding[]>> => {
   if (!supabase) return NO
   try {
-    const r = await page(kind, have)
+    const r = await page(kind, lastId)
     return r.error ? bad : { ok: true, data: ((r.data ?? []) as Finding[]).filter((x) => x.kind === kind) }
   } catch { return bad }
 }
