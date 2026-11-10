@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { alertRef } from '../location/place'
 import { usePlace } from '../location/useLocation'
-import { usePlaceRegion } from '../location/region'
+import { placeRegion } from '../location/region'
 import { ALERTS_KEY, type Alert, affectsUs, diffBulletin, freshness, freshText, hazardOf, HOME, kmTail, newestChecked, NOT_A_SIREN, outdatedLine, plainWhat } from './alerts'
 import Lazy from './Lazy'
 import { Frame, ventuskyUrl } from './MapsPanel'
@@ -52,7 +52,7 @@ export function FreshLine({ checkedAt, className }: { checkedAt?: string | null;
 /** quietOk: false when the list this card sits in holds anything worse than a quiet quake (allQuiet), so the card keeps the soft line and its steps. */
 export default function AlertCard({ alert: a, quietOk = true }: { alert: Alert; quietOk?: boolean }) {
   const place = usePlace()
-  const away = usePlaceRegion() === 'us' // S30 L8 (D4a): PH storm and quake alerts stay for a member in the US, clearly labelled as the Philippines
+  const away = placeRegion(place) === 'us' // S30 L8 (D4a): PH storm and quake alerts stay for a member in the US, clearly labelled as the Philippines
   const now = useNow()
   const fresh = freshness(a.checkedAt, now)
   const who = affectsUs(a, place ? alertRef(place) : null, now, quietOk ? place : undefined)

@@ -3,7 +3,7 @@ import { db } from '../../db'
 import { HOTLINE_AREAS, type LatLon } from './geo'
 import { inPhilippines } from './place'
 import { phoneCountry } from './phoneRegion'
-import { useLocation } from './useLocation'
+import { usePlace } from './useLocation'
 
 export { phoneCountry, phoneAbroad, toE164 } from './phoneRegion'
 
@@ -37,13 +37,13 @@ export async function viewerRegion(): Promise<Region> {
 /** The fix and the phone's country must agree; when both say something and differ (an old fix, a trip), nothing is known. */
 const agree = (byFix: Region, byPhone: Region): Region => (byFix && byPhone && byFix !== byPhone ? null : byFix ?? byPhone)
 
-/** Where the phone's owner is for the screens that are Philippine-only (Climate, Plant, DA prices, Lotto, the PH bulletin labels): a real fix decides (the stored one, not the saved home),
- *  else the phone's country. 'us' means hide the PH-only cards and label the Philippine alerts; ph or unknown changes nothing. */
-export function usePlaceRegion(): Region {
-  const l = useLocation()
-  const fix = l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon } : null
+/** Where the phone's owner is, from a place (usePlace): a real fix (the phone's own position, not the saved home) decides, and it must agree with the phone's country. */
+export function placeRegion(place: { source?: string; weather?: LatLon } | null | undefined): Region {
+  const fix = place && (place.source === 'gps' || place.source === 'last' || place.source === 'gps-abroad') && place.weather ? place.weather : null
   return agree(fix ? regionOf(fix, null) : null, regionOf(null))
 }
+/** For the screens that are Philippine-only (Climate, Plant, DA prices, Lotto, the PH bulletin labels): 'us' means hide them and label the Philippine alerts; ph or unknown changes nothing. */
+export const usePlaceRegion = (): Region => placeRegion(usePlace())
 
 /** The phone's own region for rendering: the phone's country at first paint, the stored fix once read. */
 export function useViewerRegion(): Region {
