@@ -4,6 +4,7 @@ import { SubHeader } from '../shell/SubHeader'
 import type { ClimateType } from '../../data/provinceClimate'
 import { CLIMATE_TYPES, cropsFor, MONTH_NAMES, useClimate, useMonth } from './climate'
 import { priceDay, priceFor, priceText, useDaPrices, type DaPrices, type DaRow } from './daPrices'
+import { dryAhead, isStale, manilaYm, useDrought } from './drought'
 import { guideFor, LICENCE_URL, VEG_GUIDE, type VegGuide } from './vegGuide'
 import './garden.css'
 
@@ -11,11 +12,23 @@ export const PLANT_FOOTER = 'General guide from the planting calendar of PCARRD,
 export const PRICE_NOTE = 'Prices are Metro Manila; local prices may differ.'
 const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
 
-/** Crops in the bulletin for this type and month: the ones with a written guide first (poster order), then the rest. */
-export function plantList(type: ClimateType, month: number): { guided: VegGuide[]; others: { name: string; tagalog: string | null }[] } {
+/** Crops in the calendar that cope with less water. A short list, general agronomy, not DA or PCAARRD data; sources: FAO crop information pages and ECHO technical notes for cowpea (which includes
+ *  yardlong bean, Vigna unguiculata), pigeon pea, hyacinth bean (lablab), lima bean and okra; FAO crop water notes for watermelon (deep roots). Extend only from a named source. */
+export const DROUGHT_TOLERANT = ['Cowpea', 'Yardlong bean', 'Pigeon pea', 'Hyacinth bean', 'Lima bean', 'Okra', 'Watermelon']
+const tolerantFirst = <T,>(xs: T[], name: (x: T) => string): T[] => [...xs.filter((x) => DROUGHT_TOLERANT.includes(name(x))), ...xs.filter((x) => !DROUGHT_TOLERANT.includes(name(x)))]
+export const dryNote = (province: string) => `Because of the dry spell in ${province}, these crops cope with less water.`
+
+/** Crops in the bulletin for this type and month: the ones with a written guide first (poster order), then the rest. `dry`: crops that cope with less water go first in each group. */
+export function plantList(type: ClimateType, month: number, dry = false): { guided: VegGuide[]; others: { name: string; tagalog: string | null }[] } {
   const crops = cropsFor(type, month)
   const names = new Set(crops.map((c) => c.name))
-  return { guided: VEG_GUIDE.filter((g) => names.has(g.calendar)), others: crops.filter((c) => !guideFor(c.name)) }
+  const guided = VEG_GUIDE.filter((g) => names.has(g.calendar)), others = crops.filter((c) => !guideFor(c.name))
+  return dry ? { guided: tolerantFirst(guided, (g) => g.calendar), others: tolerantFirst(others, (o) => o.name) } : { guided, others }
+}
+/** The province whose PAGASA outlook shows a dry spell or drought in this month or the next two (null = no, or no current outlook). */
+function useDryProvince(province: string | null | undefined): string | null {
+  const d = useDrought(province ?? null)
+  return province && d && !isStale(d.issued_at) && dryAhead(d.months, manilaYm()) ? province : null
 }
 const priceOf = (g: VegGuide, d: DaPrices | null | undefined): DaRow | null => (d ? priceFor(d.rows, g.price) : null)
 
@@ -38,9 +51,10 @@ export function PlantCard() {
   const c = useClimate()
   const d = useDaPrices()
   const month = useMonth()
+  const dryIn = useDryProvince(c.province)
   if (!c.ready) return null
   if (!c.type) return <Section title="Plant this month" testId="today-plant"><div className="card gpl-card"><ClimatePicker onPick={c.pick} /></div></Section>
-  const { guided, others } = plantList(c.type, month)
+  const { guided, others } = plantList(c.type, month, !!dryIn)
   const tiles: ({ g: VegGuide } | { name: string })[] = [...guided.map((g) => ({ g })), ...others.map((o) => ({ name: o.name }))].slice(0, 3)
   const total = guided.length + others.length
   if (!tiles.length) return null
@@ -50,6 +64,7 @@ export function PlantCard() {
     <Section title="Plant this month" link={{ href: '#garden/plant', label: total > 3 ? `See all ${total}` : 'See more' }} testId="today-plant">
       <a className="card gpl-card" href="#garden/plant" data-testid="plant-card">
         <span className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
+        {dryIn && <span className="gpl-dry" data-testid="plant-dry">{dryNote(dryIn)}</span>}
         <span className="gpl-tiles">
           {tiles.map((t) => 'g' in t ? (
             <span key={t.g.name} className="gpl-tile"><img src={t.g.img} alt={t.g.alt} loading="lazy" /><span className="gpl-tn" data-contrast-bg="#0A190F">{t.g.name}{priceOf(t.g, d) && <small>{priceText(priceOf(t.g, d)!)}</small>}</span></span>
@@ -92,15 +107,17 @@ export function PlantPoster() {
   const d = useDaPrices()
   const [change, setChange] = useState(false)
   const month = useMonth()
+  const dryIn = useDryProvince(c.province)
   const head = <SubHeader title="Plant this month" backHref="#today" backLabel="Today" />
   if (!c.ready) return <section className="gpl-page">{head}</section>
   const picker = !c.type || change
-  const list = c.type ? plantList(c.type, month) : null
+  const list = c.type ? plantList(c.type, month, !!dryIn) : null
   const priced = !!d && !!list && list.guided.some((g) => priceOf(g, d))
   return (
     <section className="gpl-page" data-testid="plant-page">
       {head}
       {c.type && <p className="gpl-sub">{MONTH_NAMES[month - 1]}, climate type {c.type}{c.guess ? ' (from your province)' : ''}.{priced && d ? ` Prices: Metro Manila markets, DA, ${priceDay(d.date)}.` : ''}</p>}
+      {c.type && dryIn && <p className="gpl-sub gpl-dry" data-testid="plant-dry">{dryNote(dryIn)}</p>}
       {picker && <div className="card gpl-card"><ClimatePicker current={c.type} onPick={(t) => { c.pick(t); setChange(false) }} /></div>}
       {list && list.guided.map((g, i) => <Poster key={g.name} g={g} price={priceOf(g, d)} date={d ? d.date : null} hero={i === 0} />)}
       {list && list.others.length > 0 && (

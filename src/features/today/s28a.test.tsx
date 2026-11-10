@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nearestPlace, nearestLabel, BARANGAY_KM } from '../location/nearestPlace'
 import { placeLine, placeWords } from '../location/placeWords'
-import PagasaMapCard, { PAGASA_MAP_URL, PAGASA_OUTLOOK_URL } from '../safety/PagasaMapCard'
 import CalmCard from './CalmCard'
 import { takenLabel } from './doneMorph'
 import { clockIn } from '../weather/forecast'
@@ -61,19 +60,6 @@ describe('S28 A: Today times', () => {
     const k = noBreak('Tagbilaran · last known, 3 days ago · as of 9:09 PM')
     expect(k).toBe('Tagbilaran · last known, 3 days ago · as of 9:09 PM')
     expect(k.replace(/ /g, ' ')).toBe('Tagbilaran · last known, 3 days ago · as of 9:09 PM')
-  })
-})
-
-describe('S28 A: PAGASA map and outlook card', () => {
-  it('loads nothing until tapped, then frames panahon.gov.ph; the outlook is a link only', () => {
-    const { container } = render(<PagasaMapCard />)
-    expect(container.querySelector('iframe')).toBeNull()
-    expect(screen.getByRole('heading', { name: 'PAGASA weather map and outlook' })).toBeTruthy()
-    const outlook = screen.getByRole('link', { name: /PAGASA climate outlook and forecasts/ })
-    expect(outlook.getAttribute('href')).toBe(PAGASA_OUTLOOK_URL)
-    fireEvent.click(screen.getByRole('button', { name: /PAGASA weather map/ }))
-    expect(container.querySelector('iframe')!.getAttribute('src')).toBe(PAGASA_MAP_URL)
-    expect(container.querySelector('iframe')!.getAttribute('sandbox')).not.toMatch(/allow-top-navigation/)
   })
 })
 

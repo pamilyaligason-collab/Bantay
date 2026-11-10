@@ -1,0 +1,17 @@
+/* S29 lane C: "Climate outlook" card (PAGASA drought outlook). Class prefix clm-. Chip colours are token pairs, checked in light and dark by ClimateCard.test.tsx. */
+.card.clm { display: grid; gap: var(--sp-3, 12px); min-width: 0; padding: var(--card-pad, 16px); color: var(--ink); }
+.clm-sub { margin: 0; font-size: 15px; line-height: 20px; color: var(--muted); }
+.clm-line { margin: 0; font-size: 17px; line-height: 24px; color: var(--ink); }
+.clm-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: var(--sp-2, 8px); margin: 0; padding: 0; list-style: none; }
+/* every month chip is as tall as the tallest (grid-auto-rows), so the rows of three are even whether or not a level word wraps; "Now" is its own full-width chip above them */
+.clm-chip { display: grid; align-content: center; gap: 2px; min-width: 0; min-height: 60px; padding: 8px 10px; border-radius: 14px; box-sizing: border-box; overflow-wrap: anywhere; }
+.clm-chip[data-now] { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; min-height: 44px; }
+.clm-chip b { font-size: 17px; line-height: 22px; font-weight: 700; }
+.clm-chip span { font-size: 15px; line-height: 19px; font-weight: 600; }
+.clm-chip[data-level="not_affected"] { background: var(--tint-green); color: var(--tint-green-ink); }
+.clm-chip[data-level="dry_condition"] { background: var(--tint-amber); color: var(--tint-amber-ink); }
+.clm-chip[data-level="dry_spell"] { background: var(--tint-red); color: var(--tint-red-ink); box-shadow: inset 0 0 0 1.5px var(--tint-red-ink); }
+.clm-chip[data-level="drought"] { background: var(--danger-bg); color: var(--btn-fg); }
+.clm-link { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 44px; font-size: 17px; font-weight: 600; color: var(--ink); text-decoration: underline; }
+.clm-link:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.clm-vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
