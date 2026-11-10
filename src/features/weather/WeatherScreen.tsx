@@ -165,8 +165,9 @@ export default function WeatherScreen() {
         </div>
         <div className="card wx-made">
           <h3>How this is made</h3>
-          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your spot (rounded to about 1 km) from Open-Meteo. Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
+          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your spot (rounded to about 1 km). Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
           <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services. The map gets the same rounded location." : 'Your rounded location is sent only to the weather and map services.'}</p>
+          <p className="wx-sub">Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.</p>
         </div>
       </Section>
     </div>

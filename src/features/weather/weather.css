@@ -114,4 +114,5 @@
 .wx-sun-t > span:last-child { text-align: right; }
 .wx-sun-t b { font-size: 17px; }
 .wx-thresh { display: grid; gap: 8px; margin-top: 8px; }
+.wx-thresh .segd { --card2: rgba(5,12,28,.45); --card: rgba(255,255,255,.24); } /* the page is a dark sky: white labels need a dark track (the cream default hid them) */
 .wx-aqi .wx-sub, .wx-sun .wx-sub, .wx-thresh .wx-sub { font-size: 15px; }

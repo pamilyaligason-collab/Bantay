@@ -8,7 +8,7 @@ vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => cap.nat
 
 import { db } from '../../db'
 import type { MiniSlot } from '../today/RainMini'
-import { RAIN_COOLDOWN_MS, RAIN_ID, RAIN_KEY, RAIN_TEXT, THRESH_KEY, applyRainReminder, inCooldown, rainAlarm } from './rainRemind'
+import { RAIN_COOLDOWN_MS, RAIN_ID, RAIN_KEY, RAIN_TEXT, RAIN_TEXT_CHANCE, THRESH_KEY, applyRainReminder, inCooldown, rainAlarm } from './rainRemind'
 
 const NOW = new Date('2026-11-04T11:00:20Z')
 /** 8 slots of 15 minutes; `wet` lists the wet slot numbers. */
@@ -146,5 +146,42 @@ describe('applyRainReminder', () => {
     await db.kv.put({ key: RAIN_KEY, value: true })
     expect(await applyRainReminder(slots(2), NOW)).toBe('web')
     expect(LN.cancel).not.toHaveBeenCalled(); expect(LN.schedule).not.toHaveBeenCalled()
+  })
+})
+
+describe('a cancelled alert never starts the cooldown', () => {
+  const T = (hhmm: string) => new Date(`2026-11-04T${hhmm}:20Z`)
+  it('10:00 schedules 10:45; 10:20 the forecast is dry and it is cancelled; 11:00 rain due 11:45 schedules', async () => {
+    await db.kv.put({ key: RAIN_KEY, value: true })
+    expect(await applyRainReminder(slots(4), T('10:00'), 80)).toBe('scheduled') // wet slot 4 (60 min): rings 10:45
+    expect(sched()[0].schedule.at.toISOString()).toBe('2026-11-04T10:45:00.000Z')
+    expect(await applyRainReminder(slots(), T('10:20'), null)).toBe('cancelled')
+    expect(await applyRainReminder(slots(4), T('11:00'), 80)).toBe('scheduled')
+    expect(sched()[1].schedule.at.toISOString()).toBe('2026-11-04T11:45:00.000Z')
+  })
+  it('switch off while armed also clears the pending time', async () => {
+    await db.kv.put({ key: RAIN_KEY, value: true })
+    await applyRainReminder(slots(4), T('10:00'), 80)
+    await db.kv.put({ key: RAIN_KEY, value: false })
+    await applyRainReminder(slots(4), T('10:10'), 80)
+    await db.kv.put({ key: RAIN_KEY, value: true })
+    expect(await applyRainReminder(slots(4), T('10:20'), 80)).toBe('scheduled')
+  })
+  it('an alert that rang (time passed) still blocks for 3 hours', async () => {
+    await db.kv.put({ key: RAIN_KEY, value: true })
+    await applyRainReminder(slots(4), T('10:00'), 80) // rings 10:45
+    expect(await applyRainReminder(slots(), T('11:00'), null)).toBe('cancelled')
+    expect(await applyRainReminder(slots(4), T('11:30'), 80)).toBe('cancelled')
+  })
+})
+
+describe('alert wording', () => {
+  it('a wet slot says rain may start in about 15 minutes; a chance with no wet slot says rain is likely in the next hour', async () => {
+    await db.kv.put({ key: RAIN_KEY, value: true })
+    await applyRainReminder(slots(2), NOW)
+    expect(sched()[0].body).toBe(RAIN_TEXT.body); expect(RAIN_TEXT.body).toContain('about 15 minutes')
+    await db.kv.clear(); await db.kv.put({ key: RAIN_KEY, value: true })
+    await applyRainReminder(slots(), NOW, 70)
+    expect(sched()[1].body).toBe(RAIN_TEXT_CHANCE.body); expect(RAIN_TEXT_CHANCE.body.startsWith('Rain is likely in the next hour.')).toBe(true)
   })
 })

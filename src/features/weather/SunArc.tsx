@@ -14,7 +14,7 @@ export function sunPosition(fc: Pick<Forecast, 'utcOffset' | 'daily'>, now: numb
 }
 
 const CX = 150; const CY = 100; const RX = 120; const RY = 80
-/** Arc from sunrise to sunset with the sun on it; at night a dim dot rests on the horizon. No animation, so reduced motion needs no special case. */
+/** Arc from sunrise to sunset with the sun on it; at night a pale dot rests on the horizon. No animation, so reduced motion needs no special case. */
 export default function SunArc({ fc, now }: { fc: Forecast; now: number }) {
   const p = sunPosition(fc, now)
   const d = fc.daily[0]
@@ -27,7 +27,7 @@ export default function SunArc({ fc, now }: { fc: Forecast; now: number }) {
       <svg viewBox="0 0 300 120" role="img" aria-label={`Sun: rose ${rise}, sets ${set}, now ${up ? 'up' : 'down'}`} className="wx-sun-svg">
         <path d={`M ${CX - RX} ${CY} A ${RX} ${RY} 0 0 1 ${CX + RX} ${CY}`} fill="none" stroke="currentColor" strokeOpacity=".4" strokeWidth="2" strokeDasharray="4 5" />
         <line x1={CX - RX - 10} y1={CY} x2={CX + RX + 10} y2={CY} stroke="currentColor" strokeOpacity=".4" strokeWidth="1.5" />
-        <circle data-testid="wx-sun-dot" data-state={p.state} cx={up ? CX + RX * Math.cos(ang) : p.state === 'before' ? CX - RX : CX + RX} cy={up ? CY - RY * Math.sin(ang) : CY} r={up ? 9 : 6} fill={up ? '#F5B301' : 'currentColor'} fillOpacity={up ? 1 : 0.5} />
+        <circle data-testid="wx-sun-dot" data-state={p.state} cx={up ? CX + RX * Math.cos(ang) : p.state === 'before' ? CX - RX : CX + RX} cy={up ? CY - RY * Math.sin(ang) : CY} r={up ? 9 : 6} fill={up ? '#F5B301' : 'currentColor'} fillOpacity={up ? 1 : 0.8} />
       </svg>
       <div className="wx-sun-t"><span><b>{rise}</b><span className="wx-sub">Sun rises</span></span><span><b>{set}</b><span className="wx-sub">Sun sets</span></span></div>
     </section>

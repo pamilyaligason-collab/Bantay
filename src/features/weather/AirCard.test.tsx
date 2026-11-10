@@ -18,7 +18,7 @@ describe('AirCard', () => {
     render(<AirCard point={P} />)
     expect(await screen.findByText('Unhealthy for Sensitive Groups')).toBeTruthy()
     expect(screen.getByText('Level 3 of 6')).toBeTruthy()
-    expect(screen.getByText(/cut down on hard outdoor activity/)).toBeTruthy()
+    expect(screen.getByText(/limit hard activity outdoors/)).toBeTruthy()
     expect(screen.getByText(/Air quality \(DENR scale\), PM2.5 24-hour average/)).toBeTruthy()
   })
   it('Good has no caution', async () => {

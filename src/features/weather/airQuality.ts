@@ -3,15 +3,16 @@ import { db } from '../../db'
 import type { LatLon } from '../location/geo'
 import { FETCH_TIMEOUT_MS } from './forecast'
 
+// Cautions are the DENR statements, lightly shortened (no new advice).
 // Philippine AQI (DENR DAO 2020-14): the 24-hour mean of PM2.5 (ug/m3), from Open-Meteo Air Quality, fetched from the phone (it allows CORS, like the forecast).
 export interface Band { id: number; label: string; max: number; bg: string; ink: string; say: string | null } // bg/ink: a tinted chip, text 4.5:1 or better (airQuality.test.ts)
 export const BANDS: Band[] = [
   { id: 1, label: 'Good', max: 25, bg: '#CDEBD8', ink: '#0F4D33', say: null },
   { id: 2, label: 'Fair', max: 35, bg: '#FBE9A6', ink: '#5C4400', say: null },
-  { id: 3, label: 'Unhealthy for Sensitive Groups', max: 45, bg: '#FFD3A8', ink: '#7A3500', say: 'Children, older people and people with heart or lung disease should cut down on hard outdoor activity.' },
-  { id: 4, label: 'Very Unhealthy', max: 55, bg: '#FFC9C4', ink: '#8C1A12', say: 'Everyone may feel effects. Children, older people and people with heart or lung disease should stay indoors.' },
-  { id: 5, label: 'Acutely Unhealthy', max: 90, bg: '#E2D2FA', ink: '#4B2A93', say: 'Everyone should avoid outdoor activity. People with heart or lung disease should stay indoors.' },
-  { id: 6, label: 'Emergency', max: Infinity, bg: '#F3C1CF', ink: '#6E0F2E', say: 'Everyone should stay indoors and keep activity light.' }
+  { id: 3, label: 'Unhealthy for Sensitive Groups', max: 45, bg: '#FFD3A8', ink: '#7A3500', say: 'People with asthma or other breathing problems should limit hard activity outdoors.' },
+  { id: 4, label: 'Very Unhealthy', max: 55, bg: '#FFC9C4', ink: '#8C1A12', say: 'Avoid heavy traffic areas. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.' },
+  { id: 5, label: 'Acutely Unhealthy', max: 90, bg: '#E2D2FA', ink: '#4B2A93', say: 'Everyone should limit hard activity outdoors. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.' },
+  { id: 6, label: 'Emergency', max: Infinity, bg: '#F3C1CF', ink: '#6E0F2E', say: 'Everyone should stay indoors with windows and doors closed, unless it is too hot.' }
 ]
 export const MIN_HOURS = 18 // fewer readings than this in the 24 hours: unknown, not a guess
 
@@ -33,7 +34,10 @@ export const airUrl = (p: LatLon) => `https://air-quality-api.open-meteo.com/v1/
 export const AIR_FRESH_MS = 60 * 60_000
 export const AIR_KEEP_MS = 6 * 3600_000 // an older reading is not shown: a 24-hour mean that old would mislead
 export interface Air { mean: number | null; fetchedAt: string }
-const key = (p: LatLon) => `weather.air.${r2(p.lat)},${r2(p.lon)}`
+const PREFIX = 'weather.air.'
+export const AIR_PLACES = 5 // kv rows kept: the newest places only
+const key = (p: LatLon) => `${PREFIX}${r2(p.lat)},${r2(p.lon)}`
+const prune = async () => { const rows = (await db.kv.toArray()).filter((r) => r.key.startsWith(PREFIX)).sort((a, b) => Date.parse((b.value as Air).fetchedAt) - Date.parse((a.value as Air).fetchedAt)); for (const r of rows.slice(AIR_PLACES)) await db.kv.delete(r.key) }
 
 /** Cached reading under 60 minutes old, else one request, else a cache under 6 hours old, else throws. */
 export async function getAir(p: LatLon, f: typeof fetch = fetch, now = Date.now()): Promise<{ air: Air; stale: boolean }> {
@@ -49,7 +53,7 @@ export async function getAir(p: LatLon, f: typeof fetch = fetch, now = Date.now(
     const j = (await res.json()) as { hourly?: { time?: unknown; pm2_5?: unknown }; utc_offset_seconds?: unknown }
     const off = typeof j.utc_offset_seconds === 'number' ? j.utc_offset_seconds : 0
     const air: Air = { mean: pm25Mean(j.hourly, new Date(now + off * 1000).toISOString().slice(0, 13)), fetchedAt: new Date(now).toISOString() }
-    await db.kv.put({ key: k, value: air }).catch(() => undefined)
+    await db.kv.put({ key: k, value: air }).then(prune).catch(() => undefined)
     return { air, stale: false }
   } catch (e) {
     if (cached && age >= 0 && age < AIR_KEEP_MS) return { air: cached, stale: true }

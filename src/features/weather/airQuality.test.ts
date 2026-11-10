@@ -17,6 +17,15 @@ describe('Philippine AQI bands (DENR DAO 2020-14)', () => {
     expect(BANDS.map((b) => b.label)).toEqual(['Good', 'Fair', 'Unhealthy for Sensitive Groups', 'Very Unhealthy', 'Acutely Unhealthy', 'Emergency'])
     expect(BANDS.map((b) => b.say !== null)).toEqual([false, false, true, true, true, true])
   })
+  it('the caution for each level is the DENR statement, lightly shortened', () => {
+    expect(BANDS.map((b) => b.say)).toEqual([
+      null, null,
+      'People with asthma or other breathing problems should limit hard activity outdoors.',
+      'Avoid heavy traffic areas. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.',
+      'Everyone should limit hard activity outdoors. People with heart or breathing problems should stay indoors and rest. Postpone trips you do not need.',
+      'Everyone should stay indoors with windows and doors closed, unless it is too hot.'
+    ])
+  })
   it('chip text passes 4.5:1 on its tint', () => { for (const b of BANDS) expect(ratio(b.ink, b.bg), b.label).toBeGreaterThanOrEqual(4.5) })
 })
 
@@ -66,6 +75,12 @@ describe('getAir (live path, fetch faked)', () => {
     const bad = F(async () => { throw new Error('offline') })
     expect((await getAir(P, bad, NOW + 2 * 3600_000)).stale).toBe(true)
     await expect(getAir(P, bad, NOW + 7 * 3600_000)).rejects.toThrow()
+  })
+  it('keeps at most 5 places: the oldest reading is dropped on write', async () => {
+    const f = async () => new Response(body())
+    for (let i = 0; i < 7; i++) await getAir({ lat: 10 + i, lon: 120 }, F(f), NOW + i * 1000)
+    const keys = (await db.kv.toArray()).map((r) => r.key).filter((k) => k.startsWith('weather.air.')).sort()
+    expect(keys).toEqual([2, 3, 4, 5, 6].map((i) => `weather.air.${10 + i},120`))
   })
   it('too few hours: mean is null (unknown)', async () => {
     const f = async () => new Response(JSON.stringify({ utc_offset_seconds: 28800, hourly: hours(48, '2026-11-10T12', (i) => (i > 40 ? 30 : null)) }))

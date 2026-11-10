@@ -49,7 +49,7 @@ describe('Weather screen with the blend', () => {
     expect(screen.queryByRole('heading', { name: 'Around you' })).toBeNull()
     expect(screen.getByTestId('wx-next2h-est').textContent).toContain('estimated') // the 15-minute block from hourly data exists without the blend (X3)
     expect(screen.queryByTestId('wx-other-alerts')).toBeNull()
-    expect(screen.getByText('Forecast for your spot (rounded to about 1 km) from Open-Meteo. Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeTruthy()
+    expect(screen.getByText('Forecast for your spot (rounded to about 1 km). Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeTruthy()
   })
 
   it('flag on: Next 2 hours (estimated), air quality word, credits; OpenWeather notices sit below the PAGASA row', async () => {

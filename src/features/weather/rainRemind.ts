@@ -14,6 +14,7 @@ export const RAIN_KEY = 'wx.rainRemind'
 const ARMED_KEY = 'wx.rainRemindArmed'
 export const RAIN_ID = 1_840_000_000
 export const RAIN_TEXT = { title: 'Rain soon', body: 'Rain may start in about 15 minutes. This is an estimate from the hourly forecast. Open Bantay for the Weather.' }
+export const RAIN_TEXT_CHANCE = { title: 'Rain soon', body: 'Rain is likely in the next hour. This is an estimate from the hourly forecast. Open Bantay for the Weather.' } // chance only, no wet slot: it rings 30 minutes from now
 export const RAIN_LATER_MIN = 20 // rain this close is "now", no reminder
 export const RAIN_LEAD_MIN = 15
 const SLOT_MIN = 15
@@ -24,6 +25,7 @@ const LAST_KEY = 'wx.rainRemindLast' // ISO time of the last alert set; with RAI
 export const RAIN_COOLDOWN_MS = 3 * 3600_000
 export const RAIN_MM = 0.1 // rain expected within RAIN_MM_MIN minutes
 export const RAIN_MM_MIN = 45
+// storm mode: a null mm is read as 0, so only the chance can raise the alert there (accepted)
 const SOON_RING_MIN = 30 // chance-only alert (no wet slot): ring this long from now
 
 /** When to ring, or null. Due when 0.1 mm or more is expected in the next 45 minutes, OR the rain chance in the next hour is at least `threshold`. Slot 0 starts now, slot i starts i x 15 minutes later.
@@ -45,6 +47,9 @@ export type RainSync = 'web' | 'off' | 'unknown' | 'no-permission' | 'scheduled'
 let chain: Promise<unknown> = Promise.resolve()
 const kvGet = async (k: string) => (await db.kv.get(k).catch(() => undefined))?.value
 
+/** A cancelled alert never rang, so it must not start the 3 hour cooldown: drop a stored time that is still in the future. */
+const dropPending = async (now: Date) => { const t = Date.parse(String(await kvGet(LAST_KEY))); if (t > now.getTime()) await db.kv.delete(LAST_KEY) }
+
 /** Apply the plan for these slots (null = the forecast could not be read). */
 export function applyRainReminder(slots: MiniSlot[] | null, now = new Date(), prob: number | null = null): Promise<RainSync> {
   const next = chain.then(() => once(slots, now, prob))
@@ -58,19 +63,20 @@ async function once(slots: MiniSlot[] | null, now: Date, prob: number | null): P
     const armed = (await kvGet(ARMED_KEY)) === true
     if (!on) {
       if (!armed) return 'off'
-      await LocalNotifications.cancel({ notifications: [{ id: RAIN_ID }] }); await db.kv.put({ key: ARMED_KEY, value: false })
+      await LocalNotifications.cancel({ notifications: [{ id: RAIN_ID }] }); await db.kv.put({ key: ARMED_KEY, value: false }); await dropPending(now)
       return 'off'
     }
     if (!slots || slots.length < MINI_SLOTS) return 'unknown'
     const th = Number(await kvGet(THRESH_KEY)); const threshold = (RAIN_CHOICES as readonly number[]).includes(th) ? th : RAIN_DEFAULT
     if (inCooldown(await kvGet(LAST_KEY), now)) { if (armed) await db.kv.put({ key: ARMED_KEY, value: false }); return 'cancelled' } // the last alert rang less than 3 hours ago
     const at = rainAlarm(slots, now, threshold, prob)
+    const text = slots.some((s) => s.wet) ? RAIN_TEXT : RAIN_TEXT_CHANCE
     // rain already falling or within 20 minutes leaves an armed reminder alone; only a window with no rain at all cancels it
     if (!at && slots.some((s) => s.wet)) return armed ? 'scheduled' : 'cancelled'
-    if (armed || at) await LocalNotifications.cancel({ notifications: [{ id: RAIN_ID }] })
+    if (armed || at) { await LocalNotifications.cancel({ notifications: [{ id: RAIN_ID }] }); await dropPending(now) }
     if (!at) { await db.kv.put({ key: ARMED_KEY, value: false }); return 'cancelled' }
     if ((await LocalNotifications.checkPermissions()).display !== 'granted') { await db.kv.put({ key: ARMED_KEY, value: false }); return 'no-permission' }
-    await LocalNotifications.schedule({ notifications: [{ id: RAIN_ID, title: RAIN_TEXT.title, body: RAIN_TEXT.body, extra: { kind: 'rain' }, schedule: { at, allowWhileIdle: true } }] })
+    await LocalNotifications.schedule({ notifications: [{ id: RAIN_ID, title: text.title, body: text.body, extra: { kind: 'rain' }, schedule: { at, allowWhileIdle: true } }] })
     await db.kv.put({ key: ARMED_KEY, value: true }); await db.kv.put({ key: LAST_KEY, value: at.toISOString() })
     return 'scheduled'
   } catch { return 'failed' }
