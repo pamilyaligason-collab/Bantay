@@ -135,7 +135,7 @@ test.describe('Near me on the maps switcher', () => {
       expect(await page.evaluate(() => (window as unknown as { __gpsCalls: number }).__gpsCalls)).toBe(0)
       await near.click()
       await expect(near).toHaveAttribute('aria-pressed', 'true')
-      await expect(page.getByRole('button', { name: /^Place:/ })).toHaveText('General Santos') // S4: the area the phone is in, not the nearest home zone
+      await expect(page.getByRole('button', { name: /^Place:/ })).toHaveText(/^Dadiangas West, General Santos$/) // S4: the area the phone is in, not the nearest home zone (S28 offline place names add the barangay)
       await page.getByText('Ventusky weather map').click()
       await expect(page.locator('iframe[title^="Ventusky"]')).toHaveAttribute('src', /p=6\.11;125\.17;7/)
     })
