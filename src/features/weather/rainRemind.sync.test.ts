@@ -27,6 +27,9 @@ describe('syncRainReminder reads the chance in the next hour (this hour and the 
     fcx.probs = p
     expect(await syncRainReminder(NOW)).toBe('scheduled')
     expect(LN.schedule).toHaveBeenCalledTimes(1)
+    const n = LN.schedule.mock.calls[0][0].notifications[0] // chance only, no wet slot: rings 30 minutes from 11:10, with the chance-only body
+    expect(n.schedule.at).toEqual(new Date('2026-11-04T11:40:00Z'))
+    expect(n.body).toContain('Rain is likely in the next hour.')
   })
   it('both under the threshold: nothing is scheduled', async () => {
     fcx.probs = [50, 59]

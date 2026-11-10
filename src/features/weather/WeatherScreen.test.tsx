@@ -72,7 +72,7 @@ describe('WeatherScreen', () => {
     for (const a of links) expect(a.getAttribute('target')).toBe('_blank')
     expect(document.querySelector('details')).toBeNull()
     expect(screen.getByText('How this is made')).toBeTruthy()
-    expect(screen.getByText('Forecast for your spot (rounded to about 1 km). Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeTruthy()
+    expect(screen.getByText('Forecast for your spot (rounded to about 1 km). The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeTruthy()
     expect(screen.getByText('Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.')).toBeTruthy()
   })
 
