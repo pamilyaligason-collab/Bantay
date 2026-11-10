@@ -19,7 +19,8 @@ const ageCache = async (ms: number) => { // make the saved reading look `ms` old
   for (const r of await db.kv.toArray()) if (r.key.startsWith('weather.forecast.')) await db.kv.put({ key: r.key, value: { ...(r.value as object), fetchedAt: new Date(Date.now() - ms).toISOString() } })
 }
 
-beforeEach(async () => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); await db.kv.clear(); calls.n = 0; location.hash = '#weather' })
+beforeEach(async () => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW); await db.kv.clear(); calls.n = 0; location.hash = '#weather'; localStorage.setItem('bantay.flag.wx.blend', '0') // the blend is on by default since 2026-11-10; these tests cover the direct Open-Meteo path
+})
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 describe('Weather stays fresh', () => {

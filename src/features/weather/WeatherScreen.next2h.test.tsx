@@ -21,7 +21,7 @@ beforeEach(async () => {
   vi.clearAllMocks()
   LN.schedule.mockResolvedValue(undefined); LN.cancel.mockResolvedValue(undefined)
   LN.checkPermissions.mockResolvedValue({ display: 'denied' }); LN.requestPermissions.mockResolvedValue({ display: 'granted' })
-  await db.kv.clear(); localStorage.clear()
+  await db.kv.clear(); localStorage.clear(); localStorage.setItem('bantay.flag.wx.blend', '0') // the blend is on by default since 2026-11-10; these tests cover the direct Open-Meteo path
   vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(withMm()), { status: 200 })))
   location.hash = '#weather'
 })

@@ -10,7 +10,7 @@ import WeatherScreen from './WeatherScreen'
 const track = vi.hoisted(() => vi.fn(async () => true))
 vi.mock('../admin/events', () => ({ track }))
 const invoke = vi.hoisted(() => vi.fn())
-vi.mock('../auth/client', () => ({ supabase: { functions: { invoke } } }))
+vi.mock('../auth/client', () => ({ supabase: { functions: { invoke }, auth: { getSession: async () => ({ data: { session: { user: { id: 'u1' } } } }) } } })) // signed in: the hook skips the call when there is no session
 
 const t = (m: number) => `2026-11-04T19:${String(m).padStart(2, '0')}`
 type Reply = { data: Blended & { ok: true; stale?: boolean }; error: null }
@@ -42,6 +42,7 @@ afterEach(() => { vi.useRealTimers(); cleanup(); vi.unstubAllGlobals(); localSto
 
 describe('Weather screen with the blend', () => {
   it('flag off: the function is never called and no blend cards or credits appear', async () => {
+    localStorage.setItem('bantay.flag.wx.blend', '0') // the blend is on by default since 2026-11-10; these tests cover the direct Open-Meteo path
     invoke.mockResolvedValue(reply(blend()))
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
@@ -71,14 +72,15 @@ describe('Weather screen with the blend', () => {
     expect(screen.queryByText(/PAGASA above is the official word/)).toBeNull()
   })
 
-  it('flag on, function down: the direct forecast, an honest empty state, no blend cards', async () => {
+  it('flag on, function down: the direct forecast and its estimated Next 2 hours, no blend cards', async () => {
     localStorage.setItem('bantay.flag.wx.blend', '1')
     invoke.mockRejectedValue(new Error('down'))
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
     await waitFor(() => expect(invoke).toHaveBeenCalled())
     expect(screen.queryByTestId('wx-air')).toBeNull()
-    expect(screen.getByText('Not available yet')).toBeTruthy()
+    expect(screen.queryByText('Not available yet')).toBeNull()
+    expect(screen.getByTestId('wx-next2h-est')).toBeTruthy() // the estimate from hourly data, as with the flag off
   })
 
   it('flag on, stale blend: says so in the hero and shows no frozen rain chart', async () => {
