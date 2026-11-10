@@ -9,7 +9,7 @@ const s = vi.hoisted(() => ({ res: { data: null as unknown, error: null as null 
 vi.mock('../auth/client', () => ({
   supabase: { from: (t: string) => ({ select: (cols: string) => ({ limit: async () => { s.calls.push(`${t}|${cols}`); return s.res } }) }) }
 }))
-import { addMonths, chipMonths, dryAhead, isStale, loadDrought, manilaYm, outlookSentence, resetDrought, type DroughtMonth } from './drought'
+import { addMonths, chipMonths, dryAhead, dryWhen, isStale, loadDrought, manilaYm, outlookSentence, resetDrought, type DroughtMonth } from './drought'
 
 const FIXTURES: Record<string, unknown> = { 'bohol.json': boholJson, 'south-cotabato.json': socotJson } // real PAGASA answers saved 10 Nov 2026
 const real = (n: string, p: string) => parseDrought(FIXTURES[n], p)!
@@ -56,9 +56,12 @@ describe('chipMonths', () => {
 })
 
 describe('dryAhead and the month helpers', () => {
-  it('looks at this month and the next two only', () => {
+  it('reads the outlook months the Climate card shows (S29 TD round 2, A4)', () => {
+    expect(dryWhen(SOCOT.months, '2026-11')).toEqual({ ym: '2027-01', level: 'dry_spell' }) // Nov not affected, Dec dry condition, Jan-Feb dry spell, Mar-Apr drought
+    expect(dryWhen(SOCOT.months, '2026-10')).toEqual({ ym: '2027-01', level: 'dry_spell' }) // the old three-month window (Oct to Dec) saw none
+    expect(dryWhen(SOCOT.months, '2027-05')).toBeNull()
     expect(dryAhead(BOHOL.months, '2026-11')).toBe(true) // January is a dry spell
-    expect(dryAhead(BOHOL.months, '2026-10')).toBe(false) // October to December: none
+    expect(dryAhead(BOHOL.months, '2026-10')).toBe(true) // January is one of the six shown months
     expect(dryAhead(BOHOL.months, '2027-05')).toBe(false)
     expect(dryAhead(null, '2026-11')).toBe(false)
     expect(dryAhead([m('2026-11', 'dry_condition'), m('2026-12', 'dry_condition')], '2026-11')).toBe(false)
