@@ -193,10 +193,36 @@ const stateNote = (kind: VerdictKind, pos: Position, bp?: BpArg) => verdictFor(k
 export const hoursMinutes = (min: number) => `${Math.floor(min / 60)}h ${String(Math.round(min % 60)).padStart(2, '0')}`
 const sameDay = (a: string, b: Date) => new Date(a).toDateString() === b.toDateString()
 
-/** Sum of a day's activity numbers, or null when there was nothing that day (never 0 for no data). */
-function dayTotal(acts: Activity[], kind: string, field: 'minutes' | 'steps', day: Date): number | null {
-  const v = acts.filter((a) => a.kind === kind && sameDay(a.startedAt, day)).map((a) => a[field]).filter(isNum)
-  return v.length ? v.reduce((s, n) => s + n, 0) : null
+/** Steps per local day, the one place step rows become a day total. Per source, rows that overlap in time count once (a later row adds only the part of its span not already covered, in proportion);
+ *  an exact repeat of a zero-length row counts once; then the day takes the source with the most steps, never the sum of two sources (a watch and a phone count the same walk). No entry for a day with no steps row (never 0 from no data). */
+export function stepDayTotals(acts: { kind: string; steps: number | null; startedAt: string; minutes?: number | null; source?: string }[]): Map<string, number> {
+  const by = new Map<string, Map<string, { t: number; end: number; steps: number }[]>>()
+  for (const a of acts) {
+    if (a.kind !== 'steps' || !isNum(a.steps) || a.steps < 0 || !a.startedAt) continue
+    const t = Date.parse(a.startedAt)
+    if (Number.isNaN(t)) continue
+    const day = localDay(a.startedAt), src = a.source ?? 'manual'
+    const m = by.get(day) ?? new Map<string, { t: number; end: number; steps: number }[]>()
+    m.set(src, [...(m.get(src) ?? []), { t, end: t + (isNum(a.minutes) && a.minutes > 0 ? a.minutes : 0) * 60_000, steps: a.steps }])
+    by.set(day, m)
+  }
+  const out = new Map<string, number>()
+  for (const [day, srcs] of by) {
+    let best = 0
+    for (const rows of srcs.values()) {
+      rows.sort((x, y) => x.t - y.t || y.end - x.end)
+      let total = 0, reach = -Infinity
+      const seen = new Set<string>()
+      for (const r of rows) {
+        if (r.end <= r.t) { const k = `${r.t}|${r.steps}`; if (!seen.has(k)) { seen.add(k); total += r.steps } continue }
+        total += r.steps * (Math.max(0, r.end - Math.max(r.t, reach)) / (r.end - r.t))
+        reach = Math.max(reach, r.end)
+      }
+      best = Math.max(best, total)
+    }
+    out.set(day, Math.round(best))
+  }
+  return out
 }
 
 export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, familyOf: (r: Reading) => Range | undefined = () => undefined): NodeView[] {
@@ -227,7 +253,7 @@ export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, fami
   const w = last('weight')
   nodes.push({ id: 'weight', label: 'Weight', value: w ? `${formatNumber(w.value)} kg` : '--', note: w ? shortDate(w.takenAt) : 'No data yet', state: 'none', code: 'weight', empty: !w })
 
-  const steps = dayTotal(acts, 'steps', 'steps', now)
+  const steps = stepDayTotals(acts).get(localDay(now.toISOString())) ?? null
   nodes.push({ id: 'steps', label: 'Steps', value: steps == null ? '--' : steps.toLocaleString('en-PH'), note: steps == null ? 'No data yet' : 'today', state: 'none', code: 'steps', empty: steps == null })
   return nodes
 }
@@ -246,15 +272,15 @@ export function activitySeries(acts: Activity[], code: 'steps' | 'sleep' | 'mood
       .map((n) => ({ takenAt: `${n.day}T12:00:00.000Z`, value: Math.round(((n.minutes + n.napMinutes) / 60) * 10) / 10 }))
       .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
   }
+  if (code === 'steps') return [...stepDayTotals(acts)].map(([day, value]) => ({ takenAt: `${day}T12:00:00.000Z`, value })).sort((a, b) => a.takenAt.localeCompare(b.takenAt))
   const byDay = new Map<string, number[]>()
   for (const a of acts) {
     if (!a.startedAt || Number.isNaN(Date.parse(a.startedAt))) continue
-    const day = localDay(a.startedAt)
-    const v = code === 'steps' ? (a.kind === 'steps' ? a.steps : null) : a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
-    if (isNum(v) && a.startedAt) byDay.set(day, [...(byDay.get(day) ?? []), v])
+    const v = a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
+    if (v != null) byDay.set(localDay(a.startedAt), [...(byDay.get(localDay(a.startedAt)) ?? []), v])
   }
   return [...byDay.entries()]
-    .map(([day, v]) => ({ takenAt: `${day}T12:00:00.000Z`, value: code === 'mood' ? Math.round((v.reduce((s, n) => s + n, 0) / v.length) * 10) / 10 : v.reduce((s, n) => s + n, 0) }))
+    .map(([day, v]) => ({ takenAt: `${day}T12:00:00.000Z`, value: Math.round((v.reduce((s, n) => s + n, 0) / v.length) * 10) / 10 }))
     .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
 }
 

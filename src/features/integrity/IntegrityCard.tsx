@@ -1,7 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Card, join, useSource } from '../admin/desk/Home'
 import { useDeskPeople } from '../admin/desk/people'
 import { Empty, Tag } from '../admin/desk/ui'
-import { findingLine, integrityStatus, KIND_LABEL, LIST_MAX, loadIntegrity } from './integrityApi'
+import { findingLine, integrityStatus, KIND_LABEL, KIND_ORDER, loadIntegrity, loadMore, PAGE_SIZE, type Finding, type Kind } from './integrityApi'
 import '../admin/desk/system.css'
 
 const WORD = { ok: 'OK', warn: 'Check', bad: 'Problem', plain: '' } as const
@@ -14,6 +15,16 @@ export default function IntegrityCard({ tick }: { tick: number }) {
   const st = integrityStatus(snap.data)
   const name = (id: string | null) => (id ? people.people?.find((p) => p.id === id)?.display_name ?? 'Unknown person' : 'No person')
   const d = snap.data
+  const [more, setMore] = useState<Partial<Record<Kind, Finding[]>>>({})
+  const [busy, setBusy] = useState<Kind | null>(null)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => { setMore({}); setFailed(false) }, [d]) // a fresh load starts the lists over
+  const showMore = async (k: Kind, have: number) => {
+    setBusy(k)
+    const r = await loadMore(k, have)
+    setBusy(null)
+    if (r.ok) { setFailed(false); setMore((m) => ({ ...m, [k]: [...(m[k] ?? []), ...r.data.filter((x) => !(m[k] ?? []).some((y) => y.id === x.id))] })) } else setFailed(true)
+  }
   const sum = d?.run?.summary
   return (
     <Card id="sy-int" title="Data integrity check" cls="dk-s12" src={join(snap)}>
@@ -32,20 +43,32 @@ export default function IntegrityCard({ tick }: { tick: number }) {
               <span className={`sy-st ${st.tone}`}>{WORD[st.tone] && <span className="wa-sr">{WORD[st.tone]}: </span>}{st.text}</span>
             </li>
           </ul>
-          {d.findings.length === 0 ? <div className="dk-card-b"><Empty>{d.run ? 'No open findings.' : 'Nothing yet.'}</Empty></div> : (
-            <ul className="sy-list" aria-label="Open findings">
-              {d.findings.map((f) => {
-                const l = findingLine(f)
+          {d.open === 0 ? <div className="dk-card-b"><Empty>{d.run ? 'No open findings.' : 'Nothing yet.'}</Empty></div> : (
+            <>
+              <p className="sy-foot" aria-label="Open findings by kind">{KIND_ORDER.filter((k) => d.counts[k] > 0).map((k) => `${KIND_LABEL[k]} ${d.counts[k].toLocaleString('en-PH')}`).join(' · ')}</p>
+              {KIND_ORDER.filter((k) => d.counts[k] > 0).map((k) => {
+                const rows = [...d.byKind[k], ...(more[k] ?? [])]
+                const left = d.counts[k] - rows.length
                 return (
-                  <li key={f.id} className="sy-ln">
-                    <Tag tone={f.kind === 'impossible' ? 'bad' : 'warn'}>{KIND_LABEL[f.kind]}</Tag>
-                    <div className="sy-grow"><b>{l.title}</b><div className="sy-sub">{name(f.person_id)} · {l.note}</div></div>
-                  </li>
+                  <section key={k} aria-label={`${KIND_LABEL[k]}, ${d.counts[k]}`}>
+                    <ul className="sy-list" aria-label={k === KIND_ORDER[0] ? 'Open findings' : `Open findings: ${KIND_LABEL[k]}`}>
+                      {rows.map((f) => {
+                        const l = findingLine(f)
+                        return (
+                          <li key={f.id} className="sy-ln">
+                            <Tag tone={f.kind === 'impossible' ? 'bad' : 'warn'}>{KIND_LABEL[f.kind]}</Tag>
+                            <div className="sy-grow"><b>{l.title}</b><div className="sy-sub">{name(f.person_id)} · {l.note}</div></div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                    {left > 0 && <p className="sy-foot"><button type="button" className="dk-b" disabled={busy === k} onClick={() => void showMore(k, rows.length)}>Show more {KIND_LABEL[k].toLowerCase()} ({Math.min(left, PAGE_SIZE)} of {left.toLocaleString('en-PH')} left)</button></p>}
+                  </section>
                 )
               })}
-            </ul>
+              {failed && <p className="sy-foot" role="status">Could not load more. Try again.</p>}
+            </>
           )}
-          {d.open > d.findings.length && <p className="sy-foot">Showing the first {LIST_MAX} of {d.open}.</p>}
         </>
       )}
     </Card>

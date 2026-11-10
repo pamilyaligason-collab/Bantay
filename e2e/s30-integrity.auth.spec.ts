@@ -47,8 +47,11 @@ async function mock(page: Page, opts: { missing?: boolean; empty?: boolean } = {
     }
     if (t === 'integrity_findings') {
       if (opts.missing) return reply({ code: '42P01', message: 'relation does not exist' }, 404)
-      const list = opts.empty ? [] : FINDINGS
-      return rows(list, { 'content-range': `0-${Math.max(list.length - 1, 0)}/${list.length}` })
+      const kind = (url.searchParams.get('kind') ?? '').replace('eq.', '')
+      const off = Number(url.searchParams.get('offset') ?? 0), lim = Number(url.searchParams.get('limit') ?? 1000)
+      const all = (opts.empty ? [] : FINDINGS).filter((x) => !kind || x.kind === kind)
+      const list = all.slice(off, off + lim)
+      return rows(list, { 'content-range': list.length ? `${off}-${off + list.length - 1}/${all.length}` : `*/${all.length}` })
     }
     return rows([])
   })
@@ -67,8 +70,9 @@ for (const [w, h] of [[390, 844], [1280, 900]] as const) {
       const card = page.getByRole('region', { name: 'Data integrity check' })
       await expect(card.getByText(/12,345 records checked/)).toBeVisible()
       await expect(card.getByText('5 to look at')).toBeVisible()
-      const list = card.getByRole('list', { name: 'Open findings' })
-      await expect(list.getByRole('listitem')).toHaveCount(5)
+      const list = card // the status line plus one finding per kind, worst kind first
+      await expect(list.getByRole('listitem')).toHaveCount(6)
+      await expect(card.getByText('Cannot be right 1 · Unit looks wrong 1 · No unit 1 · Totals disagree 1 · Possible duplicate 1')).toBeVisible()
       await expect(list.getByText(/Test Mama · Rows add up to 12 h 40 min, the app shows 6 h 40 min/)).toBeVisible()
       await expect(list.getByText(/Test Mama · Fits mmol\/l better than mg\/dL/)).toBeVisible()
       await card.scrollIntoViewIfNeeded()

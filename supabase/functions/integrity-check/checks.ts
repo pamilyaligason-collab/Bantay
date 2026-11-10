@@ -6,10 +6,10 @@
 
 export type Kind = 'duplicate' | 'impossible' | 'unit_mismatch' | 'tile_mismatch' | 'no_unit'
 export type Table = 'readings' | 'lab_results' | 'activity'
-export type Detail = Record<string, string | number | boolean | null>
+export type Detail = Record<string, string | number | boolean | null | string[]>
 export interface Finding { kind: Kind; table_name: Table; row_ref: string; person_id: string | null; detail: Detail }
 
-export interface ReadingRow { id: string; person_id: string; taken_at: string; test: string; value: number | string | null; unit: string | null }
+export interface ReadingRow { id: string; person_id: string; taken_at: string; test: string; value: number | string | null; unit: string | null; lab_result_id?: string | null }
 export interface LabRow { id: string; person_id: string; test_code: string | null; name_raw: string | null; value_num: number | string | null; unit_raw: string | null; collected_at: string | null; status: string }
 export interface ActivityRow { id: string; person_id: string; kind: string; minutes: number | string | null; steps: number | string | null; started_at: string; source: string | null }
 
@@ -84,25 +84,49 @@ export function checkValue(test: string | null, unitRaw: string | null, valueIn:
   return { kind: 'impossible', detail: { ...base, reason: 'out_of_range', low: own[0], high: own[1] } }
 }
 
-// ---------- duplicates ----------
-/** Rows with the same key within a minute of the first kept one are duplicates of it. Rows already in records_dedupe_log are skipped (handled before). */
-function dupeRuns<T>(rows: T[], key: (r: T) => string | null, at: (r: T) => number, id: (r: T) => string, logged: ReadonlySet<string>): { id: string; keeper: string; gap_s: number }[] {
-  const by = new Map<string, { id: string; t: number }[]>()
-  for (const r of rows) {
-    const k = key(r), t = at(r)
-    if (k == null || Number.isNaN(t) || logged.has(id(r))) continue
-    const list = by.get(k) ?? []
-    list.push({ id: id(r), t })
-    by.set(k, list)
-  }
-  const out: { id: string; keeper: string; gap_s: number }[] = []
-  for (const list of by.values()) {
-    list.sort((a, b) => a.t - b.t || a.id.localeCompare(b.id))
-    let keep = list[0]!
-    for (const r of list.slice(1)) {
-      if (r.t - keep.t <= DUPE_WINDOW_MS) out.push({ id: r.id, keeper: keep.id, gap_s: Math.round((r.t - keep.t) / 1000) })
-      else keep = r
+// ---------- grouping: one finding per group, never one per row ----------
+export const SAMPLE_IDS = 5
+const dayKey = (iso: string | null | undefined, off: number) => (iso && !Number.isNaN(Date.parse(iso)) ? dayOf(iso, off) : '')
+interface Item { table: Table; id: string; person: string | null; at: number; kind: Kind; detail: Detail; gkey: string }
+const byTimeThenId = <T extends { id: string; at: number }>(a: T, b: T) => (Number.isNaN(a.at) ? 0 : a.at) - (Number.isNaN(b.at) ? 0 : b.at) || a.id.localeCompare(b.id)
+/** Rows that share a group key (person, test or metric, kind, reason, unit, local day, source) become ONE finding: row_ref is a stable key from the earliest row, detail has {count, first_row, last_row, sample_ids (max 5)}.
+ *  A group of several rows drops the single value of its first row and carries value_min / value_max instead. No names. */
+function groupItems(items: Item[]): Finding[] {
+  const by = new Map<string, Item[]>()
+  for (const i of items) { const l = by.get(i.gkey); if (l) l.push(i); else by.set(i.gkey, [i]) }
+  return [...by.values()].map((g) => {
+    g.sort(byTimeThenId)
+    const first = g[0]!, last = g[g.length - 1]!
+    const detail: Detail = { ...first.detail }
+    if (g.length > 1) {
+      let lo = Infinity, hi = -Infinity
+      for (const x of g) { const v = x.detail.value; if (typeof v === 'number') { if (v < lo) lo = v; if (v > hi) hi = v } }
+      for (const k of ['value', 'systolic', 'diastolic', 'steps', 'minutes']) delete detail[k]
+      if (lo <= hi) { detail.value_min = lo; detail.value_max = hi }
     }
+    return { kind: first.kind, table_name: first.table, row_ref: `g:${first.id}`, person_id: first.person, detail: { ...detail, count: g.length, first_row: first.id, last_row: last.id, sample_ids: g.slice(0, SAMPLE_IDS).map((x) => x.id) } }
+  })
+}
+
+// ---------- duplicates ----------
+/** Rows with the same key within a minute of the first kept one are duplicates of it: one group per keeper. Rows already in records_dedupe_log are skipped (handled before). */
+function dupeGroups<T>(rows: T[], key: (r: T) => string | null, at: (r: T) => number, id: (r: T) => string, logged: ReadonlySet<string>): { keeper: T; members: T[] }[] {
+  const by = new Map<string, T[]>()
+  for (const r of rows) {
+    const k = key(r)
+    if (k == null || Number.isNaN(at(r)) || logged.has(id(r))) continue
+    const list = by.get(k)
+    if (list) list.push(r); else by.set(k, [r])
+  }
+  const out: { keeper: T; members: T[] }[] = []
+  for (const list of by.values()) {
+    list.sort((a, b) => at(a) - at(b) || id(a).localeCompare(id(b)))
+    let cur: { keeper: T; members: T[] } = { keeper: list[0]!, members: [] }
+    for (const r of list.slice(1)) {
+      if (at(r) - at(cur.keeper) <= DUPE_WINDOW_MS) cur.members.push(r)
+      else { if (cur.members.length) out.push(cur); cur = { keeper: r, members: [] } }
+    }
+    if (cur.members.length) out.push(cur)
   }
   return out
 }
@@ -153,27 +177,47 @@ export function sleepFindings(rows: ActivityRow[], off = MANILA_OFFSET_MIN): Fin
   return out
 }
 
-/** Steps per local day: more than 100 000 in a day, a row faster than 250 steps a minute, and rows that overlap in time (the day total counts the overlap twice). */
+/** What the app shows for one source's rows in a day (same maths as stepDayTotals in src/features/health/model.ts, parity-tested): a later row adds only the part of its span not already covered. */
+export function shownSteps(rows: { t: number; end: number; steps: number }[]): { total: number; overlaps: number } {
+  const sorted = [...rows].sort((a, b) => a.t - b.t || b.end - a.end)
+  let total = 0, overlaps = 0, reach = -Infinity
+  const seen = new Set<string>()
+  for (const r of sorted) {
+    if (r.end <= r.t) { const k = `${r.t}|${r.steps}`; if (!seen.has(k)) { seen.add(k); total += r.steps } else overlaps++; continue }
+    if (r.t < reach) overlaps++
+    total += r.steps * (Math.max(0, r.end - Math.max(r.t, reach)) / (r.end - r.t))
+    reach = Math.max(reach, r.end)
+  }
+  return { total, overlaps }
+}
+
+/** Steps per local day: a row faster than 250 steps a minute (grouped per person, day and source), more than 100 000 shown in a day, and a day whose rows add up to more than the app shows (overlapping rows, or two sources). */
 export function stepsFindings(rows: ActivityRow[], skip: ReadonlySet<string>, off = MANILA_OFFSET_MIN): Finding[] {
-  const g = new Map<string, { person: string; day: string; total: number; spans: { id: string; t: number; end: number }[] }>()
-  const out: Finding[] = []
+  const g = new Map<string, { person: string; day: string; total: number; by: Map<string, { t: number; end: number; steps: number }[]> }>()
+  const items: Item[] = []
   for (const r of rows) {
     const steps = num(r.steps), t = ms(r.started_at)
     if (r.kind !== 'steps' || steps == null || Number.isNaN(t) || skip.has(r.id)) continue
     const min = Math.max(num(r.minutes) ?? 0, 0)
-    if (steps < 0 || (min > 0 && steps > 250 * min)) out.push({ kind: 'impossible', table_name: 'activity', row_ref: r.id, person_id: r.person_id, detail: { metric: 'steps', reason: steps < 0 ? 'negative' : 'over_250_a_minute', steps, minutes: min } })
-    const day = dayOf(r.started_at, off), k = `${r.person_id}|${day}`
-    const d = g.get(k) ?? { person: r.person_id, day, total: 0, spans: [] }
+    const day = dayOf(r.started_at, off), k = `${r.person_id}|${day}`, src = r.source ?? 'manual'
+    if (steps < 0 || (min > 0 && steps > 250 * min)) {
+      const reason = steps < 0 ? 'negative' : 'over_250_a_minute'
+      items.push({ table: 'activity', id: r.id, person: r.person_id, at: t, kind: 'impossible', detail: { metric: 'steps', reason, steps, minutes: min, day }, gkey: `activity|${r.person_id}|impossible|steps|${reason}|${day}|${src}` })
+    }
+    const d = g.get(k) ?? { person: r.person_id, day, total: 0, by: new Map() }
     d.total += Math.max(steps, 0)
-    d.spans.push({ id: r.id, t, end: t + min * MIN })
+    const l = d.by.get(src) ?? []
+    l.push({ t, end: t + min * MIN, steps: Math.max(steps, 0) })
+    d.by.set(src, l)
     g.set(k, d)
   }
+  const out = groupItems(items)
   for (const [k, d] of g) {
-    if (d.total > MAX_STEPS_DAY) out.push({ kind: 'impossible', table_name: 'activity', row_ref: `steps:${k}`, person_id: d.person, detail: { metric: 'steps', day: d.day, reason: 'over_100000_a_day', steps: d.total } })
-    d.spans.sort((a, b) => a.t - b.t)
-    let overlaps = 0, reach = -Infinity
-    for (const s of d.spans) { if (s.t < reach) overlaps++; reach = Math.max(reach, s.end) }
-    if (overlaps > 0) out.push({ kind: 'tile_mismatch', table_name: 'activity', row_ref: `steps:${k}`, person_id: d.person, detail: { metric: 'steps', day: d.day, rows_total: d.total, overlapping_rows: overlaps } })
+    let shown = 0, overlaps = 0
+    for (const list of d.by.values()) { const s = shownSteps(list); shown = Math.max(shown, s.total); overlaps += s.overlaps }
+    shown = Math.round(shown)
+    if (shown > MAX_STEPS_DAY) out.push({ kind: 'impossible', table_name: 'activity', row_ref: `steps:${k}`, person_id: d.person, detail: { metric: 'steps', day: d.day, reason: 'over_100000_a_day', steps: shown } })
+    if (d.total - shown > 1) out.push({ kind: 'tile_mismatch', table_name: 'activity', row_ref: `steps:${k}`, person_id: d.person, detail: { metric: 'steps', day: d.day, rows_total: Math.round(d.total), shown_total: shown, overlapping_rows: overlaps } })
   }
   return out
 }
@@ -190,46 +234,49 @@ export function runChecks(input: Input): Result {
   const add = (x: Finding) => { f.set(`${x.kind}|${x.table_name}|${x.row_ref}`, x) }
 
   const labs = input.labs.filter((l) => l.status !== 'rejected') // a rejected row is a copy already set aside by the dedupe run
-  for (const r of input.readings) {
+  const readings = input.readings.filter((r) => !r.lab_result_id) // a lab value mirrored into readings is checked once, as the lab result (one bad lab = one finding)
+  const items: Item[] = []
+  for (const r of readings) {
     const v = checkValue(r.test, r.unit, r.value)
-    if (v) add({ kind: v.kind, table_name: 'readings', row_ref: r.id, person_id: r.person_id, detail: v.detail })
+    if (v) items.push({ table: 'readings', id: r.id, person: r.person_id, at: ms(r.taken_at), kind: v.kind, detail: v.detail, gkey: `readings|${r.person_id}|${v.kind}|${r.test}|${v.detail.reason ?? ''}|${normUnit(r.unit)}|${dayKey(r.taken_at, off)}` })
   }
   for (const l of labs) {
     const v = checkValue(l.test_code, l.unit_raw, l.value_num)
-    if (v) add({ kind: v.kind, table_name: 'lab_results', row_ref: l.id, person_id: l.person_id, detail: v.detail })
+    if (v) items.push({ table: 'lab_results', id: l.id, person: l.person_id, at: ms(l.collected_at), kind: v.kind, detail: v.detail, gkey: `lab_results|${l.person_id}|${v.kind}|${l.test_code}|${v.detail.reason ?? ''}|${normUnit(l.unit_raw)}|${dayKey(l.collected_at, off)}` })
   }
 
   // blood pressure: the bottom number cannot reach the top number (same person, same minute)
   const sys = new Map<string, number>()
-  for (const r of input.readings) if (r.test === 'bp_systolic' && num(r.value) != null) sys.set(`${r.person_id}|${Math.floor(ms(r.taken_at) / MIN)}`, num(r.value)!)
-  for (const r of input.readings) {
+  for (const r of readings) if (r.test === 'bp_systolic' && num(r.value) != null) sys.set(`${r.person_id}|${Math.floor(ms(r.taken_at) / MIN)}`, num(r.value)!)
+  for (const r of readings) {
     const top = r.test === 'bp_diastolic' ? sys.get(`${r.person_id}|${Math.floor(ms(r.taken_at) / MIN)}`) : undefined
     const dia = num(r.value)
-    if (top != null && dia != null && dia >= top) add({ kind: 'impossible', table_name: 'readings', row_ref: r.id, person_id: r.person_id, detail: { test: 'bp_diastolic', reason: 'bottom_not_below_top', systolic: top, diastolic: dia } })
+    if (top != null && dia != null && dia >= top) items.push({ table: 'readings', id: r.id, person: r.person_id, at: ms(r.taken_at), kind: 'impossible', detail: { test: 'bp_diastolic', reason: 'bottom_not_below_top', systolic: top, diastolic: dia }, gkey: `readings|${r.person_id}|impossible|bp_diastolic|bottom_not_below_top||${dayKey(r.taken_at, off)}` })
   }
+  for (const x of groupItems(items)) add(x)
 
   const dupeOf = new Set<string>()
-  const noteDupes = (table: Table, rows: { id: string; keeper: string; gap_s: number }[], pid: Map<string, string>, extra: (id: string) => Detail) => {
-    for (const d of rows) { dupeOf.add(d.id); add({ kind: 'duplicate', table_name: table, row_ref: d.id, person_id: pid.get(d.id) ?? null, detail: { ...extra(d.id), duplicate_of: d.keeper, gap_s: d.gap_s } }) }
+  const noteDupes = <T extends { id: string; person_id: string }>(table: Table, groups: { keeper: T; members: T[] }[], at: (r: T) => number, extra: (r: T) => Detail) => {
+    for (const { keeper, members } of groups) {
+      for (const m of members) dupeOf.add(m.id)
+      const last = members[members.length - 1]!
+      add({ kind: 'duplicate', table_name: table, row_ref: `g:${keeper.id}`, person_id: keeper.person_id, detail: { ...extra(keeper), count: members.length + 1, first_row: keeper.id, last_row: last.id, sample_ids: members.slice(0, SAMPLE_IDS).map((m) => m.id), span_s: Math.round((at(last) - at(keeper)) / 1000) } })
+    }
   }
-  const rPerson = new Map(input.readings.map((r) => [r.id, r.person_id]))
-  const rTest = new Map(input.readings.map((r) => [r.id, r.test]))
-  noteDupes('readings', dupeRuns(input.readings, (r) => (num(r.value) == null ? null : `${r.person_id}|${r.test}|${num(r.value)}|${normUnit(r.unit)}`), (r) => ms(r.taken_at), (r) => r.id, input.logged), rPerson, (id) => ({ test: rTest.get(id) ?? null }))
-  const lPerson = new Map(labs.map((l) => [l.id, l.person_id]))
-  const lCode = new Map(labs.map((l) => [l.id, l.test_code]))
-  noteDupes('lab_results', dupeRuns(labs, (l) => {
+  noteDupes('readings', dupeGroups(readings, (r) => (num(r.value) == null ? null : `${r.person_id}|${r.test}|${num(r.value)}|${normUnit(r.unit)}`), (r) => ms(r.taken_at), (r) => r.id, input.logged), (r) => ms(r.taken_at), (r) => ({ test: r.test ?? null }))
+  noteDupes('lab_results', dupeGroups(labs, (l) => {
     const name = l.test_code || l.name_raw?.trim().toLowerCase()
     return name && num(l.value_num) != null && l.collected_at ? `${l.person_id}|${name}|${num(l.value_num)}|${normUnit(l.unit_raw)}` : null
-  }, (l) => ms(l.collected_at), (l) => l.id, input.logged), lPerson, (id) => ({ test: lCode.get(id) ?? null }))
-  const aPerson = new Map(input.activity.map((a) => [a.id, a.person_id]))
-  const aKind = new Map(input.activity.map((a) => [a.id, a.kind]))
-  noteDupes('activity', dupeRuns(input.activity, (a) => `${a.person_id}|${a.kind}|${num(a.minutes)}|${num(a.steps)}`, (a) => ms(a.started_at), (a) => a.id, input.logged), aPerson, (id) => ({ metric: aKind.get(id) ?? null }))
+  }, (l) => ms(l.collected_at), (l) => l.id, input.logged), (l) => ms(l.collected_at), (l) => ({ test: l.test_code ?? null }))
+  noteDupes('activity', dupeGroups(input.activity, (a) => `${a.person_id}|${a.kind}|${num(a.minutes)}|${num(a.steps)}`, (a) => ms(a.started_at), (a) => a.id, input.logged), (a) => ms(a.started_at), (a) => ({ metric: a.kind ?? null }))
 
   // sleep and steps: duplicates are reported as duplicates, so they are taken out before the day totals are compared
   const act = input.activity.filter((a) => !dupeOf.has(a.id))
   for (const x of [...sleepFindings(act, off), ...stepsFindings(act, dupeOf, off)]) add(x)
 
   const findings = [...f.values()]
-  const n = (k: Kind[]) => findings.filter((x) => k.includes(x.kind)).length
+  // counts are ROWS (a group of 600 duplicate rows counts 599 extra rows), findings are groups
+  const rowsIn = (x: Finding) => (typeof x.detail.count === 'number' ? x.detail.count : 1) - (x.kind === 'duplicate' ? 1 : 0)
+  const n = (k: Kind[]) => findings.filter((x) => k.includes(x.kind)).reduce((sum, x) => sum + rowsIn(x), 0)
   return { findings, counts: { dupes: n(['duplicate']), impossible: n(['impossible']), mismatched: n(['unit_mismatch', 'tile_mismatch', 'no_unit']), checked: input.readings.length + labs.length + input.activity.length } }
 }

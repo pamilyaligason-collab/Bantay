@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     }
   }
   const port: Port = {
-    readings: () => pages((a, b) => sb.from('readings').select('id,person_id,taken_at,test,value,unit').is('deleted_at', null).order('id').range(a, b)),
+    readings: () => pages((a, b) => sb.from('readings').select('id,person_id,taken_at,test,value,unit,lab_result_id').is('deleted_at', null).order('id').range(a, b)),
     labs: () => pages((a, b) => sb.from('lab_results').select('id,person_id,test_code,name_raw,value_num,unit_raw,collected_at,status').order('id').range(a, b)),
     activity: () => pages((a, b) => sb.from('activity').select('id,person_id,kind,minutes,steps,started_at,source').order('id').range(a, b)),
     async logged() { return new Set((await pages<{ row_id: string }>((a, b) => sb.from('records_dedupe_log').select('row_id').order('id').range(a, b))).map((r) => r.row_id)) },

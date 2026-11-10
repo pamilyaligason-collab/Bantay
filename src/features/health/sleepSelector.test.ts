@@ -41,3 +41,32 @@ describe('one sleep selector for tiles, detail and charts', () => {
     expect([...sleepNights(live).values()].map((n) => [n.day, n.minutes])).toEqual([['2026-11-09', 259], ['2026-11-10', 398]])
   })
 })
+
+// ML-38: the app's day is the phone's local day. These dates are built from local parts, so they hold in Manila, Texas (UTC-6) or any zone the runner uses.
+describe('the clock at the edge of midnight (23:30 and 00:30 local)', () => {
+  const nights = [hc(at(9, 23, 58), 398)] // the night that ended on the morning of the 10th
+  it('at 23:30 on the 10th the last night is still the one that ended that morning', () => {
+    const now = new Date(2026, 10, 10, 23, 30)
+    expect(lastNight(nights, now)).toMatchObject({ day: '2026-11-10', minutes: 398 })
+    expect(tile(nights, now).value).toBe('6h 38')
+  })
+  it('at 00:30 on the 11th it is "yesterday" and still on the tile', () => {
+    const now = new Date(2026, 10, 11, 0, 30)
+    expect(lastNight(nights, now)).toMatchObject({ day: '2026-11-10', minutes: 398 })
+    expect(tile(nights, now).value).toBe('6h 38')
+  })
+  it('a night that has begun but not ended (22:00 start, 90 min so far) is not the 23:30 figure: it wakes on the 11th', () => {
+    const acts = [...nights, hc(at(10, 22, 0), 90)]
+    const now = new Date(2026, 10, 10, 23, 30)
+    expect(lastNight(acts, now)).toMatchObject({ day: '2026-11-10', minutes: 398 })
+  })
+  it('a start at 23:58 (32 min) and one at 00:20 (20 min) are one night, and they overlap 00:20 to 00:30, so 23:58 to 00:40 = 42 min (not 52)', () => {
+    const acts = [hc(at(10, 23, 58), 32), hc(at(11, 0, 20), 20)]
+    const now = new Date(2026, 10, 11, 0, 30)
+    expect(lastNight(acts, now)).toMatchObject({ day: '2026-11-11', minutes: 42 })
+  })
+  it('a nap at 14:00 is a nap on its own day in any zone', () => {
+    expect(lastNight([hc(at(10, 14, 0), 45)], new Date(2026, 10, 10, 16, 0))).toBeNull()
+  })
+})
+

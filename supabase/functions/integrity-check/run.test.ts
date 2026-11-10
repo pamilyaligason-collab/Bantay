@@ -30,18 +30,18 @@ describe('runIntegrity', () => {
     const f = fake({ readings: [rd('a', 'heart_rate', 72, 'bpm', '2026-11-09T10:00:00Z'), rd('b', 'heart_rate', 72, 'bpm', '2026-11-09T10:00:00Z'), rd('c', 'bp_systolic', 400, 'mmHg', '2026-11-09T11:00:00Z')] })
     const r = await runIntegrity(f.port, NOW)
     expect(r).toEqual({ ok: true, dupes: 1, impossible: 1, mismatched: 0, checked: 3, resolved: 0 })
-    expect([...f.stored.keys()].sort()).toEqual(['duplicate|readings|b', 'impossible|readings|c'])
-    expect(f.stored.get('duplicate|readings|b')).toMatchObject({ status: 'open', checked_at: '2026-11-10T19:30:00.000Z', person_id: P })
+    expect([...f.stored.keys()].sort()).toEqual(['duplicate|readings|g:a', 'impossible|readings|g:c'])
+    expect(f.stored.get('duplicate|readings|g:a')).toMatchObject({ status: 'open', checked_at: '2026-11-10T19:30:00.000Z', person_id: P })
     expect(f.calls.trimmed).toBe(new Date(NOW - KEEP_RESOLVED_DAYS * 86_400_000).toISOString())
   })
   it('a finding that no longer applies is marked resolved; one that still applies is not', async () => {
-    const f = fake({ readings: [rd('c', 'bp_systolic', 400, 'mmHg', '2026-11-09T11:00:00Z')], open: [{ id: 7, kind: 'impossible', table_name: 'readings', row_ref: 'c' }, { id: 8, kind: 'duplicate', table_name: 'readings', row_ref: 'gone' }] })
+    const f = fake({ readings: [rd('c', 'bp_systolic', 400, 'mmHg', '2026-11-09T11:00:00Z')], open: [{ id: 7, kind: 'impossible', table_name: 'readings', row_ref: 'g:c' }, { id: 8, kind: 'duplicate', table_name: 'readings', row_ref: 'gone' }] })
     const r = await runIntegrity(f.port, NOW)
     expect(r.resolved).toBe(1)
     expect(f.calls.resolved).toEqual([8])
   })
   it('chunks big runs: 1 200 findings are written in 3 requests and every one arrives', async () => {
-    const rows = Array.from({ length: 1200 }, (_, i) => rd(`r${i}`, 'bp_systolic', 400, 'mmHg', new Date(Date.UTC(2026, 10, 9, 0, 0) + i * 120_000).toISOString())) // 2 minutes apart: no duplicates
+    const rows = Array.from({ length: 1200 }, (_, i) => ({ ...rd(`r${i}`, 'bp_systolic', 400, 'mmHg', '2026-11-09T11:00:00Z'), person_id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}` })) // one person each: 1 200 groups
     const f = fake({ readings: rows })
     const r = await runIntegrity(f.port, NOW)
     expect(r.impossible).toBe(1200)
@@ -54,7 +54,7 @@ describe('runIntegrity', () => {
     await runIntegrity(f.port, NOW)
     await runIntegrity(f.port, NOW + 86_400_000)
     expect(f.stored.size).toBe(1)
-    expect(f.stored.get('impossible|readings|c')!.checked_at).toBe('2026-11-11T19:30:00.000Z')
+    expect(f.stored.get('impossible|readings|g:c')!.checked_at).toBe('2026-11-11T19:30:00.000Z')
   })
   it('a read or write failure is a failed run with zero counts, not a throw', async () => {
     expect(await runIntegrity(fake({ fail: 'read' }).port, NOW)).toEqual({ ok: false, dupes: 0, impossible: 0, mismatched: 0, checked: 0, resolved: 0 })
