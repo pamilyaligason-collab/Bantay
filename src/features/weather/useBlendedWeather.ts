@@ -95,5 +95,6 @@ export function useBlendedWeather(p: LatLon | null, o: { on?: boolean; invoke?: 
   }
   const none = { blended: false, next2h: [], aqi: null, alerts: [], sources: [], check: null }
   if (on && !(mine && b.failed)) return { fc: mine ? b.cached : null, offline: false, loading: true, ...none } // blend pending
-  return { ...direct, fc: direct.fc ?? (mine ? b.cached : null), ...none } // the cached reading stays on screen while the direct forecast reads its own
+  const held = !direct.fc && mine ? b.cached : null
+  return { ...direct, fc: direct.fc ?? held, offline: direct.offline || (!!held && !direct.loading), ...none } // the cached reading stays on screen while the direct forecast reads its own
 }
