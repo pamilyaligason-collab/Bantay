@@ -51,8 +51,13 @@ for (const size of SIZES) {
       await expect(page.locator('[data-testid="dc-top-story"] > .sec-h a')).toHaveCount(0) // no header link: nothing sits in Jack's corner
       await expect(page.getByTestId('dc-top-all')).toBeVisible()
       await layoutStable(page)
-      for (const at of ['rest', 'bottom'] as const) { // 'bottom': the row scrolled to the bottom edge of the view, in Jack's row
-        await page.evaluate((to) => { const s = document.querySelector('.bt .scroll') as HTMLElement; if (to === 'rest') s.scrollTop = 0; else document.querySelector('[data-testid="dc-top-all"]')!.scrollIntoView({ block: 'end' }) }, at)
+      // 'row': the row scrolled to the bottom edge of the view, in Jack's row, Jack back at rest (S29 TD round 2, ML-44); 'top': scrollTop 0; 'page end': the very end
+      for (const at of ['row', 'top', 'page end'] as const) {
+        await page.evaluate((to) => {
+          const s = document.querySelector('.bt .scroll') as HTMLElement
+          if (to === 'row') { const r = document.querySelector('[data-testid="dc-top-all"]')!; r.scrollIntoView({ block: 'end' }); const tabs = document.querySelector('.sh-tabs'); if (tabs) s.scrollTop += r.getBoundingClientRect().bottom - tabs.getBoundingClientRect().top } // the tab bar covers the scroll box's bottom edge: park the row just above it, in Jack's row
+          else s.scrollTop = to === 'top' ? 0 : s.scrollHeight
+        }, at)
         await expectJackAtRest(page, `top stories ${at}`)
         const m = await page.evaluate(() => {
           const a = document.querySelector('[data-testid="dc-top-all"]')!.getBoundingClientRect()
@@ -60,9 +65,15 @@ for (const size of SIZES) {
           const sec = document.querySelector('[data-testid="dc-top-story"]')!.getBoundingClientRect()
           const cx = (a.left + a.right) / 2, cy = (a.top + a.bottom) / 2
           const box = document.querySelector('.bt .scroll')!.getBoundingClientRect()
-          return { under: cx >= f.left && cx <= f.right && cy >= f.top && cy <= f.bottom, height: a.height, fullWidth: Math.abs(a.width - sec.width) <= 1, onScreen: a.top >= Math.max(box.top, 0) - 1 && a.bottom <= Math.min(box.bottom, innerHeight) + 1 && a.left >= 0 && a.right <= innerWidth }
+          const row = document.querySelector('[data-testid="dc-top-all"]')!
+          const hit = document.elementFromPoint(cx, cy)
+          return { under: cx >= f.left && cx <= f.right && cy >= f.top && cy <= f.bottom, height: a.height, fullWidth: Math.abs(a.width - sec.width) <= 1, onScreen: a.top >= Math.max(box.top, 0) - 1 && a.bottom <= Math.min(box.bottom, innerHeight, document.querySelector('.sh-tabs')?.getBoundingClientRect().top ?? innerHeight) + 1 && a.left >= 0 && a.right <= innerWidth, hitIsRow: !!hit && row.contains(hit), hitIsJack: !!hit && !!hit.closest(".sh-jackfab"), hitDesc: hit ? hit.tagName + "." + String(hit.className).slice(0, 40) + " in " + (hit.parentElement?.className ?? "") : "none" }
         })
-        if (at === 'bottom') expect(m.onScreen, `See all stories is inside the viewport ${at} (a row scrolled off screen proves nothing)`).toBe(true)
+        if (at === 'row') expect(m.onScreen, `See all stories is inside the viewport ${at} (a row scrolled off screen proves nothing)`).toBe(true)
+        if (m.onScreen) { // the hit target at the row's centre is the row, not Jack (ML-44)
+          expect(m.hitIsJack, `Jack is the hit target at the row centre ${at}`).toBe(false)
+          expect(m.hitIsRow, `the row is the hit target at its centre ${at}: ${m.hitDesc}`).toBe(true)
+        }
         expect(m.under, `See all stories centre under Jack ${at}`).toBe(false)
         expect(m.height, 'target height').toBeGreaterThanOrEqual(44)
         expect(m.fullWidth, 'spans the section').toBe(true)

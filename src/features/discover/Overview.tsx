@@ -26,6 +26,7 @@ import { READY_TOPICS, countLine, readyShelf as shelf } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
 import './today.css'
+import '../today/today.css' // .sf-link-row (See all stories) lives here
 
 const COUNTS = 'dc.watchcounts'
 /** Taps per video on this phone (a bounded map: only ids of the fixed shelves are ever stored). The second signal for Top stories and the Farming and DIY lead; nothing leaves the device. */
