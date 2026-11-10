@@ -38,6 +38,8 @@ import { weatherWarning } from './warning'
 import { useNow } from '../safety/AlertCard'
 import '../today/weatherHero.css' // the Next 2 hours bars (td-rm) are drawn by Today's RainMini
 import { Next2hMini } from './Next2hMini'
+import AirCard from './AirCard'
+import SunArc from './SunArc'
 import { syncRainReminder } from './rainRemind'
 import './weather.css'
 import './wxs7w.css'
@@ -163,8 +165,9 @@ export default function WeatherScreen() {
         </div>
         <div className="card wx-made">
           <h3>How this is made</h3>
-          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your spot (rounded to about 1 km) from Open-Meteo. Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
+          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your spot (rounded to about 1 km). The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
           <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services. The map gets the same rounded location." : 'Your rounded location is sent only to the weather and map services.'}</p>
+          <p className="wx-sub">Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.</p>
         </div>
       </Section>
     </div>
@@ -285,6 +288,10 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         </ul>
         {days.length > 5 && <button type="button" className="btn2 wx-more" aria-expanded={allDays} onClick={() => setAllDays((v) => !v)}>{allDays ? 'Show fewer days' : `Show all ${days.length} days`}</button>}
       </Section>}
+
+      <AirCard point={point} />
+
+      <SunArc fc={fc} now={now} />
 
       <section aria-label="Details" className="wx-tiles" data-testid="wx-details">
         <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>

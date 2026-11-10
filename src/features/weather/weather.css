@@ -91,9 +91,25 @@
 .wx-n2h-bars i { display: block; width: 100%; max-width: 30px; border-radius: 8px 8px 4px 4px; background: linear-gradient(180deg, #BFE3FF, #5FA8E8); }
 .wx-other p { display: flex; justify-content: space-between; gap: 8px; }
 .wx-made a { color: inherit; text-decoration: underline; }
+.wx-made .wx-sub { font-size: 15px; }
 .wx-remind { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
 .wx-remind > span { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .wx-remind b { font-size: 15px; font-weight: 600; }
 
 .wx-fnote a { display: inline-block; padding: 12px 0; margin: -12px 0; color: inherit; text-decoration: underline; } /* 44 px to tap, 20 px of layout */
 .wx-fnote { display: block; margin-top: 6px; font-size: 15px; }
+
+/* S29 lane F: air quality, sun arc, rain alert threshold */
+.wx-aqi { padding: 16px; display: grid; gap: 10px; }
+.wx-aqi-chip { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 12px 14px; border-radius: 14px; font-size: 17px; }
+.wx-aqi-chip span { font-size: 15px; font-weight: 600; }
+.wx-aqi p { margin: 0; font-size: 17px; line-height: 1.45; }
+.wx-sun { padding: 16px; display: grid; gap: 8px; }
+.wx-sun-svg { width: 100%; height: auto; max-height: 150px; color: var(--muted); }
+.wx-sun-t { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wx-sun-t > span { display: grid; gap: 2px; min-width: 0; }
+.wx-sun-t > span:last-child { text-align: right; }
+.wx-sun-t b { font-size: 17px; }
+.wx-thresh { display: grid; gap: 8px; margin-top: 8px; }
+.wx-thresh .segd { --card2: rgba(5,12,28,.45); --card: rgba(255,255,255,.24); } /* the page is a dark sky: white labels need a dark track (the cream default hid them) */
+.wx-aqi .wx-sub, .wx-sun .wx-sub, .wx-thresh .wx-sub { font-size: 15px; }
