@@ -1,3 +1,4 @@
+import { tzMidnight } from '../time/zone'
 import { manilaDay, matchDoses, slotsFor, type DoseState } from '../health/meds'
 import { addManilaDays, manilaDaysEnding } from '../today/nextPick'
 import { recentlyTaken } from '../today/useDueMeds'
@@ -33,7 +34,7 @@ export function pillbox(i: { personId: string; meds: Medication[]; takes: Pick<M
  *  (here, from a reminder or on another screen) is never logged twice. Resolves to the rows logged. Only today's cells can be logged. */
 export async function logHalf(personId: string, half: Half, now = new Date()): Promise<number> {
   const day = manilaDay(now)
-  const yest = new Date(`${addManilaDays(day, -1)}T00:00:00+08:00`)
+  const yest = tzMidnight(addManilaDays(day, -1))
   const [meds, takes] = await Promise.all([ldb.medications.filter((m) => m.personId === personId).toArray(), ldb.meds.where('takenAt').aboveOrEqual(yest.toISOString()).filter((t) => t.personId === personId).toArray()])
   // Same rule as markTaken: the day match alone misses a dose just after midnight tapped before midnight.
   const open = matchDoses(slotsFor(meds, personId, day), takes, day, manilaDay).filter((d) => halfOf(d.at) === half && d.state === 'pending' && !recentlyTaken(takes, personId, d, now.getTime()))

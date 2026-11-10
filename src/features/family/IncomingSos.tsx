@@ -18,12 +18,13 @@ export { pickSos, useSosActive } from './sosActive'
  *  A late row (`sos_late`) is a quiet line in the alert list, never this banner; a cancelled SOS (`sos_cancel` row or cancelled_at) hides it. */
 interface SosEventRow { id: string; person_id: string; at: string; lat: number | null; lon: number | null; gps: boolean | null; cancelled_at: string | null }
 
+import { getZone } from '../time/zone'
 const ACKED_KEY = 'sos.acked' // the last SOS ids this phone has told the server it saw (ML-06: capped)
 const ACKED_MAX = 20
 
 const clock = (iso: string) => {
   const t = Date.parse(iso)
-  return Number.isNaN(t) ? '' : new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' }).format(t)
+  return Number.isNaN(t) ? '' : new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: getZone() }).format(t) // S30 L8 (A6): the clock of the phone that reads it (a Texas carer sees Texas time), Asia/Manila until the app sets the phone's zone
 }
 const known = (n: number | null | undefined): n is number => typeof n === 'number' && Number.isFinite(n)
 

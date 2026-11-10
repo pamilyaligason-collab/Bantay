@@ -1,6 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import { showsAsCard } from '../family/CarerCards'
+import { tzMidnight, zoneOf } from '../time/zone'
 import { manilaDay, matchDoses, slotsFor } from '../health/meds'
 import { doseRef } from '../inbox/MissedDoseActions'
 import { ldb } from '../log/store'
@@ -23,7 +24,7 @@ export function slotTime(ref: string | null): string | null {
 /** One entry per person and loudness with an unseen missed-dose alert for today (the same showsAsCard rule as the Family cards): `time` is the newest slot, `alertIds` every unseen one of that entry.
  *  A dose is quiet once its newest alert (seen or not) is MISSED_QUIET_MS old. */
 export function missedDoses(rows: AlertRow[], now: Date = new Date(), final: ReadonlySet<string> = new Set()): Missed[] {
-  const today = (r: AlertRow) => r.kind === 'dose_missed' && !!r.personId && showsAsCard(r.ref, now)
+  const today = (r: AlertRow) => r.kind === 'dose_missed' && !!r.personId && showsAsCard(r.ref, now, zoneOf(r.personId))
   const dose = (r: AlertRow) => `${r.personId}|${doseRef(r.ref).slot ?? r.id}` // a ref with no slot is its own dose
   const at = (r: AlertRow) => { const t = Date.parse(r.createdAt); return Number.isNaN(t) ? now.getTime() : t } // unknown age is fresh, never old (ML-05): a bad stamp must not fold a row nobody has seen
   const last = new Map<string, number>()
@@ -52,13 +53,13 @@ export function useMissedToday(rows: AlertRow[]): Missed[] {
   useEffect(() => {
     if (!key) return setFinal(new Set())
     const ids = key.split(',')
-    const since = () => new Date(`${manilaDay(new Date())}T00:00:00+08:00`).toISOString()
+    const since = () => tzMidnight(manilaDay(new Date())).toISOString()
     const sub = liveQuery(async () => ({ meds: await ldb.medications.where('personId').anyOf(ids).toArray(), takes: await ldb.meds.where('takenAt').aboveOrEqual(since()).filter((t) => ids.includes(t.personId)).toArray() })).subscribe({
       next: ({ meds, takes }) => {
         const day = manilaDay(new Date()), done = new Set<string>()
         for (const r of rows) {
           const { slot } = doseRef(r.ref)
-          if (r.kind !== 'dose_missed' || r.seenAt != null || !r.personId || !slot || !ids.includes(r.personId) || !showsAsCard(r.ref)) continue
+          if (r.kind !== 'dose_missed' || r.seenAt != null || !r.personId || !slot || !ids.includes(r.personId) || !showsAsCard(r.ref, undefined, zoneOf(r.personId))) continue
           const mine = meds.filter((m) => m.personId === r.personId)
           if (mine.length && !matchDoses(slotsFor(mine, r.personId, day), takes.filter((t) => t.personId === r.personId), day, manilaDay).some((d) => d.slot === slot && d.state === 'pending')) done.add(r.id)
         }

@@ -2,6 +2,7 @@ import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { supabase } from '../auth/client'
 import { toE164 } from '../location/phoneRegion'
+import { getZone, theirTime, wallToMs, zoneOf } from '../time/zone'
 import { isLive, manilaDay, matchDoses, reviewAgeDays, slotsFor } from '../health/meds'
 import { clock12 } from '../health/medActions'
 import { shortMedName } from '../health/medName'
@@ -36,9 +37,9 @@ export function reviewAsks(meds: Medication[], people: FamilyPerson[], today: Da
   return out.sort((a, b) => b.days - a.days || a.med.name.localeCompare(b.med.name))
 }
 
-/** "1 h 10 min ago" for a Manila day + 'HH:MM' slot; '' when it is not in the past or the parts are missing. */
-export function slotAgo(day: string | null, slot: string | null, now: Date = new Date()): string {
-  const at = day && slot ? Date.parse(`${day}T${slot}:00+08:00`) : NaN
+/** "1 h 10 min ago" for a day + 'HH:MM' slot; '' when it is not in the past or the parts are missing. */
+export function slotAgo(day: string | null, slot: string | null, now: Date = new Date(), tz: string = getZone()): string {
+  const at = day && slot ? wallToMs(tz, day, slot) : NaN // the slot's wall clock in the person's zone (S30 L8)
   const min = Math.floor((now.getTime() - at) / 60_000)
   if (Number.isNaN(min) || min < 0) return ''
   return min < 60 ? `${min} min ago` : `${Math.floor(min / 60)} h${min % 60 ? ` ${min % 60} min` : ''} ago`
@@ -68,7 +69,7 @@ function useUserId(): string | undefined {
 }
 
 /** A dose row that MissedDoseCard can show: its slot is today (Manila) or has no day. Older ones stay in the alert list. A dose marked on this phone closes its card and marks the row seen, which drops it from the count. */
-export const showsAsCard = (ref: string | null, now: Date = new Date()) => { const { day } = doseRef(ref); return day == null || day === manilaDay(now) } // the ref's day is the server's Manila day
+export const showsAsCard = (ref: string | null, now: Date = new Date(), tz: string = getZone()) => { const { day } = doseRef(ref); return day == null || day === manilaDay(now, tz) } // the ref's day is the server's day on the PERSON's zone (people.tz)
 
 const newestPerPerson = (rows: AlertRow[]) => rows.filter((r, i) => !!r.personId && rows.findIndex((x) => x.personId === r.personId) === i)
 
@@ -101,10 +102,11 @@ function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPer
   const [ask, setAsk] = useState<string | null>(null) // row id being confirmed: one tap marks ONE slot only (ML-13)
   const [doneIds, setDoneIds] = useState<string[]>([])
   const now = new Date()
-  const today = manilaDay(now)
+  const tz = zoneOf(pid)
+  const today = manilaDay(now, tz)
   const lines = rows.map((row) => {
     const { day, slot } = doseRef(row.ref)
-    const open = slot && (day == null || day === today) ? matchDoses(slotsFor(meds, pid, today), takes, today, manilaDay).filter((d) => d.slot === slot && d.state === 'pending') : null
+    const open = slot && (day == null || day === today) ? matchDoses(slotsFor(meds, pid, today), takes, today, (v) => manilaDay(v, tz)).filter((d) => d.slot === slot && d.state === 'pending') : null
     return { row, day, slot, open, resolved: open != null && meds.length > 0 && open.length === 0 }
   })
   const resolvedKey = lines.filter((l) => l.resolved).map((l) => l.row.id).join(',')
@@ -118,8 +120,8 @@ function MissedDosesCard({ rows, person }: { rows: AlertRow[]; person: FamilyPer
   }
   const what = (l: (typeof shown)[number]) => {
     const names = [...new Set((l.open ?? []).map((d) => shortMedName(d.name)))]
-    const ago = slotAgo(l.day ?? today, l.slot, now)
-    return l.slot ? `${names.length ? names.join(', ') : 'A dose'} was due ${clock12(l.slot)}${ago ? `, ${ago}` : ''}` : 'A dose was not marked'
+    const ago = slotAgo(l.day ?? today, l.slot, now, tz)
+    return l.slot ? `${names.length ? names.join(', ') : 'A dose'} was due ${theirTime(clock12(l.slot), pid)}${ago ? `, ${ago}` : ''}` : 'A dose was not marked'
   }
   const first = shown[0]!
   const confirm = (l: (typeof shown)[number]) => (
@@ -170,7 +172,7 @@ export function CarerCards({ onMessage, onPhones, onNote }: { onMessage: (person
   const [answering, setAnswering] = useState<ReviewAsk | null>(null)
   const self = people.find((p) => p.id === selfId)
   const who = (id: string | null) => people.find((p) => p.id === id)
-  const doses = rows.filter((r, i) => r.kind === 'dose_missed' && r.personId && showsAsCard(r.ref) && (r.ref == null || rows.findIndex((x) => x.kind === 'dose_missed' && x.personId === r.personId && x.ref === r.ref) === i)) // D-145: one line per dose, however many alerts it raised
+  const doses = rows.filter((r, i) => r.kind === 'dose_missed' && r.personId && showsAsCard(r.ref, undefined, zoneOf(r.personId)) && (r.ref == null || rows.findIndex((x) => x.kind === 'dose_missed' && x.personId === r.personId && x.ref === r.ref) === i)) // D-145: one line per dose, however many alerts it raised
   const askGroups = byPerson(asks, (a) => a.person.id)
   const phones = newestPerPerson(rows.filter((r) => r.kind === 'phone_health'))
   const moods = newestPerPerson(rows.filter((r) => r.kind === 'mood_unwell'))

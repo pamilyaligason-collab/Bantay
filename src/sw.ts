@@ -4,9 +4,11 @@ import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from
 import { NavigationRoute, registerRoute } from 'workbox-routing'
 import { subscribeAndSave, vapidKey } from './features/notify/subscribe'
 import { claimNudge, handlePush } from './features/notify/push'
+import { initZone } from './features/time/zone'
 
 declare let self: ServiceWorkerGlobalScope
 
+initZone() // S30 L8: quiet hours and the nudge day follow this phone's zone, here as in the app
 self.skipWaiting()
 clientsClaim()
 cleanupOutdatedCaches()

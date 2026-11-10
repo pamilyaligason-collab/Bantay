@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { addDays, dayIn, differsFromMine, minutesIn, offsetMs, setPersonZones, setZone, theirTime, tzDay, tzMidnight, validZone, wallToMs, zoneOf } from './zone'
+import { setSelf, addDays, dayIn, differsFromMine, minutesIn, offsetMs, setPersonZones, setZone, theirTime, tzDay, tzMidnight, validZone, wallToMs, zoneOf } from './zone'
 
 const CHI = 'America/Chicago'
 const MNL = 'Asia/Manila'
 const H = 3_600_000
 
 describe('zone helpers (hand-computed: Chicago is UTC-6 in winter, UTC-5 in summer, Manila UTC+8)', () => {
-  afterEach(() => { setZone(null); setPersonZones({}, null) })
+  afterEach(() => { setZone(null); setPersonZones({}, null); setSelf(null) })
   it('offsets', () => {
     expect(offsetMs(CHI, Date.parse('2026-12-01T14:00:00Z'))).toBe(-6 * H)
     expect(offsetMs(CHI, Date.parse('2026-07-01T13:00:00Z'))).toBe(-5 * H)

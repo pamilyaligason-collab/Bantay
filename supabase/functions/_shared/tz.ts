@@ -8,9 +8,11 @@ export function safeZone(tz: unknown): string {
   try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); return tz } catch { return DEFAULT_TZ }
 }
 
+const fmts = new Map<string, Intl.DateTimeFormat>() // building a formatter is the slow part; one per zone
+const fmt = (tz: string) => { let f = fmts.get(tz); if (!f) { f = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }); fmts.set(tz, f) } return f }
 const parts = (tz: string, ms: number) => {
   const o: Record<string, number> = {}
-  for (const p of new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(new Date(ms))) if (p.type !== 'literal') o[p.type] = Number(p.value)
+  for (const p of fmt(tz).formatToParts(new Date(ms))) if (p.type !== 'literal') o[p.type] = Number(p.value)
   return o as { year: number; month: number; day: number; hour: number; minute: number; second: number }
 }
 const pad = (n: number) => String(n).padStart(2, '0')

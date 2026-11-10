@@ -1,3 +1,4 @@
+import { dayIn, getZone, minutesIn } from '../time/zone'
 import type { MedTaken, Medication } from '../log/store'
 
 /** Pure helpers for the live medicine schedule (public.medications, PART-3 1.2 and 1.3). No React, no storage. */
@@ -51,13 +52,14 @@ const isDeleted = (m: Medication) => !!(m as { deletedAt?: unknown }).deletedAt
 /** Not deleted, and active (a row with no medStatus is active). */
 export const isLive = (m: Medication) => !isDeleted(m) && (m.medStatus ?? 'active') === 'active'
 
-const MANILA = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila', year: 'numeric', month: '2-digit', day: '2-digit' })
-/** Calendar day (YYYY-MM-DD) in Asia/Manila of an instant (an ISO string or a Date): the dose day the server uses (alert refs, dose-watch). */
-export const manilaDay = (v: string | Date) => { const d = typeof v === 'string' ? new Date(v) : v; return Number.isNaN(d.getTime()) ? '' : MANILA.format(d) }
+// S30 L8 (Texas): the dose day and clock are the PERSON's zone (people.tz, the same one dose-watch uses), no longer a fixed Asia/Manila. The names stay (manilaDay is the dose day everywhere);
+// `tz` defaults to the zone of this phone's owner (getZone: Asia/Manila until the app sets the phone's zone at start, so a Philippine phone and every test behave as before).
+// Another person's dose day passes their zone (time/zone zoneOf). DST is Intl's job, never a table.
+/** The dose day (YYYY-MM-DD) of an instant (an ISO string or a Date) in the person's zone: the day the server uses (alert refs, dose-watch). */
+export const manilaDay = (v: string | Date, tz: string = getZone()) => { const d = typeof v === 'string' ? new Date(v) : v; return Number.isNaN(d.getTime()) ? '' : dayIn(tz, d) }
 
-const MANILA_CLOCK = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hour12: false })
-/** Minutes after Manila midnight of an instant: the clock a dose slot (`at`) is read on, whatever this phone's timezone says (pairs with manilaDay, ML-38). */
-export const manilaMinutes = (d: Date) => { const [h, m] = MANILA_CLOCK.format(d).split(':').map(Number); return (h! % 24) * 60 + m! }
+/** Minutes after local midnight of an instant in the person's zone: the clock a dose slot (`at`) is read on, whatever this phone's timezone says (pairs with manilaDay, ML-38). */
+export const manilaMinutes = (d: Date, tz: string = getZone()) => minutesIn(tz, d)
 
 /** Whole days a "Still taking it?" has been open (0 = asked today); null when the medicine is not in review or has no review_since. `today` is YYYY-MM-DD or a Date (Manila day). */
 export function reviewAgeDays(med: Pick<Medication, 'schedule'>, today: string | Date): number | null {

@@ -1,3 +1,4 @@
+import { getZone } from '../time/zone'
 import { DOSE_WINDOW_MIN, dueDoses } from '../today/heroCards'
 import { rankAlerts, type Alert } from '../safety/alerts'
 import { manilaDay, manilaMinutes, matchDoses, slotsFor } from '../health/meds'
@@ -34,7 +35,7 @@ export function shortName(full: string | null | undefined): string | null {
   if (!w.length) return null
   return (w[0] && TITLE_WORDS.has(w[0].toLowerCase()) && w.length > 1 ? w.slice(0, 2) : w.slice(0, 1)).join(' ')
 }
-const manilaClock = (ms: number) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' }).format(ms)
+const manilaClock = (ms: number) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: getZone() }).format(ms)
 
 /** One inbox row per unexpired carer_alerts row. Template ids carry no values, so the title is the fixed copy with the person's name filled in from this phone. */
 export function familyItems(rows: AlertRow[], nameOf: (personId: string | null) => string | null, now: Date): InboxItem[] {

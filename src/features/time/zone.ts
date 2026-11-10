@@ -22,9 +22,11 @@ export const setZone = (tz: string | null | undefined): void => { zone = validZo
 /** Called once at app start: own days follow this phone. */
 export const initZone = (): void => setZone(phoneZone())
 
+const fmts = new Map<string, Intl.DateTimeFormat>() // building a formatter is the slow part; one per zone
+const fmt = (tz: string) => { let f = fmts.get(tz); if (!f) { f = new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }); fmts.set(tz, f) } return f }
 const parts = (tz: string, ms: number) => {
   const o: Record<string, number> = {}
-  for (const p of new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).formatToParts(new Date(ms))) if (p.type !== 'literal') o[p.type] = Number(p.value)
+  for (const p of fmt(tz).formatToParts(new Date(ms))) if (p.type !== 'literal') o[p.type] = Number(p.value)
   return o as { year: number; month: number; day: number; hour: number; minute: number; second: number }
 }
 const pad = (n: number) => String(n).padStart(2, '0')
@@ -74,6 +76,8 @@ export const addDays = (day: string, n: number): string => new Date(Date.parse(`
 // ---- other people's zones (A5/A8) ----
 let personZones: Record<string, string> = {}
 let selfId: string | null = null
+/** The person this phone belongs to (the last signed-in one, until the server says): their clock is this phone's zone. */
+export const setSelf = (id: string | null): void => { selfId = id }
 export const setPersonZones = (m: Record<string, string | null | undefined>, self: string | null = selfId): void => {
   personZones = {}
   for (const [id, tz] of Object.entries(m)) { const z = validZone(tz); if (z) personZones[id] = z }
