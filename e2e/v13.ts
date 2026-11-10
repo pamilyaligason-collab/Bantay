@@ -48,7 +48,7 @@ export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 
   }
 }
 
-/** D-128 hit test: a control that touches the Jack button fails unless it is a named whole-card link with more than half of it still tappable (hit-tested on a 12 x 12 grid over its on-screen part, so clipping and the real top element count). Section links and small controls (Open Papa, See all) have no allowance. `scroll: 'top'` (default) measures at scroll 0, 'keep' measures where the page is now (a peeked Jack: his 48 x 88 hit strip). The log line carries each measured share. */
+/** D-128 hit test: a control that touches the Jack button fails unless it is a named whole-card link with more than half of it still tappable (hit-tested on a 12 x 12 grid over its on-screen part, so clipping and the real top element count). Section links and small controls (Open Papa, See all) have no allowance. `scroll: 'top'` (default) measures at scroll 0, 'keep' measures where the page is now. Either way Jack is measured at rest, after data-away clears (S29). The log line carries each measured share. */
 export type JackAllow = { name: string; sel: string }
 // The named allowances (D-128) are whole-card links only. 'Learn card' (min 90% tappable) and 'Together row' (min 84%) were added by ruling in D-128.
 // Measured tappable share in gaps-s21 (S21-JACK lines, 4 widths x 5 heights, 3 dates, 143 tests green): Be prepared card 0.75 to 0.99 (43 hits), Learn card 0.90 to 0.97 (9 hits), People row 0.85 to 0.99 (22 hits), Together row 0.84 to 0.99 (11 hits), Needs row never touched Jack (0 hits).
@@ -57,14 +57,14 @@ export type JackAllow = { name: string; sel: string }
 export const DISCOVER_ALLOW: JackAllow[] = [{ name: 'Video link card', sel: 'a.md' }, { name: 'Video button card', sel: 'button.md' }, { name: 'Learn card', sel: 'a.dc-lc' }]
 export const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"] .rw-main' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main, [data-testid="together-list"] a.fm-tile' }] // a Needs row's Answer / Open / Fix phone control is a small control: no allowance
 export async function assertJackHit(page: Page, allow: JackAllow[], tag: string, scroll: 'top' | 'keep' = 'top'): Promise<void> {
-  const hits = await page.evaluate(([allow, scroll]) => {
+  const hits = await page.evaluate(async ([allow, scroll]) => {
     const sc = document.querySelector('.bt .scroll') as HTMLElement
     if (scroll === 'top') sc.scrollTop = 0
     const fab = document.querySelector('.sh-jackfab')
     if (!fab) return []
-    const fr = fab.getBoundingClientRect()
-    const cy = (fr.top + fr.bottom) / 2
-    const f = fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr
+    for (let i = 0; i < 40 && fab.hasAttribute('data-away'); i++) await new Promise((r) => setTimeout(r, 50)) // S29: measure with Jack at rest, never while he is slid away (a vacuous check)
+    await new Promise((r) => setTimeout(r, 200)) // his 150 ms slide in
+    const f = fab.getBoundingClientRect()
     const box = sc.getBoundingClientRect()
     const barTop = document.querySelector('.tabbar')?.getBoundingClientRect().top ?? innerHeight // content under the tab bar is the bar's business, not Jack's
     const out: { label: string; allowed: string | null; tappable: number }[] = []
@@ -85,7 +85,7 @@ export async function assertJackHit(page: Page, allow: JackAllow[], tag: string,
   expect(hits.filter((h) => !h.allowed || h.tappable <= 0.5).map((h) => `${h.label} (${h.allowed ?? 'no allowance'}, ${Math.round(h.tappable * 100)}% tappable)`), `controls under Jack ${tag}`).toEqual([])
 }
 
-/** assertJackHit at rest (scroll 0) and again at the end of the scroll, where Jack is peeked (his 48 x 88 hit strip). Late content moves the end, so the end is re-applied for three frames. */
+/** assertJackHit at rest (scroll 0) and again at the end of the scroll, once Jack is back at rest (S29). Late content moves the end, so the end is re-applied for three frames. */
 export async function assertJackHitRestAndEnd(page: Page, allow: JackAllow[], tag: string): Promise<void> {
   await settled(page)
   await assertJackHit(page, allow, `${tag} at rest`)

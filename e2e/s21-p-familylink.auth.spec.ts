@@ -34,12 +34,14 @@ for (const width of [320, 344, 360]) {
         else await link.evaluate((e) => e.scrollIntoView({ block: 'center' }))
         const m = await page.evaluate(async () => {
           for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(() => r(null)))
+          const jk = document.querySelector('.sh-jackfab')
+          for (let i = 0; i < 40 && jk?.hasAttribute('data-away'); i++) await new Promise((r) => setTimeout(r, 50)) // S29: Jack is measured at rest
+          await new Promise((r) => setTimeout(r, 200))
           const a = document.querySelector('[data-testid="family-health"] .sec-h a')!.getBoundingClientRect()
           const t = document.querySelector('[data-testid="family-health"] .sec-h h2')!.getBoundingClientRect()
           const fab = document.querySelector('.sh-jackfab')
           const fr = fab?.getBoundingClientRect()
-          const cy = fr ? (fr.top + fr.bottom) / 2 : 0
-          const f = !fab ? null : fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr! // a peeking button shows only its edge strip
+          const f = fr ?? null
           const hit = f ? Math.min(a.right, f.right) > Math.max(a.left, f.left) && Math.min(a.bottom, f.bottom) > Math.max(a.top, f.top) : false
           return { a: { left: a.left, right: a.right, top: a.top, height: a.height }, titleLeft: t.left, titleBottom: t.bottom, hit, fab: !!fab, vw: innerWidth }
         })

@@ -47,7 +47,7 @@ const wordFit = (page: Page) => page.locator('.sf-fa').evaluateAll((els) => els.
 }))
 
 // The Jack button must sit clear of every control but the tiles, with the expanded tiles on screen (not only at the page end, where Be ready may be what is underneath).
-// Named whole-card allowance (D-128 rulings 1 and 10): the Safety first aid tiles (`.sf-fa`) and the Go-bag card (`.sf-bag`) may pass under the peeking button's 48 px edge strip while at least 86% of the card stays tappable (cover at most 0.14).
+// Named whole-card allowance (D-128 rulings 1 and 10): the Safety first aid tiles (`.sf-fa`) and the Go-bag card (`.sf-bag`) may pass under Jack at rest while at least 86% of the card stays tappable (cover at most 0.14).
 // Measured at 390 x 844 on this build: first tile on screen 0.12 covered (88% tappable), last tile 0.09 (91%), at rest nothing. Go-bag card: 0 of it covered at rest (off screen), centred and scrolled to the top, 0.01 (99% tappable) scrolled to the bottom. Any other control under the button fails the check.
 const jackHits = (page: Page, where: 'rest' | 'first' | 'last') => page.evaluate(async ([where, warn]) => {
   const sc = document.querySelector('.bt .scroll') as HTMLElement
@@ -56,10 +56,10 @@ const jackHits = (page: Page, where: 'rest' | 'first' | 'last') => page.evaluate
   else tiles[where === 'first' ? 0 : tiles.length - 1]!.scrollIntoView({ block: 'center' })
   for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(() => r(null)))
   const fab = document.querySelector('.sh-jackfab')
-  if (!fab) return { fab: false, tilesOnScreen: 0, hits: [] as string[], cover: 0, peek: false }
-  const fr = fab.getBoundingClientRect()
-  const cy = (fr.top + fr.bottom) / 2
-  const f = fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr
+  if (!fab) return { fab: false, tilesOnScreen: 0, hits: [] as string[], cover: 0 }
+  for (let i = 0; i < 40 && fab.hasAttribute('data-away'); i++) await new Promise((r) => setTimeout(r, 50)) // S29: Jack is measured at rest
+  await new Promise((r) => setTimeout(r, 200))
+  const f = fab.getBoundingClientRect()
   const vis = (n: Element) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 && r.top < innerHeight && r.bottom > 0 }
   const share = (n: Element) => { const r = n.getBoundingClientRect(); const w = Math.max(0, Math.min(r.right, f.right) - Math.max(r.left, f.left)); const h = Math.max(0, Math.min(r.bottom, f.bottom) - Math.max(r.top, f.top)); return (w * h) / (r.width * r.height) }
   const under = Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]')).filter((n) => n !== fab && !fab.contains(n) && vis(n) && share(n) > 0)
@@ -67,7 +67,7 @@ const jackHits = (page: Page, where: 'rest' | 'first' | 'last') => page.evaluate
   const big = (n: Element) => n.getBoundingClientRect().width >= 120 && n.getBoundingClientRect().height >= 44 && n.matches('a.card, .sf-fa, a.sf-bag, .sf-bag') && !n.closest(warn) // never a card inside a warning or SOS block
   const hits = under.filter((n) => !big(n) || share(n) > 0.14).map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
   const cover = Math.max(0, ...under.filter(big).map(share))
-  return { fab: true, tilesOnScreen: tiles.filter(vis).length, hits, cover: Math.round(cover * 100) / 100, peek: fab.hasAttribute('data-peek') }
+  return { fab: true, tilesOnScreen: tiles.filter(vis).length, hits, cover: Math.round(cover * 100) / 100 }
 }, [where, WARN_SOS] as const)
 
 test.describe('first aid grid: Show more and Show less', () => {

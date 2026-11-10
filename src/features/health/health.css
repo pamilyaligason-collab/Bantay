@@ -430,4 +430,3 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .tk .cd-kicker, .tk .cd-value, .tk .cd-meta { color: inherit; }
 .fh-m .cd-title { font-size: var(--fs-body, 17px); font-weight: 700; }
 
-/* Health videos: the cards end 72 px short of the gutter so none lies under the Jack button at rest (e2e v13-foundation, no allowance) */

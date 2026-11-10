@@ -211,7 +211,7 @@ test('H9: Browse is six cards (tall in two columns, Body wiki wide), each with a
     const b = (await r.boundingBox())!
     const wide = (await r.getAttribute('data-wide')) !== null
     expect(b.height, `browse card ${i}`).toBeGreaterThanOrEqual(wide ? 80 : 140)
-    expect(b.height, `browse card ${i}`).toBeLessThanOrEqual(wide ? 110 : 190) // the grid ends 72 px short of the gutter for Jack (S28 X), so a second line can wrap
+    expect(b.height, `browse card ${i}`).toBeLessThanOrEqual(wide ? 110 : 190) // a second line can wrap in a narrow card
     const visits = (await r.getAttribute('data-testid')) === 'browse-visits' // with no booked visit and no saved questions its second line is the date preview (Not booked) instead
     await expect(r.locator(visits ? '.hb-date' : '.hb-s')).toHaveCount(1)
   }

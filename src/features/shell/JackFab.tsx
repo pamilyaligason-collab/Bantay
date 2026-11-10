@@ -20,10 +20,12 @@ const hits = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top <
 /** Only keyboard focus brings him back: a press focuses the button too. */
 const keyboardFocus = (el: HTMLElement) => { try { return el.matches(':focus-visible') } catch { return true } } // no :focus-visible support: treat as keyboard
 
-/** True when the coach mark would sit on any line of page text (UI-1): it is then not shown, never drawn over safety text. */
+/** True when the coach mark would sit on any line of page text (UI-1) or on the Today Full forecast link: it is then not shown, never drawn over safety text or that tap target. */
 function coversText(hint: Box): boolean {
   const root = document.querySelector('.bt .scroll')
   if (!root) return false
+  const full = root.querySelector('.td-wxh-full') // shortcut: only this one control is guarded; whole-card links would hide the hint on every Today
+  if (full) { const r = full.getBoundingClientRect(); if (r.width > 0 && hits(hint, r)) return true }
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   const range = document.createRange()
   if (typeof range.getClientRects !== 'function') return false // jsdom has no layout; real browsers do
@@ -129,7 +131,7 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
       >
         <JackArt name="head" size={56} decorative />
       </button>
-      {hint && <p ref={hintRef} className="sh-hint" role="status" style={fits ? undefined : { visibility: 'hidden' }}>Help, scan or chat</p>}
+      {hint && <p ref={hintRef} className="sh-hint" role="status" style={fits && !away ? undefined : { visibility: 'hidden' }}>Help, scan or chat</p>}
       {sheet && <JackSheet onClose={onClose} onSos={onSos} onReach={onReach} firstName={firstOf(name)} />}
       {reach && <SosFamilySheet onClose={() => setReach(false)} />}
       {sosScreen}

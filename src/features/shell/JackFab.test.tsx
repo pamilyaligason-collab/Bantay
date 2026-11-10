@@ -108,6 +108,22 @@ describe('JackFab hide on scroll', () => {
   })
 })
 
+describe('JackFab coach mark with scroll', () => {
+  it('the bubble is hidden while Jack is away and shown again when he is back', () => {
+    vi.useFakeTimers()
+    const bt = document.createElement('div'); bt.className = 'bt'; const sc = document.createElement('div'); sc.className = 'scroll'; bt.append(sc); document.body.append(bt)
+    render(<JackFab tab="today" hash="#today" />)
+    const hint = () => screen.getByRole('status', { hidden: true }) as HTMLElement
+    expect(hint().style.visibility).toBe('')
+    sc.scrollTop = 300; act(() => { sc.dispatchEvent(new Event('scroll')) })
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    expect(hint().style.visibility).toBe('hidden')
+    act(() => { vi.advanceTimersByTime(601) })
+    expect(hint().style.visibility).toBe('')
+    bt.remove(); vi.useRealTimers()
+  })
+})
+
 describe('JackFab actions', () => {
   it('a tap opens the Jack sheet; closing it removes the sheet', () => {
     render(<JackFab tab="today" hash="#today" />)
