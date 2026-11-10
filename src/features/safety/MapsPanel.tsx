@@ -75,7 +75,7 @@ export default function MapsPanel({ loc, ask, zone }: { loc?: LatLon | null; ask
       <p className="sf-empty" role="status">{finding ? 'Finding you…' : off}</p>
       <Lazy summary="Ventusky weather map"><Frame title="Ventusky weather map centred on your area" src={ventuskyUrl(c, layer)} /></Lazy>
       <Lazy summary="HazardHunterPH hazards at an address"><Frame title="HazardHunterPH hazard maps" src="https://hazardhunter.georisk.gov.ph/" /></Lazy>
-      <Lazy summary="PAGASA forecasts and warnings"><Frame title="PAGASA Panahon forecasts" src="https://www.panahon.gov.ph/" /></Lazy>
+      <Lazy summary="PAGASA forecasts and warnings"><Frame title="PAGASA PANaHON forecasts" src="https://www.panahon.gov.ph/" /></Lazy>
       <div className="grp">
         {LINKS.map(([name, use, url]) => (
           <a key={url} className="row" href={url} target="_blank" rel="noopener noreferrer">

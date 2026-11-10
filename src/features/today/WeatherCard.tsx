@@ -39,6 +39,7 @@ function rainSummary(wx: Wx, now: Date): string | null {
   const out = rainOutlook(wx.hourly.time, wx.hourly.prob, nowLocal, raining)
   if (!out || out.tomorrow) return null
   if (out.now) return out.endH < 0 ? 'Rain likely to last. Bring an umbrella.' : `Rain until ${hour12(out.endH)}. Bring an umbrella.`
+  if (raining) return `More rain likely from ${hour12(out.startH)}. Bring an umbrella.` // it is raining now (chip): never "Dry till"
   const night = todOf(nowLocal, wx.sunrise, wx.sunset) === 'night'
   const dry = sky === 'clear' ? (night ? 'Clear' : 'Sunny') : sky === 'cloud' ? 'Cloudy' : sky === 'fog' ? 'Foggy' : 'Dry'
   return `${dry} till ${hour12(out.startH)}, then rain. Bring an umbrella.`

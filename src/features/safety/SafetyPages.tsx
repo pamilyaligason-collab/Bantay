@@ -216,7 +216,7 @@ const SOURCES: [string, string, string][] = [
   ['NDRRMC, PAGASA, PHIVOLCS, DOH, Philippine Red Cross', 'Plain-word safety cards and warnings', 'https://www.pagasa.dost.gov.ph/'],
   ['Ready.gov and WHO', 'Safety card wording (written in our own words)', 'https://www.ready.gov/'],
   ['HazardHunterPH', 'Hazard readings for Dampas', 'https://hazardhunter.georisk.gov.ph/'],
-  ['Windy, Ventusky, PAGASA Panahon', 'Weather and storm maps', 'https://www.windy.com/'],
+  ['Windy, Ventusky, PAGASA PANaHON', 'Weather and storm maps', 'https://www.windy.com/'],
   ['PAGASA public alerts (CC BY 4.0)', 'Wind signals and flood advisories, read from the PAGASA public alert feed', 'https://publicalert.pagasa.dost.gov.ph/'],
   ['GDACS', 'Storm and quake alerts', 'https://www.gdacs.org/'],
   ['OpenStreetMap contributors', 'Map data (ODbL)', 'https://www.openstreetmap.org/copyright'],

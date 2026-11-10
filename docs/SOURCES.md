@@ -16,7 +16,7 @@ Read 2026-10-17 unless a row says otherwise. Every bundled entry in `src/data/sa
 | Ventusky | https://embed.ventusky.com/ | frameable |
 | Windy | https://embed.windy.com/ | frameable |
 | HazardHunterPH | https://hazardhunter.georisk.gov.ph/ | frameable |
-| PAGASA Panahon | https://www.panahon.gov.ph/ | frameable |
+| PAGASA PANaHON | https://www.panahon.gov.ph/ | frameable |
 | Project NOAH | https://noah.up.edu.ph/ | not frameable, link card |
 | worldmonitor ("World view") | https://worldmonitor.app/ | not frameable, link card |
 | JMA typhoon map | https://www.jma.go.jp/bosai/map.html | link out only |

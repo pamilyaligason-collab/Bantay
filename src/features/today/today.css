@@ -472,6 +472,7 @@
 
 /* v13 T7: Finish setup row */
 [data-testid="setup-row"] { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); border-radius: var(--r-card); }
+[data-testid="setup-row"] .tl-value, [data-testid="setup-row"] .rw-title { white-space: normal; text-overflow: clip; } /* S29: the setup subtitle wraps, never "Reminde..." */
 
 .td-root > .sec { margin-top: 6px; }
 

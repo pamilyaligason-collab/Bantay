@@ -111,6 +111,16 @@ describe('Today weather card, rain now and no fix', () => {
     expect(container.querySelector('.wxs')!.getAttribute('data-cond')).toBe('rain')
     expect(container.textContent).not.toMatch(/Strong sun/)
   })
+  it('raining now with more rain later: never "Dry till", says More rain likely from', () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-20T02:00:00Z')) // 10:00 in Manila
+    const time = Array.from({ length: 12 }, (_, i) => `2026-10-20T${String(10 + i).padStart(2, '0')}:00`)
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: true }
+    m.wx = { ...base, temp: 27, humidity: 60, words: 'partly cloudy', code: 2, precip: 1.2, rainingNow: { value: true, source: 'model', ageMin: null }, hourly: { time, prob: time.map((_, i) => (i >= 5 ? 70 : 20)) } }
+    const { container } = render(<WeatherCard />)
+    expect(container.textContent).not.toMatch(/till d/)
+    expect(container.textContent).toMatch(/More rain likely from 3 PM/)
+    vi.useRealTimers()
+  })
   describe('sun and heat tips at 10 AM place time (fake Date, so the tests cannot pass at night)', () => {
     const model = { value: true, source: 'model' as const, ageMin: null }
     const setup = (extra: Partial<Wx>) => {
