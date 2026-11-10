@@ -236,6 +236,12 @@ describe('weatherAction (Today and Simple mode action line)', () => {
     expect(weatherAction(w({ hourly }), now)).toMatch(/^Rain likely 12-2 PM/)
     expect(weatherAction(w({ temp: 36, humidity: 70, hourly }), now)).toMatch(/^Stay indoors/) // heat outranks rain
   })
+  it('S29: while it rains (Simple mode too) the sun/heat tip goes, Danger heat stays', () => {
+    const rn = { value: true, source: 'model' as const, ageMin: null }
+    expect(weatherAction(w({ temp: 31, humidity: 65, rainingNow: rn }), now)).toBeNull()
+    expect(weatherAction(w({ temp: 31, humidity: 65, rainingNow: { ...rn, value: false } }), now)).toBe('Avoid the noon sun. Drink water often.')
+    expect(weatherAction(w({ temp: 36, humidity: 70, rainingNow: rn }), now)).toMatch(/^Stay indoors/)
+  })
   it('a hot day with no humidity reading earns no heat line (the heat index needs both)', () => {
     expect(weatherAction(w({ temp: 36, humidity: null }), now)).toBeNull()
   })

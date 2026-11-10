@@ -50,7 +50,7 @@ for (const { w, h } of SIZES) for (const scheme of ['light', 'dark'] as const) {
     await inView(page, 'wx-sun'); await shot(page, `sun-${w}x${h}-${scheme}`)
 
     const made = page.locator('.wx-made')
-    await expect(made).toContainText('Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.')
+    await expect(made).toContainText('Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.')
     await expect(page.getByText(/from Open-Meteo\. Its global/)).toHaveCount(0)
     await made.evaluate((el) => el.scrollIntoView({ block: 'center' })); await shot(page, `made-${w}x${h}-${scheme}`)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)

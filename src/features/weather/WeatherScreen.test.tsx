@@ -63,6 +63,20 @@ describe('WeatherScreen', () => {
     expect(screen.getByText('Your rounded location is sent only to the weather and map services.')).toBeTruthy()
   })
 
+  it('S29: raining now (model, 1.2 mm) under a partly-cloudy code: Light rain, the Raining now chip, no strong-sun tip', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (u: string) => {
+      calls.push(String(u))
+      const f = openMeteoFixture({ now: new Date(), temp: 30, humidity: 60 }) as { current: Record<string, unknown> }
+      f.current.precipitation = 1.2
+      return new Response(JSON.stringify(f), { status: 200 })
+    }))
+    render(<WeatherScreen />)
+    expect(await screen.findByText('Light rain')).toBeTruthy()
+    expect(screen.queryByText('Partly cloudy')).toBeNull()
+    expect(screen.getByTestId('rain-now').textContent).toMatch(/Raining now/)
+    expect(screen.queryByText(/Strong sun/)).toBeNull()
+  })
+
   it('sections: h2 headings, sources open without a tap and leave the app, How this is made', async () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')

@@ -41,6 +41,8 @@ import { Next2hMini } from './Next2hMini'
 import AirCard from './AirCard'
 import SunArc from './SunArc'
 import { syncRainReminder } from './rainRemind'
+import RainNowChip from './RainNowChip'
+import { rainChanceText, reconcileNow } from './rainNow'
 import './weather.css'
 import './wxs7w.css'
 
@@ -165,9 +167,9 @@ export default function WeatherScreen() {
         </div>
         <div className="card wx-made">
           <h3>How this is made</h3>
-          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your spot (rounded to about 1 km). The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
-          <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services. The map gets the same rounded location." : 'Your rounded location is sent only to the weather and map services.'}</p>
-          <p className="wx-sub">Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.</p>
+          {bl.blended ? <Credits sources={bl.sources} station={bl.check?.name ?? null} /> : <p className="wx-sub">Forecast for your spot (rounded to about 1 km). The global weather models behind it work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.</p>}
+          <p className="wx-sub">{wxFlag('blend') ? "Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services. The map gets the same rounded location." : 'Your rounded location is sent only to the weather and map services.'}</p>
+          <p className="wx-sub">Air quality is asked from Open-Meteo directly, with the place rounded to about 1 km.</p>
         </div>
       </Section>
     </div>
@@ -198,11 +200,12 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
   const nextRain = hoursFrom(fc, RAIN_WATCH_HOURS, now)
   const known = nextRain.flatMap((h) => (h.prob == null ? [] : [h.prob]))
   const rainNext = known.length ? Math.max(...known) : null // unknown stays unknown, never 0%
-  const cond = condOf(c.code)
+  const rn = reconcileNow({ words: conditionWords(c.code), code: c.code, precip: c.precip, rainingNow: fc.rainingNow }) // S29: an airport or model "raining now" wins over a dry-looking code
+  const cond = condOf(rn.code)
   const raining = cond === 'drizzle' || cond === 'rain' || cond === 'storm'
   let lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn })
   if (raining) { // it is falling now: never "nothing to plan around" or a strong-sun tip under a rainy hero, even when the hourly chances are low
-    lines = lines.filter((x) => x.id !== 'uv')
+    lines = lines.filter((x) => x.id !== 'uv' && (x.id !== 'heat' || x.rank >= 80)) // same rule as the Today card: Danger heat stays
     if (!lines.some((x) => x.id === 'rain')) lines = [...lines, { id: 'rain' as const, rank: 50, text: cond === 'storm' ? 'Thunderstorm now' : 'Raining now' }].sort((a, b) => b.rank - a.rank)
   }
   const main = lines[0]
@@ -229,7 +232,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
       <div className="card wx-stripbox">
         <ul className="wx-strip" tabIndex={0} aria-label="Next 48 hours, scrolls sideways">
           {strip.map((h, i) => (
-            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : `${Math.round(h.prob)}% rain`}</span></li>
+            <li key={h.time}><span>{i === 0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kindOf(h.code)} /><b>{deg(h.temp)}</b><span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : h.prob < 10 ? rainChanceText(h.prob) : `${Math.round(h.prob)}% rain`}</span></li>
           ))}
         </ul>
       </div>
@@ -239,11 +242,12 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
   return (
     <>
       <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-testid="wx-hero">
-        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={condOf(c.code)} hot={isHot(c.temp, c.humidity)} />
+        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={cond} hot={isHot(c.temp, c.humidity)} />
         <div className="wx-k">{line}</div>
         <span className="wx-sub wx-stamp">{offline ? `as of ${asOf}, ${online ? 'could not refresh' : 'offline'}` : `Updated ${asOf}`}</span>
         <div className="wx-temp">{deg(c.temp)}</div>
-        <b className="wx-cond">{cap(conditionWords(c.code))}</b>
+        <b className="wx-cond">{cap(rn.words)}</b>
+        <RainNowChip rain={fc.rainingNow} />
         <span className="wx-sub">Feels like {deg(fl.value)}</span>
         <span className="wx-sub">H:{deg(today?.max ?? null)}  L:{deg(today?.min ?? null)}</span>
         <ForecastNote className="wx-sub wx-fnote" place={name} link sources={creditIds(bl)} />
@@ -282,7 +286,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
               <span className="wx-lo">{deg(d.min)}</span>
               <span className="wx-range" aria-hidden="true"><i style={{ left: `${(((d.min ?? lo) - lo) / span) * 100}%`, right: `${((hiAll - (d.max ?? hiAll)) / span) * 100}%`, background: `linear-gradient(90deg, var(${tempTint(d.min ?? lo)}), var(${tempTint(d.max ?? hiAll)}))` }} /></span>
               <span className="wx-hi">{deg(d.max)}</span>
-              <span className="wx-rp" aria-label={d.prob == null ? 'Rain chance not known' : `${Math.round(d.prob)} percent chance of rain`}>{d.prob == null ? 'n/a' : `${Math.round(d.prob)}%`}</span>
+              <span className="wx-rp" aria-label={d.prob == null ? 'Rain chance not known' : `${Math.round(d.prob)} percent chance of rain`}>{d.prob == null ? 'n/a' : rainChanceText(d.prob)}</span>
             </li>
           ))}
         </ul>
@@ -297,7 +301,7 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
         <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
         <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
-        {wet ? <div className="wx-tile"><span className="eyebrow">Rain next 12 h</span><b>{rainNext == null ? 'n/a' : `${Math.round(rainNext)}%`}</b><span className="wx-sub">{rainNext == null ? 'No data' : 'Highest chance'}</span></div> : <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>}
+        {wet ? <div className="wx-tile"><span className="eyebrow">Rain next 12 h</span><b>{rainNext == null ? 'n/a' : rainChanceText(rainNext)}</b><span className="wx-sub">{rainNext == null ? 'No data' : 'Highest chance'}</span></div> : <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>}
       </section>
     </>
   )

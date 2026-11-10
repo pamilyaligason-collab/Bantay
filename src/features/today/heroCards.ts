@@ -199,5 +199,5 @@ export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning:
   return (raining ? lines.filter((l) => l.id !== 'uv' && (l.id !== 'heat' || l.rank >= 80)) : lines)[0] ?? null
 }
 export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
-  return weatherActionLine(w, now, warning)?.text ?? null
+  return weatherActionLine(w, now, warning, w?.rainingNow?.value === true)?.text ?? null
 }
