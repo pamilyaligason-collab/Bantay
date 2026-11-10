@@ -6,16 +6,16 @@ import { assertJackClear, expectJackAtRest, layoutStable } from './v13'
 // Shots only when S29_SHOTS=<dir>. Runs in the chromium project (no sign-in).
 declare const process: { env: Record<string, string | undefined> }
 const SHOTS = process.env.S29_SHOTS
-const SIZES = [{ width: 390, height: 844 }, { width: 360, height: 780 }]
+const SIZES = [{ width: 390, height: 844, full: true }, { width: 360, height: 780, full: true }, { width: 360, height: 740, full: false }, { width: 390, height: 720, full: false }] // full: false runs only the See all test (the other checks keep their two sizes)
 const SCREENS: [string, string][] = [['Today', '#today'], ['Health', '#health'], ['Family', '#family'], ['Discover', '#discover'], ['Discover Play', '#discover/play'], ['Discover Listen', '#discover/listen'], ['Safety', '#safety']]
 const GRIDS = '.tk-grid, .hb-grid, .fm-tiles, .pt-grid, .dc-rgrid, .dc-lgrid'
 
 for (const size of SIZES) {
   test.describe(`${size.width}x${size.height}`, () => {
-    test.use({ viewport: size })
+    test.use({ viewport: { width: size.width, height: size.height } })
     test.beforeEach(async ({ page }) => { await skipOnboarding(page) })
 
-    for (const [name, hash] of SCREENS) {
+    for (const [name, hash] of size.full ? SCREENS : []) {
       test(`${name}: centre point clear of Jack at rest and at the end; grids equal columns and equal gutters`, async ({ page }) => {
         await page.goto(`/${hash}`)
         await expect(page.locator('.bt .scroll')).toBeVisible()
@@ -50,22 +50,24 @@ for (const size of SIZES) {
       await expect(page.getByTestId('dc-top-story')).toBeVisible()
       await expect(page.locator('[data-testid="dc-top-story"] > .sec-h a')).toBeVisible()
       await layoutStable(page)
-      for (const at of ['rest', 'end'] as const) {
-        await page.evaluate((to) => { const s = document.querySelector('.bt .scroll') as HTMLElement; s.scrollTop = to === 'rest' ? 0 : s.scrollHeight }, at)
+      for (const at of ['rest', 'bottom'] as const) { // 'bottom': the link scrolled to the bottom edge of the view, in Jack's row (the page end itself has it far above, off screen)
+        await page.evaluate((to) => { const s = document.querySelector('.bt .scroll') as HTMLElement; if (to === 'rest') s.scrollTop = 0; else document.querySelector('[data-testid="dc-top-story"] > .sec-h a')!.scrollIntoView({ block: 'end' }) }, at)
         await expectJackAtRest(page, `top stories ${at}`)
         const m = await page.evaluate(() => {
           const a = document.querySelector('[data-testid="dc-top-story"] > .sec-h a')!.getBoundingClientRect()
           const f = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
           const cx = (a.left + a.right) / 2, cy = (a.top + a.bottom) / 2
-          return { under: cx >= f.left && cx <= f.right && cy >= f.top && cy <= f.bottom, right: a.right, jackLeft: f.left }
+          const box = document.querySelector('.bt .scroll')!.getBoundingClientRect()
+          return { under: cx >= f.left && cx <= f.right && cy >= f.top && cy <= f.bottom, right: a.right, jackLeft: f.left, onScreen: a.top >= Math.max(box.top, 0) && a.bottom <= Math.min(box.bottom, innerHeight) && a.left >= 0 && a.right <= innerWidth }
         })
+        expect(m.onScreen, `See all is inside the viewport ${at} (a link scrolled off screen proves nothing)`).toBe(true)
         expect(m.under, `See all centre under Jack ${at}`).toBe(false)
         expect(m.right, `See all right edge left of Jack ${at}`).toBeLessThanOrEqual(m.jackLeft + 1)
       }
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/Discover-topstories-${size.width}x${size.height}.png`, animations: 'disabled' })
     })
 
-    test('Jack slides out on scroll down, returns on scroll up and 600 ms after the scroll stops', async ({ page }) => {
+    if (size.full) test('Jack slides out on scroll down, returns on scroll up and 600 ms after the scroll stops', async ({ page }) => {
       await page.goto('/#today')
       const jack = page.getByTestId('jack')
       await expect(jack).toBeVisible()
