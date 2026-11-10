@@ -25,6 +25,7 @@ export function toWx(fc: Forecast, offline = false, sources?: string[]): Wx {
     tz: fc.tz,
     humidity: fc.current.humidity,
     feels: fc.current.feels,
+    precip: fc.current.precip ?? null,
     uvMax: fc.daily[0]?.uvMax ?? null,
     sunrise: fc.daily[0]?.sunrise ?? null,
     sunset: fc.daily[0]?.sunset ?? null,

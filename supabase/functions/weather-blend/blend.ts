@@ -201,9 +201,10 @@ export function blend(g: Gathered, cell: Cell, nowMs: number): Blended {
     date: ds[0].date, code: midCode(ds.map((d) => d.code)), min: mid(ds.map((d) => d.min)), max: mid(ds.map((d) => d.max)), prob: mid(ds.map((d) => d.prob)), uvMax: mid(ds.map((d) => d.uvMax)), sunrise: first(ds.map((d) => d.sunrise)), sunset: first(ds.map((d) => d.sunset))
   }))
   const ow = s.find((x) => x.id === 'openweather')
+  const now: Now = { time: local(nowMs), precip: pick('precip'), temp: pick('temp'), humidity: pick('humidity'), feels: pick('feels'), code: midCode(nows.map((n) => n.code)), wind: pick('wind'), gust: pick('gust'), uv: pick('uv') }
   return {
     cell, fetchedAt: new Date(nowMs).toISOString(), tz: TZ, utcOffset: UTC_OFFSET,
-    now: { time: local(nowMs), precip: pick('precip'), temp: pick('temp'), humidity: pick('humidity'), feels: pick('feels'), code: midCode(nows.map((n) => n.code)), wind: pick('wind'), gust: pick('gust'), uv: pick('uv') },
+    now, rainingNow: modelRaining(now), // the model reading; index.ts lets a fresh airport report replace it (contract rule B: METAR, then model, then null)
     next2h: next2h(ow?.minutely, hourly48, nowMs), hourly48, daily10, aqi: g.aqi, alerts: ow?.alerts ?? [], sources: g.sources, check: null
   }
 }

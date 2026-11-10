@@ -1,6 +1,7 @@
 // @vitest-environment node
 // S29 B: "raining now" from airport METAR present weather, then Open-Meteo current; and the hourly chance as a share of sources.
 // Expected values are worked out by hand: METAR groups follow ICAO Annex 3 (RA rain, DZ drizzle, SH showers, TS thunderstorm, - light, + heavy, VC in the vicinity).
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { blend, type Hour, modelRaining, type Series } from './blend.ts'
 import { nearestStation, parseRainObs, rainObserved } from './metar.ts'
@@ -59,6 +60,30 @@ describe('model rain now', () => {
   it('nothing known is null, never dry', () => {
     expect(modelRaining({ precip: null, code: null })).toBeNull()
     expect(modelRaining(null)).toBeNull()
+  })
+})
+
+const gathered = (cur: Record<string, unknown>) => ({ series: [{ id: 'open-meteo' as const, now: { time: '2026-11-10T12:00', temp: 30, humidity: 70, feels: 34, wind: 5, gust: 9, uv: 8, precip: null, code: null, ...cur }, hours: [], days: [] }], sources: [], aqi: null })
+const blended = (cur: Record<string, unknown>) => blend(gathered(cur), GENSAN, NOW)
+
+describe('blend() sets the model rain now (contract rule B: METAR, then model, then null)', () => {
+  it('wet: 0.4 mm now, or a rain code', () => {
+    expect(blended({ precip: 0.4, code: 3 }).rainingNow).toEqual({ value: true, source: 'model', ageMin: null })
+    expect(blended({ precip: null, code: 63 }).rainingNow?.value).toBe(true)
+  })
+  it('dry: 0 mm and a cloud code', () => expect(blended({ precip: 0, code: 3 }).rainingNow).toEqual({ value: false, source: 'model', ageMin: null }))
+  it('unknown: no precip and no code is null, never dry', () => expect(blended({ precip: null, code: null }).rainingNow).toBeNull())
+  it('index.ts order: no METAR near (Manila) keeps the model value; a fresh dry METAR beats a wet model', async () => {
+    const wet = blended({ precip: 2, code: 63 })
+    const manila = await rainObserved(async () => obs('RA'), { lat: 14.6, lon: 121 }, NOW)
+    expect(manila ?? wet.rainingNow).toEqual({ value: true, source: 'model', ageMin: null })
+    const dry = await rainObserved(async () => obs('', 10), GENSAN, NOW)
+    expect(dry ?? wet.rainingNow).toEqual({ value: false, source: 'observed', ageMin: 10, station: 'General Santos airport' })
+  })
+  it('index.ts really uses that order and fetches each METAR once', () => {
+    const src = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
+    expect(src).toContain('b.rainingNow = (await rainObserved(fetchJson, cell, now).catch(() => null)) ?? b.rainingNow')
+    expect(src).toContain('seen.has(u)')
   })
 })
 

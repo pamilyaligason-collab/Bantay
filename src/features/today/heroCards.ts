@@ -24,6 +24,7 @@ export interface Wx {
   feels?: number | null // Open-Meteo apparent temperature, the same 'Feels like' the Weather screen shows
   uvMax?: number | null
   sunrise?: string | null; sunset?: string | null // today's, place-local; the weather scene's time of day
+  precip?: number | null // mm now (Open-Meteo current), when known
   rainingNow?: { value: boolean; source: 'observed' | 'model'; ageMin: number | null; station?: string } | null // S29 B
   offline?: boolean // the forecast is the last good one from the cache, not a fresh reading
 }

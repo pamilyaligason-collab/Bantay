@@ -80,10 +80,10 @@ describe('D-163 one weather source', () => {
   it('names the place and credits Open-Meteo on the Today hero and the Weather screen', async () => {
     render(<><WeatherCard expanded /><WeatherScreen /></>)
     await waitFor(() => expect(screen.getAllByTestId('forecast-note')).toHaveLength(2))
-    for (const n of screen.getAllByTestId('forecast-note')) {
-      expect(n.textContent).toMatch(/^Forecast for .+ · Weather data by Open-Meteo\.com$/)
-      expect(n.textContent).not.toMatch(/\d+\.\d{3}/) // a place name, never coordinates
-    }
+    const [today, screenNote] = screen.getAllByTestId('forecast-note')
+    expect(today!.textContent).toBe('Weather data by Open-Meteo.com') // no fix: the card's one place line is "Location off: showing <place>", so the credit drops the place
+    expect(screenNote!.textContent).toMatch(/^Forecast for .+ · Weather data by Open-Meteo\.com$/)
+    for (const n of [today!, screenNote!]) expect(n.textContent).not.toMatch(/\d+\.\d{3}/) // a place name, never coordinates
   })
 
   it('hourly rain slots read "NN% rain", not a bare percent', async () => {

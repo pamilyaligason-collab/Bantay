@@ -5,7 +5,7 @@ import HourlyStrip from '../today/HourlyStrip'
 import RainMini from '../today/RainMini'
 import { parseForecast, forecastUrl } from './forecast'
 import RainNowChip from './RainNowChip'
-import { locationOffNote, rainChanceText } from './rainNow'
+import { locationOffNote, rainChanceText, reconcileNow } from './rainNow'
 
 afterEach(cleanup)
 
@@ -46,6 +46,30 @@ describe('rain bars while it rains', () => {
     const dry = Array.from({ length: 8 }, (_, i) => ({ time: `2026-11-10T12:${String(i * 15 % 60).padStart(2, '0')}`, mm: 0, pct: null, wet: false }))
     render(<RainMini slots={dry} raining />)
     expect(screen.getByTestId('rain-mini').textContent).toMatch(/raining now/)
+  })
+})
+
+describe('reconcileNow: one story for the card', () => {
+  const model = { value: true, source: 'model' as const, ageMin: null }
+  const dryObs = { value: false, source: 'observed' as const, ageMin: 10, station: 'X' }
+  it('raining with a cloud code and 3 mm: Rain, rain icon, no sun tip', () => {
+    expect(reconcileNow({ words: 'partly cloudy', code: 2, precip: 3, rainingNow: model })).toEqual({ words: 'rain', code: 63, hideSun: true })
+  })
+  it('raining with under 2.5 mm: Light rain; precip unknown: Rain', () => {
+    expect(reconcileNow({ words: 'cloudy', code: 3, precip: 0.4, rainingNow: model })).toEqual({ words: 'light rain', code: 61, hideSun: true })
+    expect(reconcileNow({ words: 'cloudy', code: 3, precip: null, rainingNow: model })).toEqual({ words: 'rain', code: 63, hideSun: true })
+  })
+  it('raining and the code already says rain or storm: keep it, still hide the sun tip', () => {
+    expect(reconcileNow({ words: 'heavy rain', code: 65, precip: 9, rainingNow: model })).toEqual({ words: 'heavy rain', code: 65, hideSun: true })
+    expect(reconcileNow({ words: 'thunderstorm', code: 95, rainingNow: model }).code).toBe(95)
+  })
+  it('observed dry beats a rain code: no rain words or icon', () => {
+    expect(reconcileNow({ words: 'rain', code: 63, rainingNow: dryObs })).toEqual({ words: 'cloudy', code: 3, hideSun: false })
+  })
+  it('unknown, or a model dry reading, changes nothing', () => {
+    expect(reconcileNow({ words: 'clear', code: 0, rainingNow: null })).toEqual({ words: 'clear', code: 0, hideSun: false })
+    expect(reconcileNow({ words: 'rain', code: 63, rainingNow: { ...model, value: false } })).toEqual({ words: 'rain', code: 63, hideSun: false })
+    expect(reconcileNow({ words: 'unsettled', rainingNow: undefined })).toEqual({ words: 'unsettled', code: null, hideSun: false })
   })
 })
 

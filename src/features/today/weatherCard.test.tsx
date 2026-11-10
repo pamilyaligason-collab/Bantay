@@ -35,7 +35,7 @@ describe('Today weather card', () => {
     const { container } = render(<WeatherCard />)
     expect(screen.getByText('31°')).toBeTruthy()
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
-    expect(screen.getByText(/^Dampas, Tagbilaran · your home area · as of\s/)).toBeTruthy()
+    expect(screen.getByText(/^Dampas, Tagbilaran · as of\s/)).toBeTruthy()
     expect(screen.getByText(/^Feels 3\d° · Extreme caution$/)).toBeTruthy()
     expect(screen.getByText('Drink water')).toBeTruthy()
     expect(container.querySelector('.td-wx-chev svg')).toBeTruthy()
@@ -98,6 +98,26 @@ describe('Today weather card, stale location (S28)', () => {
   })
 })
 
+describe('Today weather card, rain now and no fix', () => {
+  it('raining now (model) reads Rain with the rain scene and no strong-sun tip', () => {
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: true }
+    m.wx = { ...base, temp: 31, words: 'partly cloudy', code: 2, uvMax: 10, precip: 1.2, rainingNow: { value: true, source: 'model', ageMin: null } }
+    const { container } = render(<WeatherCard expanded />)
+    expect(screen.getByText('Light rain')).toBeTruthy()
+    expect(screen.queryByText('Partly cloudy')).toBeNull()
+    expect(container.querySelector('.wxs')!.getAttribute('data-cond')).toBe('rain')
+    expect(container.textContent).not.toMatch(/Strong sun/)
+  })
+  it('no fix and no picked zone: the place once, as the one Location off note', () => {
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
+    m.wx = base
+    const { container } = render(<WeatherCard expanded />)
+    expect(container.textContent).not.toContain('your home area')
+    expect(screen.getByTestId('location-off').textContent).toBe('Location off: showing Dampas, Tagbilaran')
+    expect(screen.getByTestId('forecast-note').textContent).toBe('Weather data by Open-Meteo.com')
+  })
+})
+
 describe('Today weather card, expanded', () => {
   const hours = (n: number) => {
     const t0 = new Date(`${wxLocal(base, new Date()).slice(0, 13)}:00:00Z`).getTime()
@@ -108,7 +128,7 @@ describe('Today weather card, expanded', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
     m.wx = { ...base, temp: 33, humidity: 68, words: 'partly cloudy', code: 2, high: 34, low: 26, hourly: hours(24) }
     const { container } = render(<WeatherCard expanded review={0} />)
-    expect(screen.getByText(/^Dampas, Tagbilaran · your home area · as of\s/)).toBeTruthy()
+    expect(screen.getByText(/^Dampas, Tagbilaran · as of\s/)).toBeTruthy()
     expect(container.querySelector('.td-wxh-t')!.textContent).toBe('33°')
     expect(screen.getByText('Partly cloudy')).toBeTruthy()
     expect(screen.getByText('Feels 43° · Danger')).toBeTruthy()

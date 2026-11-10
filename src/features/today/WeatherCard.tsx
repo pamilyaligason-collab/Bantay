@@ -16,7 +16,8 @@ import { stormSlots, type Slot } from './stormView'
 import HourlyStrip, { hourlySlots } from './HourlyStrip'
 import { ForecastNote } from '../weather/ForecastNote'
 import RainNowChip from '../weather/RainNowChip'
-import { locationOffNote } from '../weather/rainNow'
+import { locationOffNote, reconcileNow } from '../weather/rainNow'
+import { zoneLabel } from '../location/nearestPlace'
 import RainMini, { miniSlots } from './RainMini'
 import './weatherHero.css'
 
@@ -105,21 +106,22 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const gx = mmGated(wx)
   const line = storm ? null : weatherActionLine(gx, now, null)
   const rainHero = !storm && gx.hourly ? heroRainLine(gx.hourly.time.map((time, i) => ({ time, prob: gx.hourly!.prob[i] ?? null })), wxLocal(wx, now)) : null // T5: from 30%, not only when the action line says rain
-  const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(gx, now) ?? line.text : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
+  const rn = reconcileNow(wx)
+  const text = storm ? 'Rain and strong wind.' : rn.hideSun && line?.id === 'uv' ? null : line?.id === 'rain' ? rainSummary(gx, now) ?? line.text : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
   // Jack only on an everyday rain or heat tip, in the expanded card. Never on a storm, an air alert or the Danger heat bands and above (rank 80+, D-91), and never when `noJack`.
   const jack: JackName | null = noJack || storm || !expanded ? null : line?.id === 'rain' ? 'ready-for-rain' : line?.id === 'heat' && line.rank < 80 ? 'drink-water' : null
   const href = line ? WEATHER_ACTION_HREF : WEATHER_HREF
-  const cond = storm ? 'Thunderstorm' : `${wx.words[0]!.toUpperCase()}${wx.words.slice(1)}`
+  const cond = storm ? 'Thunderstorm' : `${rn.words[0]!.toUpperCase()}${rn.words.slice(1)}`
   // The same single "Feels like" and danger label as the Weather screen (scene.ts feelsLike): heat index when it applies, else the forecast's apparent temperature.
   const fl = feelsLike(wx.temp, wx.humidity, wx.feels)
   const feelsOn = fl.value != null && Math.round(fl.value) > Math.round(wx.temp)
   const feels = storm ? (fl.value != null ? `Feels ${deg(fl.value)}` : null) : feelsOn ? [`Feels ${deg(fl.value!)}`, fl.label].filter(Boolean).join(' · ') : null
   const drink = !storm && !!fl.label // N5: "Drink water" from Extreme caution up
   const clock = clockIn(wx.at, placeTimezone(place.weather, wx.tz))
-  const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(wx.code)} hot={!storm && isHot(wx.temp, wx.humidity)} lite />
+  const scene = <WeatherScene tod={storm ? 'night' : todOf(wxLocal(wx, now), wx.sunrise, wx.sunset)} cond={storm ? 'storm' : condOf(rn.code)} hot={!storm && isHot(wx.temp, wx.humidity)} lite />
   const next = storm ? stormSlots(slots(wx, now)) : slots(wx, now) // T16: under a storm the slots agree with the title // both sizes: 56 px expanded, 40 px compact (PLAN 1.1 row 2)
   const locationOff = locationOffNote(place)
-  const kicker = noBreak(`${whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`)
+  const kicker = noBreak(`${locationOff ? zoneLabel(place.zone) : whereOf(place)}${clock ? ` · as of ${clock}` : ''}${offlineNote(wx)}`)
   const range = expanded ? [wx.high != null && `High ${deg(wx.high)}`, wx.low != null && `Low ${deg(wx.low)}`].filter(Boolean).join(' · ') : '' // live parity: today's range (V11 section B)
   const pills = (feels || drink) && (
     <span className="td-wxh-pills">{feels && <span className="td-wxh-pill">{feels}</span>}{drink && <span className="td-wxh-pill">Drink water</span>}</span>
@@ -149,7 +151,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
                 {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{s.pct < 10 ? 'Low chance' : <>{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</>}</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>
             )}
-            <ForecastNote className="td-wxh-credit" link place={placeNameOf(place)} sources={wx.sources} />
+            <ForecastNote className="td-wxh-credit" link place={locationOff ? undefined : placeNameOf(place)} sources={wx.sources} />
           </>
         )}
       >

@@ -35,7 +35,11 @@ Deno.serve(async (req) => {
   if (!got.series.length) return row ? reply(200, { ok: true, cached: true, stale: true, ...(row.payload as Blended) }) : reply(502, { ok: false, error: 'no_source', sources: got.sources })
 
   const b = blend(got, cell, now)
-  const fetchJson = async (u: string) => { const r = await fetch(u, { signal: AbortSignal.timeout(8_000), headers: { 'User-Agent': USER_AGENT } }); if (!r.ok) throw new Error(`HTTP${r.status}`); return r.json() }
+  const seen = new Map<string, Promise<unknown>>() // one fetch per URL per request: the rain reading and the station check share the same METAR
+  const fetchJson = (u: string) => {
+    if (!seen.has(u)) seen.set(u, (async () => { const r = await fetch(u, { signal: AbortSignal.timeout(8_000), headers: { 'User-Agent': USER_AGENT } }); if (!r.ok) throw new Error(`HTTP${r.status}`); return r.json() })())
+    return seen.get(u)!
+  }
   b.rainingNow = (await rainObserved(fetchJson, cell, now).catch(() => null)) ?? b.rainingNow // an airport report within 25 km and 90 minutes beats the model
   b.check = await stationCheck({
     async read(id) { const { data } = await sb.from('weather_stations').select('*').eq('station', id).maybeSingle(); return (data as StationRow | null) ?? null },
