@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { JackFab } from './JackFab'
+import { JackFab, coversText } from './JackFab'
 import { openSos } from '../sos/openSos'
 
 const sosMounts = vi.hoisted(() => ({ n: 0 }))
@@ -224,5 +224,28 @@ describe('JackFab owns the SOS screen opened from a warning card', () => {
     await vi.waitFor(() => expect(fab()).toBeNull())
     expect(sosMounts.n).toBe(1) // a remount would start a second SOS and alarm the family again
     warn.remove()
+  })
+})
+
+describe('coversText (S29: the hint never sits on a tap target)', () => {
+  const box = (left: number, top: number, w: number, h: number) => ({ left, top, right: left + w, bottom: top + h, width: w, height: h, x: left, y: top, toJSON: () => ({}) }) as DOMRect
+  const hint = { left: 100, right: 300, top: 400, bottom: 460 }
+  const setup = (tag: string, attrs: Record<string, string>, rect: DOMRect) => {
+    document.body.innerHTML = '<div class="bt"><div class="scroll"></div></div>'
+    const el = document.createElement(tag)
+    for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v)
+    el.getBoundingClientRect = () => rect
+    document.querySelector('.scroll')!.appendChild(el)
+  }
+  afterEach(() => { document.body.innerHTML = '' })
+  it.each([['a', { href: '#x' }], ['button', {}], ['div', { role: 'button' }]])('a %s under the hint hides it', (tag, attrs) => {
+    setup(tag, attrs, box(150, 420, 80, 80))
+    expect(coversText(hint)).toBe(true)
+  })
+  it('a link clear of the hint, or a plain div under it, does not', () => {
+    setup('a', { href: '#x' }, box(150, 600, 80, 80))
+    expect(coversText(hint)).toBe(false)
+    setup('div', {}, box(150, 420, 80, 80))
+    expect(coversText(hint)).toBe(false)
   })
 })

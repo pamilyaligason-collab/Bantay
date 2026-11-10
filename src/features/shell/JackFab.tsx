@@ -20,12 +20,11 @@ const hits = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top <
 /** Only keyboard focus brings him back: a press focuses the button too. */
 const keyboardFocus = (el: HTMLElement) => { try { return el.matches(':focus-visible') } catch { return true } } // no :focus-visible support: treat as keyboard
 
-/** True when the coach mark would sit on any line of page text (UI-1) or on the Today Full forecast link: it is then not shown, never drawn over safety text or that tap target. */
-function coversText(hint: Box): boolean {
+/** True when the coach mark would sit on any line of page text (UI-1) or on any link or button: it is then not shown, never drawn over safety text or that tap target. */
+export function coversText(hint: Box): boolean {
   const root = document.querySelector('.bt .scroll')
   if (!root) return false
-  const full = root.querySelector('.td-wxh-full') // shortcut: only this one control is guarded; whole-card links would hide the hint on every Today
-  if (full) { const r = full.getBoundingClientRect(); if (r.width > 0 && hits(hint, r)) return true }
+  for (const el of Array.from(root.querySelectorAll('a[href], button, [role="button"]'))) { const r = el.getBoundingClientRect(); if (r.width > 0 && r.height > 0 && hits(hint, r)) return true } // any tap target (Today Full forecast link, Plant photo tiles): the hint never sits on one
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   const range = document.createRange()
   if (typeof range.getClientRects !== 'function') return false // jsdom has no layout; real browsers do

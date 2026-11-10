@@ -70,7 +70,7 @@ const jackHits = async (page: Page, where: 'rest' | 'first' | 'last') => {
     const under = Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]')).filter((n) => n !== fab && !fab.contains(n) && vis(n) && share(n) > 0)
     // a large whole-card link (a tile, the Go-bag card) may pass under the button's edge strip as long as its centre point stays clear (S29 rule); any other control may not
     const centreUnder = (n: Element) => { const r = n.getBoundingClientRect(); const x = (r.left + r.right) / 2, y = (Math.max(r.top, 0) + Math.min(r.bottom, innerHeight)) / 2; return x >= f.left && x <= f.right && y >= f.top && y <= f.bottom }
-    const big = (n: Element) => n.getBoundingClientRect().width >= 120 && n.getBoundingClientRect().height >= 44 && n.matches('a.card, .sf-fa, a.sf-bag, .sf-bag') && !n.closest(warn) // never a card inside a warning or SOS block
+    const big = (n: Element) => n.getBoundingClientRect().width >= 120 && n.getBoundingClientRect().height >= 44 && n.matches('a.card, .sf-fa, a.sf-bag, .sf-bag, a.rw-main') && !n.closest(warn) // never a card inside a warning or SOS block
     const hits = under.filter((n) => !big(n) || centreUnder(n)).map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
     const cover = Math.max(0, ...under.filter(big).map(share))
     return { fab: true, tilesOnScreen: tiles.filter(vis).length, hits, cover: Math.round(cover * 100) / 100 }
