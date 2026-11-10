@@ -260,7 +260,7 @@ test('hazards at my location: layer buttons, earthquake row with what to do, Haz
 
 test('storm tracker, safety cards and past SOS pages open', async ({ page }) => {
   await page.goto('/#safety/storms')
-  await expect(page.getByText(/Storms have not been checked lately/)).toBeVisible() // fresh browser, no saved check (R1)
+  await expect(page.getByText(/Storms have not been checked yet/)).toBeVisible() // fresh browser, no saved check (R1)
   await page.goto('/#safety/cards')
   await page.locator('summary', { hasText: /^Earthquake$/ }).click()
   await expect(page.getByText('Do not wait for a message.').first()).toBeVisible()
@@ -278,7 +278,7 @@ test('live weather: layer switch only changes overlay, storm tracker and links',
   await sec.getByRole('group', { name: 'Weather layer' }).getByRole('button', { name: 'Wind' }).click()
   await expect(main).toHaveAttribute('src', /overlay=wind&/)
   await expect(sec.getByText('Storms near you')).toBeVisible()
-  await expect(sec.getByText(/Storms have not been checked lately/)).toBeVisible() // no check on this phone yet: no all-clear (the checked case is in livemaps.render.test)
+  await expect(sec.getByText(/Storms have not been checked yet/)).toBeVisible() // no check on this phone yet: no all-clear (the checked case is in livemaps.render.test)
   await expect(sec.getByText(/No storm warnings for the Philippines/)).toHaveCount(0)
   await expect(sec.locator('iframe[title^="Windy wind map around"]')).toHaveAttribute('src', /zoom=5&overlay=wind.*lat=9\.65&lon=123\.88/)
   await expect(sec.getByRole('link', { name: /PAGASA bulletin/ })).toHaveAttribute('target', '_blank')

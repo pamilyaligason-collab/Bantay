@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { CONDS, condOf, feelsLike, isHot, layersFor, LIT, litOf, SCRIM, scrimFor, SKY, TODS, todOf } from './scene'
+import { CONDS, condOf, feelsLike, isHot, layersFor, LIT, litOf, pastSunset, SCRIM, scrimFor, SKY, TODS, todOf } from './scene'
 
 const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16))
 const lum = (c: number[]) => { const [r, g, b] = c.map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4 }); return 0.2126 * r! + 0.7152 * g! + 0.0722 * b! }
@@ -17,6 +17,24 @@ describe('todOf', () => {
     expect(todOf('2026-10-20T02:00')).toBe('night')
     expect(todOf('2026-10-20T13:00', null, null)).toBe('day')
     expect(todOf('nonsense')).toBe('day')
+  })
+})
+
+describe('A5: no sun disc after sunset', () => {
+  const down = '2026-10-20T17:45'
+  it('pastSunset is true from sunset on, false before, 18:00 without one, false for an unreadable clock', () => {
+    expect(pastSunset('2026-10-20T17:44', down)).toBe(false)
+    expect(pastSunset('2026-10-20T17:45', down)).toBe(true)
+    expect(pastSunset('2026-10-20T17:30', null)).toBe(false)
+    expect(pastSunset('2026-10-20T18:00', null)).toBe(true)
+    expect(pastSunset('nonsense', down)).toBe(false)
+  })
+  it('dusk keeps its sun before sunset and drops the disc after it; the moon and night are unchanged', () => {
+    expect(layersFor('dusk', 'clear', false, false).sun).toBe(true)
+    expect(layersFor('dusk', 'clear', false, true).sun).toBe(false)
+    expect(layersFor('dusk', 'partly', false, true).sun).toBe(false)
+    expect(layersFor('day', 'clear').sun).toBe(true)
+    expect(layersFor('night', 'clear', false, true).moon).toBe(true)
   })
 })
 

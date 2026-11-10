@@ -33,7 +33,7 @@ test('weather: hero first, place toggle, forecast sections', async ({ page }) =>
   await page.getByRole('button', { name: 'Show all 10 days' }).click()
   await expect(page.getByRole('region', { name: '10 days' }).getByRole('listitem')).toHaveCount(10)
   await expect(page.getByRole('link', { name: /^PAGASA/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
-  await expect(page.getByText('Your rounded location is sent only to the weather and map services.')).toBeVisible()
+  await expect(page.getByText("Your location, rounded to about 1 km, goes to Bantay's server, which asks the weather services. The map gets the same rounded location.")).toBeVisible()
   expect(seen[0]).toContain('timezone=auto')
   expect(seen[0]).toContain('forecast_days=10')
   expect(seen[0]).toContain('latitude=9.65')

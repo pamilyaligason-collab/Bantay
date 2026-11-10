@@ -50,18 +50,22 @@ export const shortMonth = (ym: string) => monthName(ym).slice(0, 3)
 
 export const isStale = (issued: string, now: number = Date.now()): boolean => now - Date.parse(issued) > STALE_DAYS * 86_400_000
 
-/** Chips to show: the latest assessment (it reads "Now") and the outlook months from this month on, at most six, in whole rows of three so the grid is never lopsided. Months already past are dropped. */
-export function chipMonths(months: readonly DroughtMonth[], nowYm: string): DroughtMonth[] {
-  const assessed = months.filter((m) => m.kind === 'assessment').slice(-1)
+/** The outlook months the Climate card shows: this month on, at most six, in whole rows of three so the grid is never lopsided. Months already past are dropped. Plant's dry check reads the same months (one story). */
+export function shownOutlook(months: readonly DroughtMonth[], nowYm: string): DroughtMonth[] {
   const ahead = months.filter((m) => m.kind === 'outlook' && m.month >= nowYm).slice(0, 6)
-  return [...assessed, ...(ahead.length >= 3 ? ahead.slice(0, ahead.length - (ahead.length % 3)) : ahead)]
+  return ahead.length >= 3 ? ahead.slice(0, ahead.length - (ahead.length % 3)) : ahead
+}
+
+/** Chips to show: the latest assessment (it reads "Now") and the shown outlook months. */
+export function chipMonths(months: readonly DroughtMonth[], nowYm: string): DroughtMonth[] {
+  return [...months.filter((m) => m.kind === 'assessment').slice(-1), ...shownOutlook(months, nowYm)]
 }
 
 const span = (ms: string[]) => (ms.length === 1 ? `in ${monthName(ms[0]!)}` : `${monthName(ms[0]!)} to ${monthName(ms[ms.length - 1]!)}`)
 
 /** One plain sentence from the upcoming outlook months (PAGASA's outlook, never a forecast of ours). */
 export function outlookSentence(months: readonly DroughtMonth[], nowYm: string): string {
-  const ahead = months.filter((m) => m.kind === 'outlook' && m.month >= nowYm)
+  const ahead = shownOutlook(months, nowYm) // the months the chips show, so card, chips and Plant tell one story (S29 A4)
   if (!ahead.length) return 'Climate outlook not available yet.'
   const of = (l: Level) => ahead.filter((m) => m.level === l).map((m) => m.month)
   const spell = of('dry_spell'), drought = of('drought'), dry = of('dry_condition')
@@ -73,10 +77,9 @@ export function outlookSentence(months: readonly DroughtMonth[], nowYm: string):
   return 'No dry spell or drought expected in the coming months.'
 }
 
-/** The first dry month (dry spell or drought) in PAGASA's outlook for this month and the next two, or null: the Plant card then favours crops that cope with less water and says when. */
+/** The first dry month (dry spell or drought) among the outlook months the Climate card shows, or null: the Plant card then favours crops that cope with less water and says when. */
 export function dryWhen(months: readonly DroughtMonth[] | null | undefined, nowYm: string): { ym: string; level: 'dry_spell' | 'drought' } | null {
-  const last = addMonths(nowYm, 2)
-  const m = months?.find((x) => x.kind === 'outlook' && x.month >= nowYm && x.month <= last && (x.level === 'dry_spell' || x.level === 'drought'))
+  const m = months && shownOutlook(months, nowYm).find((x) => x.level === 'dry_spell' || x.level === 'drought')
   return m ? { ym: m.month, level: m.level as 'dry_spell' | 'drought' } : null
 }
 export const dryAhead = (months: readonly DroughtMonth[] | null | undefined, nowYm: string): boolean => !!dryWhen(months, nowYm)

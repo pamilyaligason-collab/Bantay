@@ -94,7 +94,7 @@ describe('Top stories (farming, DIY and prepping videos together)', () => {
   it('no signal: one hero and rows from today\'s turn of the farm, DIY and prepping pool, 4 rows then Show 4 more, See all link', async () => {
     await show()
     const sec = screen.getByTestId('dc-top-story')
-    expect(within(sec).getByRole('link', { name: 'See all' }).getAttribute('href')).toBe('#discover/watch')
+    expect(within(sec).getByRole('link', { name: 'See all stories' }).getAttribute('href')).toBe('#discover/watch')
     const hero = screen.getByTestId('dc-hero')
     expect(hero.className).toContain('md-hero')
     expect(idOf(pics(hero)[0]!)).toBe('qdbieBBd-Ko')

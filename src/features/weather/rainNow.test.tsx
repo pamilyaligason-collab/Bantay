@@ -20,14 +20,16 @@ describe('rain chance words', () => {
   })
   it('the hourly strip never prints 0%', () => {
     render(<HourlyStrip slots={[{ time: 'Now', kind: 'cloud', pct: 0, temp: 30 }, { time: '1 PM', kind: 'rain', pct: 40, temp: 29 }]} />)
-    expect(screen.getByText('Low chance')).toBeTruthy()
+    const low = screen.getByText('Low').closest('.td-hs-p')!
+    expect(low.textContent).toBe('Low chance of rain') // A9: the long words are hidden text (read aloud), not an aria-label on a span
+    expect(low.hasAttribute('aria-label')).toBe(false)
     expect(screen.getByText('40% rain')).toBeTruthy()
     expect(screen.queryByText(/^0%/)).toBeNull()
   })
   it('S29 W: the Now cell of a raining slot says Raining, not a chance; the next hour keeps its own', () => {
     render(<HourlyStrip slots={[{ time: 'Now', kind: 'rain', pct: 5, temp: 27, raining: true }, { time: '1 PM', kind: 'cloud', pct: 5, temp: 34 }]} />)
     expect(screen.getByText('Raining')).toBeTruthy()
-    expect(screen.getAllByText('Low chance')).toHaveLength(1)
+    expect(screen.getAllByText('Low')).toHaveLength(1)
   })
 })
 
@@ -80,7 +82,7 @@ describe('reconcileNow: one story for the card', () => {
 
 describe('no location fix', () => {
   it('names the home place it is showing; a picked zone or a real fix says nothing', () => {
-    expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: true })).toBe('Location off: showing Dampas, Tagbilaran')
+    expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: true })).toBe('Location off: showing your home area')
     expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: true, settled: true })).toBeNull()
     expect(locationOffNote({ source: 'gps', zone: 'dampas', picked: false, settled: true })).toBeNull()
     expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: false })).toBeNull() // still looking

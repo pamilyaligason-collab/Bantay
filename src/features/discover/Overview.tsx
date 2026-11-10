@@ -26,6 +26,7 @@ import { READY_TOPICS, countLine, readyShelf as shelf } from './learn/ready'
 import './play/play.css' // the fp-hl headline markup is the News screen's own
 import './discover.css'
 import './today.css'
+import '../today/today.css' // .sf-link-row (See all stories) lives here
 
 const COUNTS = 'dc.watchcounts'
 /** Taps per video on this phone (a bounded map: only ids of the fixed shelves are ever stored). The second signal for Top stories and the Farming and DIY lead; nothing leaves the device. */
@@ -54,7 +55,7 @@ const topPool = () => [...shelf('prepping'), ...shelf('farm-diy')]
 function TopStory({ ranked }: { ranked: Video[] | null }) {
   const [hero, ...rest] = ranked ?? []
   return (
-    <Section title="Top stories" link={{ href: '#discover/watch', label: 'See all' }} testId="dc-top-story">
+    <Section title="Top stories" testId="dc-top-story">
       <p className="sub dc-sub">Farming, DIY and prepping, picked for your family.</p>
       {!ranked
         ? <p className="sub" role="status">Picking videos</p>
@@ -62,6 +63,7 @@ function TopStory({ ranked }: { ranked: Video[] | null }) {
         ? (
           <div className="dc-stack">
             <VidCard v={hero} variant="hero" ev="card_top_story" />
+            <a className="sf-link-row" href="#discover/watch" data-testid="dc-top-all">See all stories<Icon name="chev" size={20} /></a>
             {rest.length > 0 && <MediaList label="More top stories" testId="dc-top-rows">{rest.map((v) => <VidCard key={v.id} v={v} ev="card_top_story" />)}</MediaList>}
           </div>
         )

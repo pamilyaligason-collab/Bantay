@@ -154,7 +154,7 @@ test.describe('S4', () => {
   test('storms: PAR polygon, No storms now, Windy waits for Load on cellular', async ({ page }) => {
     await page.addInitScript(() => Object.defineProperty(navigator, 'connection', { value: { type: 'cellular' }, configurable: true }))
     await page.goto('/#safety/storms')
-    await expect(page.getByTestId('storm-hero')).toContainText('Storms not checked lately')
+    await expect(page.getByTestId('storm-hero')).toContainText('Storms not checked yet')
     await expect(page.locator('.leaflet-interactive')).toHaveCount(0) // PAR ring is non-interactive; the path itself is .lm-par
     await expect(page.locator('path.lm-par')).toHaveCount(1)
     await expect(page.locator('iframe.sf-frame')).toHaveCount(0)
@@ -191,7 +191,7 @@ test.describe('VR', () => {
     test(`Storm tracker not checked wears no green, ${scheme}`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme })
       await page.goto('/#safety/storms')
-      await expect(page.getByTestId('storm-hero')).toContainText('Storms not checked lately')
+      await expect(page.getByTestId('storm-hero')).toContainText('Storms not checked yet')
       await setScheme(page, scheme)
       const c = await page.evaluate(() => {
         const get = (q: string) => getComputedStyle(document.querySelector(q)!)

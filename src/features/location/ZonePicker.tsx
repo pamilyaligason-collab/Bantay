@@ -14,6 +14,7 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
   if (!place) return null
   const words = placeWords(place)
   const label = placeLine(words)
+  const shown = label.replace(/ · your home area$/, '') // A6: the pill shows the place; the long form stays in the accessible name
   const current = async () => {
     setMsg('')
     const l = await place.ask().catch(() => null)
@@ -29,7 +30,7 @@ export default function ZonePicker({ loc }: { loc: ReturnType<typeof useLocation
   ]
   return (
     <div className="zp">
-      <button type="button" className="sf-chip" aria-expanded={open} aria-controls="zp-list" aria-label={`Place: ${label}. Change`} data-testid={words.stale ? 'place-last' : undefined} onClick={() => setOpen(!open)}><span className="zp-t">{label}</span></button>
+      <button type="button" className="sf-chip" aria-expanded={open} aria-controls="zp-list" aria-label={`Place: ${label}. Change`} data-testid={words.stale ? 'place-last' : undefined} onClick={() => setOpen(!open)}><span className="zp-t">{shown}</span></button>
       {open && (
         <div id="zp-list" role="group" aria-label="Zone" className="sf-chips">
           {pills.map(([id, text, on, go]) => (

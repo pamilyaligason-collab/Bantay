@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Wx } from './heroCards'
 import { kindOf } from '../weather/forecast'
 import { hourlySlots } from './HourlyStrip'
-import { miniSlots, miniSummary } from './RainMini'
+import RainMini, { miniSlots, miniSummary, type MiniSlot } from './RainMini'
 import WeatherCard from './WeatherCard'
 
 const m = vi.hoisted(() => ({ place: { weather: { lat: 9.6, lon: 123.8 }, zone: 'dampas', source: 'zone', settled: true, picked: false } as unknown, wx: null as unknown }))
@@ -119,6 +119,30 @@ describe('on the hero', () => {
     expect(container.querySelector('.td-rm-v')!.parentElement!.textContent).not.toContain('mm')
     expect(container.querySelector('.td-rm')!.textContent).not.toMatch(/ mm/)
     expect(screen.queryByText('Estimated from hourly data')).toBeNull()
+  })
+  it('A2: chance bars use a fixed 0-100% scale (a flat 40% is under half height, a flat 90% is tall) and the +1 h axis label is not a clock like 7:07 PM', () => {
+    const heights = (p: number) => {
+      m.wx = mk(time.map(() => p)) // a flat chance: every slot is the same, so the old scale to the highest slot drew full bars at any value
+      const { container, unmount } = render(<WeatherCard expanded />)
+      const hs = Array.from(container.querySelectorAll<HTMLElement>('.td-rm-bars i')).map((i) => parseFloat(i.style.height))
+      const label = container.querySelectorAll('.td-rm-l')[4]!.textContent
+      unmount()
+      return { hs, label }
+    }
+    const low = heights(40); const hi = heights(90)
+    expect(low.hs[7]).toBeCloseTo(0.4 * 36, 5) // 40% of the 36 px track
+    expect(hi.hs[7]).toBeCloseTo(0.9 * 36, 5)
+    expect(low.label).toBe('+1 h')
+  })
+  it('ML-05: a slot with no chance draws a dashed stub, not the 2 px bar of a 0% slot', () => {
+    const slot = (i: number, pct: number | null): MiniSlot => ({ time: `2026-10-20T20:${String(i * 15).padStart(2, '0')}`, mm: null, pct, wet: (pct ?? 0) >= 30 })
+    const slots = [slot(0, 80), slot(1, 0), slot(2, null), slot(3, 80), slot(4, 80), slot(5, 80), slot(6, 80), slot(7, 80)]
+    const { container } = render(<RainMini slots={slots} />)
+    const bars = Array.from(container.querySelectorAll<HTMLElement>('.td-rm-bars i'))
+    expect(bars[1]!.className).toBe('')
+    expect(bars[1]!.style.height).toBe('2px') // a real 0%
+    expect(bars[2]!.className).toBe('td-rm-unk')
+    expect(bars[2]!.style.height).toBe('') // unknown: no height at all
   })
   it('80% chance but 0 mm: one plain dry line, no bars', () => {
     m.wx = mmOf(cloudyMm({}))

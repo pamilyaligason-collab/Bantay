@@ -1,15 +1,15 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Drought } from './drought'
+import { dryWhen, outlookSentence, type Drought } from './drought'
 const useType = vi.hoisted(() => ({ t: 4 as 1 | 2 | 3 | 4 }))
-const h = vi.hoisted(() => ({ province: 'Bohol' as string | null, dr: null as Drought | null | undefined }))
-vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: useType.t, guess: false, ready: true, pick: vi.fn(), picked: null, province: h.province }) }))
+const h = vi.hoisted(() => ({ guess: false, province: 'Bohol' as string | null, dr: null as Drought | null | undefined }))
+vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: useType.t, guess: h.guess, ready: true, pick: vi.fn(), picked: null, province: h.province }) }))
 vi.mock('./daPrices', async (orig) => ({ ...(await orig<typeof import('./daPrices')>()), useDaPrices: () => null }))
 vi.mock('./drought', async (orig) => ({ ...(await orig<typeof import('./drought')>()), useDrought: () => h.dr }))
 import { DROUGHT_TOLERANT, dryLead, dryText, PlantCard, PlantPoster, plantList, plantTiles } from './Plant'
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 10, 9, 12, 0, 0)) }) // local midday, 9 Nov 2026 (ML-38)
-afterEach(() => { vi.useRealTimers(); cleanup(); h.dr = null; h.province = 'Bohol'; useType.t = 4 })
+afterEach(() => { vi.useRealTimers(); cleanup(); h.dr = null; h.guess = false; h.province = 'Bohol'; useType.t = 4 })
 
 const row = (issued: string, levels: [string, Drought['months'][number]['level']][]): Drought => ({
   province: 'Bohol', issued_at: issued, saved: false, months: levels.map(([month, level], i) => ({ month, level, kind: i === 0 ? 'assessment' : 'outlook' as const }))
@@ -31,6 +31,18 @@ describe('S29 C: dry spell in the outlook', () => {
     unmount()
     render(<PlantPoster />)
     expect(screen.getByTestId('plant-dry').textContent).toBe(NOTE)
+  })
+  it('S29 A4: with a dry outlook the sub-line drops the climate-type words (one story with the Climate card); without one it keeps them', () => {
+    h.dr = BOHOL
+    const { container, unmount } = render(<PlantCard />)
+    expect(container.querySelector('.gpl-sub')!.textContent).toBe('November')
+    unmount()
+    const poster = render(<PlantPoster />)
+    expect(poster.container.querySelector('.gpl-sub')!.textContent).toBe('November.')
+    poster.unmount()
+    h.dr = row('2026-11-03', [['2026-10', 'not_affected'], ['2026-11', 'not_affected'], ['2026-12', 'dry_condition'], ['2027-01', 'not_affected']]) // no dry spell or drought in the window
+    const calm = render(<PlantCard />)
+    expect(calm.container.querySelector('.gpl-sub')!.textContent).toBe('November · Rain all year')
   })
   it('no note without a dry month in the window, with no outlook, an old one, or no province', () => {
     h.dr = row('2026-11-03', [['2026-10', 'not_affected'], ['2026-11', 'not_affected'], ['2026-12', 'dry_condition'], ['2027-01', 'not_affected'], ['2027-02', 'drought']]) // the drought is the 4th month: outside Nov to Jan
@@ -118,5 +130,48 @@ describe('S29 C fix r3: tiles, note, line and credit agree', () => {
     useType.t = 2
     render(<PlantPoster />)
     expect(screen.getByTestId('plant-dry').textContent).toBe(TIP)
+  })
+})
+
+describe('S29 TD round 2: Plant reads the same outlook months as the Climate card', () => {
+  // South Cotabato shape: assessment Oct, Nov not affected, Dec dry condition, Jan-Feb dry spell, Mar-Apr drought
+  const SOCOT = row('2026-10-03', [['2026-10', 'not_affected'], ['2026-11', 'not_affected'], ['2026-12', 'dry_condition'], ['2027-01', 'dry_spell'], ['2027-02', 'dry_spell'], ['2027-03', 'drought'], ['2027-04', 'drought']])
+  const sub = (c: HTMLElement) => c.querySelector('.gpl-sub')!.textContent
+  it('(A4) in October the January dry spell is on the Climate card, so the climate-type words go', () => {
+    vi.setSystemTime(new Date(2026, 9, 9, 12, 0, 0))
+    h.dr = SOCOT
+    const a = render(<PlantCard />)
+    expect(sub(a.container)).toBe('October') // October to December alone shows no dry month; the card's six months do
+    expect(screen.getByTestId('plant-dry').textContent).toContain('A dry spell is coming to Bohol in January.')
+    a.unmount()
+    expect(sub(render(<PlantPoster />).container)).toBe('October.')
+  })
+  it('(A4) a dry month past the shown months counts for neither Plant nor the Climate card sentence', () => {
+    vi.setSystemTime(new Date(2026, 9, 9, 12, 0, 0))
+    h.dr = row('2026-10-03', [['2026-10', 'not_affected'], ['2026-11', 'not_affected'], ['2026-12', 'not_affected'], ['2027-01', 'dry_condition'], ['2027-02', 'not_affected'], ['2027-03', 'not_affected'], ['2027-04', 'not_affected'], ['2027-05', 'drought']])
+    expect(sub(render(<PlantCard />).container)).toBe('October · Rain all year')
+    expect(screen.queryByTestId('plant-dry')).toBeNull()
+    expect(outlookSentence(h.dr.months, '2026-10')).toBe('Dry conditions possible in January. No dry spell expected.') // May's drought is not mentioned either
+  })
+  it('(A4) the real South Cotabato shape: the card sentence and Plant name the same dry month', () => {
+    vi.setSystemTime(new Date(2026, 9, 9, 12, 0, 0))
+    h.province = 'South Cotabato'
+    h.dr = { ...SOCOT, province: 'South Cotabato' }
+    render(<PlantCard />)
+    expect(screen.getByTestId('plant-dry').textContent).toContain('A dry spell is coming to South Cotabato in January.')
+    expect(outlookSentence(h.dr.months, '2026-10')).toBe('Dry spell expected from January; drought possible March to April.')
+    expect(dryWhen(h.dr.months, '2026-10')).toEqual({ ym: '2027-01', level: 'dry_spell' })
+  })
+  it('(3) a guessed climate type with a dry outlook drops the orphan "(from your province)"', () => {
+    h.guess = true
+    h.dr = BOHOL
+    const a = render(<PlantCard />)
+    expect(sub(a.container)).toBe('November')
+    a.unmount()
+    const b = render(<PlantPoster />)
+    expect(sub(b.container)).toBe('November.')
+    b.unmount()
+    h.dr = null
+    expect(sub(render(<PlantCard />).container)).toBe('November · Rain all year (from your province)')
   })
 })

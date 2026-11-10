@@ -215,7 +215,7 @@ async function titleRow(page: import('@playwright/test').Page) {
     return {
       t: document.querySelector('h1.lt-title')!.getBoundingClientRect().top - sc.getBoundingClientRect().top,
       rowH: row.getBoundingClientRect().height, rowOverflow: row.scrollWidth - row.clientWidth, docOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      chipH: chip ? chip.getBoundingClientRect().height : null, chipText: chip?.innerText ?? null,
+      chipH: chip ? chip.getBoundingClientRect().height : null, chipText: chip?.innerText ?? null, chipLabel: chip?.getAttribute('aria-label') ?? null,
       bell: box('head-bell'), me: box('head-me'), admin: !!document.querySelector('a[aria-label="Admin"]')
     }
   })
@@ -244,7 +244,12 @@ for (const [name, withFix] of [['home area', false], ['last known', true]] as co
         await seed(page, 'bantay', 'kv', [{ key: 'loc.last', value: { ...LAST_FIX, at: new Date(FIXED_CLOCKS[1]).getTime() - 3 * 3_600_000 } }])
         await page.reload()
       }
-      await expect.poll(async () => (await titleRow(page)).chipText, { message: 'the chip shows its words' }).toMatch(withFix ? /last known/ : /your home area/)
+      await expect.poll(async () => (await titleRow(page)).chipText, { message: 'the chip shows its words' }).toMatch(withFix ? /last known/ : /\S/)
+      if (!withFix) { // A6: the pill shows the place only (no "·"); "your home area" is in its accessible name
+        const c = await titleRow(page)
+        expect(c.chipText).not.toContain('·'); expect(c.chipText!.trim().length).toBeGreaterThan(0)
+        expect(c.chipLabel).toMatch(/your home area/)
+      }
       const m = await titleRow(page)
       expect(m.chipH, 'chip is at most three lines (64 px) at 320; one or two lines wider').toBeLessThanOrEqual(64) // S28: long-form ages ("3 hours ago") and barangay names make the words longer
       expect(m.rowH, 'title row stays one line').toBeLessThanOrEqual(56)

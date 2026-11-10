@@ -3,6 +3,7 @@ import { HOME_ZONES } from '../location/geo'
 import { affectsUs, distanceKm, NEAR_KM, placeOnly, quakeQuiet, rankAlerts, RECENT_MS, tierOf, urgent, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
 import { quakeRow } from './alertRow'
 import { actionLines, type WarningIn } from '../weather/actionLine'
+import { isRainingNow } from '../weather/rainNow'
 import { heatIndexC } from '../weather/heatIndex'
 
 /** Hero card engine (D-31/D-43): one card per thing that matters now, in priority order:
@@ -194,11 +195,15 @@ export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning:
     hourly: (w.hourly?.time ?? []).map((time, i) => ({ time, prob: w.hourly!.prob[i] ?? null })),
     nowLocal: wxLocal(w, now),
     uvMax: w.uvMax ?? null,
-    warning
+    warning,
+    raining
   })
   // While it rains, sun and heat tips are wrong ("avoid the noon sun"): drop the UV tip and every heat line under Danger (rank 80+). Danger and Extreme danger stay.
-  return (raining ? lines.filter((l) => l.id !== 'uv' && (l.id !== 'heat' || l.rank >= 80)) : lines)[0] ?? null
+  if (!raining) return lines[0] ?? null
+  const kept = lines.filter((l) => l.id !== 'uv' && (l.id !== 'heat' || l.rank >= 80))
+  // ML-51: the Weather screen says "Raining now" when no hour reaches 60%; Today says the same
+  return (kept.some((l) => l.id === 'rain') ? kept : [...kept, { id: 'rain' as const, rank: 50, text: 'Raining now' }].sort((a, b) => b.rank - a.rank))[0] ?? null
 }
 export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
-  return weatherActionLine(w, now, warning, w?.rainingNow?.value === true)?.text ?? null
+  return weatherActionLine(w, now, warning, w ? isRainingNow(w) : false)?.text ?? null
 }

@@ -110,6 +110,9 @@ export const feedStale = (alerts: Alert[], saved: unknown, down: StaleSources, n
 export const shownCheck = (alerts: Alert[], saved: unknown, down: StaleSources): string | null =>
   Object.values(down).filter((t): t is string => !!t).sort()[0] ?? lastCheck(alerts, saved)
 
+/** True when there is no check time at all (a fresh phone): the copy says "not checked yet", not "lately". */
+export const neverChecked = (alerts: Alert[], saved: unknown, down: StaleSources): boolean => freshness(shownCheck(alerts, saved, down)).ageMin === null
+
 /** The newest `checkedAt` in the list (ISO), or null when no row has one. */
 export function newestChecked(alerts: Alert[]): string | null {
   let best: string | null = null

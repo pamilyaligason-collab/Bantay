@@ -36,7 +36,7 @@ describe('rain fallback branch (R3: RainViewer coverage of the Philippines not c
 describe('RainMap', () => {
   it('draws bars on one baseline and the PAGASA radar link, with no layer tabs', () => {
     vi.useFakeTimers({ toFake: ['Date'], now: NOW }) // RainMap reads the clock; on a real clock this fixed-date forecast has run out, so the count changed with the time of day
-    render(<RainMap fc={fc()} placeName="General Santos" />)
+    render(<RainMap fc={fc()} />)
     expect(screen.getByRole('list', { name: 'Chance of rain, next 12 hours' }).children).toHaveLength(12)
     expect(screen.getByRole('link', { name: /Radar images from PAGASA/ }).getAttribute('href')).toMatch(/pagasa\.dost\.gov\.ph/)
     expect(document.querySelector('iframe, img[src*="rainviewer"]')).toBeNull() // nothing loads from a map provider
@@ -46,7 +46,7 @@ describe('RainMap', () => {
   })
   it('S29: the figures line never prints 0%', () => {
     vi.useFakeTimers({ toFake: ['Date'], now: NOW })
-    render(<RainMap fc={fc()} placeName="General Santos" daily={0} nextRain={4} />)
+    render(<RainMap fc={fc()} daily={0} nextRain={4} />)
     expect(screen.getByTestId('wx-rain-figures').textContent).toBe('Today: low chance · Next 12 h low chance')
     vi.useRealTimers()
   })
