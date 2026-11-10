@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test'
 import { mock } from './health-auth-mock'
 import { seed } from './fixtures/s16/health'
 import { skipOnboarding } from './helpers'
-import { assertNoSideways, settled } from './v13'
+import { assertNoSideways, expectJackAtRest, settled } from './v13'
 
 // Session 21 lane P item 5 (D-128): the Family health section link wraps under its title on the left, never under Jack's column, from 320 to 360 wide, 667 to 900 tall and with 0 to 2 pins.
 // Same fixture as e2e/s21-h-health.auth.spec.ts: signed in as a made-up member `me` with one carer link `ma`, frozen clock, invented readings.
@@ -32,14 +32,14 @@ for (const width of [320, 344, 360]) {
       for (const at of ['rest', 'centre'] as const) {
         if (at === 'rest') await page.evaluate(() => { (document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0 })
         else await link.evaluate((e) => e.scrollIntoView({ block: 'center' }))
-        const m = await page.evaluate(async () => {
-          for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(() => r(null)))
+        await page.evaluate(async () => { for (let i = 0; i < 3; i++) await new Promise((r) => requestAnimationFrame(() => r(null))) })
+        await expectJackAtRest(page, at) // S29: Jack is measured at rest, and the test fails if he is not
+        const m = await page.evaluate(() => {
           const a = document.querySelector('[data-testid="family-health"] .sec-h a')!.getBoundingClientRect()
           const t = document.querySelector('[data-testid="family-health"] .sec-h h2')!.getBoundingClientRect()
           const fab = document.querySelector('.sh-jackfab')
           const fr = fab?.getBoundingClientRect()
-          const cy = fr ? (fr.top + fr.bottom) / 2 : 0
-          const f = !fab ? null : fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr! // a peeking button shows only its edge strip
+          const f = fr ?? null
           const hit = f ? Math.min(a.right, f.right) > Math.max(a.left, f.left) && Math.min(a.bottom, f.bottom) > Math.max(a.top, f.top) : false
           return { a: { left: a.left, right: a.right, top: a.top, height: a.height }, titleLeft: t.left, titleBottom: t.bottom, hit, fab: !!fab, vw: innerWidth }
         })

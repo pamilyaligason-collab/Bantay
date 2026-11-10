@@ -40,6 +40,7 @@ section.sec > .sec-h .sec-meta { font-size: 15px; color: var(--muted); }
 .card.pt:has(> .pt-spark) { position: relative; }
 .pt-spark { position: absolute; top: 14px; right: 14px; color: var(--tint-ink, var(--ink)); opacity: .7; }
 .pt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.pt-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; } /* S29: an odd last card spans the row, no empty cell */
 :root[data-narrow] .pt-grid { grid-template-columns: minmax(0, 1fr); }
 .carousel { display: flex; gap: 12px; overflow-x: auto; padding: 0 16px; margin: 0 -16px; scroll-padding-inline: 16px; scroll-snap-type: x proximity; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .carousel > * { flex: none; scroll-snap-align: start; }

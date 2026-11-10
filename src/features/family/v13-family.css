@@ -59,6 +59,6 @@
 /* F7: long imported names stop at two lines so a row stays short */
 .fm-item .grow b, [data-testid="need-row"] .rw-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; white-space: normal; }
 
-/* People fold control: a row at the foot of the list, not in the title bar where Jack's column is (D-128). It stops 72 px short of the right edge, so at rest it never touches Jack's column (his left edge is 80 px in, measured at 390 and 450 wide); a small control has no allowance under him. */
+/* People fold control: a row at the foot of the list, not in the title bar where Jack's column is (D-128). It stops 72 px short of the right edge, so it never touches Jack's column at rest (his left edge is 80 px in, measured at 390 and 450 wide; he slides away while the page scrolls, S29); a small control has no allowance under him. */
 .pl-more { display: block; width: calc(100% - 72px); min-height: 44px; margin-top: 4px; padding: 0 16px; box-sizing: border-box; font: inherit; font-size: 15px; font-weight: 500; color: var(--green); background: none; border: 0; text-align: left; }
 :root[data-narrow] .pl-more { width: 100%; padding: 0 6px; } /* 195 px wide: no room to stop short, and the text must not wrap */

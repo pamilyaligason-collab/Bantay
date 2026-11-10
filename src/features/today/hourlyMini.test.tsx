@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Wx } from './heroCards'
+import { kindOf } from '../weather/forecast'
 import { hourlySlots } from './HourlyStrip'
 import { miniSlots, miniSummary } from './RainMini'
 import WeatherCard from './WeatherCard'
@@ -30,6 +31,15 @@ describe('hourly strip data', () => {
     expect(s[0]!.temp).toBe(26) // now = the big temperature
     expect(s[1]!.temp).toBe(23) // hourly index 3 is 20 + 3
     expect(s[11]!.time).toBe('7 AM')
+  })
+  it('S29: the Now cell shows rain while raining now, even when the current code is already wet and the hourly code is a cloud', () => {
+    const wx = { ...mk(wet, 3), code: 61, words: 'light rain', rainingNow: { value: true, source: 'model' as const, ageMin: null } }
+    const s = hourlySlots(wx, NOW)
+    expect(s[0]!.kind).toBe(kindOf(61))
+    expect(s[0]!.kind).not.toBe(kindOf(3))
+    expect(s[0]!.raining).toBe(true) // S29 W: the Now cell says Raining, not the hour's chance
+    expect(s[1]!.raining).toBeUndefined()
+    expect(s[1]!.kind).toBe(kindOf(3)) // later hours keep their own code
   })
   it('null data shows nothing invented', () => {
     expect(hourlySlots({ ...mk(wet), hourly: undefined }, NOW)).toEqual([])

@@ -49,10 +49,10 @@ export function miniSummary(slots: MiniSlot[]): string | null {
 }
 
 /** Under the rain sentence: 8 bars of 15 minutes, the value as text on the tallest. Real millimetres say "Estimated from hourly data"; a chance-only forecast says "Chance of rain" and shows no mm. No rain in the next 2 hours: one plain line instead. Nothing when the forecast has no numbers. */
-export default function RainMini({ slots }: { slots: MiniSlot[] | null }) {
+export default function RainMini({ slots, raining = false }: { slots: MiniSlot[] | null; raining?: boolean }) {
   if (!slots) return null
   const summary = miniSummary(slots)
-  if (!summary) return <p className="td-rm-none" data-testid="rain-mini">No rain in the next 2 hours</p>
+  if (!summary) return <p className="td-rm-none" data-testid="rain-mini">{raining ? 'No more rain expected in the next 2 hours' : 'No rain in the next 2 hours'}</p>
   const chance = slots[0]!.mm == null
   const val = (s: MiniSlot) => (s.wet ? (chance ? s.pct : s.mm) ?? 0 : 0)
   const max = Math.max(...slots.map(val), chance ? 1 : 0.01)

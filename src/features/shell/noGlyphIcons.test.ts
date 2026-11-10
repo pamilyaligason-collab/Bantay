@@ -9,6 +9,7 @@ const GRAPHICS = [
   '/src/features/health/MetricChart.tsx', // chart line
   '/src/features/health/LatestList.tsx', // sparkline
   '/src/features/weather/WeatherScene.tsx', // weather scene cloud
+  '/src/features/weather/SunArc.tsx', // the sun's path across the sky (S29 F)
   '/src/features/look/Tile.tsx', // tile sparkline (S16)
   '/src/features/today/YourNumbers.tsx', // the dynamic tile's trend sparkline (S22)
   '/src/features/look/CheckDraw.tsx', // the self-drawing check mark graphic (S16)

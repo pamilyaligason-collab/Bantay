@@ -2,7 +2,7 @@ import { alertHash } from '../sharing/alertHash'
 import { renderTemplate, TEMPLATES, type TemplateId } from './templates'
 
 /** The System health labels (admin/desk/systemApi.ts JOBS); a test keeps the two lists equal. Not imported from there so Today does not load the admin desk. */
-export const JOB_LABELS: Record<string, string> = { 'dose-watch': 'Missed-dose watch', 'alerts-ingest': 'Official alerts feed', 'alerts-digest': 'Daily safety digest', 'records-extract': 'Records reader', 'world-news': 'World news feed', 'lotto-pcso': 'Lotto results feed', 'yt-feed': 'Regional news videos' }
+export const JOB_LABELS: Record<string, string> = { 'dose-watch': 'Missed-dose watch', 'alerts-ingest': 'Official alerts feed', 'alerts-digest': 'Daily safety digest', 'records-extract': 'Records reader', 'world-news': 'World news feed', 'lotto-pcso': 'Lotto results feed', 'yt-feed': 'Regional news videos', 'pagasa-drought': 'PAGASA climate outlook' }
 
 /** What the row says inside the app. The push copy ("Open Bantay to see what happened") is wrong here: the reader is already in Bantay.
  *  A `system` row (heartbeat.ts) holds `<job>:<6h window>` in `ref`, so name the job by its System health label (an unknown job keeps its saved name) and say where an admin looks. The row cannot know whether later runs passed, so it says only that a run failed. Everything else is the push copy. */

@@ -5,7 +5,7 @@
 .pv-danger { background: var(--red, #b3261e); color: #fff; }
 .pv-confirm { display: grid; gap: 10px; outline: 2px solid var(--red, #b3261e); }
 .pv-where { display: grid; gap: 6px; }
-.pv-where ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 4px; color: var(--muted); font-size: 14px; }
+.pv-where ul { margin: 0; padding-left: 1.1rem; display: grid; gap: 4px; color: var(--muted); font-size: 15px; line-height: 21px; }
 .pv-where li b { color: var(--ink); }
 .pv-link { align-self: flex-start; min-height: 48px; display: inline-flex; align-items: center; color: var(--green); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .pv-notice { margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--soft); color: var(--ink); font-size: 14px; }

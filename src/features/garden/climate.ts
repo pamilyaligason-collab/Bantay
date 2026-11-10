@@ -78,5 +78,5 @@ export function useClimate() {
     return () => { live = false }
   }, [lat, lon])
   const r = resolveClimate(found.place, picked, found.name)
-  return { ...r, pick: (t: ClimateType) => setPicked({ type: t, province: found.name }), ready: loaded && settled }
+  return { ...r, province: found.name, pick: (t: ClimateType) => setPicked({ type: t, province: found.name }), ready: loaded && settled }
 }

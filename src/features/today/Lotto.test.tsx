@@ -44,7 +44,7 @@ describe('Lotto card', () => {
     expect(container.querySelectorAll('.lotto-ball')).toHaveLength(6 + 6 + 3)
     expect(container.textContent).not.toContain('01 02 03')
     const note = container.querySelector('.lotto-note')!
-    expect(note.textContent).toBe('Source: lottopcso.com (unofficial).')
+    expect(note.textContent).toBe('Unofficial.')
     expect(note.textContent).toBe(LOTTO_NOTE)
     const link = screen.getByRole('link', { name: 'Check your ticket with PCSO' }) // its own line: no spaced full stop after it
     expect(link.nextSibling).toBeNull()

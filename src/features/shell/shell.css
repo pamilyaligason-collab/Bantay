@@ -113,10 +113,8 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 /* Floating Jack button: 62px white disc, bottom right. It floats 14px above the tab bar and .bt[data-jack] .scroll::after adds the button's height
    to the end spacer, so the last item (the Taken pill) always ends above it. One tap opens the Jack sheet. */
 .sh-jackfab { position: absolute; right: 18px; bottom: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 14px); z-index: 6; width: 62px; height: 62px; padding: 0; border-radius: 50%; background: var(--card); border: 3px solid var(--card); display: grid; place-items: center; box-shadow: var(--shadow-float); touch-action: manipulation; -webkit-touch-callout: none; user-select: none; transition: transform var(--dur-press) var(--ease-out); }
-/* Scrolled down: slide mostly off the right edge (46 px of the 62 px button, so its centre stays on screen) and leave a 48 px wide hit area; the slide is skipped under reduced motion (below) */
-.sh-jackfab[data-peek] { transform: translateX(46px); transition: transform 220ms var(--ease-out); }
-.sh-jackfab[data-peek]:active { transform: translateX(46px) scale(.94); } /* same specificity as plain :active would lose to the peek move; a press must not move him off the finger */
-.sh-jackfab[data-peek]::after { content: ""; position: absolute; inset: -13px -3px -13px -17px; } /* inset is from the padding box (3 px border): a square 48 px wide from the screen edge, 88 px tall */
+/* S29 (D-184): while the page scrolls down he slides fully off the right edge (150 ms) and returns on scroll up or 600 ms after the scroll stops; instant under reduced motion (below) */
+.sh-jackfab[data-away] { transform: translateX(calc(100% + 24px)); opacity: 0; pointer-events: none; transition: transform 150ms var(--ease-out), opacity 150ms var(--ease-out); }
 .sh-jackfab img { width: 56px; height: 56px; border-radius: 50%; background: var(--on-green); object-fit: cover; pointer-events: none; }
 .sh-jackfab:active { transform: scale(.94); }
 .sh-jackfab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
@@ -127,7 +125,7 @@ button.sync-pill:focus-visible { outline: 2px solid var(--amber); outline-offset
 .sh-hint { position: absolute; right: 18px; bottom: calc(var(--tabbar-h) + var(--tabbar-gap) + var(--sab) + 14px + 62px + 10px); z-index: 6; margin: 0; padding: 8px 14px; border-radius: 14px; background: var(--ink); color: var(--ground); font-size: 15px; font-weight: 600; width: max-content; max-width: calc(100% - 28px); box-sizing: border-box; pointer-events: none; }
 /* above Jack, not beside him: beside him it sat on the SOS caption and clipped at 200% (UI-1) */
 .sh-hint::after { content: ""; position: absolute; right: 22px; top: 100%; border: 7px solid transparent; border-top-color: var(--ink); border-bottom: 0; }
-@media (prefers-reduced-motion: reduce) { .sh-jackfab, .sh-jackfab[data-peek] { transition: none; } .sh-jackfab:active { transform: none; } .sh-jackfab[data-peek]:active { transform: translateX(46px); } }
+@media (prefers-reduced-motion: reduce) { .sh-jackfab, .sh-jackfab[data-away] { transition: none; } .sh-jackfab:active { transform: none; } }
 
 
 /* Jack sheet (D-105): head, red Help row (SosHold restyled), Safety link, Scan and Chat tiles, Upload link. */

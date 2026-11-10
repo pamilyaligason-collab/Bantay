@@ -41,7 +41,7 @@ test('weather: hero first, place toggle, forecast sections', async ({ page }) =>
   // the zone chip: Conel is the second home zone
   await page.getByRole('button', { name: /^Place: / }).click()
   await page.getByRole('button', { name: 'Conel' }).click()
-  await expect(page.locator('.wx-k')).toContainText('Conel')
+  await expect(page.getByRole('button', { name: /^Place: / })).toContainText('Conel') // S29: the place is said once, in the header pill (the .wx-k line is gone)
   await expect(page.getByText(/Updated \d/)).toBeVisible()
   expect(seen.some((u) => u.includes('latitude=6.2&'))).toBe(true)
 })
@@ -56,6 +56,7 @@ test('weather: the live map loads by default, one frame, layers do not stack (D-
   await page.reload()
   await expect(page.locator('.wx-temp')).toBeVisible()
   const card = page.getByTestId('wx-live-map')
+  await card.scrollIntoViewIfNeeded() // the frame mounts only near the screen (NearView) and the S29 cards above push the map past its 300 px margin
   await expect(card.getByRole('group', { name: 'Weather layer' })).toBeVisible()
   await expect(page.locator('iframe')).toHaveCount(1)
   await card.getByRole('button', { name: 'Temp' }).click()
@@ -110,7 +111,11 @@ test('weather: the live map follows my last fix (Conel here), not 12N 128E', asy
   await expect(page.locator('.wx-temp')).toBeVisible()
   await seed(page, 'bantay', 'kv', [{ key: 'loc.last', value: { lat: 6.2, lon: 125.19, at: Date.now() } }])
   await page.reload()
-  await expect(page.getByTestId('wx-live-map').locator('iframe')).toHaveAttribute('src', /lat=6\.20&lon=125\.19/)
+  await expect(page.locator('.wx-temp')).toBeVisible()
+  await expect(async () => { // the frame mounts only near the screen; the card can re-render once under the scroll, so retry the pair
+    await page.getByTestId('wx-live-map').scrollIntoViewIfNeeded({ timeout: 1000 })
+    await expect(page.getByTestId('wx-live-map').locator('iframe')).toHaveAttribute('src', /lat=6\.20&lon=125\.19/, { timeout: 1000 })
+  }).toPass()
 })
 
 test('today weather card: from=action only when an action line shows, and it is the Weather screen line', async ({ page }) => {

@@ -2,7 +2,7 @@
 // It is shown ("checked against Mactan-Cebu airport, 1.2 °C warmer"), never applied: one reading is not enough to correct a forecast.
 // Source: aviationweather.gov Data API, no key, 100 requests/minute; at most one request per station per hour here.
 import { distanceKm } from '../alerts-ingest/parse.ts'
-import type { Cell, Check } from './blend.ts'
+import type { Cell, Check, RainingNow } from './blend.ts'
 
 // RPVT Tagbilaran is listed (WMO 98644) but sent no METAR in the 48 h before 2026-10-31; the check is then simply absent.
 export const STATIONS = [
@@ -15,7 +15,7 @@ const REFRESH_MS = 3600_000
 const MAX_AGE_MS = 3 * 3600_000 // an observation or stored check older than this is not shown
 
 export const metarUrl = (id: string) => `https://aviationweather.gov/api/data/metar?ids=${id}&format=json`
-export const nearestStation = (c: Cell) => STATIONS.map((s) => ({ s, km: distanceKm(c, s) })).filter((x) => x.km <= NEAR_KM).sort((a, b) => a.km - b.km)[0]?.s ?? null
+export const nearestStation = (c: Cell, maxKm = NEAR_KM) => STATIONS.map((s) => ({ s, km: distanceKm(c, s) })).filter((x) => x.km <= maxKm).sort((a, b) => a.km - b.km)[0]?.s ?? null
 
 /** Latest observation: temperature (°C) and when, or null when there is none recent. */
 export function parseMetar(j: unknown, nowMs: number): { temp: number; at: string } | null {
@@ -40,4 +40,27 @@ export async function stationCheck(port: StationPort, cell: Cell, forecastTemp: 
   if (!row || nowMs - Date.parse(row.observed_at) > MAX_AGE_MS) return null
   const t = Number(row.temp_c)
   return { station: row.station, name: row.name, observedAt: row.observed_at, observedTemp: t, forecastTemp, bias: Math.round((t - forecastTemp) * 10) / 10 }
+}
+
+// S29 B: "raining now" from the airport's present weather. shortcut: three listed stations only; add a station to STATIONS to cover another city.
+export const RAIN_KM = 25 // farther than this the airport's rain is not the cell's rain
+export const RAIN_MAX_AGE_MS = 90 * 60_000 // an older report says nothing about now
+// one METAR weather group: optional intensity (- + or VC), optional descriptor (TS SH FZ), then DZ/RA; bare TS and SH count too. RERA (recent rain) does not match.
+const WET = /^(?:[-+]|VC)?(?:(?:TS|SH|FZ)?(?:DZ|RA)+|TS|SH)$/
+
+/** The report's present weather as true (rain, drizzle, showers, thunderstorm), false (a report with none), or null (no report, or older than 90 minutes). */
+export function parseRainObs(j: unknown, nowMs: number): { wet: boolean; at: string; ageMin: number } | null {
+  const o = (Array.isArray(j) ? j[0] : null) as { obsTime?: unknown; wxString?: unknown; rawOb?: unknown } | null
+  const ms = typeof o?.obsTime === 'number' ? o.obsTime * 1000 : NaN
+  if (!o || Number.isNaN(ms) || nowMs - ms > RAIN_MAX_AGE_MS || ms - nowMs > 5 * 60_000) return null
+  const raw = typeof o.wxString === 'string' ? o.wxString : typeof o.rawOb === 'string' ? o.rawOb.split(/ (?:RMK|TEMPO|BECMG|NOSIG)\b/)[0]!.split(' ').slice(2).join(' ') : ''
+  return { wet: raw.split(/\s+/).some((t) => WET.test(t)), at: new Date(ms).toISOString(), ageMin: Math.max(0, Math.round((nowMs - ms) / 60_000)) }
+}
+
+/** Observed rain at the nearest station within 25 km, or null (none near, none recent, fetch failed): the caller then falls back to the model. */
+export async function rainObserved(fetchJson: (url: string) => Promise<unknown>, cell: Cell, nowMs: number): Promise<RainingNow | null> {
+  const st = nearestStation(cell, RAIN_KM)
+  if (!st) return null
+  const r = parseRainObs(await fetchJson(metarUrl(st.id)).catch(() => null), nowMs)
+  return r ? { value: r.wet, source: 'observed', ageMin: r.ageMin, station: st.name } : null
 }

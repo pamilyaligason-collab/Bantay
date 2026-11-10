@@ -36,7 +36,7 @@ export async function assertNoWrappedButtons(page: Page): Promise<void> {
   expect(wrapped, 'buttons that wrap to a second line').toEqual([])
 }
 
-/** At the end of the scroll no interactive element (button, a, input, [role=button]) sits under the Jack button. */
+/** S29 (D-184): at the end of the scroll no interactive element (button, a, input, [role=button]) has its centre point (of the part on screen) under the Jack button. Jack hides while scrolling down, so wait for him to be back first. */
 export async function assertJackClear(page: Page): Promise<void> {
   const hits = await page.evaluate(async () => {
     const fab = document.querySelector('.sh-jackfab')
@@ -44,10 +44,18 @@ export async function assertJackClear(page: Page): Promise<void> {
     if (!fab) return [] as string[] // tab frames without the button (warning, storm, SOS ...) have nothing to clear
     el.scrollTop = el.scrollHeight
     for (let i = 0; i < 3; i++) { await new Promise((r) => requestAnimationFrame(() => r(null))); el.scrollTop = el.scrollHeight } // late content (cards that load after first paint) moves the end
+    for (let i = 0; i < 40 && fab.hasAttribute('data-away'); i++) await new Promise((r) => setTimeout(r, 50))
+    await new Promise((r) => setTimeout(r, 200))
     const f = fab.getBoundingClientRect()
+    const v = el.getBoundingClientRect()
     return Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))
       .filter((n) => n !== fab && !fab.contains(n))
-      .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== 'hidden' && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top })
+      .filter((n) => {
+        const r = n.getBoundingClientRect()
+        if (r.width <= 0 || r.height <= 0 || getComputedStyle(n).visibility === 'hidden') return false
+        const x = (Math.max(r.left, v.left) + Math.min(r.right, v.right)) / 2, y = (Math.max(r.top, v.top) + Math.min(r.bottom, v.bottom)) / 2
+        return x >= f.left && x <= f.right && y >= f.top && y <= f.bottom
+      })
       .map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
   })
   expect(hits, 'controls under the Jack button at scroll end').toEqual([])

@@ -6,7 +6,7 @@ import { alertRef } from '../location/place'
 import type { PlaceLike } from '../location/placeWords'
 import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
-import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
+import { rainLine as todayRainLine, type Wx } from '../today/heroCards'
 import { useWeather } from '../today/weather'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, type Alert, affectsUs, allQuiet, feedStale, freshness, freshText, outdatedLine, placeOnly, quakeFeltKm, rankAlerts, shownCheck, urgentFirst, type LatLon, type StaleSources } from './alerts'
 import { useNow } from './AlertCard'
@@ -55,11 +55,7 @@ export function dialCount(place: Place, overrides: Overrides): number {
 
 /** Same rain numbers as Today: the hourly outlook when we have it, else the day chance. */
 export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): string {
-  if (!wx) return 'Rain, wind and clouds'
-  const sky = skyOf(wx)
-  const local = wxLocal(wx, now)
-  const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, local, sky === 'rain' || sky === 'storm') : undefined
-  return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60, local)
+  return wx ? todayRainLine(wx, now) : 'Rain, wind and clouds' // the same rain words as Today, raining-now included
 }
 
 /** Saved ID and insurance cards on this phone (one per card, front and back count once), plus cards that live only in the family Drive. Null while unknown. */
@@ -101,7 +97,7 @@ export function rightNowRows(p: { alerts: Alert[]; here: LatLon | null; place?: 
     // the board's first row is the top alert itself (it opens Warnings); the Warnings row stays when there is no alert row, more alerts than rows, or the feed is stale
     ...(alerts.length && !p.stale && active <= alerts.length ? [] : [{ href: '#safety/warnings', icon: 'warn' as IconName, tint: (active || p.stale ? 'amber' : 'green') as Tint, title: 'Warnings', value: p.stale ? undefined : active ? `${active} now` : 'None now', badge: p.stale ? 'May be out of date' : undefined }]),
     ...alerts,
-    { href: '#weather', icon: 'rain', tint: 'blue', title: 'Rain', sub: rainLine(p.wx), value: p.wx?.rainPct != null ? `Today up to ${Math.round(p.wx.rainPct)}%` : undefined },
+    { href: '#weather', icon: 'rain', tint: 'blue', title: 'Rain', sub: rainLine(p.wx), value: p.wx?.rainPct != null ? (p.wx.rainPct < 10 ? 'Low chance today' : `Today up to ${Math.round(p.wx.rainPct)}%`) : undefined },
     { href: '#safety/storms', icon: 'typhoon', tint: n || signal ? 'amber' : 'blue', title: 'Storm tracker', value: n ? `${stormName(p.storms[0]!)}${n > 1 ? ` and ${n - 1} more` : ''}` : signal ? signal.level! : p.stale ? undefined : 'No storms', badge: !n && !signal && p.stale ? 'May be out of date' : undefined },
     { href: '#safety/hazards', icon: 'flood', tint: 'amber', title: 'Hazards at my location', sub: p.hazard },
     { href: '#safety/map', icon: 'pin', tint: 'green', title: 'Rescue map', value: p.pins ? plural(p.pins, 'place') : 'Shelters, help' }

@@ -472,6 +472,7 @@
 
 /* v13 T7: Finish setup row */
 [data-testid="setup-row"] { background: transparent; box-shadow: inset 0 0 0 1px var(--hair); border-radius: var(--r-card); }
+[data-testid="setup-row"] .tl-value, [data-testid="setup-row"] .rw-title { white-space: normal; text-overflow: clip; } /* S29: the setup subtitle wraps, never "Reminde..." */
 
 .td-root > .sec { margin-top: 6px; }
 
@@ -552,9 +553,10 @@
 .td-wxh-st { grid-area: t; text-align: center; }
 .td-wxh-sd { font-size: 14px; }
 .td-todo-main { background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; min-height: 44px; }
-/* T6: clouds drift in the right half only, below the kicker, so no cloud runs through the words (still sky included) */
+/* T6: moving clouds drift in the right half only, below the kicker; still clouds (data-still) sit at 44% and 51% (next line) so none runs through the words */
 .td-wxs .wxs-cloud { left: 56%; animation-name: td-cloud; }
-.td-wxs .wxs[data-still] .wxs-cloud { left: 56%; } .td-wxs .wxs[data-still] .wxs-cloud:nth-of-type(2n) { left: 64%; }
+.td-wxs .wxs[data-still] .wxs-cloud { left: 44%; } .td-wxs .wxs[data-still] .wxs-cloud:nth-of-type(2n) { left: 51%; } /* S29 (15 px floor): the condition line is wider and sits right under the cloud row, so the still clouds stay left of it (e2e T6) */
+@media (max-width: 389px) { .td-wxs .wxs[data-still] .wxs-cloud { left: 39%; } .td-wxs .wxs[data-still] .wxs-cloud:nth-of-type(2n) { left: 40%; } } /* S29: at 360 the condition word starts at x 204, so the still clouds move left to end before it (e2e T6 at 360) */
 @keyframes td-cloud { from { transform: translateX(0); } to { transform: translateX(260%); } }
 .td-wxs .td-act-box b { font-size: 15px; }
 .td-wxs .td-act-box { padding: 6px 16px; }
@@ -651,5 +653,3 @@
 .td-wxh-credit { display: block; margin-top: 6px; font-size: 15px; line-height: 1.3; color: #fff; }
 .sf-wxnote { margin: 8px 16px 0; font-size: 15px; color: var(--muted); }
 .td-wxh-credit a { display: inline-block; padding: 12px 0; margin: -12px 0; color: inherit; text-decoration: underline; } /* 44 px to tap, 20 px of layout */
-/* Integration (S28): the Turn on button and the Details link end 72 px short of the gutter so neither lies under Jack when the cards above them are short (e2e s16-today, no allowance) */
-.card.td-ao, .card.td-arow { padding-right: var(--jack-clear, 72px); }

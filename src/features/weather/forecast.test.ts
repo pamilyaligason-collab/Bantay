@@ -16,7 +16,7 @@ describe('request', () => {
   const u = new URL(forecastUrl(P))
   it('is one Open-Meteo forecast call with every field the screen needs', () => {
     expect(u.origin + u.pathname).toBe('https://api.open-meteo.com/v1/forecast')
-    expect(u.searchParams.get('current')!.split(',')).toEqual(['temperature_2m', 'relative_humidity_2m', 'apparent_temperature', 'weather_code', 'wind_speed_10m', 'wind_gusts_10m', 'uv_index'])
+    expect(u.searchParams.get('current')!.split(',')).toEqual(['temperature_2m', 'relative_humidity_2m', 'apparent_temperature', 'weather_code', 'wind_speed_10m', 'wind_gusts_10m', 'uv_index', 'precipitation', 'rain'])
     expect(u.searchParams.get('hourly')!.split(',')).toEqual(['temperature_2m', 'precipitation_probability', 'weather_code', 'precipitation'])
     expect(u.searchParams.get('daily')!.split(',')).toEqual(['weather_code', 'temperature_2m_min', 'temperature_2m_max', 'precipitation_probability_max', 'uv_index_max', 'sunrise', 'sunset'])
   })

@@ -49,10 +49,10 @@ describe('Weather screen with the blend', () => {
     expect(screen.queryByRole('heading', { name: 'Around you' })).toBeNull()
     expect(screen.getByTestId('wx-next2h-est').textContent).toContain('estimated') // the 15-minute block from hourly data exists without the blend (X3)
     expect(screen.queryByTestId('wx-other-alerts')).toBeNull()
-    expect(screen.getByText('Forecast for your spot (rounded to about 1 km) from Open-Meteo. Its global weather models work on a grid of roughly 10 km, so a shower over one street can be missed. Official warnings: PAGASA.')).toBeTruthy()
+    expect(screen.getByText(/^Forecast for [^·]+, your home area \(rounded to about 1.km\)\. The global weather models behind it work on a grid of roughly 10.km, so a shower over one street can be missed\. Official warnings: PAGASA\.$/)).toBeTruthy() // S29: no fix, so the home area is named
   })
 
-  it('flag on: Next 2 hours (estimated), air quality word, credits; OpenWeather notices sit below the PAGASA row', async () => {
+  it('flag on: Next 2 hours (estimated), no Around you air card, credits; OpenWeather notices sit below the PAGASA row', async () => {
     localStorage.setItem('bantay.flag.wx.blend', '1')
     invoke.mockResolvedValue(reply(blend()))
     render(<WeatherScreen />)
@@ -61,12 +61,14 @@ describe('Weather screen with the blend', () => {
     for (const v of [lat, lon]) expect(Math.abs(v * 100 - Math.round(v * 100))).toBeLessThan(1e-6) // 2 decimals at most
     expect(within(card).getByText('estimated')).toBeTruthy()
     expect(within(card).getByText(/Rain likely from about 7:20 PM, heaviest around 7:30 PM/)).toBeTruthy()
-    expect(within(screen.getByTestId('wx-air')).getByText('Moderate')).toBeTruthy()
+    expect(screen.queryByTestId('wx-air')).toBeNull() // air now lives in the Philippine air card
+    expect(screen.queryByText('Around you')).toBeNull()
     const warn = screen.getByTestId('wx-warn')
     const other = screen.getByTestId('wx-other-alerts')
     expect(warn.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     for (const c of ['Weather data by Open-Meteo.com (CC BY 4.0)', 'Data from MET Norway (CC BY 4.0)', 'Weather data by OpenWeather']) expect(screen.getByText(c)).toBeTruthy()
     expect(screen.queryByText(/from Open-Meteo \(global models/)).toBeNull()
+    expect(screen.queryByText(/PAGASA above is the official word/)).toBeNull()
   })
 
   it('flag on, function down: the direct forecast, an honest empty state, no blend cards', async () => {

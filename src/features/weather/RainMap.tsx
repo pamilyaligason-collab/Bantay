@@ -8,24 +8,25 @@ const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${
  *  Philippines is confirmed (rainBars.ts, M1); nothing loads from a map provider. Everything shown comes from the saved forecast, so it works offline. */
 export default function RainMap({ fc, placeName, daily = null, nextRain = null }: { fc: Forecast; placeName: string; daily?: number | null; nextRain?: number | null }) {
   const bars = rainBars(fc, 12)
+  const raining = fc.rainingNow?.value === true
   return (
     <section aria-label="Rain chance" className="card wx-rain" data-testid="wx-rain">
       <div className="wx-sech"><h2 className="wx-h">Rain chance</h2><span className="wx-sub"><Icon name="dl" size={16} /> {savedLine(fc)}</span></div>
-      <p className="wx-sub" data-testid="wx-rain-figures">{daily == null ? 'Today: no number yet' : `Today up to ${Math.round(daily)}%`}{nextRain != null && ` · Next 12 h ${Math.round(nextRain)}%`}</p>
+      <p className="wx-sub" data-testid="wx-rain-figures">{daily == null ? 'Today: no number yet' : daily < 10 ? 'Today: low chance' : `Today up to ${Math.round(daily)}%`}{nextRain != null && ` · Next 12 h ${nextRain < 10 ? 'low chance' : `${Math.round(nextRain)}%`}`}</p>
       {(rainMode() === 'bars' ? (
         <>
           {bars.length === 0 ? <p className="wx-note">No hourly rain data is saved yet.</p> : (
             <ul className="wx-bars" aria-label="Chance of rain, next 12 hours">
               {bars.map((b, i) => (
-                <li key={b.time} data-level={b.level}>
+                <li key={b.time} data-level={b.level} aria-label={`${i === 0 ? 'Now' : hourLabel(b.time)}: ${i === 0 && raining ? 'raining' : b.pct == null ? 'not known' : b.pct < 10 ? 'low chance' : `${Math.round(b.pct)}%`}`}>
                   <em><i style={{ height: `${Math.max(4, b.pct ?? 0)}%` }} /></em>
-                  <b>{b.pct == null ? '–' : `${Math.round(b.pct)}%`}</b>
-                  <span data-show={i % 3 === 0 ? '1' : '0'}>{i === 0 ? 'Now' : hourLabel(b.time)}</span>
+                  <b aria-hidden="true" data-show={i % 2 === 0 ? '1' : '0'}>{i === 0 && raining ? 'Rain' : b.pct == null ? '–' : b.pct < 10 ? 'Low' : `${Math.round(b.pct)}%`}</b>
+                  <span aria-hidden="true" data-show={i % 3 === 0 ? '1' : '0'}>{i === 0 ? 'Now' : hourLabel(b.time)}</span>
                 </li>
               ))}
             </ul>
           )}
-          <p className="wx-sub">Chance of rain each hour at {placeName}, from Open-Meteo. For the live radar picture, open PAGASA.</p>
+          <p className="wx-sub">Chance of rain each hour at {placeName}. For the live radar picture, open PAGASA.</p>
           <a className="pill ghost block" href={PAGASA_RADAR_HREF} target="_blank" rel="noopener noreferrer">Radar images from PAGASA <Icon name="out" size={18} /></a>
         </>
       ) : null)}

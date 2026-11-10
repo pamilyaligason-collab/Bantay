@@ -58,7 +58,7 @@ describe('Plant this month card', () => {
     expect(tiles.map((x) => x.textContent)).toEqual(['Sitaw₱109.30/kg', 'Ampalaya₱109.77/kg', 'Pipino₱111.23/kg'])
     expect(tiles.every((x) => x.querySelector('img')!.getAttribute('alt'))).toBe(true)
     expect(screen.getByTestId('plant-card').getAttribute('href')).toBe('#garden/plant')
-    expect(container.textContent).toContain('November, climate type 4 · DA prices, Metro Manila')
+    expect(container.textContent).toContain('November · Rain all year · DA prices, Metro Manila')
     expect(container.textContent).toContain('Sitaw: first harvest in 45 to 50 days after sowing.')
     expect(screen.getByRole('link', { name: `See all ${cropsFor(4, 11).length}` }).getAttribute('href')).toBe('#garden/plant')
   })
@@ -87,7 +87,7 @@ describe('Plant this month card', () => {
   it('uncertain province: the type is used and the sub line says it comes from the province', () => {
     h.guess = true
     const { container } = render(<PlantCard />)
-    expect(container.textContent).toContain('November, climate type 4 (from your province)')
+    expect(container.textContent).toContain('November · Rain all year (from your province)')
   })
   it('renders nothing until the climate is settled (no picker flash)', () => {
     h.ready = false
@@ -123,7 +123,8 @@ describe('poster page', () => {
     expect(screen.getByTestId('poster-Yardlong bean').textContent).not.toContain('cropped')
     expect(container.textContent).toContain('60 to 75 days after sowing')
     expect(container.textContent).toContain('Common varieties')
-    expect(container.textContent).toContain('PLANT THIS MONTH')
+    expect(container.textContent).not.toContain('PLANT THIS MONTH') // the badge repeated the page title
+    expect(container.querySelectorAll('.gpl-nw a')).toHaveLength(container.querySelectorAll('.gpl-poster').length) // "(Wikimedia Commons)" stays in one nowrap piece
     expect(links.every((a) => a.getAttribute('href')!.startsWith('https://commons.wikimedia.org/wiki/File:') && a.getAttribute('rel')!.includes('noopener'))).toBe(true)
     expect(container.querySelectorAll('.gpl-hero')).toHaveLength(1) // one hero shadow per screen
   })

@@ -13,55 +13,98 @@ export async function settled(page: Page): Promise<void> {
   await page.evaluate(() => document.fonts.ready)
 }
 
+/** S29: waits until the page stops growing (scroll height unchanged for `quietMs`). Late cards (the Safety weather note adds about 100 px above the first aid tiles about a second after load) move every row, so a share measured before they land is not the share the person sees. */
+export async function layoutStable(page: Page, quietMs = 1500): Promise<void> {
+  await page.evaluate(async (quietMs) => {
+    const sc = document.querySelector('.bt .scroll') as HTMLElement
+    let last = -1, since = performance.now()
+    for (let i = 0; i < 200; i++) { // 20 s at most
+      if (sc.scrollHeight !== last) { last = sc.scrollHeight; since = performance.now() }
+      else if (performance.now() - since >= quietMs) return
+      await new Promise((r) => setTimeout(r, 100))
+    }
+    throw new Error('the page never stopped growing')
+  }, quietMs)
+}
+
 /** Warning and SOS content (Today's warning cards and `.td-alertband`, the family notice, the storm roll call `.fm-storm`, the Safety `storm-block`, any sos screen or row): a Jack allowance never covers it. `outsideWarning('.rw-main')` is that selector with warning and SOS content left out. */
 export const WARN_SOS = '[data-testid^="warning"], [data-testid^="warn-"], [data-testid*="sos"], [data-testid="family-notice"], .td-alertband, .fm-storm, [data-testid="storm-block"], [data-nofab]'
 export const outsideWarning = (sel: string) => `${sel}:not(:is(${WARN_SOS}) *)`
 
-/** No control (button, a, input, [role=button]) sits under the Jack button: at scroll 0 ('rest'), at the end of the scroll ('end'), or both (default). Failures are prefixed "at rest:" / "at end:". */
-/** `allow`: a selector whose controls may sit under Jack (D-122: only the Family People rows `.rw-main`, when an empty Activity card hugs its line). When Jack is peeked (scrolled pages) his real hit strip is measured: 48 px wide from the screen edge, 88 px tall. */
+/** S29 (D-184) centre-point gate: no control (button, a, input, [role=button]) has its CENTRE POINT (of the part on screen) under the Jack button at scroll 0 ('rest'), at the end of the scroll ('end'), or both (default). Jack hides while the page scrolls down, so each check first waits for him to be back. Failures are prefixed "at rest:" / "at end:".
+ *  `allow`: a selector whose controls may sit under Jack (D-122 People rows). No gutter on a whole grid is a way to pass: the cards run the full width. */
 export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 'both'; allow?: string } = {}): Promise<void> {
   await settled(page)
   const at = opts.at ?? 'both'
   for (const when of at === 'both' ? (['rest', 'end'] as const) : [at]) {
-    const hits = await page.evaluate(async ([when, allow]) => {
-      const fab = document.querySelector('.sh-jackfab')
+    if (when === 'end') await layoutStable(page) // Today's late cards keep growing the page, so a scroll to the end lands short and every scroll event after it hides Jack again
+    await page.evaluate(async (when) => {
       const el = document.querySelector('.bt .scroll') as HTMLElement
-      if (!fab) return [] as string[] // frames without the button (warning, storm, SOS ...) have nothing to clear
       const put = () => { el.scrollTop = when === 'rest' ? 0 : el.scrollHeight }
       put()
       for (let i = 0; i < 3; i++) { await new Promise((r) => requestAnimationFrame(() => r(null))); put() } // late content (cards that load after first paint) moves the end
-      const fr = fab.getBoundingClientRect()
-      const cy = (fr.top + fr.bottom) / 2
-      const f = fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr
+    }, when)
+    await expectJackAtRest(page, `at ${when}`)
+    const hits = await page.evaluate(([allow]) => {
+      const fab = document.querySelector('.sh-jackfab')
+      const el = document.querySelector('.bt .scroll') as HTMLElement
+      if (!fab) return [] as string[] // frames without the button (warning, storm, SOS ...) have nothing to clear
+      if (fab.hasAttribute('data-away')) throw new Error('Jack slid away during the measure')
+      const f = fab.getBoundingClientRect()
+      const v = el.getBoundingClientRect()
       return Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))
         .filter((n) => n !== fab && !fab.contains(n) && !(allow && n.closest(allow)))
-        .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== 'hidden' && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top })
+        .filter((n) => {
+          const r = n.getBoundingClientRect()
+          if (r.width <= 0 || r.height <= 0 || getComputedStyle(n).visibility === 'hidden') return false
+          const x = (Math.max(r.left, v.left) + Math.min(r.right, v.right)) / 2, y = (Math.max(r.top, v.top) + Math.min(r.bottom, v.bottom)) / 2
+          return x >= f.left && x <= f.right && y >= f.top && y <= f.bottom
+        })
         .map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
-    }, [when, opts.allow ?? ''] as const)
+    }, [opts.allow ?? ''] as const)
     expect(hits, `at ${when}: controls under the Jack button`).toEqual([])
   }
 }
 
-/** D-128 hit test: a control that touches the Jack button fails unless it is a named whole-card link with more than half of it still tappable (hit-tested on a 12 x 12 grid over its on-screen part, so clipping and the real top element count). Section links and small controls (Open Papa, See all) have no allowance. `scroll: 'top'` (default) measures at scroll 0, 'keep' measures where the page is now (a peeked Jack: his 48 x 88 hit strip). The log line carries each measured share. */
+/** S29: fails loudly unless Jack is AT REST: `data-away` clear and the same box 100 ms apart (his 150 ms slide is over). Call it right before every Jack measure; a measure taken while he is away or sliding is vacuous or wrong. No button on the page (warning, storm, SOS frames): nothing to wait for. */
+export async function expectJackAtRest(page: Page, tag = 'Jack'): Promise<void> {
+  const r = await page.evaluate(async () => {
+    const fab = document.querySelector('.sh-jackfab')
+    if (!fab) return { fab: false, away: false, still: true }
+    const nap = (ms: number) => new Promise((x) => setTimeout(x, ms))
+    for (let i = 0; i < 3; i++) await new Promise((x) => requestAnimationFrame(() => x(null)))
+    await nap(100) // a scroll that just happened (scrollIntoView resolves before its scroll event) has set data-away by now; reading earlier sees a clear flag and a vacuous "rest"
+    for (let i = 0; i < 40 && fab.hasAttribute('data-away'); i++) await nap(50) // 600 ms after the scroll stops he is back
+    await nap(250) // his 150 ms slide in
+    const a = fab.getBoundingClientRect()
+    await nap(100)
+    const b = fab.getBoundingClientRect()
+    return { fab: true, away: fab.hasAttribute('data-away'), still: a.left === b.left && a.top === b.top && a.width === b.width && a.height === b.height }
+  })
+  expect(r.away, `${tag}: Jack is at rest (data-away clear)`).toBe(false)
+  expect(r.still, `${tag}: Jack's box is stable`).toBe(true)
+}
+
 export type JackAllow = { name: string; sel: string }
 // The named allowances (D-128) are whole-card links only. 'Learn card' (min 90% tappable) and 'Together row' (min 84%) were added by ruling in D-128.
 // Measured tappable share in gaps-s21 (S21-JACK lines, 4 widths x 5 heights, 3 dates, 143 tests green): Be prepared card 0.75 to 0.99 (43 hits), Learn card 0.90 to 0.97 (9 hits), People row 0.85 to 0.99 (22 hits), Together row 0.84 to 0.99 (11 hits), Needs row never touched Jack (0 hits).
-// Discover (S22 D-135, kept in S25): DISCOVER_ALLOW names four whole-card links: Watch hero card (a.dc-herocard), Video row card (a.dc-vrow), Video card (a.dc-vc), Learn card (a.dc-lc). Each may touch Jack only while more than half of it stays tappable (assertJackHit fails at 50 % or less). Measured on Discover in gaps-s21 and gaps-d117 (4 widths x 5 heights x 3 dates, 16 dates x 6 sizes, 195 to 450 wide): the Watch hero card and a More-videos card touched Jack with 0.69 to 0.99 of them tappable (190 hits); Learn, recipe and Top story cards on Discover never touched him. So the Learn card allowance on Discover (a.dc-lc) is UNMEASURED: the 0.90 to 0.97 range above came from the gaps-s21 Learn card of the D-128 ruling, not from Discover. The log does not split the video hits between a.dc-vrow and a.dc-vc. Nothing was re-measured for the S24 revamp or S25 (a full e2e run needs two production builds); the S21-JACK log lines of the next gaps-s21 and gaps-d117 run print the current share of every control that touches Jack. Section links (All, All topics, See all) and the Today | News | Saved tabs have no allowance.
+// Discover (S22 D-135, kept in S25): DISCOVER_ALLOW names four whole-card links: Watch hero card (a.dc-herocard), Video row card (a.dc-vrow), Video card (a.dc-vc), Learn card (a.dc-lc). Each may touch Jack only while more than half of it stays tappable (assertJackHit fails at 50 % or less). Measured on Discover in gaps-s21 and gaps-d117 (4 widths x 5 heights x 3 dates, 16 dates x 6 sizes, 195 to 450 wide): the Watch hero card and a More-videos card touched Jack with 0.69 to 0.99 of them tappable (190 hits); Learn, recipe and Top story cards on Discover never touched him. So the Learn card allowance on Discover (a.dc-lc) is UNMEASURED: the 0.90 to 0.97 range above came from the gaps-s21 Learn card of the D-128 ruling, not from Discover. The log does not split the video hits between a.dc-vrow and a.dc-vc. Nothing was re-measured for the S24 revamp or S25 (a full e2e run needs two production builds); the S21-JACK log lines of the next gaps-s21 and gaps-d117 run print the current share of every control that touches Jack. Section links (All, All topics, See all) and the Today | News | Saved tabs have no allowance: since S29 (D-184) that means their centre point may not be under Jack at rest or at the end (an edge may be).
 // S28 (D-180): every video preview is the shared MediaCard (.md): a link card (a.md, hero or row) or a button card (button.md, Regional news and Watch); the old dc-herocard, dc-vrow, dc-vc and dc-vgcard classes are gone.
 export const DISCOVER_ALLOW: JackAllow[] = [{ name: 'Video link card', sel: 'a.md' }, { name: 'Video button card', sel: 'button.md' }, { name: 'Learn card', sel: 'a.dc-lc' }]
 export const FAMILY_ALLOW: JackAllow[] = [{ name: 'People row', sel: '[data-testid="people-row"] .rw-main' }, { name: 'Needs row', sel: '[data-testid="need-row"] .rw-main' }, { name: 'Together row', sel: '[data-testid="together-list"] a.rw-main, [data-testid="together-list"] a.fm-tile' }] // a Needs row's Answer / Open / Fix phone control is a small control: no allowance
+/** D-128 hit test: a control that touches the Jack button fails if its centre is under him, or unless it is a named whole-card link with more than half of it still tappable (hit-tested on a 12 x 12 grid over its on-screen part, so clipping and the real top element count). Section links and small controls (Open Papa, See all) have no allowance. Since S29 the centre point of any control, allowed or not, may not be under Jack. `scroll: 'top'` (default) measures at scroll 0, 'keep' measures where the page is now. Either way Jack is measured at rest, after data-away clears (S29). The log line carries each measured share. */
 export async function assertJackHit(page: Page, allow: JackAllow[], tag: string, scroll: 'top' | 'keep' = 'top'): Promise<void> {
-  const hits = await page.evaluate(([allow, scroll]) => {
+  if (scroll === 'top') await page.evaluate(() => { (document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0 })
+  await expectJackAtRest(page, tag)
+  const hits = await page.evaluate(([allow]) => {
     const sc = document.querySelector('.bt .scroll') as HTMLElement
-    if (scroll === 'top') sc.scrollTop = 0
     const fab = document.querySelector('.sh-jackfab')
     if (!fab) return []
-    const fr = fab.getBoundingClientRect()
-    const cy = (fr.top + fr.bottom) / 2
-    const f = fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr
+    if (fab.hasAttribute('data-away')) throw new Error('Jack slid away during the measure') // expectJackAtRest ran just before: a stray scroll would make this check vacuous
+    const f = fab.getBoundingClientRect()
     const box = sc.getBoundingClientRect()
     const barTop = document.querySelector('.tabbar')?.getBoundingClientRect().top ?? innerHeight // content under the tab bar is the bar's business, not Jack's
-    const out: { label: string; allowed: string | null; tappable: number }[] = []
+    const out: { label: string; allowed: string | null; tappable: number; centreUnder: boolean }[] = []
     for (const n of Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))) {
       if (n === fab || fab.contains(n)) continue
       const r = n.getBoundingClientRect()
@@ -71,15 +114,17 @@ export async function assertJackHit(page: Page, allow: JackAllow[], tag: string,
       let ok = 0, all = 0
       for (let i = 0; i < 12; i++) for (let j = 0; j < 12; j++) { all++; const e = document.elementFromPoint(l + ((i + 0.5) * (rt - l)) / 12, t + ((j + 0.5) * (b - t)) / 12); if (e && n.contains(e)) ok++ }
       if (ok === all) continue // the box touches Jack's but nothing of it is covered (Jack's round, or the control sits above him)
-      out.push({ label: (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40), allowed: allow.find((a) => n.matches(a.sel))?.name ?? null, tappable: ok / all })
+      const cx = (l + rt) / 2, cy = (t + b) / 2
+      out.push({ label: (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40), allowed: allow.find((a) => n.matches(a.sel))?.name ?? null, tappable: ok / all, centreUnder: cx >= f.left && cx <= f.right && cy >= f.top && cy <= f.bottom })
     }
     return out
-  }, [allow, scroll] as const)
+  }, [allow] as const)
   for (const h of hits) console.log('S21-JACK', tag, h.allowed ?? 'NONE', h.label, h.tappable.toFixed(2))
-  expect(hits.filter((h) => !h.allowed || h.tappable <= 0.5).map((h) => `${h.label} (${h.allowed ?? 'no allowance'}, ${Math.round(h.tappable * 100)}% tappable)`), `controls under Jack ${tag}`).toEqual([])
+  // S29 (D-184, contract rule A): EVERY control fails when its CENTRE POINT is under Jack (named or not); he may cover an edge of a full-width card or a flush-right link. A named whole-card link also needs more than half of it tappable.
+  expect(hits.filter((h) => (h.centreUnder || (h.allowed !== null && h.tappable <= 0.5))).map((h) => `${h.label} (${h.allowed ?? 'no allowance'}, ${Math.round(h.tappable * 100)}% tappable${h.centreUnder ? ', centre under Jack' : ''})`), `controls under Jack ${tag}`).toEqual([])
 }
 
-/** assertJackHit at rest (scroll 0) and again at the end of the scroll, where Jack is peeked (his 48 x 88 hit strip). Late content moves the end, so the end is re-applied for three frames. */
+/** assertJackHit at rest (scroll 0) and again at the end of the scroll, once Jack is back at rest (S29). Late content moves the end, so the end is re-applied for three frames. */
 export async function assertJackHitRestAndEnd(page: Page, allow: JackAllow[], tag: string): Promise<void> {
   await settled(page)
   await assertJackHit(page, allow, `${tag} at rest`)

@@ -3,11 +3,12 @@
 .wx-rain .wx-sech { flex-wrap: wrap; }
 .wx-rain .wx-sub { display: inline-flex; align-items: center; gap: 4px; }
 .wx-bars { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; }
-.wx-bars li { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; font-size: 11px; line-height: 14px; color: var(--muted); white-space: nowrap; }
+.wx-bars li { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; font-size: 15px; line-height: 18px; color: var(--muted); white-space: nowrap; }
 .wx-bars li em { display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 72px; border-bottom: 1px solid var(--sep); }
 .wx-bars li i { display: block; width: 100%; max-width: 18px; border-radius: 4px 4px 0 0; background: var(--c1); }
 .wx-bars li[data-level="none"] i, .wx-bars li[data-level="unknown"] i { opacity: .45; }
-.wx-bars li b { color: var(--ink); font-size: 11px; font-weight: 600; }
+.wx-bars li b { color: var(--ink); font-size: 15px; font-weight: 600; }
+.wx-bars li b[data-show="0"] { visibility: hidden; } /* every other bar is labelled: 12 labels do not fit 24 px columns at 15 px */
 .wx-bars li span[data-show="0"] { visibility: hidden; }
 .wx-storm { display: grid; gap: 10px; }
 .wx-rain .pill, .wx-storm .pill { box-sizing: border-box; max-width: 100%; white-space: normal; text-align: center; }

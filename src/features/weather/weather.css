@@ -8,14 +8,14 @@
 .wx > section, .wx ul { min-width: 0; }
 .wx .card, .wx .grp, .wx .wx-tile, .wx .wx-action { background: var(--card); border: 1px solid rgba(255,255,255,.18); box-shadow: none; -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
 .wx .grp .row { background: transparent; color: var(--ink); text-decoration: none; }
-.wx .grp .row .sub { font-size: 14px; color: var(--muted); }
+.wx .grp .row .sub { font-size: 15px; color: var(--muted); }
 .wx .lt-back, .wx .lt-title, .wx .sec-t, .wx h2, .wx h3 { color: #fff; }
 .wx .lt-title { text-shadow: 0 1px 6px rgba(0,0,0,.3); }
 .wx .btn2, .wx .pill.ghost { color: #fff; border-color: rgba(255,255,255,.35); background: rgba(255,255,255,.1); }
 .wx-h { font-size: 20px; font-weight: 700; margin: 4px 4px 8px; letter-spacing: -.01em; }
 .wx-sech { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .wx-sech .wx-h { margin: 0; }
-.wx-sub { font-size: 14px; color: var(--muted); }
+.wx-sub { font-size: 15px; color: var(--muted); }
 .wx-note { margin: 0 4px; color: var(--muted); font-size: 16px; }
 
 /* action line: a glass banner, amber edge when there is something to do */
@@ -32,7 +32,6 @@
 .wx .wx-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; margin: -4px -16px 0; padding: 4px 16px 8px; border: 0; border-radius: 0; background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
 .wx .wxs { background: none; }
 .wx .wxs-scrim, .wx .wxs-haze { display: none; } /* the page paints the veiled sky; haze here would show as a grey block behind the hero */
-.wx-k { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
 .wx .wx-hero .wx-temp { font-size: 76px; line-height: 1; font-weight: 200; letter-spacing: -.02em; }
 .wx-cond { font-size: 22px; }
 :root[data-narrow] .wx .wx-hero { margin: -4px -12px 0; }
@@ -41,14 +40,15 @@
 .wx-tile { display: flex; flex-direction: column; gap: 2px; padding: 14px; border-radius: 20px; min-width: 0; }
 .wx-tile b { font-size: 26px; font-weight: 700; }
 .wx-tile .eyebrow { color: var(--muted); }
+.wx .wx-tiles .wx-tile .eyebrow, .wx .wx-tiles .wx-tile .wx-sub { font-size: 15px; } /* today.css sets 13 on the same tiles */
 
 /* next 48 hours: sideways strip, faded at the right edge (mask, so it works over glass) */
 .wx-stripbox { padding: 12px 0 12px 12px; position: relative; overflow: hidden; }
 .wx-strip { list-style: none; margin: 0; padding: 0 40px 6px 0; display: flex; gap: 6px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; -webkit-overflow-scrolling: touch; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 36px), transparent); }
 .wx-strip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.wx-strip li { flex: 0 0 70px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 14px; color: var(--muted); }
+.wx-strip li { flex: 0 0 70px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 15px; text-align: center; color: var(--muted); }
 .wx-strip li b { color: var(--ink); font-size: 17px; }
-.wx-rp { font-size: 14px; font-weight: 600; color: var(--ink); } /* white: the light blue was 3.1:1 on the day sky */
+.wx-rp { font-size: 15px; font-weight: 600; color: var(--ink); } /* white: the light blue was 3.1:1 on the day sky */
 
 /* 10 days */
 .card.wx-days { list-style: none; margin: 0; padding: 4px 16px; }
@@ -81,23 +81,40 @@
 /* the status line wraps before it reaches the sun disc at the top right (360 wide) */
 .wx-stamp { max-width: 11em; text-wrap: balance; }
 
-/* X3 blend (behind the flag): Next 2 hours, Around you, other notices */
-.wx-n2h, .wx-air, .wx-other { padding: 16px; display: grid; gap: 10px; }
+/* X3 blend (behind the flag): Next 2 hours, other notices */
+.wx-n2h, .wx-other { padding: 16px; display: grid; gap: 10px; }
 .wx-n2h-t { font-size: 17px; line-height: 22px; font-weight: 600; }
 .wx-n2h p, .wx-other p { margin: 0; }
 .wx-n2h-bars { list-style: none; margin: 0; padding: 0; display: flex; gap: 3px; align-items: flex-end; min-height: 124px; }
 .wx-n2h-bars li { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; }
-.wx-n2h-bars .wx-rp, .wx-n2h-bars .wx-sub { font-size: 12px; }
+.wx-n2h-bars .wx-rp, .wx-n2h-bars .wx-sub { font-size: 15px; }
 .wx-n2h-bars i { display: block; width: 100%; max-width: 30px; border-radius: 8px 8px 4px 4px; background: linear-gradient(180deg, #BFE3FF, #5FA8E8); }
-.wx-air { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.wx-air div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.wx-air b { font-size: 22px; font-weight: 700; }
-.wx-air .eyebrow { color: var(--muted); }
 .wx-other p { display: flex; justify-content: space-between; gap: 8px; }
 .wx-made a { color: inherit; text-decoration: underline; }
+.wx-made .wx-sub { font-size: 15px; }
 .wx-remind { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; }
 .wx-remind > span { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .wx-remind b { font-size: 15px; font-weight: 600; }
 
 .wx-fnote a { display: inline-block; padding: 12px 0; margin: -12px 0; color: inherit; text-decoration: underline; } /* 44 px to tap, 20 px of layout */
 .wx-fnote { display: block; margin-top: 6px; font-size: 15px; }
+
+/* S29 lane F: air quality, sun arc, rain alert threshold */
+.wx-aqi { padding: 16px; display: grid; gap: 10px; }
+.wx-aqi-chip { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; padding: 12px 14px; border-radius: 14px; font-size: 17px; }
+.wx-aqi-chip span { font-size: 15px; font-weight: 600; }
+.wx-aqi p { margin: 0; font-size: 17px; line-height: 1.45; }
+.wx-sun { padding: 16px; display: grid; gap: 8px; }
+.wx-sun-svg { width: 100%; height: auto; max-height: 150px; color: var(--muted); }
+.wx-sun-t { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wx-sun-t > span { display: grid; gap: 2px; min-width: 0; }
+.wx-sun-t > span:last-child { text-align: right; }
+.wx-sun-t b { font-size: 17px; }
+.wx-thresh { display: grid; gap: 8px; margin-top: 8px; }
+.wx-thresh .segd { --card2: rgba(5,12,28,.45); --card: rgba(255,255,255,.24); } /* the page is a dark sky: white labels need a dark track (the cream default hid them) */
+.wx-aqi .wx-sub, .wx-sun .wx-sub, .wx-thresh .wx-sub { font-size: 15px; }
+
+/* S29 W: the place pill in the Weather header stays on one line and ends in an ellipsis; "area" no longer sits alone on a second line (safety.css wraps the pill text for Safety only) */
+.wx .lt-actions { min-width: 0; }
+.wx .lt-actions .zp, .wx .lt-actions .zp .sf-chip { min-width: 0; max-width: 100%; }
+.wx .lt-actions .zp .zp-t, .wx .lt-actions [data-testid="place-last"] .zp-t { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }

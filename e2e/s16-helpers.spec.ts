@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertHero, assertJackClear, assertNoSideways, assertTargets, assertTextContrast } from './v13'
+import { assertHero, assertJackClear, assertJackHit, assertNoSideways, assertTargets, assertTextContrast } from './v13'
 
 // Self-test of the v13 helpers: each must FAIL on a bad page, otherwise every lane gate is vacuous.
 test.use({ viewport: { width: 390, height: 844 }, serviceWorkers: 'block' })
@@ -70,4 +70,42 @@ test('assertJackClear at rest catches a button that only sits under Jack at scro
   })
   await expect(assertJackClear(page, { at: 'rest' })).rejects.toThrow(/at rest:.*rest-trap/s)
   await assertJackClear(page, { at: 'end' })
+})
+
+test('assertJackHit fails a control whose centre is under Jack (allowed or not) and passes one that is clear', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#today')
+  await expect(page.locator('.sh-jackfab')).toBeVisible()
+  await page.evaluate(() => { // a button under Jack's disc, z-index 0 so Jack is the top element
+    const f = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
+    const b = document.createElement('button')
+    b.className = 'trap'
+    b.textContent = 'trap'
+    b.style.cssText = `position:fixed;left:${f.left}px;top:${f.top}px;width:${f.width}px;height:${f.height}px;z-index:0`
+    document.body.append(b)
+  })
+  await expect(assertJackHit(page, [], 'trap plain', 'keep')).rejects.toThrow(/centre under Jack/)
+  await expect(assertJackHit(page, [{ name: 'trap', sel: 'button.trap' }], 'trap allowed', 'keep')).rejects.toThrow(/centre under Jack/)
+  await page.evaluate(() => document.querySelector('.trap')?.remove())
+  await assertJackHit(page, [], 'clear', 'keep')
+})
+
+test('assertJackHit centre rule: a wide allowed control that is mostly tappable still fails when its centre is on Jack', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#today')
+  await expect(page.locator('.sh-jackfab')).toBeVisible()
+  const put = (cls: string, dx: number) => page.evaluate(([cls, dx]) => { // a 2x wide, Jack-high button in Jack's own container, one layer under him (z-index 5 vs his 6), centre dx px right of his centre
+    const fab = document.querySelector('.sh-jackfab') as HTMLElement
+    const w = fab.offsetWidth * 2
+    const b = document.createElement('button')
+    b.className = cls as string
+    b.textContent = cls as string
+    b.style.cssText = `position:absolute;left:${fab.offsetLeft + fab.offsetWidth / 2 + (dx as number) - w / 2}px;top:${fab.offsetTop}px;width:${w}px;height:${fab.offsetHeight}px;z-index:5`
+    fab.parentElement!.append(b)
+  }, [cls, dx] as const)
+  await put('wide', 0) // centre on Jack's centre; measured 54 % tappable, so it passes the old tappable rule; the regex pins >50 % so this cannot go vacuous if Jack grows
+  await expect(assertJackHit(page, [{ name: 'wide', sel: 'button.wide' }], 'wide allowed', 'keep')).rejects.toThrow(/(5[1-9]|[6-9]\d|100)% tappable, centre under Jack/)
+  await page.evaluate(() => document.querySelector('.wide')?.remove())
+  await put('wide-ctl', -50) // control: same size, centre 50 px left of Jack's centre (outside his disc), still touching him and mostly tappable: the allowance passes
+  await assertJackHit(page, [{ name: 'wide', sel: 'button.wide-ctl' }], 'wide control', 'keep')
 })

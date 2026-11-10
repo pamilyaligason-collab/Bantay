@@ -17,14 +17,14 @@ describe('PAGASA card', () => {
     const { container } = render(<PagasaCard place={null} />)
     expect(container.innerHTML).toBe('')
   })
-  it('current bulletin with no signal: title, bulletin time, line, authority, link to the row', () => {
+  it('current bulletin with no signal: title, bulletin time, line, link to the row', () => {
     put([row()])
     const { container } = render(<PagasaCard place={{ source: "zone", zone: "dampas" }} />)
     expect(screen.getByRole('heading', { name: 'PAGASA' })).toBeTruthy()
     expect(screen.getByText('Typhoon "Samuel" - Tropical Cyclone Bulletin #1')).toBeTruthy()
     expect(container.textContent).toMatch(/Bulletin .*\d/)
     expect(screen.getByText('No wind signal in this bulletin.')).toBeTruthy()
-    expect(screen.getByText('PAGASA is the official word.')).toBeTruthy()
+    expect(screen.queryByText(/official word/)).toBeNull() // S29: the line was cut
     expect(link().getAttribute('href')).toBe(URL1)
     expect(link().getAttribute('target')).toBe('_blank')
     expect(link().getAttribute('rel')).toContain('noopener')
@@ -53,7 +53,7 @@ describe('PAGASA card', () => {
     h.d = null
     render(<PagasaCard place={null} />)
     expect(screen.getByText(/No PAGASA bulletin read/)).toBeTruthy()
-    expect(screen.getByText('PAGASA is the official word.')).toBeTruthy()
+    expect(screen.queryByText(/official word/)).toBeNull() // S29: the line was cut
   })
   it('saved copy shows its rows with a status chip; older than 24 h shows the no-bulletin line', () => {
     put([row()], true, Date.now() - 3_600_000)

@@ -226,6 +226,16 @@ describe('rain timing', () => {
   })
 })
 
+describe('rainLine with raining now (S29)', () => {
+  it('an airport or model raining-now counts as rain even when the code looks dry and this hour is low', () => {
+    const now = new Date('2026-10-19T02:00:00Z') // 10:00 Manila
+    const hourly = { time: ['2026-10-19T10:00', '2026-10-19T11:00', '2026-10-19T12:00'], prob: [20, 70, 70] }
+    const base = { temp: 27, rainPct: 70, words: 'partly cloudy', code: 2, at: '', hourly, utcOffset: 8 * 3600 }
+    expect(rainLine(base, now)).not.toBe(rainLine({ ...base, rainingNow: { value: true, source: 'observed' as const, ageMin: 10 } }, now))
+    expect(rainLine({ ...base, rainingNow: { value: true, source: 'observed' as const, ageMin: 10 } }, now)).toBe('Rain now. More likely from 11 AM.')
+  })
+})
+
 describe('weatherAction (Today and Simple mode action line)', () => {
   const w = (o: Partial<Wx>): Wx => ({ temp: 28, rainPct: 10, words: 'clear', at: '2026-10-19T00:00:00Z', humidity: 60, ...o })
   const now = new Date('2026-10-19T02:00:00Z') // 10:00 in Manila
@@ -235,6 +245,12 @@ describe('weatherAction (Today and Simple mode action line)', () => {
     const hourly = { time: ['2026-10-19T12:00', '2026-10-19T13:00'], prob: [80, 70] }
     expect(weatherAction(w({ hourly }), now)).toMatch(/^Rain likely 12-2 PM/)
     expect(weatherAction(w({ temp: 36, humidity: 70, hourly }), now)).toMatch(/^Stay indoors/) // heat outranks rain
+  })
+  it('S29: while it rains (Simple mode too) the sun/heat tip goes, Danger heat stays', () => {
+    const rn = { value: true, source: 'model' as const, ageMin: null }
+    expect(weatherAction(w({ temp: 31, humidity: 65, rainingNow: rn }), now)).toBeNull()
+    expect(weatherAction(w({ temp: 31, humidity: 65, rainingNow: { ...rn, value: false } }), now)).toBe('Avoid the noon sun. Drink water often.')
+    expect(weatherAction(w({ temp: 36, humidity: 70, rainingNow: rn }), now)).toMatch(/^Stay indoors/)
   })
   it('a hot day with no humidity reading earns no heat line (the heat index needs both)', () => {
     expect(weatherAction(w({ temp: 36, humidity: null }), now)).toBeNull()

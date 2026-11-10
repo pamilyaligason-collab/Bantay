@@ -212,7 +212,7 @@
 .ah-val small { font-size: 16px; font-weight: 500; color: var(--muted); }
 .ah .lr-track { align-self: stretch; }
 .ah-foot { margin: 0; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.ah-acts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 8px; padding-right: 52px; } /* D-128: a button is never under Jack (right 18 + 62 wide = 80 from the edge, card inner edge is 32 in), so the two actions stack to the left of his column at every phone width */
+.ah-acts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 8px; } /* S29: no Jack gutter; Jack hides on scroll and the action buttons run the full card width */
 .ah .cd-act { width: 100%; min-width: 0; min-height: 44px; margin: 0; padding-inline: 8px; }
 .ps-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; padding: 0 12px 0 8px; border: 0; border-radius: 999px; background: var(--card2); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; }
 .ps-pill[data-other] { background: var(--btn); color: var(--btn-fg); } /* Family: someone other than Me is on show */
@@ -224,8 +224,9 @@
 .fy-reads { display: grid; gap: 10px; }
 
 /* S22-D Today row: six tinted stat tiles. S28 C1: senior type floor (label and sub 15, value 24), two columns on a phone, a small 7-day visual per tile */
-.tk-grid { padding-right: var(--jack-clear, 72px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 12px); }
+.tk-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--card-gap, 12px); }
 @media (min-width: 720px) { .tk-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 719px) { .tk-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; } } /* S29: 3 cards in 2 columns, the odd last one spans so no cell is empty */
 a.tk { --tint-fill: var(--card2); --tint-ink: var(--ink); position: relative; display: flex; flex-direction: column; justify-content: center; gap: var(--sp-1, 4px); min-height: 112px; padding: var(--card-pad, 16px); border-radius: 18px; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; box-sizing: border-box; min-width: 0; box-shadow: var(--shadow-raised, none); }
 a.tk:active { box-shadow: var(--shadow-press, none); }
 .tk[data-tint="blue"] { --tint-fill: var(--tint-blue); --tint-ink: var(--tint-blue-ink); }
@@ -260,7 +261,7 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .rc-add { width: 100%; min-height: 48px; }
 
 /* S22-D Browse: two-column animated cards */
-.hb-grid { padding-right: var(--jack-clear, 72px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.hb-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .card.hb { --tint-fill: var(--card2); --tint-ink: var(--ink); display: flex; flex-direction: column; justify-content: space-between; gap: 10px; min-height: 150px; padding: 14px; box-sizing: border-box; background: var(--tint-fill); color: var(--tint-ink); text-decoration: none; animation: hb-rise .6s ease-out both; animation-delay: calc(var(--i, 0) * 80ms); }
 .card.hb[data-wide] { grid-column: span 2; min-height: 96px; }
 @media (max-width: 300px) { .hb-grid { grid-template-columns: minmax(0, 1fr); } .card.hb[data-wide] { grid-column: auto; } } /* 200% text zoom: one column, as the old grid did */
@@ -364,7 +365,7 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .ah .lr-zones i, .ah .lr-zones i.n { background: none; padding: 0; text-align: left; color: var(--ink2); font-weight: 400; } /* the board's plain line, not a tinted strip */
 .ah .lr-zones i:last-child:not(.n) { text-align: right; }
 .ah .lr-over { display: none; }
-:root[data-narrow] .ah-acts { grid-template-columns: minmax(0, 1fr); padding-right: 0; } /* at 195 px the two labels do not fit side by side, and with the Jack padding they would not fit at all; the 195 px Jack checks still pass */
+:root[data-narrow] .ah-acts { grid-template-columns: minmax(0, 1fr); } /* at 195 px the two labels do not fit side by side */
 :root[data-narrow] .ah-foot { display: block; -webkit-line-clamp: unset; } /* the range numbers must not be cut off */
 [data-testid=browse] .rw-sub { -webkit-line-clamp: 1; }
 
@@ -403,7 +404,7 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .hb-sr { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* S25 Health videos: chips that wrap (no side scroll), then a MediaList of media cards */
-.hv-chips { padding-right: var(--jack-clear, 72px); display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.hv-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .hv-chip { min-height: 44px; padding: 0 14px; border: 1.5px solid var(--tab-accent, #9C2A3A); border-radius: 999px; background: transparent; color: var(--ink); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
 .hv-chip[aria-pressed="true"] { background: var(--tint-amber); color: var(--tint-amber-ink); } /* a tested tint pair: 4.5:1 in light and dark */
 .hv-chip:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
@@ -430,5 +431,3 @@ a.tk:active { box-shadow: var(--shadow-press, none); }
 .tk .cd-kicker, .tk .cd-value, .tk .cd-meta { color: inherit; }
 .fh-m .cd-title { font-size: var(--fs-body, 17px); font-weight: 700; }
 
-/* Health videos: the cards end 72 px short of the gutter so none lies under the Jack button at rest (e2e v13-foundation, no allowance) */
-[data-testid="health-videos"] .md-listwrap { padding-right: var(--jack-clear, 72px); }

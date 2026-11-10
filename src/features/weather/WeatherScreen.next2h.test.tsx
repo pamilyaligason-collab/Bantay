@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { openMeteoFixture } from './fixture'
-import { RAIN_KEY } from './rainRemind'
+import { RAIN_KEY, THRESH_KEY } from './rainRemind'
 import WeatherScreen from './WeatherScreen'
 
 const cap = vi.hoisted(() => ({ native: false }))
@@ -46,5 +46,15 @@ describe('Weather screen: Next 2 hours with the blend flag off (X3)', () => {
     await waitFor(() => expect(LN.requestPermissions).toHaveBeenCalledTimes(1))
     await waitFor(async () => expect((await db.kv.get(RAIN_KEY))?.value).toBe(true))
     await waitFor(() => expect(screen.getByTestId('wx-remind').getAttribute('aria-checked')).toBe('true'))
+  })
+  it('the alert chance row (native, switch on) starts at 60, and choosing 80 saves 80', async () => {
+    cap.native = true
+    await db.kv.put({ key: RAIN_KEY, value: true })
+    render(<WeatherScreen />)
+    const row = await screen.findByTestId('wx-thresh')
+    expect(row.querySelector('[aria-pressed="true"]')?.textContent).toBe('60%')
+    fireEvent.click(Array.from(row.querySelectorAll('button')).find((b) => b.textContent === '80%')!)
+    await waitFor(async () => expect((await db.kv.get(THRESH_KEY))?.value).toBe(80))
+    await waitFor(() => expect(screen.getByTestId('wx-thresh').querySelector('[aria-pressed="true"]')?.textContent).toBe('80%'))
   })
 })

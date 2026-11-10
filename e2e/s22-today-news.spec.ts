@@ -49,7 +49,7 @@ for (const width of [320, 360, 390]) {
         await page.evaluate(async () => { const pending: Promise<unknown>[] = []; window.dispatchEvent(new CustomEvent('bantay:refresh', { detail: { waitUntil: (p: Promise<unknown>) => void pending.push(p) } })); await Promise.allSettled(pending) })
         return news.locator('.tn-row').count()
       }).toBe(3)
-      // Jack at rest (scroll 0, not yet peeked) with News in the page; no new allowance
+      // Jack at rest (scroll 0, at rest) with News in the page; no new allowance
       // News gets no allowance. At 320 My day's own Log button (MyDay.tsx, lane B) is 71% tappable next to Jack with or without News; it is named here, not hidden.
       await assertJackHitRestAndEnd(page, width === 320 ? [{ name: 'My day Log (pre-existing, lane B)', sel: '[data-testid="myday"] a.td-todo-go' }] : [], `today-news ${width} ${scheme} rest`)
       await assertJackClear(page, { at: 'rest', allow: width === 320 ? '[data-testid="myday"] a.td-todo-go' : undefined })
