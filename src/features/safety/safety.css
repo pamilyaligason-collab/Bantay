@@ -191,15 +191,13 @@ a.btn2.sf-ico { box-sizing: border-box; display: flex; align-items: center; just
 .sf-kind .rw-value { font-size: 14px; }
 .sf-kind .sf-callbtn { margin-right: 12px; flex: none; min-height: 44px; }
 
-/* VR / D-110: Jack stays; no Right now link sits under him at rest. Each row's link stops short of the Jack column (right 18 px + 62 px disc), so the card keeps its width and the right 68 px of a row is plain card. Not at 195 px, where that would leave no room for words. */
-@media (min-width: 300px) {
-  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw { padding-right: 68px; }
-  /* the inset takes 54 px from the words: titles wrap instead of cutting, and a long badge wraps to two lines */
-  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: break-word; }
-  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-txt { min-width: 92px; }
-  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-sub { -webkit-line-clamp: 3; overflow-wrap: break-word; } /* the words wrap onto more lines before they are cut */
-  :root:not([data-narrow]) .bt[data-jack] [data-testid="right-now"] .rw-badge { white-space: normal; max-width: 88px; text-align: center; line-height: 16px; }
-}
+/* S29 (D-184): no Jack gutter on Right now rows. The sub text wraps in full (no clamp) and the value or badge sits under the words, so the chevron end of the row is free and a long line such as the Rain forecast is never cut. */
+[data-testid="right-now"] .rw-main { flex-wrap: wrap; row-gap: 2px; }
+[data-testid="right-now"] .rw-txt { flex: 1 1 calc(100% - 76px); min-width: 0; }
+[data-testid="right-now"] .rw-title { white-space: normal; overflow-wrap: anywhere; }
+[data-testid="right-now"] .rw-sub { display: block; -webkit-line-clamp: unset; overflow: visible; overflow-wrap: break-word; }
+[data-testid="right-now"] .rw-main > svg { order: 1; }
+[data-testid="right-now"] .rw-value, [data-testid="right-now"] .rw-badge { order: 2; margin: 0 auto 0 44px; white-space: normal; text-align: left; line-height: 20px; }
 
 /* A last-known place keeps "last known" readable: it wraps to a second line before it ever cuts the words */
 .lt-actions .zp .sf-chip, .lt-below .zp .sf-chip, .lt-actions [data-testid="place-last"], .lt-below [data-testid="place-last"] { height: auto; min-height: 48px; padding-top: 4px; padding-bottom: 4px; }
