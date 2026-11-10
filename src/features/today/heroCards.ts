@@ -2,7 +2,7 @@ import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
 import { affectsUs, distanceKm, NEAR_KM, placeOnly, quakeQuiet, rankAlerts, RECENT_MS, tierOf, urgent, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
 import { quakeRow } from './alertRow'
-import { actionLine, type WarningIn } from '../weather/actionLine'
+import { actionLines, type WarningIn } from '../weather/actionLine'
 import { heatIndexC } from '../weather/heatIndex'
 
 /** Hero card engine (D-31/D-43): one card per thing that matters now, in priority order:
@@ -24,6 +24,8 @@ export interface Wx {
   feels?: number | null // Open-Meteo apparent temperature, the same 'Feels like' the Weather screen shows
   uvMax?: number | null
   sunrise?: string | null; sunset?: string | null // today's, place-local; the weather scene's time of day
+  precip?: number | null // mm now (Open-Meteo current), when known
+  rainingNow?: { value: boolean; source: 'observed' | 'model'; ageMin: number | null; station?: string } | null // S29 B
   offline?: boolean // the forecast is the last good one from the cache, not a fresh reading
 }
 export type HeroActionId = 'ok' | 'safety' | 'taken' | 'skip' | 'plan'
@@ -148,8 +150,9 @@ export function rainBody(w: Wx, rain: ReturnType<typeof rainOutlook> | undefined
   if (rain) return rainWords(rain)
   if (w.rainPct == null) return 'No rain chance number yet.'
   const pct = Math.round(w.rainPct)
-  if (rain === null) return rainPassed(w, nowLocal) ? 'No more rain expected for now.' : `Today up to ${pct}%.`
-  return rainy ? `Bring an umbrella. Today up to ${pct}%.` : `Today up to ${pct}%.`
+  const upTo = pct < 10 ? 'Low chance of rain today.' : `Today up to ${pct}%.` // never "0%"
+  if (rain === null) return rainPassed(w, nowLocal) ? 'No more rain expected for now.' : upTo
+  return rainy ? `Bring an umbrella. ${upTo}` : upTo
 }
 
 /** The rain sentence, worked out at render time (the cached reading can be hours old). Shared by the hero card and the one-line weather helper. */
@@ -183,15 +186,17 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
 
 /** The one action line weather earns on Today and in Simple mode. It is the top line of the Weather screen's actionLines() (heat index first,
  *  then rain in the next 12 hours, then strong sun), so Today and Weather never disagree. null when none applies. */
-export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null) {
+export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null, raining = false) {
   if (!w || w.temp == null) return null
-  return actionLine({
+  const lines = actionLines({
     heatIndexC: heatIndexC(w.temp, w.humidity),
     hourly: (w.hourly?.time ?? []).map((time, i) => ({ time, prob: w.hourly!.prob[i] ?? null })),
     nowLocal: wxLocal(w, now),
     uvMax: w.uvMax ?? null,
     warning
   })
+  // While it rains, sun and heat tips are wrong ("avoid the noon sun"): drop the UV tip and every heat line under Danger (rank 80+). Danger and Extreme danger stay.
+  return (raining ? lines.filter((l) => l.id !== 'uv' && (l.id !== 'heat' || l.rank >= 80)) : lines)[0] ?? null
 }
 export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
   return weatherActionLine(w, now, warning)?.text ?? null

@@ -37,7 +37,7 @@ for (const [w, scheme] of [[390, 'light'], [390, 'dark'], [195, 'light']] as con
     await open(page, '/#today')
     const hero = page.getByTestId('weather-hero')
     await expect(hero).toContainText('29°')
-    await expect(hero.getByTestId('forecast-note')).toHaveText(/^Forecast for .+ · Weather data by Open-Meteo\.com$/)
+    await expect(hero.getByTestId('forecast-note')).toHaveText(/^Weather data by Open-Meteo\.com$/) // no fix: the card says "Location off: showing <place>" once, so its credit has no place
     await expect(page.locator('.td-hs-p, .td-wxh-sp').first()).toHaveText(/^\d+% rain$/)
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/today-${w}-${scheme}.png`, fullPage: true })
     await page.goto('/#weather')

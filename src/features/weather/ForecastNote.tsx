@@ -11,11 +11,11 @@ export const creditText = (sources?: string[]) => {
   return names?.length ? `Weather data by ${names.join(', ')}` : OPEN_METEO_CREDIT
 }
 
-export function ForecastNote({ place, className, link = false, sources }: { place: string; className?: string; link?: boolean; sources?: string[] }) {
+export function ForecastNote({ place, className, link = false, sources }: { place?: string; className?: string; link?: boolean; sources?: string[] }) {
   const credit = creditText(sources)
   return (
     <span className={className} data-testid="forecast-note">
-      {forecastFor(place)} · {link && credit === OPEN_METEO_CREDIT ? <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">{credit}</a> : credit}
+      {place ? `${forecastFor(place)} · ` : ''}{link && credit === OPEN_METEO_CREDIT ? <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">{credit}</a> : credit}
     </span>
   )
 }

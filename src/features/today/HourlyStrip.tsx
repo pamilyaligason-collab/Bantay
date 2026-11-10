@@ -1,5 +1,7 @@
 import { Icon } from '../shell/Icon'
 import { kindOf } from '../weather/forecast'
+import { rainChanceText, reconcileNow } from '../weather/rainNow'
+import '../weather/rainNow.css'
 import { wxLocal, type Wx } from './heroCards'
 import { stormSlots, type Slot } from './stormView'
 
@@ -15,7 +17,9 @@ export function hourlySlots(wx: Wx, now: Date, storm = false): Slot[] {
   const at = wxLocal(wx, now).slice(0, 13)
   const from = h.time.findIndex((t) => t.slice(0, 13) >= at)
   if (from < 0) return []
-  const out = h.time.slice(from, from + STRIP_HOURS).map((t, k): Slot => ({ time: k === 0 ? 'Now' : hourLabel(t), kind: kindOf(h.code?.[from + k] ?? null), pct: h.prob[from + k] ?? null, temp: k === 0 ? wx.temp ?? h.temp?.[from] ?? null : h.temp?.[from + k] ?? null }))
+  const rn = reconcileNow(wx) // the Now cell tells the card's story: rain icon while it rains, not a cloud beside "Light rain"
+  const nowKind = rn.code !== (wx.code ?? null) ? kindOf(rn.code) : null
+  const out = h.time.slice(from, from + STRIP_HOURS).map((t, k): Slot => ({ time: k === 0 ? 'Now' : hourLabel(t), kind: k === 0 && nowKind ? nowKind : kindOf(h.code?.[from + k] ?? null), pct: h.prob[from + k] ?? null, temp: k === 0 ? wx.temp ?? h.temp?.[from] ?? null : h.temp?.[from + k] ?? null }))
   return storm ? stormSlots(out) : out // T16: under a storm the strip agrees with the title
 }
 
@@ -29,7 +33,7 @@ export default function HourlyStrip({ slots }: { slots: Slot[] }) {
           <span className="td-hs-t">{s.time}</span>
           <span className="td-hs-i" aria-hidden="true"><Icon name={s.kind} size={22} /></span>
           {s.temp != null && <span className="td-hs-d">{deg(s.temp)}</span>}
-          {s.pct != null && <span className="td-hs-p">{Math.round(s.pct)}% rain</span>}
+          {s.pct != null && <span className={s.pct < 10 ? 'td-hs-p rn-low' : 'td-hs-p'}>{s.pct < 10 ? rainChanceText(s.pct) : `${Math.round(s.pct)}% rain`}</span>}
         </li>
       ))}
     </ul>
