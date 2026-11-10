@@ -70,7 +70,7 @@ for (const [w, h] of [[390, 844], [1280, 900]] as const) {
       const card = page.getByRole('region', { name: 'Data integrity check' })
       await expect(card.getByText(/12,345 records checked/)).toBeVisible()
       await expect(card.getByText('5 to look at')).toBeVisible()
-      await expect(card.getByText(/1 extra duplicate rows \(in 1 groups\)/)).toBeVisible()
+      await expect(card.getByText(/1 extra duplicate row \(1 open group\)/)).toBeVisible()
       // the status line plus one named list per kind (one finding each), worst kind first
       const kinds = ['Cannot be right', 'Unit looks wrong', 'No unit', 'Totals disagree', 'Possible duplicate']
       for (const k of kinds) await expect(card.getByRole('list', { name: `${k} (1)` }).getByRole('listitem')).toHaveCount(1)

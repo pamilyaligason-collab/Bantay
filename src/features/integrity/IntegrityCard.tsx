@@ -4,6 +4,7 @@ import { useDeskPeople } from '../admin/desk/people'
 import { Empty, Tag } from '../admin/desk/ui'
 import { findingLine, integrityStatus, KIND_LABEL, KIND_ORDER, loadIntegrity, loadMore, PAGE_SIZE, type Finding, type Kind } from './integrityApi'
 import '../admin/desk/system.css'
+const n = (k: number, w: string) => `${k.toLocaleString('en-PH')} ${w}${k === 1 ? '' : 's'}` // senior-first copy: "1 group", "2 groups"
 
 const WORD = { ok: 'OK', warn: 'Check', bad: 'Problem', plain: '' } as const
 const clock = (iso: string) => new Date(iso).toLocaleString('en-PH', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
@@ -37,7 +38,7 @@ export default function IntegrityCard({ tick }: { tick: number }) {
               <div className="sy-grow">
                 <b>{d.run ? `Last check ${clock(d.run.ran_at)}` : 'Every record, every night'}</b>
                 <div className="sy-sub">
-                  {sum && typeof sum.checked === 'number' ? `${sum.checked.toLocaleString('en-PH')} records checked · ${sum.dupes ?? 0} extra duplicate rows (in ${d.counts.duplicate} groups) · ${sum.impossible ?? 0} cannot be right · ${sum.mismatched ?? 0} unit or total mismatches` : 'Looks for duplicates, impossible values, wrong units and day totals that disagree. It only reports; it never changes a record.'}
+                  {sum && typeof sum.checked === 'number' ? `${sum.checked.toLocaleString('en-PH')} records checked · ${n(sum.dupes ?? 0, 'extra duplicate row')} (${n(d.counts.duplicate, 'open group')}) · ${sum.impossible ?? 0} cannot be right · ${sum.mismatched ?? 0} unit or total mismatches` : 'Looks for duplicates, impossible values, wrong units and day totals that disagree. It only reports; it never changes a record.'}
                 </div>
               </div>
               <span className={`sy-st ${st.tone}`}>{WORD[st.tone] && <span className="wa-sr">{WORD[st.tone]}: </span>}{st.text}</span>
