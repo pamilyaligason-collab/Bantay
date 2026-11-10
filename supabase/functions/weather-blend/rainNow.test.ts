@@ -99,6 +99,8 @@ describe('blend() sets the model rain now (contract rule B: METAR, then model, t
     expect(src).toContain('b.rainingNow = (await rainP) ?? b.rainingNow')
     expect(src).toContain('const rainP = rainObserved(fetchJson, cell, now)') // started before gather(), so the airport report never waits for the providers
     expect(src).toContain('memoJson(')
+    expect(src.indexOf('const rainP =')).toBeLessThan(src.indexOf('await gather(')) // order, not just presence: the airport report starts before the providers are awaited
+    expect(src.indexOf('const obsP =')).toBeLessThan(src.indexOf('await gather('))
   })
 })
 
