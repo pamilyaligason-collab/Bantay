@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { needsCheck } from '../safety/dial'
 import type { Entry } from '../safety/entries'
 import { wxLocal, type Wx } from './heroCards'
+import { hourlySlots } from './HourlyStrip'
 import WeatherCard from './WeatherCard'
 
 const m = vi.hoisted(() => ({ place: { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false } as unknown, wx: null as unknown }))
@@ -107,6 +108,48 @@ describe('Today weather card, rain now and no fix', () => {
     expect(screen.queryByText('Partly cloudy')).toBeNull()
     expect(container.querySelector('.wxs')!.getAttribute('data-cond')).toBe('rain')
     expect(container.textContent).not.toMatch(/Strong sun/)
+  })
+  describe('sun and heat tips at 10 AM place time (fake Date, so the tests cannot pass at night)', () => {
+    const model = { value: true, source: 'model' as const, ageMin: null }
+    const setup = (extra: Partial<Wx>) => {
+      vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-20T02:00:00Z')) // 10:00 in Manila (UTC+8), before 15:00
+      m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: true }
+      m.wx = { ...base, temp: 31, humidity: 70, words: 'partly cloudy', code: 2, uvMax: 10, precip: 1.2, ...extra }
+    }
+    afterEach(() => vi.useRealTimers())
+    it('control, not raining: the strong-sun tip shows when nothing outranks it', () => {
+      setup({ humidity: null })
+      render(<WeatherCard />)
+      expect(screen.getByText(/Strong sun/)).toBeTruthy()
+    })
+    it('raining: no strong-sun tip', () => {
+      setup({ humidity: null, rainingNow: model })
+      const { container } = render(<WeatherCard />)
+      expect(container.textContent).not.toMatch(/Strong sun/)
+    })
+    it('control, not raining: the Extreme caution heat line shows', () => {
+      setup({})
+      render(<WeatherCard />)
+      expect(screen.getByText('Avoid the noon sun. Drink water often.')).toBeTruthy()
+    })
+    it('raining: no "Avoid the noon sun" line', () => {
+      setup({ rainingNow: model })
+      const { container } = render(<WeatherCard />)
+      expect(container.textContent).not.toMatch(/noon sun/)
+    })
+    it('raining but Danger heat index: the Danger line stays', () => {
+      setup({ temp: 34, rainingNow: model })
+      render(<WeatherCard />)
+      expect(screen.getByText(/^Stay indoors/)).toBeTruthy()
+    })
+    it('raining: the Now cell of the hourly strip has the rain icon, not a cloud', () => {
+      setup({ rainingNow: model })
+      const t0 = '2026-10-20T10:00'
+      ;(m.wx as Wx).hourly = { time: [t0, '2026-10-20T11:00'], prob: [20, 20], code: [3, 3], temp: [31, 31] }
+      expect(hourlySlots(m.wx as Wx, new Date())[0]).toMatchObject({ time: 'Now', kind: 'rain' })
+      ;(m.wx as Wx).rainingNow = null
+      expect(hourlySlots(m.wx as Wx, new Date())[0]).toMatchObject({ time: 'Now', kind: 'cloud' })
+    })
   })
   it('no fix and no picked zone: the place once, as the one Location off note', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }

@@ -73,6 +73,12 @@ describe('blend() sets the model rain now (contract rule B: METAR, then model, t
   })
   it('dry: 0 mm and a cloud code', () => expect(blended({ precip: 0, code: 3 }).rainingNow).toEqual({ value: false, source: 'model', ageMin: null }))
   it('unknown: no precip and no code is null, never dry', () => expect(blended({ precip: null, code: null }).rainingNow).toBeNull())
+  it('contract rule B: only Open-Meteo counts. MET rain code with Open-Meteo dry is dry; Open-Meteo missing is null', () => {
+    const mk = (id: 'open-meteo' | 'met-norway', precip: number | null, code: number | null): Series => ({ id, now: { time: '2026-11-10T12:00', temp: 30, humidity: 70, feels: 34, wind: 5, gust: 9, uv: 8, precip, code }, hours: [], days: [] })
+    const run = (series: Series[]) => blend({ series, sources: [], aqi: null }, GENSAN, NOW).rainingNow
+    expect(run([mk('open-meteo', 0, 3), mk('met-norway', 2, 63)])).toEqual({ value: false, source: 'model', ageMin: null })
+    expect(run([mk('met-norway', 2, 63)])).toBeNull()
+  })
   it('index.ts order: no METAR near (Manila) keeps the model value; a fresh dry METAR beats a wet model', async () => {
     const wet = blended({ precip: 2, code: 63 })
     const manila = await rainObserved(async () => obs('RA'), { lat: 14.6, lon: 121 }, NOW)

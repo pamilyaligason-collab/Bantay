@@ -2,7 +2,7 @@ import { doseStates, medSlots } from '../health/model'
 import { HOME_ZONES } from '../location/geo'
 import { affectsUs, distanceKm, NEAR_KM, placeOnly, quakeQuiet, rankAlerts, RECENT_MS, tierOf, urgent, WIDE_KM, type Alert, type LatLon } from '../safety/alerts'
 import { quakeRow } from './alertRow'
-import { actionLine, type WarningIn } from '../weather/actionLine'
+import { actionLines, type WarningIn } from '../weather/actionLine'
 import { heatIndexC } from '../weather/heatIndex'
 
 /** Hero card engine (D-31/D-43): one card per thing that matters now, in priority order:
@@ -186,15 +186,17 @@ export function heroCards(i: { alerts: Alert[]; ref: LatLon | null; doses: Dose[
 
 /** The one action line weather earns on Today and in Simple mode. It is the top line of the Weather screen's actionLines() (heat index first,
  *  then rain in the next 12 hours, then strong sun), so Today and Weather never disagree. null when none applies. */
-export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null) {
+export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null, raining = false) {
   if (!w || w.temp == null) return null
-  return actionLine({
+  const lines = actionLines({
     heatIndexC: heatIndexC(w.temp, w.humidity),
     hourly: (w.hourly?.time ?? []).map((time, i) => ({ time, prob: w.hourly!.prob[i] ?? null })),
     nowLocal: wxLocal(w, now),
     uvMax: w.uvMax ?? null,
     warning
   })
+  // While it rains, sun and heat tips are wrong ("avoid the noon sun"): drop the UV tip and every heat line under Danger (rank 80+). Danger and Extreme danger stay.
+  return (raining ? lines.filter((l) => l.id !== 'uv' && (l.id !== 'heat' || l.rank >= 80)) : lines)[0] ?? null
 }
 export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
   return weatherActionLine(w, now, warning)?.text ?? null
