@@ -1,7 +1,7 @@
 /* Weather scene: layers behind the weather text. Colours that matter for reading live in scene.ts (SKY, SCRIM) and are contrast-tested. */
 .wxs-host { position: relative; overflow: hidden; isolation: isolate; color: #fff; }
 .wxs-host > *:not(.wxs) { position: relative; z-index: 1; }
-.wxs-host .td-sub, .wxs-host .wx-k, .wxs-host .wx-sub, .wxs-host .td-k, .wxs-host .td-link { color: #fff; opacity: 1; }
+.wxs-host .td-sub, .wxs-host .wx-sub, .wxs-host .td-k, .wxs-host .td-link { color: #fff; opacity: 1; }
 .wxs-host .td-wx-t, .wxs-host .wx-temp, .wxs-host .td-wxh-t { text-shadow: 0 1px 6px rgba(0, 0, 0, .35); }
 
 .wxs { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: linear-gradient(to bottom, var(--wxs-a), var(--wxs-b)); }
