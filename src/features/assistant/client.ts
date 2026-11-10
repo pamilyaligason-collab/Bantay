@@ -20,7 +20,8 @@ export async function ask(messages: Msg[], screen: string, url = assistantUrl(),
     const res = await f(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(buildRequest(messages, screen))
+      body: JSON.stringify(buildRequest(messages, screen)),
+      signal: AbortSignal.timeout(65_000) // the function may try up to three models in turn (about 60 s worst case); never wait forever
     })
     if (res.status === 401) return { error: 'signin' }
     if (res.status === 429) return { error: 'limit' }
