@@ -150,7 +150,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
             {expanded && <HourlyStrip slots={hourlySlots(wx, now, storm)} />}
             {!expanded && next.length > 0 && (
               <ul className="td-wxh-hrs" aria-label="Next hours">
-                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{s.pct < 10 ? 'Low chance' : <>{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</>}</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
+                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp" aria-label={s.pct < 10 ? 'Low chance of rain' : undefined}>{s.pct < 10 ? 'Low' : <>{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</>}</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>
             )}
             <ForecastNote className="td-wxh-credit" link place={locationOff ? undefined : placeNameOf(place)} sources={wx.sources} />

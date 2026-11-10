@@ -9,7 +9,7 @@ import { ALL_IDS } from '../gobag/items'
 import { KEY as BAG_KEY, EMPTY as BAG_EMPTY, readState } from '../gobag/state'
 import { dialCount } from './SafetyHub'
 import { OVERRIDES_KEY, type Overrides } from './entries'
-import { ALERTS_KEY, CHECKED_KEY, LAST_SEEN_KEY, NO_STALE, STALE_KEY, feedStale, freshness, freshText, shownCheck, type Alert, type StaleSources } from './alerts'
+import { ALERTS_KEY, CHECKED_KEY, LAST_SEEN_KEY, NO_STALE, STALE_KEY, feedStale, freshness, freshText, neverChecked, shownCheck, type Alert, type StaleSources } from './alerts'
 import LazyMap from './LazyMap'
 import { cyclones, stormLine, stormName, since, windySrc, WINDY_LAYERS, type WindyLayer } from './LiveMaps'
 import { NONE_A, type Place, useOnline } from './SafetyPages'
@@ -51,7 +51,8 @@ export default function StormTracker({ place }: { place: Place }) {
   const name = placeName(place) // the line is measured from alertRef, the place this names (home for a phone abroad, never its foreign position)
   const signals = liveSignals(all)
   const view = stormCentre(place.weather)
-  const line = stormLine(storms, alertRef(place), name, checked, signals.length)
+  const never = neverChecked(all, saved, down)
+  const line = stormLine(storms, alertRef(place), name, checked, signals.length, never)
   const [layer, setLayer] = useState<WindyLayer>('wind')
   const [loaded, setLoaded] = useState(false)
   const paused = pauseOnData((navigator as Navigator & { connection?: Conn }).connection, pref)
@@ -62,7 +63,7 @@ export default function StormTracker({ place }: { place: Place }) {
     <div className="st">
       <section className="card st-hero" data-testid="storm-hero" aria-label="Storm status">
         <div role="status">
-          <div className="st-head"><span className="st-dot" data-on={storms.length || signals.length || !checked ? 'watch' : 'calm'} aria-hidden="true"><Icon name={storms.length || signals.length || !checked ? 'typhoon' : 'check'} size={16} /></span><h2 className="st-status">{storms.length ? `${storms.length} ${storms.length === 1 ? 'storm' : 'storms'} listed` : signals.length ? `${signals[0]!.level} in force` : checked ? 'No storm near the Philippines now' : 'Storms not checked lately'}</h2></div>
+          <div className="st-head"><span className="st-dot" data-on={storms.length || signals.length || !checked ? 'watch' : 'calm'} aria-hidden="true"><Icon name={storms.length || signals.length || !checked ? 'typhoon' : 'check'} size={16} /></span><h2 className="st-status">{storms.length ? `${storms.length} ${storms.length === 1 ? 'storm' : 'storms'} listed` : signals.length ? `${signals[0]!.level} in force` : checked ? 'No storm near the Philippines now' : never ? 'Storms not checked yet' : 'Storms not checked lately'}</h2></div>
           <p className={`st-line sf-storm-line ${line.tone}`}>{line.text}</p>
         </div>
         <LazyMap height={240} center={[place.weather.lat, place.weather.lon]} zoom={5} depKey={`par|${place.weather.lat}|${place.weather.lon}|${pinned.map((s) => s.id).join(',')}`}

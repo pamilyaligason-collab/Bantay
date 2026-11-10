@@ -57,6 +57,7 @@ export default function RainMini({ slots, raining = false }: { slots: MiniSlot[]
   const chance = slots[0]!.mm == null
   const val = (s: MiniSlot) => (chance ? s.pct : s.mm) ?? 0
   const top = slots.reduce((a, s, i) => (val(s) > val(slots[a]!) ? i : a), 0) // the tallest bar carries the number
+  const unknown = (s: MiniSlot) => (chance ? s.pct : s.mm) == null // ML-05: no number is not 0%: a dashed stub, no bar height
   const frac = (s: MiniSlot) => Math.min(1, val(s) / (chance ? 100 : MM_FULL)) // A2: a fixed scale (0-100% chance; MM_FULL mm per 15 min), never the highest slot, so a flat 20% does not look like a flat 90%
   return (
     <div className="td-rm" data-testid="rain-mini">
@@ -65,7 +66,7 @@ export default function RainMini({ slots, raining = false }: { slots: MiniSlot[]
         {slots.map((s, i) => (
           <li key={s.time}>
             <span className="td-rm-v">{i === top ? (chance ? `${s.pct}%` : `${s.mm} mm`) : ' '}</span>
-            <i style={{ height: `${Math.max(2, frac(s) * 36)}px` }} />
+            <i className={unknown(s) ? 'td-rm-unk' : undefined} style={unknown(s) ? undefined : { height: `${Math.max(2, frac(s) * 36)}px` }} />
             <span className="td-rm-l">{i === 0 ? 'Now' : i === 4 ? '+1 h' : ' '}</span>
           </li>
         ))}

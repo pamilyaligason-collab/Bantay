@@ -21,7 +21,10 @@ describe('rain watch', () => {
     expect(rainWatch(h, NOW, true)?.text).toBe('Raining now, until about 4 PM')
     expect(actionLines({ ...base, hourly: h, raining: true }).find((l) => l.id === 'rain')?.text).toBe('Raining now, until about 4 PM')
     expect(actionLines({ ...base, hourly: h }).find((l) => l.id === 'rain')?.text).toBe('Rain likely now until 4 PM (90%)')
-    expect(rainWatch(hours((d, hr) => (d === 0 && hr === 17 ? 90 : 0)), NOW, true)?.text).toBe('Rain likely 5-6 PM (90%)') // not falling this hour in the hourly: unchanged
+    expect(rainWatch(hours((d, hr) => (d === 0 && hr === 17 ? 90 : 0)), NOW, true)?.text).toBe('Raining now') // this hour is under 60% but it is falling: never "Rain likely 5-6 PM" under a Raining now hero
+    expect(rainWatch(hours(() => 0), NOW, true)).toBeNull() // no wet hour at all: no rain line (the hero already says it)
+    expect(rainWatch([], NOW, true)).toBeNull()
+    expect(rainWatch(hours((d, hr) => (d === 0 && hr === 17 ? 90 : 0)), NOW)?.text).toBe('Rain likely 5-6 PM (90%)') // not raining: unchanged
   })
   it('59% is not a watch; 60% is', () => {
     expect(rainWatch(hours((d, hr) => (d === 0 && hr === 15 ? 59 : 0)), NOW)).toBeNull()

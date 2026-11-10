@@ -21,6 +21,13 @@ describe('LiveMaps storm list', () => {
     expect(screen.getByRole('status').textContent).toBe('No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.')
     expect(screen.getByText('PAGASA bulletin').closest('a')?.getAttribute('href')).toContain('pagasa.dost.gov.ph/tropical-cyclone')
   })
+  it('A7: no check on this phone at all says yet, not lately', () => {
+    rows.list = []; rows.checked = null
+    render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)
+    expect(screen.getByRole('status').textContent).toContain('have not been checked yet')
+    expect(screen.getByRole('status').textContent).not.toContain('lately')
+    rows.checked = new Date().toISOString()
+  })
   it('R4 offline for 2 days: the not-checked sentence, no all-clear', () => {
     rows.list = []; rows.checked = new Date(Date.now() - 2 * 86_400_000).toISOString()
     render(<LiveMaps loc={{ lat: 9.65, lon: 123.88 }} />)

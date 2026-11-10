@@ -1,5 +1,5 @@
 import type { LatLon } from '../location/geo'
-import { CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, type Alert, type StaleSources } from '../safety/alerts'
+import { CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, neverChecked, type Alert, type StaleSources } from '../safety/alerts'
 import { useKv } from '../safety/store'
 import { cyclones, since, stormLine, stormName } from '../safety/LiveMaps'
 import { liveSignals } from '../safety/stormMode'
@@ -12,7 +12,8 @@ const BULLETIN = 'https://www.pagasa.dost.gov.ph/tropical-cyclone/severe-weather
  *  No PAGASA machine feed is read (R1), so no signal numbers or cone are drawn: the bulletin is a link. */
 export default function StormTrack({ alerts, point, placeName }: { alerts: Alert[]; point: LatLon; placeName: string }) {
   const storms = cyclones(alerts)
-  const line = stormLine(storms, point, placeName, !feedStale(alerts, useKv<unknown>(CHECKED_KEY, null), useKv<StaleSources>(STALE_KEY, NO_STALE)), liveSignals(alerts).length)
+  const saved = useKv<unknown>(CHECKED_KEY, null); const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
+  const line = stormLine(storms, point, placeName, !feedStale(alerts, saved, down), liveSignals(alerts).length, neverChecked(alerts, saved, down))
   return (
     <div className="wx-storm" data-tone={line.tone}>
       <p className="wx-note" role="status"><b>{line.text}</b></p>

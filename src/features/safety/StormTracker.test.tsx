@@ -123,7 +123,7 @@ describe('StormTracker', () => {
   it('never checked: no "No storm" claim', () => {
     kv.alerts = []; kv.checked = null
     render(<StormTracker place={place} />)
-    expect(screen.getByRole('status').textContent).toContain('Storms not checked lately')
+    expect(screen.getByRole('status').textContent).toContain('Storms not checked yet')
     expect(screen.getByRole('status').textContent).not.toContain('No storm near')
     kv.checked = new Date().toISOString()
   })

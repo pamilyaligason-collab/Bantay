@@ -15,6 +15,12 @@ describe('calmLine (the calm one-line card)', () => {
     expect(l.tone).toBe('watch')
     expect(l.text).toContain('have not been checked lately')
   })
+  it('A7: never checked says "yet", not "lately"; one wording for every card', () => {
+    const l = calmLine([], here, 'Sample Town', false, 0, true)
+    expect(l.tone).toBe('watch')
+    expect(l.text).toBe('Storms have not been checked yet, so Bantay cannot say there are none. Check the map and PAGASA.')
+    expect(l.text).not.toContain('lately')
+  })
   it('a live wind signal: stormLine keeps its own sentence', () => {
     expect(calmLine([], here, 'Sample Town', true, 1).text).toMatch(/^A PAGASA wind signal is up/)
   })

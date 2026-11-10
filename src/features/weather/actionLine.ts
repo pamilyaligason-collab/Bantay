@@ -28,6 +28,13 @@ export function rainWatch(hourly: HourlyRain[], nowLocal: string, raining = fals
   if (from < 0) return null
   const win = hourly.slice(from, from + RAIN_WATCH_HOURS)
   const hit = (i: number) => (win[i]?.prob ?? -1) >= RAIN_WATCH_PCT
+  if (raining && win.some((_, k) => hit(k))) { // A3: while it falls the line says so, never "Rain likely 5-6 PM" under a Raining now hero, whatever the hourly chance says
+    let e = 0
+    while (e < win.length && hit(e)) e++
+    const here = win[0]!.time.slice(0, 13) === nowLocal.slice(0, 13)
+    const end = e > 0 && here ? (Number(win[e - 1]!.time.slice(11, 13)) + 1) % 24 : -1
+    return { text: end < 0 ? 'Raining now' : `Raining now, until about ${hour12(end)} ${mer(end)}`, peak: Math.max(0, ...win.map((w) => w.prob ?? 0)) }
+  }
   let i = 0
   while (i < win.length && !hit(i)) i++
   if (i >= win.length) return null
@@ -40,7 +47,6 @@ export function rainWatch(hourly: HourlyRain[], nowLocal: string, raining = fals
   const start = hr(i)
   const end = (hr(j - 1) + 1) % 24
   const now = i === 0 && win[0]!.time.slice(0, 13) === nowLocal.slice(0, 13)
-  if (now && raining) return { text: `Raining now, until about ${hour12(end)} ${mer(end)}`, peak } // A3: it is falling, so no "likely" and no percentage
   const when = now ? `now until ${hour12(end)} ${mer(end)}` : `${tomorrow ? 'tomorrow ' : ''}${hourSpan(start, end)}`
   return { text: `Rain likely ${when} (${Math.round(peak)}%)`, peak }
 }

@@ -20,14 +20,14 @@ describe('rain chance words', () => {
   })
   it('the hourly strip never prints 0%', () => {
     render(<HourlyStrip slots={[{ time: 'Now', kind: 'cloud', pct: 0, temp: 30 }, { time: '1 PM', kind: 'rain', pct: 40, temp: 29 }]} />)
-    expect(screen.getByText('Low chance')).toBeTruthy()
+    expect(screen.getByText('Low').getAttribute('aria-label')).toBe('Low chance of rain') // A9: the same word as the Weather 48 h strip
     expect(screen.getByText('40% rain')).toBeTruthy()
     expect(screen.queryByText(/^0%/)).toBeNull()
   })
   it('S29 W: the Now cell of a raining slot says Raining, not a chance; the next hour keeps its own', () => {
     render(<HourlyStrip slots={[{ time: 'Now', kind: 'rain', pct: 5, temp: 27, raining: true }, { time: '1 PM', kind: 'cloud', pct: 5, temp: 34 }]} />)
     expect(screen.getByText('Raining')).toBeTruthy()
-    expect(screen.getAllByText('Low chance')).toHaveLength(1)
+    expect(screen.getAllByText('Low')).toHaveLength(1)
   })
 })
 

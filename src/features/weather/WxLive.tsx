@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { LatLon } from '../location/geo'
-import { CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, freshText, freshness, shownCheck, type Alert, type StaleSources } from '../safety/alerts'
+import { CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, freshText, freshness, neverChecked, shownCheck, type Alert, type StaleSources } from '../safety/alerts'
 import { WINDY_LAYERS, WindyMap, cyclones, since, stormLine, stormName, useOnline, windySrc, type WindyLayer } from '../safety/LiveMaps'
 import { liveSignals } from '../safety/stormMode'
 import { pauseOnData, type Conn } from '../safety/stormPar'
@@ -28,8 +28,8 @@ type Pause = ReturnType<typeof useWxPause>
 const Credit = () => <p className="sub lm-credit wx-credit">Map by Windy</p>
 /** The calm card's one line (A-P3): said only after a fresh check with no storm and no wind signal; every other state keeps stormLine's own sentence, so "no storms" is never said without a check. */
 export const CALM_LINE = 'No storm warnings for the Philippines right now.'
-export function calmLine(storms: Alert[], from: LatLon, place: string, checked: boolean, signals: number): ReturnType<typeof stormLine> {
-  return checked && !storms.length && !signals ? { text: CALM_LINE, tone: 'calm' } : stormLine(storms, from, place, checked, signals)
+export function calmLine(storms: Alert[], from: LatLon, place: string, checked: boolean, signals: number, never = false): ReturnType<typeof stormLine> {
+  return checked && !storms.length && !signals ? { text: CALM_LINE, tone: 'calm' } : stormLine(storms, from, place, checked, signals, never)
 }
 export const GoRow = ({ href, children }: { href: string; children: string }) => <a className="wx-go" href={href}>{children} <Icon name="chev" size={16} /></a>
 
@@ -61,8 +61,9 @@ export function LiveMapCard({ point, pause }: { point: LatLon; pause: Pause }) {
 export function StormsNear({ alerts, point, place, pause }: { alerts: Alert[]; point: LatLon; place: string; pause: Pause }) {
   const online = useOnline()
   const storms = cyclones(alerts)
-  const checked = !feedStale(alerts, useKv<unknown>(CHECKED_KEY, null), useKv<StaleSources>(STALE_KEY, NO_STALE))
-  const line = stormLine(storms, point, place, checked, liveSignals(alerts).length)
+  const saved = useKv<unknown>(CHECKED_KEY, null); const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
+  const checked = !feedStale(alerts, saved, down)
+  const line = stormLine(storms, point, place, checked, liveSignals(alerts).length, neverChecked(alerts, saved, down))
   const view = stormFrame(alerts, point)
   return (
     <section aria-label="Storm track" className="card wx-rain wx-bleed" data-testid="wx-storms-near">
@@ -90,14 +91,12 @@ export function StormsNear({ alerts, point, place, pause }: { alerts: Alert[]; p
   )
 }
 
-/** No advisory: one line with a status dot and a Storm tracker link. stormLine says "not checked lately" for a stale feed, never an all-clear without a fresh check. */
+/** No advisory: one line with a status dot and a Storm tracker link. stormLine says "not checked lately" ("yet" when never) for a stale feed, never an all-clear without a fresh check. */
 export function StormLineCard({ alerts, point, place }: { alerts: Alert[]; point: LatLon; place: string }) {
   const saved = useKv<unknown>(CHECKED_KEY, null)
   const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
   const checkedAt = shownCheck(alerts, saved, down)
-  const base = calmLine(cyclones(alerts), point, place, !feedStale(alerts, saved, down), liveSignals(alerts).length)
-  const never = freshness(checkedAt).ageMin === null && base.tone === 'watch' && base.text.startsWith('Storms have not been checked lately')
-  const line = never ? { ...base, text: 'Storms have not been checked yet. Check the map and PAGASA.' } : base // A7: "lately" over "Never checked" contradicted itself
+  const line = calmLine(cyclones(alerts), point, place, !feedStale(alerts, saved, down), liveSignals(alerts).length, neverChecked(alerts, saved, down))
   return (
     <section aria-label="Storm check" className="card wx-rain" data-testid="wx-storms-none">
       <p className="wx-note wx-calmline" role="status"><i className="wx-dot" data-tone={line.tone} aria-hidden="true" /><b>{line.text}</b></p>
