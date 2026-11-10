@@ -41,6 +41,7 @@ describe('RainMap', () => {
     expect(screen.getByRole('link', { name: /Radar images from PAGASA/ }).getAttribute('href')).toMatch(/pagasa\.dost\.gov\.ph/)
     expect(document.querySelector('iframe, img[src*="rainviewer"]')).toBeNull() // nothing loads from a map provider
     expect(screen.queryByRole('button', { name: /Wind|Storm track/ })).toBeNull() // no layer tabs: the board has one rain card
+    expect(screen.queryByText(/from Open-Meteo/)).toBeNull()
     expect(screen.queryByText(/Storms have not been checked/)).toBeNull() // the storm block only shows while a storm is listed
   })
   it('storm track lists a GDACS storm and never says no storms while one is listed', () => {
