@@ -35,12 +35,13 @@ describe('ask', () => {
     await ask([], 'today', 'https://x.test', f)
     expect(f).toHaveBeenCalledTimes(1)
   })
-  it('picks the provider from VITE_ASSISTANT_PROVIDER, n8n by default', () => {
+  it('uses the edge function by default; VITE_ASSISTANT_PROVIDER=n8n is the rollback to the webhook', () => {
     const env = { VITE_ASSISTANT_URL: 'https://n8n.test/hook', VITE_SUPABASE_URL: 'https://x.supabase.co/' }
-    expect(assistantUrl(env)).toBe('https://n8n.test/hook')
-    expect(assistantUrl({ ...env, VITE_ASSISTANT_PROVIDER: 'n8n' })).toBe('https://n8n.test/hook')
+    expect(assistantUrl(env)).toBe('https://x.supabase.co/functions/v1/ask')
     expect(assistantUrl({ ...env, VITE_ASSISTANT_PROVIDER: 'edge' })).toBe('https://x.supabase.co/functions/v1/ask')
-    expect(assistantUrl({ VITE_ASSISTANT_PROVIDER: 'edge' })).toBeUndefined()
+    expect(assistantUrl({ ...env, VITE_ASSISTANT_PROVIDER: 'n8n' })).toBe('https://n8n.test/hook')
+    expect(assistantUrl({ VITE_ASSISTANT_PROVIDER: 'n8n' })).toBeUndefined()
+    expect(assistantUrl({ VITE_ASSISTANT_URL: 'https://n8n.test/hook' })).toBeUndefined() // no Supabase, no edge
     expect(assistantUrl({})).toBeUndefined()
   })
 })
