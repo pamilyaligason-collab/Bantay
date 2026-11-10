@@ -8,7 +8,7 @@
 .wx-bars li i { display: block; width: 100%; max-width: 18px; border-radius: 4px 4px 0 0; background: var(--c1); }
 .wx-bars li[data-level="none"] i, .wx-bars li[data-level="unknown"] i { opacity: .45; }
 .wx-bars li b { color: var(--ink); font-size: 15px; font-weight: 600; }
-.wx-bars li b[data-show="0"] { visibility: hidden; } /* every other bar is labelled: 12 labels do not fit 24 px columns at 15 px */
+.wx-bars li b[data-show="0"] { visibility: hidden; } /* every third bar is labelled, value and hour together (A1): 12 labels do not fit 24 px columns at 15 px */
 .wx-bars li span[data-show="0"] { visibility: hidden; }
 .wx-storm { display: grid; gap: 10px; }
 .wx-rain .pill, .wx-storm .pill { box-sizing: border-box; max-width: 100%; white-space: normal; text-align: center; }

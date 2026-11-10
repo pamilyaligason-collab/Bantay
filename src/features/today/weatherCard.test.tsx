@@ -167,8 +167,8 @@ describe('Today weather card, rain now and no fix', () => {
     m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: false }
     m.wx = base
     const { container } = render(<WeatherCard expanded />)
-    expect(container.textContent).not.toContain('your home area')
-    expect(screen.getByTestId('location-off').textContent).toBe('Location off: showing Dampas, Tagbilaran')
+    expect(container.textContent!.split('Dampas, Tagbilaran')).toHaveLength(2) // the place is said once (the note no longer repeats it)
+    expect(screen.getByTestId('location-off').textContent).toBe('Location off: showing your home area')
     expect(screen.getByTestId('forecast-note').textContent).toBe('Weather data by Open-Meteo.com')
   })
 })

@@ -113,12 +113,12 @@ describe('WeatherScreen', () => {
       end(new Error('done')) // settle it: the fetch is shared per point between renders
       await screen.findByText(/Could not load the forecast/)
     })
-    it('nothing saved and never checked, the fetch fails: "Not checked lately", never a green all-clear', async () => {
+    it('nothing saved and never checked, the fetch fails: "have not been checked yet" (ML-51, same as the storm line), never a green all-clear', async () => {
       vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline') }))
       render(<WeatherScreen />)
       await screen.findByText(/Could not load the forecast/)
       const r = await row()
-      expect(r.textContent).toContain('Not checked lately')
+      expect(r.textContent).toContain('Warnings have not been checked yet')
       expect(r.querySelector('[data-tint="green"]')).toBeNull()
     })
   })
@@ -161,6 +161,7 @@ describe('WeatherScreen', () => {
     render(<WeatherScreen />)
     await screen.findByText('Partly cloudy')
     expect(screen.getByRole('button', { name: /^Place: Dampas, Tagbilaran · your home area\. Change$/ })).toBeTruthy() // the header chip says the place; the hero does not repeat it
+    expect(screen.getByRole('button', { name: /^Place: / }).textContent).toBe('Dampas, Tagbilaran') // A6: the pill shows the place only; "your home area" lives in the accessible name
     expect(document.querySelector('.wx-k')).toBeNull()
   })
 
@@ -254,7 +255,7 @@ describe('WeatherScreen', () => {
     fireEvent.click(within(card).getByRole('button', { name: 'Wind' }))
     expect(card.querySelectorAll('iframe')).toHaveLength(1)
     expect(card.querySelector('iframe')!.getAttribute('src')).toContain('overlay=wind')
-    expect(card.textContent).toContain('Forecast map, not radar. Needs internet. For radar pictures, open PAGASA.')
+    expect(card.textContent).toContain('Forecast map, not radar. Needs internet.')
   })
 
   it('D-125: Pause on mobile data is off by default, has its own key, and on cellular it holds the frame until Load live layer', async () => {
@@ -306,7 +307,8 @@ describe('WeatherScreen', () => {
     await db.kv.delete(CHECKED_KEY)
     render(<WeatherScreen />)
     const stale = await screen.findByTestId('wx-storms-none')
-    expect(stale.textContent).toContain('Storms have not been checked lately')
+    expect(stale.textContent).toContain('Storms have not been checked yet') // A7: never checked at all says "yet", not "lately" over "Never checked"
+    expect(stale.textContent).toContain('Never checked')
     expect(stale.textContent).not.toContain('No storm warnings')
   })
 

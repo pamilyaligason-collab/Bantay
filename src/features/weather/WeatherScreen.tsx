@@ -6,7 +6,7 @@ import { ZONE_KEY } from '../location/useLocation'
 import { FOLLOW_KEY, useWeatherPlace } from './weatherPlace'
 import { needsPrecise, oldFixNote, weatherFixState } from '../location/freshness'
 import { track } from '../admin/events'
-import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, type Alert, type StaleSources } from '../safety/alerts'
+import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, neverChecked, type Alert, type StaleSources } from '../safety/alerts'
 import { putKv, useKv } from '../safety/store'
 import { useOnline } from '../safety/LiveMaps'
 import { Icon, type IconName } from '../shell/Icon'
@@ -29,7 +29,7 @@ import { creditIds, ForecastNote } from './ForecastNote'
 import { wxFlag } from './flags'
 import { Credits, Next2h, OtherNotices } from './BlendCards'
 import { useBlendedWeather, type BlendedState } from './useBlendedWeather'
-import { condOf, feelsLike, isHot, SCRIM, SKY, todOf } from './scene'
+import { condOf, feelsLike, isHot, pastSunset, SCRIM, SKY, todOf } from './scene'
 import WeatherScene from './WeatherScene'
 import { LiveMapCard, StormLineCard, StormsNear, useWxPause } from './WxLive'
 import { hasAdvisory } from './advisory'
@@ -42,7 +42,7 @@ import AirCard from './AirCard'
 import SunArc from './SunArc'
 import { syncRainReminder } from './rainRemind'
 import RainNowChip from './RainNowChip'
-import { locationOffNote, rainChanceText, reconcileNow } from './rainNow'
+import { isRainingNow, locationOffNote, rainChanceText, reconcileNow } from './rainNow'
 import './weather.css'
 import './wxs7w.css'
 
@@ -105,7 +105,10 @@ export default function WeatherScreen() {
   const warnAt = place ? alertRef(place) : point // the sentences below name this place: home for a phone abroad, never its foreign position
   const now = useNow() // a quake ages out of D-114 terms and a warning of its window while the screen stays open
   const warn = useMemo(() => (warnAt ? weatherWarning(alerts, warnAt, false) : null), [alerts, warnAt, now])
-  const unchecked = feedStale(alerts, useKv<unknown>(CHECKED_KEY, null), useKv<StaleSources>(STALE_KEY, NO_STALE)) // no "no warning" wording or green tint without a fresh check
+  const savedCheck = useKv<unknown>(CHECKED_KEY, null)
+  const staleSrc = useKv<StaleSources>(STALE_KEY, NO_STALE)
+  const unchecked = feedStale(alerts, savedCheck, staleSrc) // no "no warning" wording or green tint without a fresh check
+  const never = neverChecked(alerts, savedCheck, staleSrc) // ML-51: the same never-checked words as the storm line
 
   const opened = useRef(false)
   useEffect(() => {
@@ -144,9 +147,9 @@ export default function WeatherScreen() {
       <LargeTitle back={{ href: '#today', label: 'Today' }} title="Weather" actions={<ZonePicker loc={l} />} />
       {oldFix && fixAt != null && <p className="wx-note" role="status" data-testid="wx-fix-old">{oldFixNote(fixAt, Date.now())} <button type="button" className="btn" disabled={finding} onClick={askLoc}>{finding ? 'Finding you…' : 'Update my location'}</button></p>}
       {locOff && !fix && <p className="wx-note" role="status">Location is off for Bantay. Turn it on in your phone settings to use your own weather.</p>}
-      {fc && point ? <Body fc={fc} name={placeNameOf(place)} locationOff={locationOffNote(place)} unchecked={unchecked} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
+      {fc && point ? <Body fc={fc} name={placeNameOf(place)} locationOff={locationOffNote(place)} unchecked={unchecked} never={never} point={point} stormFrom={warnAt ?? point} stormPlace={place ? placeName(place) : placeNameOf(place)} alerts={alerts} warn={warn} offline={offline || !online} online={online} bl={bl} pause={pause} /> : (
         <>
-          {warnAt && <WarnRow warn={warn} unchecked={unchecked} name={placeNameOf(place)} />}
+          {warnAt && <WarnRow warn={warn} unchecked={unchecked} never={never} name={placeNameOf(place)} />}
           {warnAt && hasAdvisory(alerts) && <StormCard alerts={alerts} point={warnAt} place={place ? placeName(place) : placeNameOf(place)} />}
           <p className="wx-note" role="status">{loading ? 'Loading the forecast…' : 'Could not load the forecast. Check your connection and open this screen again.'}</p>
           {/* shortcut: a failed forecast that later succeeds swaps this tree for Body, so the map card mounts again and asks Windy a second time; lift the map above the branch if that ever matters */}
@@ -182,15 +185,15 @@ function StormCard({ alerts, point, place }: { alerts: Alert[]; point: LatLon; p
 }
 
 /** Needs no forecast: a warning must show while the forecast is loading or could not load. */
-function WarnRow({ warn, unchecked, name }: { warn: ReturnType<typeof weatherWarning>; unchecked: boolean; name: string }) {
+function WarnRow({ warn, unchecked, never, name }: { warn: ReturnType<typeof weatherWarning>; unchecked: boolean; never: boolean; name: string }) {
   return (
     <div data-testid="wx-warn"><GroupedList icons>
-      <Row icon="warn" tint={warn ? 'red' : unchecked ? 'amber' : 'green'} title="Official warnings" sub={warn ? warn.title : unchecked ? 'Not checked lately. Open Warnings or check PAGASA.' : `PAGASA: no warning near ${name}`} href="#safety/warnings" />
+      <Row icon="warn" tint={warn ? 'red' : unchecked ? 'amber' : 'green'} title="Official warnings" sub={warn ? warn.title : unchecked ? `${never ? 'Warnings have not been checked yet' : 'Not checked lately'}. Open Warnings or check PAGASA.` : `PAGASA: no warning near ${name}`} href="#safety/warnings" />
     </GroupedList></div>
   )
 }
 
-function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; locationOff: string | null; unchecked: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
+function Body({ fc, name, locationOff, unchecked, never, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; locationOff: string | null; unchecked: boolean; never: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
   const now = Date.now()
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
@@ -202,8 +205,8 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
   const rainNext = known.length ? Math.max(...known) : null // unknown stays unknown, never 0%
   const rn = reconcileNow({ words: conditionWords(c.code), code: c.code, precip: c.precip, rainingNow: fc.rainingNow }) // S29: an airport or model "raining now" wins over a dry-looking code
   const cond = condOf(rn.code)
-  const raining = cond === 'drizzle' || cond === 'rain' || cond === 'storm'
-  let lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn })
+  const raining = isRainingNow({ code: c.code, precip: c.precip, rainingNow: fc.rainingNow })
+  let lines = actionLines({ heatIndexC: hi, hourly: fc.hourly, nowLocal: nl, uvMax: today?.uvMax ?? null, warning: warn, raining })
   if (raining) { // it is falling now: never "nothing to plan around" or a strong-sun tip under a rainy hero, even when the hourly chances are low
     lines = lines.filter((x) => x.id !== 'uv' && (x.id !== 'heat' || x.rank >= 80)) // same rule as the Today card: Danger heat stays
     if (!lines.some((x) => x.id === 'rain')) lines = [...lines, { id: 'rain' as const, rank: 50, text: cond === 'storm' ? 'Thunderstorm now' : 'Raining now' }].sort((a, b) => b.rank - a.rank)
@@ -223,10 +226,10 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
   const leftToday = fc.hourly.filter((h) => h.time.slice(0, 10) === nl.slice(0, 10) && h.time.slice(0, 13) >= nl.slice(0, 13)).map((h) => h.prob ?? 0)
   const advice = adviceLine(leftToday.length ? Math.max(...leftToday) : null, rainNext, lines, fc.daily[1]?.prob ?? null)
 
-  // A3: the page follows the weather. Wet (raining now, or rain likely in the next 12 h): the rain card leads and Rain next 12 h takes the Sunrise tile. Dry: the 48-hour strip leads and Sunrise stays.
+  // A3: the page follows the weather. Wet (raining now, or rain likely in the next 12 h): the rain card leads (the details grid is the same either way, A7). Dry: the 48-hour strip leads and Sunrise stays.
   const wet = raining || lines.some((x) => x.id === 'rain')
   const storms = hasAdvisory(alerts, now)
-  const rainCard = <RainMap key="rain" fc={fc} placeName={name} daily={daily} nextRain={rainNext} />
+  const rainCard = <RainMap key="rain" fc={fc} daily={daily} nextRain={rainNext} />
   const stripCard = strip.length > 0 && (
     <Section key="48" title="Next 48 hours" meta="every 3 h · rain chance" testId="wx-48">
       <div className="card wx-stripbox">
@@ -236,7 +239,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
             const kind = now0 && (rn.code !== (c.code ?? null) || fc.rainingNow?.value) ? kindOf(rn.code) : kindOf(h.code)
             const rainingNow = now0 && fc.rainingNow?.value === true
             return (
-              <li key={h.time}><span>{now0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kind} /><b>{deg(now0 ? c.temp : h.temp)}</b>{rainingNow ? <span className="wx-rp">Raining</span> : <span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : (h.prob < 10 ? 'Low chance of rain' : `${Math.round(h.prob)} percent chance of rain`)}>{h.prob == null ? 'n/a' : h.prob < 10 ? rainChanceText(h.prob) : `${Math.round(h.prob)}% rain`}</span>}</li>
+              <li key={h.time}><span>{now0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kind} /><b>{deg(now0 ? c.temp : h.temp)}</b>{rainingNow ? <span className="wx-rp">Raining</span> : <span className="wx-rp">{h.prob == null ? <>n/a<span className="wx-vh"> rain chance not known</span></> : h.prob < 10 ? <>Low<span className="wx-vh"> chance of rain</span></> : `${Math.round(h.prob)}% rain`}</span>}</li>
             )
           })}
         </ul>
@@ -247,7 +250,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
   return (
     <>
       <section aria-label="Now" className="card wx-hero wxs-host" data-hero data-testid="wx-hero">
-        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={cond} hot={isHot(c.temp, c.humidity)} />
+        <WeatherScene tod={todOf(nl, today?.sunrise, today?.sunset)} cond={cond} hot={isHot(c.temp, c.humidity)} afterSunset={pastSunset(nl, today?.sunset)} />
         <span className="wx-sub wx-stamp">{offline ? `as of ${asOf}, ${online ? 'could not refresh' : 'offline'}` : `Updated ${asOf}`}</span>
         <div className="wx-temp">{deg(c.temp)}</div>
         <b className="wx-cond">{cap(rn.words)}</b>
@@ -258,7 +261,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
         <ForecastNote className="wx-sub wx-fnote" link sources={creditIds(bl)} />
       </section>
 
-      <WarnRow warn={warn} unchecked={unchecked} name={name} />
+      <WarnRow warn={warn} unchecked={unchecked} never={never} name={name} />
 
       {storms && <StormsNear alerts={alerts} point={stormFrom} place={stormPlace} pause={pause} />}
       {bl.blended && <OtherNotices alerts={bl.alerts} now={now} />}
@@ -291,7 +294,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
               <span className="wx-lo">{deg(d.min)}</span>
               <span className="wx-range" aria-hidden="true"><i style={{ left: `${(((d.min ?? lo) - lo) / span) * 100}%`, right: `${((hiAll - (d.max ?? hiAll)) / span) * 100}%`, background: `linear-gradient(90deg, var(${tempTint(d.min ?? lo)}), var(${tempTint(d.max ?? hiAll)}))` }} /></span>
               <span className="wx-hi">{deg(d.max)}</span>
-              <span className="wx-rp" aria-label={d.prob == null ? 'Rain chance not known' : (d.prob < 10 ? 'Low chance of rain' : `${Math.round(d.prob)} percent chance of rain`)}>{d.prob == null ? 'n/a' : rainChanceText(d.prob)}</span>
+              <span className="wx-rp">{d.prob == null ? <>n/a<span className="wx-vh"> rain chance not known</span></> : d.prob < 10 ? <>Low<span className="wx-vh"> chance of rain</span></> : rainChanceText(d.prob)}</span>
             </li>
           ))}
         </ul>
@@ -306,7 +309,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
         <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
         <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
         <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
-        {wet ? <div className="wx-tile"><span className="eyebrow">Rain next 12 h</span><b>{rainNext == null ? 'n/a' : rainChanceText(rainNext)}</b><span className="wx-sub">{rainNext == null ? 'No data' : 'Highest chance'}</span></div> : <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>}
+        <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>
       </section>
     </>
   )

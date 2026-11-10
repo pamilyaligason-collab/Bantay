@@ -1,5 +1,5 @@
 import type { RainingNow } from '../../../supabase/functions/weather-blend/blend'
-import { zoneLabel } from '../location/nearestPlace'
+import { condOf } from './scene'
 
 /** A rain chance in words: under 10% is "Low chance", never "0%" (a chance is not a promise of dry). null stays null. */
 export const rainChanceText = (pct: number | null | undefined): string | null => (pct == null ? null : pct < 10 ? 'Low chance' : `${Math.round(pct)}%`)
@@ -23,7 +23,13 @@ export function reconcileNow(w: { words: string; code?: number | null; precip?: 
   return { words: w.words, code, hideSun: false }
 }
 
-/** "Location off: showing <place>" when no fix was found and no zone was picked by hand (the home zone is only the fallback); else null. */
+/** The one rule for "it is raining now", shared by Today, Simple mode and Weather (ML-51): the reconciled code (an airport or model report wins over a dry-looking code) is drizzle, rain or storm. */
+export function isRainingNow(w: { code?: number | null; precip?: number | null; rainingNow?: RainingNow | null }): boolean {
+  const c = condOf(reconcileNow({ words: '', code: w.code, precip: w.precip, rainingNow: w.rainingNow }).code)
+  return c === 'drizzle' || c === 'rain' || c === 'storm'
+}
+
+/** "Location off: showing your home area" (the place itself is the header pill's, so it is not said twice) when no fix was found and no zone was picked by hand (the home zone is only the fallback); else null. */
 export function locationOffNote(place: { source: string; zone: string; picked?: boolean; settled?: boolean } | null): string | null {
-  return place && place.settled !== false && place.source === 'zone' && place.picked === false ? `Location off: showing ${zoneLabel(place.zone)}` : null
+  return place && place.settled !== false && place.source === 'zone' && place.picked === false ? 'Location off: showing your home area' : null
 }

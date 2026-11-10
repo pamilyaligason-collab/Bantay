@@ -23,13 +23,13 @@ export const scrimFor = (tod: Tod, lite: boolean, moon: boolean): number => (lit
 /** Which layers a state draws (WeatherScene renders from this, scene.test.ts gates the same list). */
 export interface Layers { stars: boolean; sun: boolean; moon: boolean; clouds: 0 | 2 | 4; haze: boolean; fog: boolean; rain: number; flash: boolean; heat: boolean; shimmer: boolean }
 const RAIN: Partial<Record<Cond, number>> = { drizzle: 10, rain: 18, storm: 24 }
-export function layersFor(tod: Tod, cond: Cond, hot = false): Layers {
+export function layersFor(tod: Tod, cond: Cond, hot = false, afterSunset = false): Layers {
   const night = tod === 'night'
   const wet = cond === 'drizzle' || cond === 'rain' || cond === 'storm'
   const body = cond === 'clear' || cond === 'partly' || cond === 'none'
   return {
     stars: night && cond !== 'overcast' && !wet && cond !== 'fog',
-    sun: body && !night, moon: body && night,
+    sun: body && !night && !afterSunset, moon: body && night, // A5: dusk after sunset keeps its sky colours but no sun disc
     clouds: cond === 'partly' || cond === 'fog' ? 2 : cond === 'clear' || cond === 'none' ? 0 : 4,
     haze: cond === 'overcast' || cond === 'fog' || wet, fog: cond === 'fog',
     rain: RAIN[cond] ?? 0, flash: cond === 'storm', heat: hot, shimmer: hot
@@ -65,6 +65,12 @@ export function todOf(nowLocal: string, sunrise?: string | null, sunset?: string
   if (n < up + 60) return 'dawn'
   if (n >= down - 60) return 'dusk'
   return 'day'
+}
+
+/** True once the place-local clock is at or past today's sunset (18:00 without one): the scene then draws no sun disc. */
+export function pastSunset(nowLocal: string, sunset?: string | null): boolean {
+  const n = mins(nowLocal)
+  return n != null && n >= (mins(sunset) ?? 18 * 60)
 }
 
 /** WMO weather_code to the scene's condition. Unknown stays 'none' (sky only), never a guessed clear. */

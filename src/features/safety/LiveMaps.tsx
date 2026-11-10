@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, distanceKm, feedStale, r2, type Alert, type LatLon, type StaleSources } from './alerts'
+import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, distanceKm, feedStale, neverChecked, r2, type Alert, type LatLon, type StaleSources } from './alerts'
 import { liveSignals } from './stormMode'
 import { stormCentre, zoomEarthUrl } from './stormView'
 import { useKv } from './store'
@@ -32,9 +32,9 @@ const bearing = (a: LatLon, b: LatLon) => {
 }
 export const FAR_STORM_KM = 1000
 /** One plain sentence about storms, worked out from the distance to the nearest storm that has a position. Never says "no storms" while a storm is listed or a PAGASA wind signal (`signals`, the liveSignals count) is live, and never "far" under a signal. */
-export function stormLine(storms: Alert[], from: LatLon, placeName: string, checked = true, signals = 0): { text: string; tone: 'calm' | 'watch' } {
+export function stormLine(storms: Alert[], from: LatLon, placeName: string, checked = true, signals = 0, never = false): { text: string; tone: 'calm' | 'watch' } {
   if (!storms.length && signals) return { text: 'A PAGASA wind signal is up, though GDACS lists no storm yet. Follow PAGASA and your local officials.', tone: 'watch' }
-  if (!storms.length && !checked) return { text: 'Storms have not been checked lately, so Bantay cannot say there are none. Check the map and PAGASA.', tone: 'watch' }
+  if (!storms.length && !checked) return { text: `Storms have not been checked ${never ? 'yet' : 'lately'}, so Bantay cannot say there are none. Check the map and PAGASA.`, tone: 'watch' }
   if (!storms.length) return { text: 'No storm warnings for the Philippines from GDACS right now. Check the map and PAGASA.', tone: 'calm' }
   const pts = storms.filter((s) => s.lat != null && s.lon != null).map((s) => ({ s, p: { lat: s.lat!, lon: s.lon! } }))
     .map((x) => ({ ...x, km: distanceKm(from, x.p) })).sort((a, b) => a.km - b.km)
@@ -102,7 +102,8 @@ export default function LiveMaps({ loc }: { loc: LatLon }) {
   const view = stormCentre(loc)
   const all = useKv<Alert[]>(ALERTS_KEY, NONE)
   const storms = cyclones(all)
-  const checked = !feedStale(all, useKv<unknown>(CHECKED_KEY, null), useKv<StaleSources>(STALE_KEY, NO_STALE))
+  const saved = useKv<unknown>(CHECKED_KEY, null); const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
+  const checked = !feedStale(all, saved, down)
   return (
     <div className="sf">
       <div role="group" aria-label="Weather layer" className="sf-chips">
@@ -121,7 +122,7 @@ export default function LiveMaps({ loc }: { loc: LatLon }) {
             <div key={a.id} className="row"><span className="grow"><span>{stormName(a)}</span><span className="sub" style={{ fontSize: 14 }}>{a.level ? `${a.level} alert` : 'Level unknown'} · since {since(a.issuedAt)}</span></span></div>
           ))}
         </div>
-      ) : <p className="sf-empty" role="status">{stormLine(storms, loc, '', checked, liveSignals(all).length).text}</p>}
+      ) : <p className="sf-empty" role="status">{stormLine(storms, loc, '', checked, liveSignals(all).length, neverChecked(all, saved, down)).text}</p>}
       <div className="grp">
         {links(loc).map(([name, url]) => (
           <a key={url} className="row" href={url} target="_blank" rel="noopener">
