@@ -165,7 +165,7 @@ export default function ExploreScreen() {
               <ul className="an-bl" data-kind="doctor">{care.doctor.map((t) => <li key={t}><i />{t}{care.reported?.includes(t) && <em className="an-rep">As reported</em>}</li>)}</ul>
               <h3 className="an-lbl">Prevention</h3>
               <ul className="an-bl" data-kind="prevent">{care.prevention.map((t) => <li key={t}><i />{t}{care.reported?.includes(t) && <em className="an-rep">As reported</em>}</li>)}</ul>
-              <p className="an-note">Sources. {SYSTEM_CARE.checked} Not a diagnosis.</p>
+              <p className="an-note">{SYSTEM_CARE.checked} Not a diagnosis.</p>
               {care.reported && care.reported.length > 0 && <p className="an-note" data-testid="care-reported">{SYSTEM_CARE.reportedNote}</p>}
               <ul className="an-srcs" data-testid="care-sources">
                 {care.sources.map((s) => <li key={s.url}><a href={s.url} target="_blank" rel="noopener noreferrer">{s.name}</a></li>)}

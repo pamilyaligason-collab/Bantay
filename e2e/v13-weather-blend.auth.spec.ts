@@ -48,11 +48,11 @@ async function open(page: Page, flag: boolean) {
   return calls
 }
 
-test('flag on: Next 2 hours, Around you, credits; only the 1 km cell leaves the phone', async ({ page }) => {
+test('flag on: Next 2 hours, credits; only the 1 km cell leaves the phone', async ({ page }) => {
   const calls = await open(page, true)
   await expect(page.getByTestId('wx-next2h')).toBeVisible({ timeout: 20_000 })
   await expect(page.getByTestId('wx-next2h')).toContainText('estimated')
-  await expect(page.getByTestId('wx-air')).toContainText('Fair')
+  await expect(page.getByTestId('wx-air')).toHaveCount(0)
   await expect(page.getByTestId('wx-other-alerts')).toBeVisible()
   await expect(page.getByText('Data from MET Norway (CC BY 4.0)')).toBeVisible()
   const body = JSON.parse(calls[0]!) as { lat: number; lon: number }
@@ -62,7 +62,7 @@ test('flag on: Next 2 hours, Around you, credits; only the 1 km cell leaves the 
   if (dir) {
     for (const s of ['light', 'dark'] as const) {
       await setScheme(page, s)
-      for (const [id, name] of [['wx-next2h', 'next2h'], ['wx-air', 'around-you']] as const) {
+      for (const [id, name] of [['wx-next2h', 'next2h']] as const) {
         await page.getByTestId(id).evaluate((el) => el.scrollIntoView({ block: 'center' }))
         await page.waitForTimeout(200)
         await page.screenshot({ path: `${dir}/weather-blend-${name}-${s}.png`, animations: 'disabled' })

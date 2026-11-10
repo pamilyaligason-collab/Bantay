@@ -1,4 +1,4 @@
-import type { Alert as WxAlert, Air, Slot, Source } from '../../../supabase/functions/weather-blend/blend.ts'
+import type { Alert as WxAlert, Slot, Source } from '../../../supabase/functions/weather-blend/blend.ts'
 import { EmptyState } from '../look/EmptyState'
 import { Section } from '../look/Section'
 import { RainRemindSwitch } from './Next2hMini'
@@ -43,28 +43,13 @@ export function Next2h({ slots: all, offline, now }: { slots: Slot[]; offline: b
   )
 }
 
-/** "Around you": the air at your spot, 1 (good) to 5 (very poor). Nothing when the provider gave no reading. */
-export function AroundYou({ air }: { air: Air | null }) {
-  if (!air) return null
-  const n = (v: number | null) => (v == null ? 'n/a' : `${Math.round(v)}`)
-  return (
-    <Section title="Around you" testId="wx-air">
-      <div className="card wx-air">
-        <div><span className="eyebrow">Air quality</span><b>{air.label}</b><span className="wx-sub">{air.index} out of 5, where 1 is good</span></div>
-        <div><span className="eyebrow">PM2.5</span><b>{n(air.pm25)}</b><span className="wx-sub">µg/m³</span></div>
-        <div><span className="eyebrow">PM10</span><b>{n(air.pm10)}</b><span className="wx-sub">µg/m³</span></div>
-      </div>
-    </Section>
-  )
-}
-
 /** OpenWeather's own notices, always below PAGASA's row. */
 export function OtherNotices({ alerts: all, now }: { alerts: WxAlert[]; now: number }) {
   const alerts = all.filter((a) => !a.end || !(Date.parse(a.end) < now)) // an ended notice from a cached payload is not shown
   if (!alerts.length) return null
   return (
     <section aria-label="Other weather notices" className="card wx-other" data-testid="wx-other-alerts">
-      <span className="eyebrow">Other notices (OpenWeather). PAGASA above is the official word.</span>
+      <span className="eyebrow">Other notices (OpenWeather).</span>
       {alerts.map((a) => <p key={`${a.source}${a.event}${a.start}`}><b>{a.event}</b><span className="wx-sub">{a.source}</span></p>)}
     </section>
   )

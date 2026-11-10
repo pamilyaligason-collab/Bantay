@@ -108,7 +108,7 @@ function Weather() {
     if (!w) return
     weatherSummary(w).then(setS, () => setS('I could not load the weather. Check the Today screen.'))
   }, [w?.lat, w?.lon]) // eslint-disable-line react-hooks/exhaustive-deps
-  return <div className="as-card" role="status"><strong>Weather near you</strong><span>{s}</span><span className="sub">Source: Open-Meteo.com. For warnings, follow PAGASA.</span></div>
+  return <div className="as-card" role="status"><strong>Weather near you</strong><span>{s}</span></div>
 }
 
 function TaskCard({ card, people }: { card: Extract<Card, { kind: 'task' }>; people: People[] }) {
@@ -172,7 +172,7 @@ function RecordsCard({ card, people }: { card: Extract<Card, { kind: 'records' }
       <span>{!who ? 'Whose result do you mean?' : ans ? ans.text : 'Looking...'}</span>
       {!who && <div className="as-people" role="group" aria-label="Pick a person">{personChoices(card.person, people).map((p) => <button key={p.id} type="button" className="as-chip" onClick={() => setPicked(p.id)}>{p.name}</button>)}</div>}
       {!who && <span className="as-hint" role="status">{people.length ? 'Pick who this is for' : 'Add a family member first'}</span>}
-      {ans?.cite && <div className="as-src"><span className="sub">Sources</span><span className="as-chip as-chip-static">{ans.cite}</span></div>}
+      {ans?.cite && <div className="as-src"><span className="as-chip as-chip-static">{ans.cite}</span></div>}
       {ans && <span className="sub">Not sure? Ask the doctor.</span>}
     </div>
   )
@@ -187,7 +187,7 @@ function CardView({ card, people, go }: { card: Card; people: People[]; go: (t: 
   const src = sourceLink(card.source, card.term)
   return (
     <div className="as-card"><strong>{card.term}</strong><span>{card.answer}</span>
-      <div className="as-src"><span className="sub">Sources</span><a className="as-chip" href={src.url} target="_blank" rel="noopener noreferrer">{src.label}</a></div>
+      <div className="as-src"><a className="as-chip" href={src.url} target="_blank" rel="noopener noreferrer">{src.label}</a></div>
       <span className="sub">Not sure? Ask the doctor. General information, not medical advice.</span></div>
   )
 }

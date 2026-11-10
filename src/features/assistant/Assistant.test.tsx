@@ -263,6 +263,17 @@ describe('Assistant round 3', () => {
       expect(kept[0]!.content).toBe('m2')
     })
   })
+  it('weather and explain cards carry no "Sources" label and no Open-Meteo line, only the link chip', async () => {
+    m.ask.mockResolvedValue({ text: 'Here you go.', cards: [{ kind: 'weather', id: 'c0' }, { kind: 'explain', id: 'c1', term: 'HbA1c', answer: 'A 3 month sugar average.', source: 'medlineplus' }] })
+    render(<Assistant />)
+    act(() => { window.dispatchEvent(new Event(ASK_EVENT)) })
+    fireEvent.change(screen.getByLabelText('Your question'), { target: { value: 'weather and hba1c' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }))
+    await screen.findByText('Weather near you')
+    expect(screen.getByRole('link', { name: /MedlinePlus/ })).toBeTruthy() // the chip stays
+    expect(screen.queryByText('Sources')).toBeNull()
+    expect(screen.queryByText(/Source: Open-Meteo\.com/)).toBeNull()
+  })
   it('Clear chat empties the list and removes the saved history', async () => {
     await db.kv.put({ key: 'assistant.history', value: [{ role: 'user', content: 'private question' }] })
     render(<Assistant />)
