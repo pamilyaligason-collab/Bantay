@@ -174,19 +174,26 @@ export const tokensOf = (text: string): string[] => (text.toLowerCase().match(/\
 export function postCheck(text: string, allowed: Iterable<string>, lang: Lang): { text: string; changed: number } {
   const ok = new Set(allowed)
   let changed = 0
-  const parts = String(text ?? '').replace(/\s*[—–]\s*/g, ', ').split(/(?<=[.!?])\s+|\n+/)
+  // checked sentence by sentence, but line breaks survive so '- ' bullets still render as a list in the app
+  const lines = String(text ?? '').replace(/[ \t]*[—–][ \t]*/g, ', ').split(/\n+/)
   const out: string[] = []
-  for (const p of parts) {
-    if (!p.trim()) continue
-    const n = p.toLowerCase().replace(/['’]/g, '')
-    let note = ''
-    for (const m of p.matchAll(DOSE)) if (!ok.has(numKey(m[1] ?? m[2] ?? ''))) { note = NOTE_DOSE[lang]; break }
-    if (!note && DIAG.some((re) => re.test(n))) note = NOTE_DIAG[lang]
-    if (note) changed++
-    const s = note || p.trim()
-    if (out[out.length - 1] !== s) out.push(s)
+  let last = ''
+  for (const line of lines) {
+    const row: string[] = []
+    for (const p of line.split(/(?<=[.!?])\s+/)) {
+      if (!p.trim()) continue
+      const n = p.toLowerCase().replace(/['’]/g, '')
+      let note = ''
+      for (const m of p.matchAll(DOSE)) if (!ok.has(numKey(m[1] ?? m[2] ?? ''))) { note = NOTE_DOSE[lang]; break }
+      if (!note && DIAG.some((re) => re.test(n))) note = NOTE_DIAG[lang]
+      if (note) changed++
+      const s = note || p.trim()
+      if (last !== s) row.push(s)
+      last = s
+    }
+    if (row.length) out.push(row.join(' '))
   }
-  return { text: out.join(' '), changed }
+  return { text: out.join('\n'), changed }
 }
 
 // ---------------- the flow ----------------

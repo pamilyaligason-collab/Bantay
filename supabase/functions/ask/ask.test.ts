@@ -216,6 +216,10 @@ describe('handleAsk', () => {
 
 describe('post-check', () => {
   const run = (t: string, allowed: string[] = [], lang: 'en' | 'tl' | 'taglish' = 'en') => postCheck(t, allowed, lang)
+  it('keeps line breaks so "- " bullets reach the app as separate lines', () => {
+    const r = run('Some ideas:\n- **Oatmeal** with banana.\n- **Eggs** with no added salt.\n\nGo easy on tuyo.')
+    expect(r.text).toBe('Some ideas:\n- **Oatmeal** with banana.\n- **Eggs** with no added salt.\nGo easy on tuyo.')
+  })
   it('replaces a sentence with a dose the person never logged', () => {
     const r = run('Metformin helps with sugar. Take 1000 mg twice a day. Ask your doctor.')
     expect(r.text).toBe('Metformin helps with sugar. Please ask your doctor or pharmacist about the dose. Ask your doctor.')

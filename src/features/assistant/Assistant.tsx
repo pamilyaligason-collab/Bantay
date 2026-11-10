@@ -17,6 +17,7 @@ import { CAUTION, chatIsStale, clearHistory, loadHistoryAt, saveHistory, trimHis
 import { localGate, type Emergency } from './gateClient'
 import { EmergencyCard } from './EmergencyCard'
 import { OfflinePanel } from './OfflinePanel'
+import ReplyText from './ReplyText'
 import SosScreen from '../sos/SosScreen'
 import { startSos, SOS_CONTACTS_KEY } from '../sos/active'
 import { normalizeContacts } from '../sos/contacts'
@@ -258,6 +259,15 @@ export default function Assistant() {
   }, [items, people])
 
   const clearChat = () => { setItems([]); void clearHistory() }
+  // Closing Jack ends the conversation: the chat clears (Lloyd 2026-11-10). A message still waiting for signal stays so it is not lost.
+  const wasOpen = useRef(false)
+  useEffect(() => {
+    if (open) { wasOpen.current = true; return }
+    if (!wasOpen.current) return // first render, Jack not opened yet: nothing to end
+    wasOpen.current = false
+    setItems((i) => (i.some((m) => !m.queued) ? i.filter((m) => m.queued) : i))
+    void clearHistory()
+  }, [open])
   const lastAt = useRef(0) // when the last message in this chat was added; the chat clears itself 30 minutes later
   const restoredAt = useRef(0) // a chat restored from the phone keeps the time of its own last message
   useEffect(() => {
@@ -352,7 +362,7 @@ export default function Assistant() {
               {items.length === 0 && <p className="sub">Try: "I took my losartan" or "What is HbA1c?"</p>}
               {items.map((m, i) => (
                 <div key={i} className={`as-msg ${m.role}`}>
-                  {m.content && <p>{m.content}</p>}
+                  {m.content && (m.role === 'assistant' && !m.local ? <ReplyText text={m.content} /> : <p>{m.content}</p>)}
                   {m.queued && <span className="sub as-wait" role="status">Waiting for signal</span>}
                   {m.emergency && <EmergencyCard e={m.emergency} onSos={tellFamily} />}
                   {m.cards?.map((c) => <CardView key={c.id} card={c} people={people} go={go} />)}
