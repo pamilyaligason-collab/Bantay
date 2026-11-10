@@ -286,7 +286,6 @@ function Body({ fc, name, line, unchecked, point, stormFrom, stormPlace, alerts,
         {days.length > 5 && <button type="button" className="btn2 wx-more" aria-expanded={allDays} onClick={() => setAllDays((v) => !v)}>{allDays ? 'Show fewer days' : `Show all ${days.length} days`}</button>}
       </Section>}
 
-
       <section aria-label="Details" className="wx-tiles" data-testid="wx-details">
         <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
         <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>

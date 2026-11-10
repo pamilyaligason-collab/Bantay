@@ -81,7 +81,7 @@
 /* the status line wraps before it reaches the sun disc at the top right (360 wide) */
 .wx-stamp { max-width: 11em; text-wrap: balance; }
 
-/* X3 blend (behind the flag): Next 2 hours, Around you, other notices */
+/* X3 blend (behind the flag): Next 2 hours, other notices */
 .wx-n2h, .wx-other { padding: 16px; display: grid; gap: 10px; }
 .wx-n2h-t { font-size: 17px; line-height: 22px; font-weight: 600; }
 .wx-n2h p, .wx-other p { margin: 0; }
