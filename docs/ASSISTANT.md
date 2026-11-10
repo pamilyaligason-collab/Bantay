@@ -30,12 +30,12 @@ The `assistant_usage` table and `assistant_take(int)` function live in `supabase
 
 No diagnosis, no dosing beyond what the family logged, urgent means 911 or the doctor, never claims earthquake or local tsunami warnings (B-1, B-6).
 
-## Ask on a Supabase edge function (`supabase/functions/ask`, the default since 2026-11-10)
+## Ask on a Supabase edge function (`supabase/functions/ask`, not deployed)
 
 Replaces the n8n workflow so Bantay no longer runs anything on the Alfred VPS (B-9). The app request and reply are unchanged: `POST {messages, screen}` -> `{reply, tool_calls}`; 401 `{error:'unauthorized'}`, 429 `{error:'limit'}`, 503 `{error:'unavailable'}`, 400 `{error:'bad_input'}`. New optional reply fields the current app ignores: `sources: [{title,url}]` (for "From MedlinePlus" chips) and `emergency: {kind, call:['911'|'1553']}` (for a one-tap call button).
 
 ### Switch (default stays n8n)
-- `VITE_ASSISTANT_PROVIDER`: unset or `edge` posts to `${VITE_SUPABASE_URL}/functions/v1/ask` (the default since 2026-11-10); `n8n` posts to `VITE_ASSISTANT_URL`, the old webhook, and is the rollback (set it in Cloudflare Pages and redeploy).
+- `VITE_ASSISTANT_PROVIDER` = `n8n` (default) or `edge`. `edge` posts to `${VITE_SUPABASE_URL}/functions/v1/ask`; otherwise `VITE_ASSISTANT_URL` is used as before. The owner flips it at build time. Roll back by unsetting it; keep the n8n workflow inactive for 2 weeks.
 - Deploy with `--no-verify-jwt` (the function checks the JWT itself, like records-extract). Secrets: `OPENROUTER_CHAT_KEY` (its own key with a spend limit; NOT `OPENROUTER_API_KEY`, the scan key), `ALLOWED_ORIGIN`; optional `OPENROUTER_FAST_MODEL` (default `anthropic/claude-haiku-5.5`; the old name `OPENROUTER_CHAT_MODEL` still works), `OPENROUTER_STRONG_MODEL` (default `anthropic/claude-sonnet-5.5`), `OPENROUTER_CHAT_FALLBACK` (default `google/gemini-3.5-flash-lite`), `ASSISTANT_MONTHLY_CAP_USD` (default 10). A `:free` model id makes the function answer 503. Router and spend: see "Jack router" below.
 - Needs migration 0025 (`search_knowledge`). Without it the knowledge read returns nothing and the answer still works.
 
@@ -75,7 +75,7 @@ One line per request: status, emergency kind, language, model id, fallback yes/n
 2. In OpenRouter set the monthly limit on the chat key to $10 and keep account-wide ZDR-only on.
 3. Function secrets (all optional): `OPENROUTER_FAST_MODEL`, `OPENROUTER_STRONG_MODEL`, `OPENROUTER_CHAT_FALLBACK`, `ASSISTANT_MONTHLY_CAP_USD`. `SUPABASE_SERVICE_ROLE_KEY` is provided by the platform; without it the router stays on the fast model.
 4. Deploy `ask` with `--no-verify-jwt`, then run `node scripts/jack-gate-live.mjs` (below).
-5. The app posts to this function by default (2026-11-10). To roll back to the n8n webhook set `VITE_ASSISTANT_PROVIDER=n8n` at build time (keeps `VITE_ASSISTANT_URL`).
+5. The app still posts to the n8n webhook by default. To use this function set `VITE_ASSISTANT_PROVIDER=edge` at build time (needs `VITE_SUPABASE_URL`). Unset it to roll back.
 
 ### Not done / for the owner
 - Review of the gate phrase list and the Cebuano phrases (docs/session-8/CLINICAL-REVIEW.md, "Ask edge function").
