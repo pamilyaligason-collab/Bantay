@@ -13,9 +13,9 @@ export const DEFAULT_MODEL = 'anthropic/claude-haiku-5.5'
 export const DEFAULT_FALLBACK = 'google/gemini-3.5-flash-lite'
 export const DEFAULT_STRONG = 'anthropic/claude-sonnet-5.5'
 export const DEFAULT_CAP_USD = 10
-export const PRIMARY_MS = 20_000
-export const STRONG_MS = 25_000
-export const FALLBACK_MS = 15_000
+export const PRIMARY_MS = 25_000
+export const STRONG_MS = 35_000 // Sonnet ran 522 tokens in 8.4 s live; 2000 tokens need ~32 s. Worst chain 35 + 12 + 12 = 59 s < the app's 65 s ceiling
+export const FALLBACK_MS = 12_000
 export const MAX_TOKENS = 1500
 
 export interface Msg { role: 'user' | 'assistant'; content: string }
@@ -180,6 +180,7 @@ export function postCheck(text: string, allowed: Iterable<string>, lang: Lang): 
   let last = ''
   for (const line of lines) {
     const row: string[] = []
+    const bullet = /^\s*(?:[-*\u2022]|\d+[.)])\s+/.exec(line)?.[0].trim() ?? ''
     for (const p of line.split(/(?<=[.!?])\s+/)) {
       if (!p.trim()) continue
       const n = p.toLowerCase().replace(/['’]/g, '')
@@ -187,7 +188,7 @@ export function postCheck(text: string, allowed: Iterable<string>, lang: Lang): 
       for (const m of p.matchAll(DOSE)) if (!ok.has(numKey(m[1] ?? m[2] ?? ''))) { note = NOTE_DOSE[lang]; break }
       if (!note && DIAG.some((re) => re.test(n))) note = NOTE_DIAG[lang]
       if (note) changed++
-      const s = note || p.trim()
+      const s = note ? (bullet && !row.length ? `${bullet} ${note}` : note) : p.trim()
       if (last !== s) row.push(s)
       last = s
     }

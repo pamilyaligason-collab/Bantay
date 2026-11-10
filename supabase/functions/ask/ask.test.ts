@@ -161,7 +161,7 @@ describe('handleAsk', () => {
     const out = await handleAsk(p, env, body('How much water should I drink?'))
     const [model, req, ms] = p.chat.mock.calls[0] as [string, Record<string, unknown>, number]
     expect(model).toBe('m1')
-    expect(ms).toBe(20_000)
+    expect(ms).toBe(25_000)
     expect(req).toMatchObject({ max_tokens: 1500, provider: { zdr: true, data_collection: 'deny' } })
     expect(req).not.toHaveProperty('reasoning') // require_parameters + reasoning = OpenRouter 404 for every model
     expect((req.tools as unknown[]).length).toBe(6)
@@ -172,7 +172,7 @@ describe('handleAsk', () => {
   it('falls back once at 15 s, then 503', async () => {
     const chat = vi.fn().mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce(ok('Rest well.'))
     const out = await handleAsk(port({ chat }), env, body('Is rest good?'))
-    expect(chat.mock.calls.map((c) => [c[0], c[2]])).toEqual([['m1', 20_000], ['m2', 15_000]])
+    expect(chat.mock.calls.map((c) => [c[0], c[2]])).toEqual([['m1', 25_000], ['m2', 12_000]])
     expect(out.meta).toMatchObject({ model: 'm2', fallback: true })
     const dead = vi.fn().mockRejectedValue(new Error('down'))
     const out2 = await handleAsk(port({ chat: dead }), env, body('Is rest good?'))
@@ -216,6 +216,10 @@ describe('handleAsk', () => {
 
 describe('post-check', () => {
   const run = (t: string, allowed: string[] = [], lang: 'en' | 'tl' | 'taglish' = 'en') => postCheck(t, allowed, lang)
+  it('a replaced sentence that started a bullet keeps its "- " so the list does not split', () => {
+    const r = run('Options:\n- Take 1000 mg of metformin.\n- Walk after meals.')
+    expect(r.text).toBe('Options:\n- Please ask your doctor or pharmacist about the dose.\n- Walk after meals.')
+  })
   it('keeps line breaks so "- " bullets reach the app as separate lines', () => {
     const r = run('Some ideas:\n- **Oatmeal** with banana.\n- **Eggs** with no added salt.\n\nGo easy on tuyo.')
     expect(r.text).toBe('Some ideas:\n- **Oatmeal** with banana.\n- **Eggs** with no added salt.\nGo easy on tuyo.')
