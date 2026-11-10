@@ -53,7 +53,7 @@ export function parseRainObs(j: unknown, nowMs: number): { wet: boolean; at: str
   const o = (Array.isArray(j) ? j[0] : null) as { obsTime?: unknown; wxString?: unknown; rawOb?: unknown } | null
   const ms = typeof o?.obsTime === 'number' ? o.obsTime * 1000 : NaN
   if (!o || Number.isNaN(ms) || nowMs - ms > RAIN_MAX_AGE_MS || ms - nowMs > 5 * 60_000) return null
-  const raw = typeof o.wxString === 'string' ? o.wxString : typeof o.rawOb === 'string' ? o.rawOb.split(' RMK')[0]!.split(' ').slice(2).join(' ') : ''
+  const raw = typeof o.wxString === 'string' ? o.wxString : typeof o.rawOb === 'string' ? o.rawOb.split(/ (?:RMK|TEMPO|BECMG|NOSIG)\b/)[0]!.split(' ').slice(2).join(' ') : ''
   return { wet: raw.split(/\s+/).some((t) => WET.test(t)), at: new Date(ms).toISOString(), ageMin: Math.max(0, Math.round((nowMs - ms) / 60_000)) }
 }
 

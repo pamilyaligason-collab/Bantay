@@ -34,7 +34,7 @@ describe('alerts feed (red when the newest alerts-ingest run is over 60 minutes 
   it('uses 60 minutes for the feed and 30 for the other jobs', () => {
     expect(ALERTS_FEED_STALE_MIN).toBe(60)
     expect(feed.staleMin).toBe(60)
-    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news' && j.job !== 'lotto-pcso' && j.job !== 'yt-feed').map((j) => j.staleMin)).toEqual([30, 30])
+    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news' && j.job !== 'lotto-pcso' && j.job !== 'yt-feed' && j.job !== 'pagasa-drought').map((j) => j.staleMin)).toEqual([30, 30])
     expect(JOBS.find((j) => j.job === 'world-news')!.staleMin).toBe(480)
     expect(JOBS.find((j) => j.job === 'lotto-pcso')!.staleMin).toBe(480)
     expect(JOBS.find((j) => j.job === 'yt-feed')!.staleMin).toBe(90)

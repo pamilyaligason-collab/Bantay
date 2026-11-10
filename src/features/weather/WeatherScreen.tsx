@@ -237,7 +237,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
             const kind = now0 && (rn.code !== (c.code ?? null) || fc.rainingNow?.value) ? kindOf(rn.code) : kindOf(h.code)
             const rainingNow = now0 && fc.rainingNow?.value === true
             return (
-              <li key={h.time}><span>{now0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kind} /><b>{deg(now0 ? c.temp : h.temp)}</b>{rainingNow ? <span className="wx-rp">Raining</span> : <span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : `${Math.round(h.prob)} percent chance of rain`}>{h.prob == null ? 'n/a' : h.prob < 10 ? rainChanceText(h.prob) : `${Math.round(h.prob)}% rain`}</span>}</li>
+              <li key={h.time}><span>{now0 ? 'Now' : hourLabel(h.time)}</span><Glyph kind={kind} /><b>{deg(now0 ? c.temp : h.temp)}</b>{rainingNow ? <span className="wx-rp">Raining</span> : <span className="wx-rp" aria-label={h.prob == null ? 'Rain chance not known' : (h.prob < 10 ? 'Low chance of rain' : `${Math.round(h.prob)} percent chance of rain`)}>{h.prob == null ? 'n/a' : h.prob < 10 ? rainChanceText(h.prob) : `${Math.round(h.prob)}% rain`}</span>}</li>
             )
           })}
         </ul>
@@ -292,7 +292,7 @@ function Body({ fc, name, locationOff, unchecked, point, stormFrom, stormPlace, 
               <span className="wx-lo">{deg(d.min)}</span>
               <span className="wx-range" aria-hidden="true"><i style={{ left: `${(((d.min ?? lo) - lo) / span) * 100}%`, right: `${((hiAll - (d.max ?? hiAll)) / span) * 100}%`, background: `linear-gradient(90deg, var(${tempTint(d.min ?? lo)}), var(${tempTint(d.max ?? hiAll)}))` }} /></span>
               <span className="wx-hi">{deg(d.max)}</span>
-              <span className="wx-rp" aria-label={d.prob == null ? 'Rain chance not known' : `${Math.round(d.prob)} percent chance of rain`}>{d.prob == null ? 'n/a' : rainChanceText(d.prob)}</span>
+              <span className="wx-rp" aria-label={d.prob == null ? 'Rain chance not known' : (d.prob < 10 ? 'Low chance of rain' : `${Math.round(d.prob)} percent chance of rain`)}>{d.prob == null ? 'n/a' : rainChanceText(d.prob)}</span>
             </li>
           ))}
         </ul>

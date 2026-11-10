@@ -20,7 +20,7 @@ export function ClimateView({ province, d, nowYm = manilaYm() }: { province: str
         {ok && chips.length > 0 ? (
           <>
             <p className="clm-sub">{province} · PAGASA, {issuedOn(d.issued_at)}{d.saved ? ' (saved copy)' : ''}</p>
-            {now && <div className="clm-chip" data-level={now.level} data-now><b>{shortMonth(now.month)} (now)</b><span>{levelLabel(now.level)}</span></div>}
+            {now && <div className="clm-chip" data-level={now.level} data-now><b>{shortMonth(now.month)} (latest)</b><span>{levelLabel(now.level)}</span></div>}
             <ul className="clm-chips" aria-label="Month by month">
               {chips.filter((m) => m.kind === 'outlook').map((m) => (
                 <li key={m.month} className="clm-chip" data-level={m.level}>

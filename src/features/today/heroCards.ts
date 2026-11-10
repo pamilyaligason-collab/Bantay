@@ -159,7 +159,8 @@ export function rainBody(w: Wx, rain: ReturnType<typeof rainOutlook> | undefined
 export function rainLine(w: Wx, now: Date): string {
   const sky = skyOf(w)
   const nowLocal = wxLocal(w, now)
-  const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, nowLocal, sky === 'rain' || sky === 'storm') : undefined
+  const rain = w.hourly ? rainOutlook(w.hourly.time, w.hourly.prob, nowLocal, sky === 'rain' || sky === 'storm' || w.rainingNow?.value === true) : undefined
+  if (w.rainingNow?.value === true && rain !== undefined && !rain?.now) return rain && !rain.tomorrow ? `Rain now. More likely from ${hour12(rain.startH)}.` : 'Rain now.' // S29: raining now beats a low chance this hour
   return rainBody(w, rain, w.rainPct != null && w.rainPct >= 60, nowLocal)
 }
 

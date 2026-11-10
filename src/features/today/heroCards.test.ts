@@ -226,6 +226,16 @@ describe('rain timing', () => {
   })
 })
 
+describe('rainLine with raining now (S29)', () => {
+  it('an airport or model raining-now counts as rain even when the code looks dry and this hour is low', () => {
+    const now = new Date('2026-10-19T02:00:00Z') // 10:00 Manila
+    const hourly = { time: ['2026-10-19T10:00', '2026-10-19T11:00', '2026-10-19T12:00'], prob: [20, 70, 70] }
+    const base = { temp: 27, rainPct: 70, words: 'partly cloudy', code: 2, at: '', hourly, utcOffset: 8 * 3600 }
+    expect(rainLine(base, now)).not.toBe(rainLine({ ...base, rainingNow: { value: true, source: 'observed' as const, ageMin: 10 } }, now))
+    expect(rainLine({ ...base, rainingNow: { value: true, source: 'observed' as const, ageMin: 10 } }, now)).toBe('Rain now. More likely from 11 AM.')
+  })
+})
+
 describe('weatherAction (Today and Simple mode action line)', () => {
   const w = (o: Partial<Wx>): Wx => ({ temp: 28, rainPct: 10, words: 'clear', at: '2026-10-19T00:00:00Z', humidity: 60, ...o })
   const now = new Date('2026-10-19T02:00:00Z') // 10:00 in Manila

@@ -6,7 +6,7 @@ import { alertRef } from '../location/place'
 import type { PlaceLike } from '../location/placeWords'
 import type { usePlaceFrom } from '../location/useLocation'
 import { HISTORY_KEY, type SosEvent } from '../sos/history'
-import { rainBody, rainOutlook, skyOf, type Wx, wxLocal } from '../today/heroCards'
+import { rainLine as todayRainLine, type Wx } from '../today/heroCards'
 import { useWeather } from '../today/weather'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, type Alert, affectsUs, allQuiet, feedStale, freshness, freshText, outdatedLine, placeOnly, quakeFeltKm, rankAlerts, shownCheck, urgentFirst, type LatLon, type StaleSources } from './alerts'
 import { useNow } from './AlertCard'
@@ -55,11 +55,7 @@ export function dialCount(place: Place, overrides: Overrides): number {
 
 /** Same rain numbers as Today: the hourly outlook when we have it, else the day chance. */
 export function rainLine(wx: Wx | null | undefined, now: Date = new Date()): string {
-  if (!wx) return 'Rain, wind and clouds'
-  const sky = skyOf(wx)
-  const local = wxLocal(wx, now)
-  const r = wx.hourly ? rainOutlook(wx.hourly.time, wx.hourly.prob, local, sky === 'rain' || sky === 'storm') : undefined
-  return rainBody(wx, r, wx.rainPct != null && wx.rainPct >= 60, local)
+  return wx ? todayRainLine(wx, now) : 'Rain, wind and clouds' // the same rain words as Today, raining-now included
 }
 
 /** Saved ID and insurance cards on this phone (one per card, front and back count once), plus cards that live only in the family Drive. Null while unknown. */

@@ -69,7 +69,7 @@ describe('Climate outlook card', () => {
   })
   it('the view uses its own month clock: in January the past months are gone', () => {
     const { container } = render(<ClimateView province="Bohol" d={BOHOL} nowYm="2027-01" />)
-    expect(Array.from(container.querySelectorAll('.clm-chip')).map((x) => x.textContent)).toEqual(['Oct (now)Not affected', 'JanDry spell', 'FebDrought', 'MarDrought'])
+    expect(Array.from(container.querySelectorAll('.clm-chip')).map((x) => x.textContent)).toEqual(['Oct (latest)Not affected', 'JanDry spell', 'FebDrought', 'MarDrought'])
   })
 })
 

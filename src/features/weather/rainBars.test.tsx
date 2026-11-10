@@ -44,6 +44,12 @@ describe('RainMap', () => {
     expect(screen.queryByText(/from Open-Meteo/)).toBeNull()
     expect(screen.queryByText(/Storms have not been checked/)).toBeNull() // the storm block only shows while a storm is listed
   })
+  it('S29: the figures line never prints 0%', () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: NOW })
+    render(<RainMap fc={fc()} placeName="General Santos" daily={0} nextRain={4} />)
+    expect(screen.getByTestId('wx-rain-figures').textContent).toBe('Today: low chance · Next 12 h low chance')
+    vi.useRealTimers()
+  })
   it('storm track lists a GDACS storm and never says no storms while one is listed', () => {
     const a = { id: 'gdacs-TC-1001', kind: 'gdacs', title: 'Tropical Storm PEPITO', where: 'Pepito', issuedAt: '2026-10-25T00:00:00Z', lat: 9.7, lon: 128.5 } as unknown as Alert
     render(<StormTrack alerts={[a]} point={P} placeName="General Santos" />)

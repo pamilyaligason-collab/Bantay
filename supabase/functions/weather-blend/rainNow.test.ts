@@ -20,6 +20,14 @@ describe('METAR present weather', () => {
     const dry = [{ obsTime: NOW / 1000, rawOb: 'METAR RPMR 100400Z 09005KT 9999 FEW018 28/25 Q1010 RMK SHRA' }]
     expect(parseRainObs(dry, NOW)?.wet).toBe(false)
   })
+  it('trend groups (TEMPO, BECMG) are a forecast, not rain now', () => {
+    const tempo = [{ obsTime: NOW / 1000, rawOb: 'METAR RPMR 100400Z 09005KT 9999 FEW018 28/25 Q1010 TEMPO -SHRA' }]
+    expect(parseRainObs(tempo, NOW)?.wet).toBe(false)
+    const becmg = [{ obsTime: NOW / 1000, rawOb: 'METAR RPMR 100400Z 09005KT 9999 FEW018 28/25 Q1010 BECMG TSRA' }]
+    expect(parseRainObs(becmg, NOW)?.wet).toBe(false)
+    const wetNow = [{ obsTime: NOW / 1000, rawOb: 'METAR RPMR 100400Z 09005KT 9999 -RA FEW018 28/25 Q1010 NOSIG' }]
+    expect(parseRainObs(wetNow, NOW)?.wet).toBe(true)
+  })
   it('a report older than 90 minutes, or none, is no answer (null, not dry)', () => {
     expect(parseRainObs(obs('RA', 90), NOW)).toMatchObject({ wet: true, ageMin: 90 })
     expect(parseRainObs(obs('RA', 91), NOW)).toBeNull()

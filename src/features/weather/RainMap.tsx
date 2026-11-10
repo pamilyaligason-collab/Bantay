@@ -12,7 +12,7 @@ export default function RainMap({ fc, placeName, daily = null, nextRain = null }
   return (
     <section aria-label="Rain chance" className="card wx-rain" data-testid="wx-rain">
       <div className="wx-sech"><h2 className="wx-h">Rain chance</h2><span className="wx-sub"><Icon name="dl" size={16} /> {savedLine(fc)}</span></div>
-      <p className="wx-sub" data-testid="wx-rain-figures">{daily == null ? 'Today: no number yet' : `Today up to ${Math.round(daily)}%`}{nextRain != null && ` · Next 12 h ${Math.round(nextRain)}%`}</p>
+      <p className="wx-sub" data-testid="wx-rain-figures">{daily == null ? 'Today: no number yet' : daily < 10 ? 'Today: low chance' : `Today up to ${Math.round(daily)}%`}{nextRain != null && ` · Next 12 h ${nextRain < 10 ? 'low chance' : `${Math.round(nextRain)}%`}`}</p>
       {(rainMode() === 'bars' ? (
         <>
           {bars.length === 0 ? <p className="wx-note">No hourly rain data is saved yet.</p> : (
