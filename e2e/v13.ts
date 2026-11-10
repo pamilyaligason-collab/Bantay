@@ -17,8 +17,8 @@ export async function settled(page: Page): Promise<void> {
 export const WARN_SOS = '[data-testid^="warning"], [data-testid^="warn-"], [data-testid*="sos"], [data-testid="family-notice"], .td-alertband, .fm-storm, [data-testid="storm-block"], [data-nofab]'
 export const outsideWarning = (sel: string) => `${sel}:not(:is(${WARN_SOS}) *)`
 
-/** No control (button, a, input, [role=button]) sits under the Jack button: at scroll 0 ('rest'), at the end of the scroll ('end'), or both (default). Failures are prefixed "at rest:" / "at end:". */
-/** `allow`: a selector whose controls may sit under Jack (D-122: only the Family People rows `.rw-main`, when an empty Activity card hugs its line). When Jack is peeked (scrolled pages) his real hit strip is measured: 48 px wide from the screen edge, 88 px tall. */
+/** S29 (D-184) centre-point gate: no control (button, a, input, [role=button]) has its CENTRE POINT (of the part on screen) under the Jack button at scroll 0 ('rest'), at the end of the scroll ('end'), or both (default). Jack hides while the page scrolls down, so each check first waits for him to be back. Failures are prefixed "at rest:" / "at end:".
+ *  `allow`: a selector whose controls may sit under Jack (D-122 People rows). No gutter on a whole grid is a way to pass: the cards run the full width. */
 export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 'both'; allow?: string } = {}): Promise<void> {
   await settled(page)
   const at = opts.at ?? 'both'
@@ -30,12 +30,18 @@ export async function assertJackClear(page: Page, opts: { at?: 'rest' | 'end' | 
       const put = () => { el.scrollTop = when === 'rest' ? 0 : el.scrollHeight }
       put()
       for (let i = 0; i < 3; i++) { await new Promise((r) => requestAnimationFrame(() => r(null))); put() } // late content (cards that load after first paint) moves the end
-      const fr = fab.getBoundingClientRect()
-      const cy = (fr.top + fr.bottom) / 2
-      const f = fab.hasAttribute('data-peek') ? { left: innerWidth - 48, right: innerWidth, top: cy - 44, bottom: cy + 44 } : fr
+      for (let i = 0; i < 40 && fab.hasAttribute('data-away'); i++) await new Promise((r) => setTimeout(r, 50)) // 600 ms after the scroll stops he is back
+      await new Promise((r) => setTimeout(r, 200)) // his 150 ms slide in
+      const f = fab.getBoundingClientRect()
+      const v = el.getBoundingClientRect()
       return Array.from(document.querySelectorAll<HTMLElement>('button, a, input, [role=button]'))
         .filter((n) => n !== fab && !fab.contains(n) && !(allow && n.closest(allow)))
-        .filter((n) => { const r = n.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(n).visibility !== 'hidden' && r.left < f.right && r.right > f.left && r.top < f.bottom && r.bottom > f.top })
+        .filter((n) => {
+          const r = n.getBoundingClientRect()
+          if (r.width <= 0 || r.height <= 0 || getComputedStyle(n).visibility === 'hidden') return false
+          const x = (Math.max(r.left, v.left) + Math.min(r.right, v.right)) / 2, y = (Math.max(r.top, v.top) + Math.min(r.bottom, v.bottom)) / 2
+          return x >= f.left && x <= f.right && y >= f.top && y <= f.bottom
+        })
         .map((n) => (n.getAttribute('aria-label') || n.textContent || n.tagName).trim().slice(0, 40))
     }, [when, opts.allow ?? ''] as const)
     expect(hits, `at ${when}: controls under the Jack button`).toEqual([])

@@ -17,7 +17,7 @@ import './shell.css'
 type Box = { left: number; right: number; top: number; bottom: number }
 const hits = (a: Box, b: Box) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top
 
-/** Only keyboard focus brings him back: a press focuses the button too, and moving him then would take him from under the finger. */
+/** Only keyboard focus brings him back: a press focuses the button too. */
 const keyboardFocus = (el: HTMLElement) => { try { return el.matches(':focus-visible') } catch { return true } } // no :focus-visible support: treat as keyboard
 
 /** True when the coach mark would sit on any line of page text (UI-1): it is then not shown, never drawn over safety text. */
@@ -59,15 +59,21 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
     return () => mo.disconnect()
   }, [hash])
   const visible = tab !== null && !nofab && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && simpleLoaded && !simple
-  const [peek, setPeek] = useState(false) // scrolled down: Jack slides mostly off the right edge so he stops covering rows; back at the top, on focus or on tap he returns
+  const [away, setAway] = useState(false) // S29 (D-184): scrolling down slides Jack out; scrolling up, 600 ms without scrolling, or the page top brings him back, so he never needs a gutter on the cards
   useEffect(() => {
     if (!visible) return
     const el = document.querySelector('.bt .scroll')
     if (!el) return
-    const on = () => setPeek((was) => el.scrollTop > (was ? 8 : 48)) // two thresholds so he does not flutter near the line
-    on()
+    let last = el.scrollTop
+    let t: ReturnType<typeof setTimeout> | undefined
+    const on = () => {
+      const top = el.scrollTop, d = top - last
+      last = top
+      if (top <= 8 || d < -4) { clearTimeout(t); setAway(false); return }
+      if (d > 4) { setAway(true); clearTimeout(t); t = setTimeout(() => setAway(false), 600) }
+    }
     el.addEventListener('scroll', on, { passive: true })
-    return () => el.removeEventListener('scroll', on)
+    return () => { clearTimeout(t); el.removeEventListener('scroll', on) }
   }, [visible, hash])
   const hint = visible && loaded && !seen && !sheet && tab === 'today' && !acting // viewing as someone: the hint would sit on the locked Log (D-128)
   const hintRef = useRef<HTMLParagraphElement>(null)
@@ -118,8 +124,8 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   return (
     <>
       <button
-        type="button" className="sh-jackfab" data-testid="jack" aria-label="Jack: help, scan, chat" aria-haspopup="dialog" data-peek={peek || undefined}
-        onFocus={(e) => { if (keyboardFocus(e.currentTarget)) setPeek(false) }} onClick={() => { setPeek(false); setSheet(true); if (!seen) setSeen(true) }}
+        type="button" className="sh-jackfab" data-testid="jack" aria-label="Jack: help, scan, chat" aria-haspopup="dialog" data-away={away || undefined}
+        onFocus={(e) => { if (keyboardFocus(e.currentTarget)) setAway(false) }} onClick={() => { setAway(false); setSheet(true); if (!seen) setSeen(true) }}
       >
         <JackArt name="head" size={56} decorative />
       </button>

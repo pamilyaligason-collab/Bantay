@@ -111,26 +111,25 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 [data-testid="dc-play"] .pt-s { color: var(--tint-ink); }
 
 /* S25 fix 1: Show more / Show less keep a symmetric 64 px each side so the floating Jack button (right edge, 56 px) never covers any part of it */
-.dc-panel .more-grid-btn { display: block; width: max(calc(100% - 128px), min(100%, 160px)); margin-inline: auto; }
+.dc-panel .more-grid-btn { display: block; width: max(calc(100% - 128px), min(100%, 160px)); margin-inline: auto; } /* centred, so Jack (right) never covers it */
 
+/* S29 (D-184): at 360 wide the Top stories header sits in Jack's band at rest, so its See all link sits next to the title (the same tool as Health's Readings header); no gutter on the row. */
+.dc-panel > section.sec[data-testid="dc-top-story"] > .sec-h { justify-content: flex-start; gap: 16px; }
 /* S28 (D-180): sections are not cards; --sp-5 (24 px) above each section is the panel's own gap (today.css), --card-gap between the video cards inside one (look/media/media.css). Title left, See all right comes from Section. */
 /* S28 fix 1: "See all" stays on the right (contract) but ends 72 px short of the screen gutter: the floating Jack button is 62 px wide at right 18 px (80 px from the edge) and the link's -6 px margin reaches past the padding edge; e2e s28-discover hit-tests it at 360 and 412 px. */
-.dc-panel > section.sec > .sec-h { padding-right: var(--jack-clear, 72px); }
 /* S28 fix 2: the Play tiles and the guided Listen poster have no Jack allowance, so they end 72 px short of the screen gutter too (the tiles drop to one column when two would be under 150 px). */
-.dc-panel [data-testid="dc-play"] .pt-grid { padding-right: var(--jack-clear, 72px); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
-.dc-panel .card.dc-guided, .dc-panel .card.dc-fact { margin-right: var(--jack-clear, 72px); }
+.dc-panel [data-testid="dc-play"] .pt-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 /* the guided poster runs to the card's edges so, 72 px short of the gutter, it is still 150 px tall at 390 (e2e v13-discover D3) */
 .dc-panel .card.dc-guided { padding: 0 0 12px; overflow: hidden; }
 .dc-panel .card.dc-guided > :not(.lv) { margin: 0 12px; }
-.dc-panel [data-testid="dc-recipes"] .dc-rgrid { padding-right: var(--jack-clear, 72px); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.dc-panel [data-testid="dc-recipes"] .dc-rgrid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .dc-stack { display: flex; flex-direction: column; gap: var(--card-gap, 12px); }
 /* S26 Discover (D-166..): Learn cards raised, the Channel menu. */
 .card.dc-lc { box-shadow: var(--shadow-raised); }
 .card.dc-lc:active { box-shadow: var(--shadow-press); }
-.dc-chan { display: flex; flex-direction: column; gap: 6px; padding-right: 64px; margin-bottom: 12px; } /* clear of the Jack button, like the old chips */
+.dc-chan { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .dc-chan-l { font-size: 16px; line-height: 22px; color: var(--ink); }
 .dc-select { width: 100%; min-height: 48px; padding: 0 16px; border: 1.5px solid var(--muted); border-radius: 14px; background: var(--card); color: var(--ink); font: inherit; font-size: 16px; } /* --muted on --card and --ground is >= 4.5:1 in both themes, so the border clears 3:1 */
 .dc-select:focus-visible { outline: 2px solid var(--act); outline-offset: 2px; }
 @media (prefers-reduced-motion: no-preference) { .card.dc-lc:active { transform: scale(.98); } }
 /* Listen: the video cards end 72 px short of the gutter so none lies under the Jack button at rest (e2e v13-foundation, no allowance) */
-[data-testid="listen"] .md-listwrap, [data-testid="listen"] > .hv-vc { padding-right: var(--jack-clear, 72px); }

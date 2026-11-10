@@ -43,4 +43,3 @@
 
 /* Integration: a day is 44 px wide at 360 (7 columns in a 328 px card need 8 px side padding), and the Together tiles end 72 px short of the gutter so neither lies under Jack at rest (e2e comply-ct-family, no allowance) */
 @media (max-width: 375px) { .bt .fm2-cal, .card.fm2-cal { padding-left: 8px; padding-right: 8px; } }
-.fm-tiles { padding-right: var(--jack-clear, 72px); }

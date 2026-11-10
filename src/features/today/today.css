@@ -651,5 +651,3 @@
 .td-wxh-credit { display: block; margin-top: 6px; font-size: 15px; line-height: 1.3; color: #fff; }
 .sf-wxnote { margin: 8px 16px 0; font-size: 15px; color: var(--muted); }
 .td-wxh-credit a { display: inline-block; padding: 12px 0; margin: -12px 0; color: inherit; text-decoration: underline; } /* 44 px to tap, 20 px of layout */
-/* Integration (S28): the Turn on button and the Details link end 72 px short of the gutter so neither lies under Jack when the cards above them are short (e2e s16-today, no allowance) */
-.card.td-ao, .card.td-arow { padding-right: var(--jack-clear, 72px); }

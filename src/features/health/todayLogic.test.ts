@@ -90,7 +90,7 @@ describe('S28 C1: Today tiles at the senior floor, with a 7-day visual', () => {
     expect(block).toMatch(/\.tk-l \{ font-size: var\(--fs-meta, 15px\)/)
     expect(block).toMatch(/\.tk-s \{ font-size: var\(--fs-meta, 15px\)/)
     expect(block).toMatch(/\.tk-v \{ font-size: var\(--fs-value, 24px\)/)
-    expect(block).toMatch(/\.tk-grid \{ padding-right: var\(--jack-clear, 72px\); display: grid; grid-template-columns: repeat\(2,/)
+    expect(block).toMatch(/\.tk-grid \{ display: grid; grid-template-columns: repeat\(2,/)
     expect(px(/\.tk-l \{ font-size: var\(--fs-meta, (\d+)px/)).toBeGreaterThanOrEqual(15)
     expect(px(/\.tk-v \{ font-size: var\(--fs-value, (\d+)px/)).toBeGreaterThanOrEqual(24)
   })
