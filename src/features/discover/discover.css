@@ -113,8 +113,8 @@ a.dc-src { text-decoration: underline; display: inline-flex; align-items: center
 /* S25 fix 1: Show more / Show less keep a symmetric 64 px each side so the floating Jack button (right edge, 56 px) never covers any part of it */
 .dc-panel .more-grid-btn { display: block; width: max(calc(100% - 128px), min(100%, 160px)); margin-inline: auto; } /* centred, so Jack (right) never covers it */
 
-/* S29 (D-184, owner ruling): Top stories' See all stays on the right like every other header; at 360 wide its centre sat in Jack's box at rest, so this one link has a margin (e2e s29-cards). */
-.bt[data-jack] .dc-panel > section.sec[data-testid="dc-top-story"] > .sec-h a { margin-right: 60px; }
+/* S29 (D-184, owner ruling): Top stories' See all stays on the right like every other header, and gets a margin only where Jack would sit on it at rest. Measured at scroll 0 (same at 360 to 430 wide): the header's centre is at y 629 and the link's centre x is always inside Jack's column, so only the viewport HEIGHT decides. Jack's box is H-154 to H-92, which holds y 629 for H 721 to 783 (360x780 yes; 390x844, 375x667, 412x915 no); the band below is a little wider. Re-measure when the cards above Top stories change height (e2e s29-cards). */
+@media (min-height: 715px) and (max-height: 790px) { .bt[data-jack] .dc-panel > section.sec[data-testid="dc-top-story"] > .sec-h a { margin-right: 60px; } }
 /* S28 (D-180): sections are not cards; --sp-5 (24 px) above each section is the panel's own gap (today.css), --card-gap between the video cards inside one (look/media/media.css). Title left, See all right comes from Section. */
 .dc-panel [data-testid="dc-play"] .pt-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 .dc-panel .card.dc-guided { padding: 0 0 12px; overflow: hidden; }

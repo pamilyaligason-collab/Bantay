@@ -106,6 +106,18 @@ describe('JackFab hide on scroll', () => {
     scrollTo(900); fireEvent.click(fab()!); expect(screen.getByRole('dialog', { name: 'Jack' })).toBeTruthy(); expect(away()).toBe(false)
     bt.remove(); vi.useRealTimers()
   })
+  it('S29: a route change while he is slid away brings him back (the effect cleanup drops the 600 ms timer)', () => {
+    vi.useFakeTimers()
+    const bt = document.createElement('div'); bt.className = 'bt'; const sc = document.createElement('div'); sc.className = 'scroll'; bt.append(sc); document.body.append(bt)
+    const { rerender } = render(<JackFab tab="family" hash="#family" />)
+    sc.scrollTop = 300; act(() => { sc.dispatchEvent(new Event('scroll')) })
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    rerender(<JackFab tab="family" hash="#family/people" />)
+    expect(fab()!.hasAttribute('data-away')).toBe(false)
+    act(() => { vi.advanceTimersByTime(5000) })
+    expect(fab()!.hasAttribute('data-away')).toBe(false)
+    bt.remove(); vi.useRealTimers()
+  })
 })
 
 describe('JackFab coach mark with scroll', () => {
@@ -153,6 +165,24 @@ describe('JackFab coach mark', () => {
     tick(1)
     expect(store.get('askHintSeen')).toBe(true)
     expect(screen.queryByRole('status')).toBeNull()
+  })
+  it('S29: the 8 s clock stops while Jack is away (bubble hidden) and starts again when he is back', () => {
+    const bt = document.createElement('div'); bt.className = 'bt'; const sc = document.createElement('div'); sc.className = 'scroll'; bt.append(sc); document.body.append(bt)
+    render(<JackFab tab="today" hash="#today" />)
+    const scrollTo = (y: number) => { sc.scrollTop = y; act(() => { sc.dispatchEvent(new Event('scroll')) }) }
+    tick(5000)
+    scrollTo(200) // away: 600 ms rest timer runs, the hint is hidden
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    tick(599)
+    expect(fab()!.hasAttribute('data-away')).toBe(true)
+    tick(7000) // would have passed 8 s in total if the clock had kept running
+    expect(fab()!.hasAttribute('data-away')).toBe(false)
+    expect(store.get('askHintSeen')).toBeUndefined()
+    tick(7999)
+    expect(store.get('askHintSeen')).toBeUndefined()
+    tick(1)
+    expect(store.get('askHintSeen')).toBe(true)
+    bt.remove()
   })
   it('viewing as someone: no hint (it would sit on the locked Log) and it is not counted as seen', () => {
     viewing.on = true

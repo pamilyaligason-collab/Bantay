@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { skipOnboarding } from './helpers'
-import { assertJackClear } from './v13'
+import { assertJackClear, expectJackAtRest, layoutStable } from './v13'
 
 // S29 lane A (D-184): cards run the full width (no Jack gutter on grids), Jack hides while scrolling down, and no control has its centre point under him at rest and at the end.
 // Shots only when S29_SHOTS=<dir>. Runs in the chromium project (no sign-in).
@@ -44,6 +44,25 @@ for (const size of SIZES) {
         if (SHOTS) await page.screenshot({ path: `${SHOTS}/${name.replace(/\W+/g, '-')}-${size.width}x${size.height}.png`, animations: 'disabled' })
       })
     }
+
+    test('Discover: Top stories See all lines up with the other headers; it steps left only where Jack would sit on it at rest', async ({ page }) => {
+      await page.goto('/#discover')
+      await expect(page.getByTestId('dc-top-story')).toBeVisible()
+      await layoutStable(page)
+      await page.evaluate(() => { (document.querySelector('.bt .scroll') as HTMLElement).scrollTop = 0 })
+      await expectJackAtRest(page, 'Discover')
+      const m = await page.evaluate(() => {
+        const rights = Array.from(document.querySelectorAll<HTMLElement>('.dc-panel > section.sec > .sec-h a')).map((a) => ({ top: !!a.closest('[data-testid="dc-top-story"]'), right: a.getBoundingClientRect().right }))
+        const a = document.querySelector('[data-testid="dc-top-story"] > .sec-h a')!.getBoundingClientRect()
+        const f = document.querySelector('.sh-jackfab')!.getBoundingClientRect()
+        return { rights, centreInJack: (a.left + a.right) / 2 >= f.left && (a.left + a.right) / 2 <= f.right && (a.top + a.bottom) / 2 >= f.top && (a.top + a.bottom) / 2 <= f.bottom, boxHitsJack: a.left < f.right && a.right > f.left && a.top < f.bottom && a.bottom > f.top }
+      })
+      const top = m.rights.find((r) => r.top)!.right, others = m.rights.filter((r) => !r.top).map((r) => r.right)
+      expect(m.centreInJack, 'See all centre is not under Jack at rest').toBe(false)
+      if (size.height === 844) for (const o of others) expect(Math.abs(o - top), 'at 390 x 844 the link lines up with the other headers').toBeLessThanOrEqual(1.5)
+      else expect(top, 'at 360 x 780 Jack sits on the header row, so the link steps left').toBeLessThan(Math.min(...others) - 20)
+      if (SHOTS) await page.screenshot({ path: `${SHOTS}/Discover-topstories-${size.width}x${size.height}.png`, animations: 'disabled' })
+    })
 
     test('Jack slides out on scroll down, returns on scroll up and 600 ms after the scroll stops', async ({ page }) => {
       await page.goto('/#today')

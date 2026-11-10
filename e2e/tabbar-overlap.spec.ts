@@ -72,16 +72,16 @@ for (const width of [360, 390]) {
     const rects = (page: Page) =>
       page.evaluate(async () => {
         const main = document.querySelector('main.scroll') as HTMLElement
-        main.scrollTop = main.scrollHeight
-        await new Promise((r) => setTimeout(r, 300))
-        main.scrollTop = main.scrollHeight
         const el = document.querySelector('.sh-jackfab')
         const nap = (ms: number) => new Promise((r) => setTimeout(r, ms))
-        for (let i = 0; i < 40; i++) { // the scroll event comes a frame later and late content can scroll again: Jack is at rest when data-away stays clear for 250 ms (his slide is 150 ms)
-          await nap(i ? 50 : 150)
-          if (el?.hasAttribute('data-away')) continue
-          await nap(250)
-          if (!el?.hasAttribute('data-away')) break
+        const atEnd = () => main.scrollTop + main.clientHeight >= main.scrollHeight - 1
+        // S29: the measure needs the page at its END and Jack AT REST together. Late cards grow the page after the first scroll (Today: measured content bottom 925 against Jack top 646), so scroll again until the end holds with data-away clear for 250 ms (his slide is 150 ms).
+        let rest = false
+        for (let i = 0; i < 60 && !rest; i++) {
+          if (!atEnd()) main.scrollTop = main.scrollHeight
+          await nap(i ? 50 : 300)
+          rest = atEnd() && !el?.hasAttribute('data-away')
+          if (rest) { await nap(250); rest = atEnd() && !el?.hasAttribute('data-away') }
         }
         const fab = el?.getBoundingClientRect()
         const bar = document.querySelector('nav[aria-label="Main"]')!.getBoundingClientRect()
@@ -91,7 +91,7 @@ for (const width of [360, 390]) {
         })
         const bottom = Math.max(...kids.map((e) => e.getBoundingClientRect().bottom))
         const hit = (sel: string) => Array.from(document.querySelectorAll(sel)).map((e) => { const r = e.getBoundingClientRect(); return !!fab && r.width > 0 && r.left < fab.right && r.right > fab.left && r.top < fab.bottom && r.bottom > fab.top })
-        return { fab: fab && { top: fab.top, bottom: fab.bottom, right: fab.right }, barTop: bar.top, bottom, sos: hit('.sos-simple-btn'), taken: hit('.td-taken'), vw: window.innerWidth }
+        return { rest, fab: fab && { top: fab.top, bottom: fab.bottom, right: fab.right }, barTop: bar.top, bottom, sos: hit('.sos-simple-btn'), taken: hit('.td-taken'), vw: window.innerWidth }
       })
 
     for (const tab of ['today', 'health', 'discover', 'discover/play', 'family', 'safety']) {
@@ -101,6 +101,7 @@ for (const width of [360, 390]) {
         await expect(page.locator('.sh-jackfab')).toBeVisible()
         await page.waitForTimeout(500)
         const m = await rects(page)
+        expect(m.rest, 'the page is at its end and Jack is at rest (not slid away)').toBe(true)
         expect(m.fab, 'Jack button rendered').toBeTruthy()
         expect(m.fab!.bottom, `Jack bottom ${m.fab!.bottom} vs tab bar top ${m.barTop}`).toBeLessThanOrEqual(m.barTop)
         expect(m.bottom, `${tab}: content bottom ${m.bottom} vs Jack top ${m.fab!.top}`).toBeLessThanOrEqual(m.fab!.top)

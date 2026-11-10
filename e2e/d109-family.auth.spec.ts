@@ -122,7 +122,7 @@ for (const scheme of ['light', 'dark'] as const) {
           await top(page)
           await assertJackHit(page, FAMILY_ALLOW, `${name} ${width}x${height} rest`) // every visible button at scroll 0, Open Papa and See all included: hit-tested, only the named whole-card links may be under him
           await more.scrollIntoViewIfNeeded()
-          await assertJackHit(page, FAMILY_ALLOW, `${name} ${width}x${height} See all in view`, 'keep') // a peeked Jack: his real hit strip
+          await assertJackHit(page, FAMILY_ALLOW, `${name} ${width}x${height} See all in view`, 'keep') // Jack at rest (S29: he no longer peeks), hit-tested
           expect((await more.boundingBox())!.height).toBeGreaterThanOrEqual(44)
           await assertTargets(page)
           await top(page)

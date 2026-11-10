@@ -63,6 +63,7 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
   const visible = tab !== null && !nofab && (!hasOwnHeader(hash) || isDiscoverSubRoot(hash)) && simpleLoaded && !simple
   const [away, setAway] = useState(false) // S29 (D-184): scrolling down slides Jack out; scrolling up, 600 ms without scrolling, or the page top brings him back, so he never needs a gutter on the cards
   useEffect(() => {
+    setAway(false) // this effect re-runs on a new route or when Jack shows again, and its cleanup drops the 600 ms return timer: without this he could stay slid away until the next scroll
     if (!visible) return
     const el = document.querySelector('.bt .scroll')
     if (!el) return
@@ -103,10 +104,10 @@ export function JackFab({ tab, hash }: { tab: Tab | null; hash: string }) {
     return () => { bt?.removeAttribute('data-hint'); cancelAnimationFrame(raf); mo.disconnect(); scroller?.removeEventListener('scroll', later); window.removeEventListener('resize', later) }
   }, [hint])
   useEffect(() => { // the coach mark shows once: it counts as seen after 8 seconds on screen, so it never sits on the page again
-    if (!hint || !fits) return
+    if (!hint || !fits || away) return // S29: Jack slid away = bubble hidden, so the 8 s start again when he is back (shortcut: continuous 8 s, not a running total)
     const t = setTimeout(() => setSeen(true), 8000)
     return () => clearTimeout(t)
-  }, [hint, fits, setSeen])
+  }, [hint, fits, away, setSeen])
   useEffect(() => {
     let live = true
     void getMember().then((m) => {
