@@ -109,6 +109,22 @@ export function parseRows(items: Item[], priceDate: string, sourceUrl: string): 
 }
 
 
+/** GET that follows at most 3 redirects, and only to https://www.da.gov.ph/. A redirect anywhere else (2026-11-10: the site answered the cron's request with 302 to http://127.0.0.1) throws 'blocked',
+ * so the heartbeat can say "blocked" instead of a connection error. `get` must not follow redirects itself (redirect: 'manual'). */
+export async function getSameSite(get: (url: string) => Promise<Response>, url: string): Promise<Response> {
+  let u = url
+  for (let hop = 0; hop < 4; hop++) {
+    const res = await get(u)
+    if (res.status < 300 || res.status >= 400) return res
+    const to = res.headers.get('location')
+    let next: URL | null = null
+    try { next = to ? new URL(to, u) : null } catch { next = null }
+    if (!next || next.protocol !== 'https:' || next.hostname !== 'www.da.gov.ph') throw new Error('blocked')
+    u = next.href
+  }
+  throw new Error('blocked')
+}
+
 export interface Port { upsert(rows: (PriceRow & { fetched_at: string })[]): Promise<void>; purge(beforeDate: string): Promise<void> }
 export interface Result { ok: boolean; rows: number }
 

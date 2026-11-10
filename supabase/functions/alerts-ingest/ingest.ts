@@ -120,7 +120,17 @@ async function sendNotices(port: Port, notices: { ref: string; template: string 
   return { written, failed }
 }
 
-export async function runIngest(port: Port, fetchText: (url: string) => Promise<string>, now: number, clock: () => number = Date.now): Promise<Result> {
+/** Why a source failed, as a word that can become a flag in the counts-only heartbeat (no error text ever leaves): the fetch timed out, the host answered HTTP 4xx/5xx, the payload was not what the parser knows, or anything else (a write). */
+export type FailKind = 'timeout' | 'http' | 'payload' | 'other'
+export function failKind(e: unknown): FailKind {
+  const { name, message: msg } = (typeof e === 'object' && e !== null ? e : {}) as { name?: string; message?: string } // duck-typed: a DOMException from AbortSignal.timeout is not always an Error
+  if (name === 'TimeoutError' || name === 'AbortError') return 'timeout'
+  if (/^HTTP\d{3}$/.test(msg ?? '')) return 'http'
+  if (name === 'SyntaxError' || msg === 'unexpected payload') return 'payload'
+  return 'other'
+}
+
+export async function runIngest(port: Port, fetchText: (url: string) => Promise<string>, now: number, clock: () => number = Date.now, onFail: (source: string, kind: FailKind) => void = () => undefined): Promise<Result> {
   const result: Result = {}
   const started = clock()
   const mayFlush = () => clock() - started <= FLUSH_BUDGET_MS
@@ -160,7 +170,8 @@ export async function runIngest(port: Port, fetchText: (url: string) => Promise<
       await port.setStale(s.source, false)
       result[s.source] = { ok: true, rows: rows.length }
       await notifyTier1(port, rows, now, mayFlush, old) // every source: tier1() picks only the five urgent cases
-    } catch {
+    } catch (e) {
+      onFail(s.source, failKind(e))
       // Degraded comms is the design centre (B-4): keep what we had, say it is old. A failing stale-flag write is swallowed: the next run retries.
       await port.setStale(s.source, true).catch(() => undefined)
       result[s.source] = { ok: false, rows: 0 }
