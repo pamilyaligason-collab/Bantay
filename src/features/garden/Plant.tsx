@@ -12,6 +12,8 @@ export const PLANT_FOOTER = 'General guide from the planting calendar of PCARRD,
 export const PRICE_NOTE = 'Prices are Metro Manila; local prices may differ.'
 /** The climate type in plain words for the sub-line (the four types are in CLIMATE_TYPES). */
 const TYPE_WORD: Record<ClimateType, string> = { 1: 'Dry and wet seasons', 2: 'No dry season', 3: 'No clear season', 4: 'Rain all year' }
+/** " · No dry season" for the sub-line, left out when the province's PAGASA outlook shows a dry spell or drought ahead, so it never contradicts the Climate outlook card above (S29 A4). */
+const typeWord = (t: ClimateType, dry: boolean) => (dry ? '' : ` · ${TYPE_WORD[t]}`)
 const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1)
 
 /** Crops in the calendar that cope with less water. A short list, general agronomy, not DA or PCAARRD data; sources: FAO crop information pages and ECHO technical notes for cowpea (which includes
@@ -87,7 +89,7 @@ export function PlantCard() {
   return (
     <Section title="Plant this month" link={{ href: '#garden/plant', label: total > 3 ? `See all ${total}` : 'See more' }} testId="today-plant">
       <a className="card gpl-card" href="#garden/plant" data-testid="plant-card">
-        <span className="gpl-sub">{MONTH_NAMES[month - 1]} · {TYPE_WORD[c.type]}{c.guess ? ' (from your province)' : ''}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
+        <span className="gpl-sub">{MONTH_NAMES[month - 1]}{typeWord(c.type, !!dryIn)}{c.guess ? ' (from your province)' : ''}{anyPrice ? ' · DA prices, Metro Manila' : ''}</span>
         {dryIn && <span className="gpl-dry" data-testid="plant-dry">{dryText(dryIn, tiles)}</span>}
         <span className="gpl-tiles">
           {tiles.map((t) => 'g' in t ? (
@@ -139,7 +141,7 @@ export function PlantPoster() {
   return (
     <section className="gpl-page" data-testid="plant-page">
       {head}
-      {c.type && <p className="gpl-sub">{MONTH_NAMES[month - 1]} · {TYPE_WORD[c.type]}{c.guess ? ' (from your province)' : ''}.{priced && d ? ` Prices: Metro Manila markets, DA, ${priceDay(d.date)}.` : ''}</p>}
+      {c.type && <p className="gpl-sub">{MONTH_NAMES[month - 1]}{typeWord(c.type, !!dryIn)}{c.guess ? ' (from your province)' : ''}.{priced && d ? ` Prices: Metro Manila markets, DA, ${priceDay(d.date)}.` : ''}</p>}
       {c.type && dryIn && list && <p className="gpl-sub gpl-dry" data-testid="plant-dry">{dryText(dryIn, (list.guided.length ? list.guided.map((g): Tile => ({ g })) : list.others.map((o): Tile => ({ name: o.name }))))}</p>}
       {picker && <div className="card gpl-card"><ClimatePicker current={c.type} onPick={(t) => { c.pick(t); setChange(false) }} /></div>}
       {list && list.guided.map((g, i) => <Poster key={g.name} g={g} price={priceOf(g, d)} date={d ? d.date : null} hero={i === 0} />)}

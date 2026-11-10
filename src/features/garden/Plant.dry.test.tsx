@@ -32,6 +32,18 @@ describe('S29 C: dry spell in the outlook', () => {
     render(<PlantPoster />)
     expect(screen.getByTestId('plant-dry').textContent).toBe(NOTE)
   })
+  it('S29 A4: with a dry outlook the sub-line drops the climate-type words (one story with the Climate card); without one it keeps them', () => {
+    h.dr = BOHOL
+    const { container, unmount } = render(<PlantCard />)
+    expect(container.querySelector('.gpl-sub')!.textContent).toBe('November')
+    unmount()
+    const poster = render(<PlantPoster />)
+    expect(poster.container.querySelector('.gpl-sub')!.textContent).toBe('November.')
+    poster.unmount()
+    h.dr = row('2026-11-03', [['2026-10', 'not_affected'], ['2026-11', 'not_affected'], ['2026-12', 'dry_condition'], ['2027-01', 'not_affected']]) // no dry spell or drought in the window
+    const calm = render(<PlantCard />)
+    expect(calm.container.querySelector('.gpl-sub')!.textContent).toBe('November · Rain all year')
+  })
   it('no note without a dry month in the window, with no outlook, an old one, or no province', () => {
     h.dr = row('2026-11-03', [['2026-10', 'not_affected'], ['2026-11', 'not_affected'], ['2026-12', 'dry_condition'], ['2027-01', 'not_affected'], ['2027-02', 'drought']]) // the drought is the 4th month: outside Nov to Jan
     render(<PlantCard />).unmount()

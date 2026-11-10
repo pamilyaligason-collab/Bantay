@@ -41,7 +41,7 @@ for (const [w, h] of [[390, 844], [360, 780]] as const) {
     await page.reload()
     const pl = page.getByTestId('today-plant')
     await expect(pl).toBeVisible()
-    await expect(pl).toContainText('No dry season')
+    await expect(pl).not.toContainText('No dry season') // S29 A4: the dry outlook replaces the climate-type words
     await expect(page.getByTestId('plant-dry')).toBeVisible()
     await pl.scrollIntoViewIfNeeded()
     const dir = process.env.S29_C_SHOTS
