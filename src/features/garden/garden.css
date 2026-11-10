@@ -30,7 +30,6 @@ a.gpl-card:active { box-shadow: var(--shadow-press); transform: scale(.98); }
 .gpl-cap { position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 1; color: #fff; display: grid; }
 .gpl-cap h2 { margin: 0; font-size: 30px; line-height: 34px; font-weight: 800; letter-spacing: -.02em; }
 .gpl-cap span { font-size: 16px; line-height: 20px; }
-.gpl-tag { position: absolute; top: 12px; left: 12px; z-index: 1; background: var(--tint-amber); color: var(--tint-amber-ink); font-size: 14px; line-height: 18px; font-weight: 800; border-radius: 999px; padding: 4px 10px; }
 .gpl-price { position: absolute; top: 12px; right: 12px; z-index: 1; background: var(--card); color: var(--ink); border-radius: 14px; padding: 6px 10px; text-align: right; box-shadow: var(--shadow); display: grid; }
 .gpl-price b { font-size: 18px; line-height: 22px; font-variant-numeric: tabular-nums; }
 .gpl-price span { font-size: 14px; line-height: 18px; color: var(--muted); }
@@ -58,3 +57,6 @@ a.gpl-card:active { box-shadow: var(--shadow-press); transform: scale(.98); }
 @media (prefers-reduced-motion: reduce) { a.gpl-card:active { transform: none; } }
 /* S29 lane C: the dry-spell line under the Plant card sub-line */
 .gpl-dry { margin: 0; font-size: 16px; line-height: 22px; font-weight: 600; color: var(--tint-amber-ink); }
+/* S29 G: the photo line is the card's last line (the card opens the poster page, which carries each photo's credit); the poster credit keeps "(Wikimedia Commons)" in one piece */
+.gpl-photos { font-size: 15px; line-height: 20px; color: var(--muted); }
+.gpl-nw { white-space: nowrap; }

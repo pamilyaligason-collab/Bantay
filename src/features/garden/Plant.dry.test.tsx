@@ -6,7 +6,7 @@ const h = vi.hoisted(() => ({ province: 'Bohol' as string | null, dr: null as Dr
 vi.mock('./climate', async (orig) => ({ ...(await orig<typeof import('./climate')>()), useClimate: () => ({ type: useType.t, guess: false, ready: true, pick: vi.fn(), picked: null, province: h.province }) }))
 vi.mock('./daPrices', async (orig) => ({ ...(await orig<typeof import('./daPrices')>()), useDaPrices: () => null }))
 vi.mock('./drought', async (orig) => ({ ...(await orig<typeof import('./drought')>()), useDrought: () => h.dr }))
-import { DROUGHT_TOLERANT, dryText, PlantCard, PlantPoster, plantList, plantTiles } from './Plant'
+import { DROUGHT_TOLERANT, dryLead, dryText, PlantCard, PlantPoster, plantList, plantTiles } from './Plant'
 
 beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 10, 9, 12, 0, 0)) }) // local midday, 9 Nov 2026 (ML-38)
 afterEach(() => { vi.useRealTimers(); cleanup(); h.dr = null; h.province = 'Bohol'; useType.t = 4 })
@@ -16,8 +16,11 @@ const row = (issued: string, levels: [string, Drought['months'][number]['level']
 })
 // PAGASA's real Bohol outlook issued 3 Nov 2026 (assessment Oct, then Nov not affected, Dec dry condition, Jan dry spell, Feb drought)
 const BOHOL = row('2026-11-03', [['2026-10', 'not_affected'], ['2026-11', 'not_affected'], ['2026-12', 'dry_condition'], ['2027-01', 'dry_spell'], ['2027-02', 'drought']])
-const NOTE = 'Because of the dry spell in Bohol, Sitaw copes with less water.' // type 4, November: sitaw (yardlong bean) is the one tolerant crop shown
-const TIP = 'Dry spell in Bohol: water early in the morning and mulch to keep the soil damp.'
+const NOTE = 'A dry spell is coming to Bohol in January. Sitaw needs less water.' // type 4, November: sitaw (yardlong bean) is the one tolerant crop shown
+const LEAD_NOW = 'Bohol is in a dry spell.' // the dry month is this month
+const TIP = `${LEAD_NOW} Water early in the morning and mulch to keep the soil damp.`
+const NOW = { province: 'Bohol', ym: '2026-02', level: 'dry_spell' as const, now: true }
+const AHEAD = { ...NOW, ym: '2027-01', now: false }
 
 describe('S29 C: dry spell in the outlook', () => {
   it('a dry spell within this month and the next two: the note shows on the card and on the poster page', () => {
@@ -54,7 +57,7 @@ describe('S29 C: dry spell in the outlook', () => {
     h.dr = row('2026-02-03', [['2026-01', 'not_affected'], ['2026-02', 'dry_spell'], ['2026-03', 'drought']])
     const { container } = render(<PlantCard />)
     expect(container.querySelector('.gpl-tile')!.textContent).toBe('OkraGuide coming')
-    expect(screen.getByTestId('plant-dry').textContent).toBe('Because of the dry spell in Bohol, Okra copes with less water.')
+    expect(screen.getByTestId('plant-dry').textContent).toBe('Bohol is in a dry spell. Okra needs less water.')
   })
 })
 
@@ -66,14 +69,21 @@ describe('S29 C fix r3: tiles, note, line and credit agree', () => {
       const { l, tiles } = tilesOf(type, m)
       if (l.guided.length) expect('g' in tiles[0]!, `type ${type} month ${m}`).toBe(true)
       const shown = tiles.filter((t) => DROUGHT_TOLERANT.includes('g' in t ? t.g.calendar : t.name)).map(label)
-      const text = dryText('Bohol', tiles)
+      const text = dryText(NOW, tiles)
       if (shown.length) shown.slice(0, 2).forEach((n) => expect(text).toContain(n)); else expect(text).toBe(TIP)
     }
   })
   it('the wording: one name, two names, none', () => {
-    expect(dryText('Bohol', [{ name: 'Okra' }, { name: 'Celery' }, { name: 'Garlic' }])).toBe('Because of the dry spell in Bohol, Okra copes with less water.')
-    expect(dryText('Bohol', [{ name: 'Cowpea' }, { name: 'Celery' }, { name: 'Okra' }])).toBe('Because of the dry spell in Bohol, Cowpea and Okra cope with less water.')
-    expect(dryText('Bohol', [{ name: 'Celery' }, { name: 'Garlic' }, { name: 'Lettuce' }])).toBe(TIP)
+    expect(dryText(NOW, [{ name: 'Okra' }, { name: 'Celery' }, { name: 'Garlic' }])).toBe('Bohol is in a dry spell. Okra needs less water.')
+    expect(dryText(AHEAD, [{ name: 'Cowpea' }, { name: 'Celery' }, { name: 'Okra' }])).toBe('A dry spell is coming to Bohol in January. Cowpea and Okra need less water.')
+    expect(dryText(NOW, [{ name: 'Celery' }, { name: 'Garlic' }, { name: 'Lettuce' }])).toBe(TIP)
+    expect(dryText(AHEAD, [{ name: 'Celery' }])).toBe('A dry spell is coming to Bohol in January. Water early in the morning and mulch to keep the soil damp.')
+  })
+  it('the timing lead: now, ahead, and a drought month', () => {
+    expect(dryLead(NOW)).toBe('Bohol is in a dry spell.')
+    expect(dryLead(AHEAD)).toBe('A dry spell is coming to Bohol in January.')
+    expect(dryLead({ ...AHEAD, ym: '2027-02', level: 'drought' })).toBe('A drought may come to Bohol in February.')
+    expect(dryLead({ ...NOW, level: 'drought' })).toBe('Bohol is in a drought.')
   })
   it('type 2, February, dry outlook: the three guided tiles lead (no tolerant crop has a guide), so the tip shows; the line and the credit follow the first tile', () => {
     vi.setSystemTime(new Date(2026, 1, 9, 12, 0, 0))
@@ -92,7 +102,7 @@ describe('S29 C fix r3: tiles, note, line and credit agree', () => {
     h.dr = row('2026-02-03', [['2026-01', 'not_affected'], ['2026-02', 'dry_spell'], ['2026-03', 'drought']])
     const { container } = render(<PlantCard />)
     expect(Array.from(container.querySelectorAll('.gpl-tile')).map((t) => t.textContent)).toEqual(['OkraGuide coming', 'CeleryGuide coming', 'GarlicGuide coming'])
-    expect(screen.getByTestId('plant-dry').textContent).toBe('Because of the dry spell in Bohol, Okra copes with less water.')
+    expect(screen.getByTestId('plant-dry').textContent).toBe('Bohol is in a dry spell. Okra needs less water.')
     expect(container.querySelector('.gpl-line')!.textContent).toBe('Tap to see what to plant in February.')
     expect(screen.queryByTestId('plant-photos')).toBeNull()
   })
@@ -100,7 +110,7 @@ describe('S29 C fix r3: tiles, note, line and credit agree', () => {
     vi.setSystemTime(new Date(2026, 1, 9, 12, 0, 0))
     h.dr = row('2026-02-03', [['2026-01', 'not_affected'], ['2026-02', 'dry_spell'], ['2026-03', 'drought']])
     render(<PlantPoster />)
-    expect(screen.getByTestId('plant-dry').textContent).toBe('Because of the dry spell in Bohol, Okra copes with less water.')
+    expect(screen.getByTestId('plant-dry').textContent).toBe('Bohol is in a dry spell. Okra needs less water.')
   })
   it('poster page, type 2 February: the first group on screen is the guided one with no tolerant crop, so the tip', () => {
     vi.setSystemTime(new Date(2026, 1, 9, 12, 0, 0))

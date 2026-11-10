@@ -19,17 +19,17 @@ beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new 
 afterEach(() => { vi.useRealTimers(); cleanup(); h.c = { ready: true, province: 'Bohol' }; h.d = undefined })
 
 describe('Climate outlook card', () => {
-  it('shows the real Bohol outlook: Now plus six month chips with their level words, one sentence, the PAGASA link', () => {
+  it('shows the real Bohol outlook: six month chips with their level words (no "Now" chip: it equals November), one sentence, the PAGASA link', () => {
     h.d = BOHOL
     const { container } = render(<ClimateCard />)
     expect(screen.getByRole('heading', { name: 'Climate outlook' })).toBeTruthy()
     const months = within(screen.getByRole('list', { name: 'Month by month' })).getAllByRole('listitem')
-    expect(months).toHaveLength(6) // the six outlook months; "Now" is its own chip above them
+    expect(months).toHaveLength(6)
     const chips = Array.from(container.querySelectorAll('.clm-chip'))
-    expect(chips.map((x) => x.textContent)).toEqual(['NowNot affected', 'NovNot affected', 'DecDry condition', 'JanDry spell', 'FebDrought', 'MarDrought', 'AprDrought'])
-    expect(chips.map((x) => x.getAttribute('data-level'))).toEqual(['not_affected', 'not_affected', 'dry_condition', 'dry_spell', 'drought', 'drought', 'drought'])
+    expect(chips.map((x) => x.textContent)).toEqual(['NovNot affected', 'DecDry condition', 'JanDry spell', 'FebDrought', 'MarDrought', 'AprDrought'])
+    expect(chips.map((x) => x.getAttribute('data-level'))).toEqual(['not_affected', 'dry_condition', 'dry_spell', 'drought', 'drought', 'drought'])
     expect(screen.getByText('Dry spell expected from January; drought possible February to April.')).toBeTruthy()
-    expect(container.textContent).toContain('Bohol, PAGASA outlook of 3 Nov')
+    expect(container.textContent).toContain('Bohol · PAGASA, 3 Nov')
     const link = screen.getByRole('link', { name: /PAGASA Drought Monitor/ })
     expect(link.getAttribute('href')).toBe(OUTLOOK_URL)
     expect(link.getAttribute('target')).toBe('_blank')
@@ -69,7 +69,7 @@ describe('Climate outlook card', () => {
   })
   it('the view uses its own month clock: in January the past months are gone', () => {
     const { container } = render(<ClimateView province="Bohol" d={BOHOL} nowYm="2027-01" />)
-    expect(Array.from(container.querySelectorAll('.clm-chip')).map((x) => x.textContent)).toEqual(['NowNot affected', 'JanDry spell', 'FebDrought', 'MarDrought'])
+    expect(Array.from(container.querySelectorAll('.clm-chip')).map((x) => x.textContent)).toEqual(['Oct (now)Not affected', 'JanDry spell', 'FebDrought', 'MarDrought'])
   })
 })
 
@@ -79,7 +79,7 @@ describe('chip colours (ML-39): every level, light and dark, text >= 4.5', () =>
     expect(m, level).toBeTruthy()
     return { bg: m![1]!, fg: m![2]! }
   }
-  const pairs = { not_affected: ['--tint-green', '--tint-green-ink'], dry_condition: ['--tint-amber', '--tint-amber-ink'], dry_spell: ['--tint-red', '--tint-red-ink'], drought: ['--danger-bg', '--btn-fg'] } as const
+  const pairs = { not_affected: ['--tint-green', '--tint-green-ink'], dry_condition: ['--tint-slate', '--tint-slate-ink'], dry_spell: ['--tint-amber', '--tint-amber-ink'], drought: ['--tint-amber-ink', '--tint-amber'] } as const
   for (const theme of ['light', 'dark'] as const) {
     it(`${theme}`, () => {
       const t = tokensOf(theme)
@@ -91,6 +91,12 @@ describe('chip colours (ML-39): every level, light and dark, text >= 4.5', () =>
       expect(pair(t, '--ink', '--card')).toBeGreaterThanOrEqual(4.5) // the sentence and the link
     })
   }
+  it('drought is a strong amber pair, never the SOS red (--danger-bg)', () => {
+    expect(css).not.toMatch(/danger|--red|tint-red/)
+  })
+  it('narrow phones get two columns, so "Not affected" does not wrap', () => {
+    expect(css).toMatch(/max-width: 419px\) \{ \.clm-chips \{ grid-template-columns: repeat\(2/)
+  })
   it('the dry spell chip also carries a border, so it differs from drought by more than colour', () => {
     expect(css).toMatch(/data-level="dry_spell"\][^}]*box-shadow: inset/)
   })

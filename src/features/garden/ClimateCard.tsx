@@ -11,14 +11,16 @@ const issuedOn = (iso: string) => `${Number(iso.slice(8, 10))} ${shortMonth(iso.
 export function ClimateView({ province, d, nowYm = manilaYm() }: { province: string | null; d: Drought | null; nowYm?: string }) {
   const ok = d && !isStale(d.issued_at)
   const chips = ok ? chipMonths(d.months, nowYm) : []
-  const now = chips.find((m) => m.kind === 'assessment')
+  const first = chips.find((m) => m.kind === 'outlook')
+  const found = chips.find((m) => m.kind === 'assessment')
+  const now = found && found.level !== first?.level ? found : undefined // equal to the first month: "Now" would only repeat it
   return (
     <Section title="Climate outlook" testId="today-climate">
       <div className="card clm" data-testid="climate-card">
         {ok && chips.length > 0 ? (
           <>
-            <p className="clm-sub">{province}, PAGASA outlook of {issuedOn(d.issued_at)}{d.saved ? ' (saved copy)' : ''}</p>
-            {now && <div className="clm-chip" data-level={now.level} data-now><b>Now</b><span>{levelLabel(now.level)}</span></div>}
+            <p className="clm-sub">{province} · PAGASA, {issuedOn(d.issued_at)}{d.saved ? ' (saved copy)' : ''}</p>
+            {now && <div className="clm-chip" data-level={now.level} data-now><b>{shortMonth(now.month)} (now)</b><span>{levelLabel(now.level)}</span></div>}
             <ul className="clm-chips" aria-label="Month by month">
               {chips.filter((m) => m.kind === 'outlook').map((m) => (
                 <li key={m.month} className="clm-chip" data-level={m.level}>

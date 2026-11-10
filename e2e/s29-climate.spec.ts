@@ -49,7 +49,7 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [360, 780
 
     const cl = page.getByTestId('today-climate')
     await expect(cl).toBeVisible()
-    await expect(cl.locator('.clm-chip')).toHaveCount(7)
+    await expect(cl.locator('.clm-chip')).toHaveCount(6)
     await expect(cl).toContainText('Dry spell expected from January; drought possible February to April.')
     await expect(cl.getByRole('link', { name: /PAGASA Drought Monitor/ })).toHaveAttribute('href', /pagasa\.dost\.gov\.ph/)
     expect((await cl.getByRole('link', { name: /PAGASA Drought Monitor/ }).boundingBox())!.height).toBeGreaterThanOrEqual(43.5)
@@ -59,20 +59,21 @@ for (const [w, h, scheme] of [[390, 844, 'light'], [390, 844, 'dark'], [360, 780
     // Climate directly above Plant, as one group: Plant starts right below Climate (one section gap)
     const pl = page.getByTestId('today-plant')
     await expect(pl).toBeVisible()
-    await expect(pl).toContainText('Because of the dry spell in Bohol, Sitaw copes with less water.')
+    await expect(pl).toContainText('A dry spell is coming to Bohol in January. Sitaw needs less water.')
     const a = (await cl.boundingBox())!, b = (await pl.boundingBox())!
     expect(b.y).toBeGreaterThan(a.y + a.height - 1)
     expect(b.y - (a.y + a.height)).toBeLessThanOrEqual(40)
 
-    // the six month chips sit in two even rows of three, and the Now chip spans the row above them
-    const boxes = await cl.locator('.clm-chip').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } }))
-    const grid = boxes.slice(1)
+    // the six month chips sit in even rows (3 columns, or 2 under 420px so "Not affected" stays on one line); no "Now" chip: Now equals November
+    const cols = w >= 420 ? 3 : 2
+    const grid = await cl.locator('.clm-chip').evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height } }))
+    expect(grid).toHaveLength(6)
     expect(new Set(grid.map((x) => Math.round(x.w))).size).toBe(1)
     expect(new Set(grid.map((x) => Math.round(x.h))).size).toBe(1)
-    expect(new Set(grid.map((x) => Math.round(x.y))).size).toBe(2)
-    expect(Math.abs(boxes[0]!.w - (grid[2]!.x + grid[2]!.w - grid[0]!.x))).toBeLessThanOrEqual(1) // Now spans all three columns
+    expect(new Set(grid.map((x) => Math.round(x.y))).size).toBe(6 / cols)
+    for (const sp of await cl.locator('.clm-chip span').all()) expect((await sp.boundingBox())!.height, 'level word on one line').toBeLessThan(25)
     const card = (await cl.getByTestId('climate-card').boundingBox())!
-    expect(Math.abs((grid[0]!.x - card.x) - (card.x + card.width - (grid[2]!.x + grid[2]!.w)))).toBeLessThanOrEqual(1) // equal left and right padding
+    expect(Math.abs((grid[0]!.x - card.x) - (card.x + card.width - (grid[cols - 1]!.x + grid[cols - 1]!.w)))).toBeLessThanOrEqual(1) // equal left and right padding
     expect(await overflow(page, '[data-testid="today-climate"] *')).toEqual([])
     expect(await overflow(page, '[data-testid="today-plant"] *')).toEqual([])
     if (dir) { await cl.scrollIntoViewIfNeeded(); await page.screenshot({ path: `${dir}/climate-${w}x${h}-${scheme}.png` }) }

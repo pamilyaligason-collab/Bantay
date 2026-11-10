@@ -3,6 +3,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import css from './privacy.css?raw'
 
 const h = vi.hoisted(() => ({
   consent: vi.fn(), exp: vi.fn(), req: vi.fn(), cancel: vi.fn(), save: vi.fn()
@@ -63,7 +64,7 @@ describe('Privacy screen', () => {
   })
   it('lists exactly the processors of this build and none of Sentry or an SMS gateway', async () => {
     render(<PrivacyScreen />)
-    expect(PROCESSORS.map((p) => p.name)).toEqual(['Supabase', 'Open-Meteo and Windy', 'ExchangeRate-API (open.er-api.com)', 'Wikipedia', 'Wikimedia Commons and news sites', 'YouTube', 'Love Radio, Easy Rock, DZRH, Home Radio and Magic 89.9', 'OpenStreetMap', 'Ventusky, HazardHunterPH and PAGASA Panahon', 'MedlinePlus', 'OpenRouter', 'Google Drive', 'Firebase Cloud Messaging (Google)', 'Cloudflare Pages'])
+    expect(PROCESSORS.map((p) => p.name)).toEqual(['Supabase', 'Open-Meteo and Windy', 'ExchangeRate-API (open.er-api.com)', 'Wikipedia', 'Wikimedia Commons and news sites', 'YouTube', 'Love Radio, Easy Rock, DZRH, Home Radio and Magic 89.9', 'OpenStreetMap', 'Ventusky, HazardHunterPH and PAGASA PANaHON', 'MedlinePlus', 'OpenRouter', 'Google Drive', 'Firebase Cloud Messaging (Google)', 'Cloudflare Pages'])
     const text = (await screen.findByText('Where your data goes')).parentElement!.textContent!
     expect(text).toMatch(/about 1 km/)
     expect(text).toContain('air quality (air-quality-api.open-meteo.com)') // S29 F: the phone asks this host directly
@@ -134,5 +135,12 @@ describe('Privacy screen', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Delete my data in 7 days' }))
     expect(await screen.findByText(/Could not reach the server/)).toBeTruthy()
     expect(screen.queryByText(/will be deleted on/)).toBeNull()
+  })
+})
+
+describe('S29 G: the data-sharing list is readable', () => {
+  it('its text is at least 15px', () => {
+    expect(/\.pv-where ul \{[^}]*font-size: (\d+)px/.exec(css)?.[1]).toBeDefined()
+    expect(Number(/\.pv-where ul \{[^}]*font-size: (\d+)px/.exec(css)![1])).toBeGreaterThanOrEqual(15)
   })
 })
