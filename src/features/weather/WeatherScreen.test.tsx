@@ -113,12 +113,12 @@ describe('WeatherScreen', () => {
       end(new Error('done')) // settle it: the fetch is shared per point between renders
       await screen.findByText(/Could not load the forecast/)
     })
-    it('nothing saved and never checked, the fetch fails: "Not checked lately", never a green all-clear', async () => {
+    it('nothing saved and never checked, the fetch fails: "have not been checked yet" (ML-51, same as the storm line), never a green all-clear', async () => {
       vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('offline') }))
       render(<WeatherScreen />)
       await screen.findByText(/Could not load the forecast/)
       const r = await row()
-      expect(r.textContent).toContain('Not checked lately')
+      expect(r.textContent).toContain('Warnings have not been checked yet')
       expect(r.querySelector('[data-tint="green"]')).toBeNull()
     })
   })

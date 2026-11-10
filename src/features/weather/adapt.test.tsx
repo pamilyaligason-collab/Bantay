@@ -199,7 +199,7 @@ describe('Weather follows the conditions', () => {
     await screen.findByText('Clear')
     const cells = Array.from(document.querySelectorAll('.wx-strip .wx-rp'))
     expect(cells.length).toBeGreaterThan(3)
-    expect(cells.every((c) => c.textContent === 'Low' && c.getAttribute('aria-label') === 'Low chance of rain')).toBe(true)
+    expect(cells.every((c) => c.firstChild?.textContent === 'Low' && c.querySelector('.wx-vh')?.textContent === ' chance of rain' && !c.hasAttribute('aria-label'))).toBe(true) // A9: the long words are real text, not an aria-label on a span
   })
   it('dry now but rain likely later today: rain card first', async () => {
     const h = (NOW.getUTCHours() + 8 + 2) % 24 // two hours from now, place-local (14:00)

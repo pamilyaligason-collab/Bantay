@@ -248,9 +248,13 @@ describe('weatherAction (Today and Simple mode action line)', () => {
   })
   it('S29: while it rains (Simple mode too) the sun/heat tip goes, Danger heat stays', () => {
     const rn = { value: true, source: 'model' as const, ageMin: null }
-    expect(weatherAction(w({ temp: 31, humidity: 65, rainingNow: rn }), now)).toBeNull()
+    expect(weatherAction(w({ temp: 31, humidity: 65, rainingNow: rn }), now)).toBe('Raining now') // ML-51 A3: no hour reaches 60%, and Today still says it falls, as Weather does
     expect(weatherAction(w({ temp: 31, humidity: 65, rainingNow: { ...rn, value: false } }), now)).toBe('Avoid the noon sun. Drink water often.')
     expect(weatherAction(w({ temp: 36, humidity: 70, rainingNow: rn }), now)).toMatch(/^Stay indoors/)
+  })
+  it('ML-51 A3: Today decides raining like Weather: a rain code with no rainingNow reading says Raining now; an observed dry beats the rain code', () => {
+    expect(weatherAction(w({ temp: 28, humidity: 60, code: 61 }), now)).toBe('Raining now')
+    expect(weatherAction(w({ temp: 28, humidity: 60, code: 61, rainingNow: { value: false, source: 'observed' as const, ageMin: 10 } }), now)).toBeNull()
   })
   it('a hot day with no humidity reading earns no heat line (the heat index needs both)', () => {
     expect(weatherAction(w({ temp: 36, humidity: null }), now)).toBeNull()

@@ -20,7 +20,9 @@ describe('rain chance words', () => {
   })
   it('the hourly strip never prints 0%', () => {
     render(<HourlyStrip slots={[{ time: 'Now', kind: 'cloud', pct: 0, temp: 30 }, { time: '1 PM', kind: 'rain', pct: 40, temp: 29 }]} />)
-    expect(screen.getByText('Low').getAttribute('aria-label')).toBe('Low chance of rain') // A9: the same word as the Weather 48 h strip
+    const low = screen.getByText('Low').closest('.td-hs-p')!
+    expect(low.textContent).toBe('Low chance of rain') // A9: the long words are hidden text (read aloud), not an aria-label on a span
+    expect(low.hasAttribute('aria-label')).toBe(false)
     expect(screen.getByText('40% rain')).toBeTruthy()
     expect(screen.queryByText(/^0%/)).toBeNull()
   })

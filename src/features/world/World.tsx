@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Sheet } from '../look/Sheet'
 import { Icon } from '../shell/Icon'
-import { ALERTS_KEY, CHECKED_KEY, EONET_KEY, NO_STALE, STALE_KEY, feedStale, outdatedLine, shownCheck, type Alert, type StaleSources } from '../safety/alerts'
+import { ALERTS_KEY, CHECKED_KEY, EONET_KEY, NO_STALE, STALE_KEY, feedStale, neverChecked, outdatedLine, shownCheck, type Alert, type StaleSources } from '../safety/alerts'
 import { alertRef } from '../location/place'
 import { FLAGS } from '../safety/flags'
 import LazyMap from '../safety/LazyMap'
@@ -65,7 +65,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
   const saved = useKv<unknown>(CHECKED_KEY, null)
   const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
   const stale = feedStale(official, saved, down) // the same test as Safety: no "none" wording without a fresh check
-  const NOT_SAID = 'Not checked lately, so Bantay cannot say there is none.'
+  const NOT_SAID = `${neverChecked(official, saved, down) ? 'Warnings have not been checked yet' : 'Not checked lately'}, so Bantay cannot say there is none.` // ML-51: same never-checked split as Weather
   const prefs = readPrefs(useKv<unknown>(ALERT_KEY, undefined))
   const [filter, setFilter] = useState<Filter>('all')
   const [managing, setManaging] = useState(false)

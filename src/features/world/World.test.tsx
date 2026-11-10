@@ -90,6 +90,11 @@ describe('World', () => {
     expect(screen.queryByText('No active hazards at Dampas or Conel')).toBeNull()
     expect(screen.getAllByRole('status').some((s) => /may be out of date/.test(s.textContent ?? ''))).toBe(true)
   })
+  it('ML-51 never checked at all: the empty rows say "have not been checked yet", the same as Weather', async () => {
+    render(<World />)
+    expect((await screen.findAllByText(/Warnings have not been checked yet, so Bantay cannot say/)).length).toBe(3)
+    expect(screen.queryByText(/Not checked lately/)).toBeNull()
+  })
   it('hides the feed sections and the volcano row while their flags are off', () => {
     render(<World />)
     for (const t of ['Forecasts to watch', 'Macro and news', 'Volcanoes', 'Your panels']) expect(screen.queryByRole('heading', { name: t })).toBeNull()

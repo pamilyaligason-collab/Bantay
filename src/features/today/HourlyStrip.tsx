@@ -35,7 +35,7 @@ export default function HourlyStrip({ slots }: { slots: HourSlot[] }) {
           <span className="td-hs-t">{s.time}</span>
           <span className="td-hs-i" aria-hidden="true"><Icon name={s.kind} size={22} /></span>
           {s.temp != null && <span className="td-hs-d">{deg(s.temp)}</span>}
-          {s.raining ? <span className="td-hs-p">Raining</span> : s.pct != null && <span className={s.pct < 10 ? 'td-hs-p rn-low' : 'td-hs-p'} aria-label={s.pct < 10 ? 'Low chance of rain' : undefined}>{s.pct < 10 ? 'Low' : `${Math.round(s.pct)}% rain`}</span>}
+          {s.raining ? <span className="td-hs-p">Raining</span> : s.pct != null && <span className={s.pct < 10 ? 'td-hs-p rn-low' : 'td-hs-p'}>{s.pct < 10 ? <>Low<span className="td-vh"> chance of rain</span></> : `${Math.round(s.pct)}% rain`}</span>}
         </li>
       ))}
     </ul>

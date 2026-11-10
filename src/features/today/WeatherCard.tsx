@@ -16,7 +16,7 @@ import { stormSlots, type Slot } from './stormView'
 import HourlyStrip, { hourlySlots } from './HourlyStrip'
 import { ForecastNote } from '../weather/ForecastNote'
 import RainNowChip from '../weather/RainNowChip'
-import { locationOffNote, reconcileNow } from '../weather/rainNow'
+import { isRainingNow, locationOffNote, reconcileNow } from '../weather/rainNow'
 import { zoneLabel } from '../location/nearestPlace'
 import RainMini, { miniSlots } from './RainMini'
 import './weatherHero.css'
@@ -35,7 +35,7 @@ function rainSummary(wx: Wx, now: Date): string | null {
   if (!wx.hourly) return null
   const sky = skyOf(wx)
   const nowLocal = wxLocal(wx, now)
-  const raining = sky === 'rain' || sky === 'storm' || wx.rainingNow?.value === true // an airport report of rain beats a dry-looking code
+  const raining = isRainingNow(wx) // the one rule Weather uses (ML-51): an airport report of rain beats a dry-looking code
   const out = rainOutlook(wx.hourly.time, wx.hourly.prob, nowLocal, raining)
   if (!out || out.tomorrow) return null
   if (out.now) return out.endH < 0 ? 'Rain likely to last. Bring an umbrella.' : `Rain until ${hour12(out.endH)}. Bring an umbrella.`
@@ -106,7 +106,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const now = new Date()
   const gx = mmGated(wx)
   const rn = reconcileNow(wx)
-  const line = storm ? null : weatherActionLine(gx, now, null, rn.hideSun)
+  const line = storm ? null : weatherActionLine(gx, now, null, isRainingNow(gx))
   const rainHero = !storm && gx.hourly ? heroRainLine(gx.hourly.time.map((time, i) => ({ time, prob: gx.hourly!.prob[i] ?? null })), wxLocal(wx, now)) : null // T5: from 30%, not only when the action line says rain
   const text = storm ? 'Rain and strong wind.' : line?.id === 'rain' ? rainSummary(gx, now) ?? line.text : line && line.rank >= 35 ? line.text : rainHero ?? line?.text ?? null // a heat, air or warning line outranks the plain rain mention; the UV tip does not
   // Jack only on an everyday rain or heat tip, in the expanded card. Never on a storm, an air alert or the Danger heat bands and above (rank 80+, D-91), and never when `noJack`.
@@ -150,7 +150,7 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
             {expanded && <HourlyStrip slots={hourlySlots(wx, now, storm)} />}
             {!expanded && next.length > 0 && (
               <ul className="td-wxh-hrs" aria-label="Next hours">
-                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp" aria-label={s.pct < 10 ? 'Low chance of rain' : undefined}>{s.pct < 10 ? 'Low' : <>{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</>}</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
+                {next.map((s) => <li key={s.time}><span className="td-wxh-st">{s.time}</span>{s.pct != null && <span className="td-wxh-sp">{s.pct < 10 ? <>Low<span className="td-vh"> chance of rain</span></> : <>{Math.round(s.pct)}%<span className="td-vh"> chance of</span> rain</>}</span>}{s.temp != null && <span className="td-wxh-sd">{deg(s.temp)}</span>}</li>)}
               </ul>
             )}
             <ForecastNote className="td-wxh-credit" link place={locationOff ? undefined : placeNameOf(place)} sources={wx.sources} />
