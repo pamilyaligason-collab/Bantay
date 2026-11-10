@@ -1,5 +1,5 @@
 import { formatNumber } from '../../lib/labFormat'
-import { hoursMinutes, localDay, readingPosition, bodyNodes, type Activity, type NodeView } from './model'
+import { hoursMinutes, localDay, sleepNights, readingPosition, bodyNodes, type Activity, type NodeView } from './model'
 import { GUIDE, toCanonicalReading, type Position, type Range, type Reading } from './ranges'
 import { verdictFor } from './verdict'
 
@@ -57,6 +57,7 @@ export function averageNodes(readings: Reading[], acts: Activity[], now: Date, f
     const days = new Map<string, number>()
     // a 0 steps day is true data and stays in the average; a 0 minute sleep is no reading
     for (const a of week) if (a.kind === kind && isNum(a[f]) && (f === 'steps' ? (a[f] as number) >= 0 : (a[f] as number) > 0)) days.set(localDay(a.startedAt), (days.get(localDay(a.startedAt)) ?? 0) + (a[f] as number))
+    if (kind === 'sleep') { const t = new Map<string, number>(); for (const n of sleepNights(week).values()) if (n.minutes + n.napMinutes > 0) t.set(n.day, n.minutes + n.napMinutes); return [...t.entries()].sort((x, y) => y[0].localeCompare(x[0])).slice(0, 7).map(([, v]) => v) }
     return [...days.entries()].sort((x, y) => y[0].localeCompare(x[0])).slice(0, 7).map(([, v]) => v)
   }
   // The word of the newest reading in the week, so an average never reads as the verdict on the latest number.

@@ -149,6 +149,43 @@ export function sleepWakeDay(a: Activity): { day: string; nap: boolean } {
   if (h >= 9 && h < 18 && (a.minutes ?? 0) < 180) return { day: localDay(a.startedAt), nap: true }
   return { day: localDay(new Date(t + 6 * 3_600_000).toISOString()), nap: false }
 }
+export interface Night { day: string; minutes: number; napMinutes: number; bedAt: string | null }
+
+/** Minutes covered by the union of [start, start + minutes] spans: two rows for the same sleep (watch and phone, or a re-synced night) count once, never twice. */
+export function unionMinutes(rows: { startedAt: string; minutes: number }[]): number {
+  const iv = rows.map((r) => [Date.parse(r.startedAt), Date.parse(r.startedAt) + r.minutes * 60_000] as const).sort((a, b) => a[0] - b[0])
+  let total = 0
+  let from = NaN, to = NaN
+  for (const [s, e] of iv) {
+    if (Number.isNaN(to) || s > to) { if (!Number.isNaN(to)) total += to - from; from = s; to = e } else if (e > to) to = e
+  }
+  return Number.isNaN(to) ? 0 : (total + (to - from)) / 60_000
+}
+
+/** The one place sleep rows become nights: grouped by wake day (sleepWakeDay), overlapping spans counted once, a manual row (no real start) added as logged. A day with only naps has minutes 0.
+ *  Bed time is the earliest real start among the night rows; a night made only of manual rows has none (null). Every surface that shows a night of sleep reads this. */
+export function sleepNights(acts: Activity[]): Map<string, Night> {
+  const g = new Map<string, { real: { startedAt: string; minutes: number }[]; manual: number; nap: { startedAt: string; minutes: number }[]; bedAt: string | null }>()
+  for (const a of acts) {
+    if (a.kind !== 'sleep' || typeof a.minutes !== 'number' || !(a.minutes > 0) || Number.isNaN(Date.parse(a.startedAt))) continue
+    const { day, nap } = sleepWakeDay(a)
+    const cur = g.get(day) ?? { real: [], manual: 0, nap: [], bedAt: null }
+    const row = { startedAt: a.startedAt, minutes: a.minutes }
+    if (nap) cur.nap.push(row)
+    else if (hasRealStart(a)) { cur.real.push(row); if (cur.bedAt == null || Date.parse(a.startedAt) < Date.parse(cur.bedAt)) cur.bedAt = a.startedAt }
+    else cur.manual += a.minutes
+    g.set(day, cur)
+  }
+  return new Map([...g].map(([day, v]) => [day, { day, minutes: unionMinutes(v.real) + v.manual, napMinutes: unionMinutes(v.nap), bedAt: v.bedAt }]))
+}
+
+/** The latest night on file (never later than today). Tiles, the Sleep detail hero and the charts all come from sleepNights, so they cannot disagree. */
+export function lastNight(acts: Activity[], now: Date): Night | null {
+  const today = localDay(now.toISOString())
+  const nights = [...sleepNights(acts).values()].filter((n) => n.minutes > 0 && n.day <= today).sort((a, b) => a.day.localeCompare(b.day))
+  return nights.pop() ?? null
+}
+
 export interface NodeView { id: NodeId; label: string; value: string; note: string; state: Position; code: string; empty: boolean }
 export const MOOD_WORD: Record<string, string> = { 'mood-good': 'Good', 'mood-ok': 'OK', 'mood-low': 'Low' }
 const stateNote = (kind: VerdictKind, pos: Position, bp?: BpArg) => verdictFor(kind, pos, bp)?.word ?? ''
@@ -168,7 +205,8 @@ export function bodyNodes(readings: Reading[], acts: Activity[], now: Date, fami
   const yesterday = new Date(now.getTime() - DAY)
   const nodes: NodeView[] = []
 
-  const sleepMin = dayTotal(acts, 'sleep', 'minutes', now) ?? dayTotal(acts, 'sleep', 'minutes', yesterday)
+  const night = lastNight(acts, now) // the same night the Sleep detail shows; older than yesterday is no news
+  const sleepMin = night && night.day >= localDay(yesterday.toISOString()) ? night.minutes : null
   nodes.push({ id: 'sleep', label: 'Sleep', value: sleepMin == null ? '--' : hoursMinutes(sleepMin), note: sleepMin == null ? 'No data yet' : 'last night', state: 'none', code: 'sleep', empty: sleepMin == null })
 
   const mood = acts.filter((a) => a.kind in MOOD_WORD).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt))[0]
@@ -203,11 +241,16 @@ export const isActivityCode = (c: string): c is (typeof ACTIVITY_CODES)[number] 
 
 /** One point per day: steps summed, sleep summed (hours), mood 1..3. Days with no data have no point. */
 export function activitySeries(acts: Activity[], code: 'steps' | 'sleep' | 'mood'): Point[] {
+  if (code === 'sleep') { // one point per wake day from sleepNights (night plus naps, hours to 0.1)
+    return [...sleepNights(acts).values()].filter((n) => n.minutes + n.napMinutes > 0)
+      .map((n) => ({ takenAt: `${n.day}T12:00:00.000Z`, value: Math.round(((n.minutes + n.napMinutes) / 60) * 10) / 10 }))
+      .sort((a, b) => a.takenAt.localeCompare(b.takenAt))
+  }
   const byDay = new Map<string, number[]>()
   for (const a of acts) {
     if (!a.startedAt || Number.isNaN(Date.parse(a.startedAt))) continue
-    const day = code === 'sleep' && a.kind === 'sleep' ? sleepWakeDay(a).day : localDay(a.startedAt)
-    const v = code === 'steps' ? (a.kind === 'steps' ? a.steps : null) : code === 'sleep' ? (a.kind === 'sleep' && isNum(a.minutes) ? Math.round((a.minutes / 60) * 10) / 10 : null) : a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
+    const day = localDay(a.startedAt)
+    const v = code === 'steps' ? (a.kind === 'steps' ? a.steps : null) : a.kind === 'mood-good' ? 3 : a.kind === 'mood-ok' ? 2 : a.kind === 'mood-low' ? 1 : null
     if (isNum(v) && a.startedAt) byDay.set(day, [...(byDay.get(day) ?? []), v])
   }
   return [...byDay.entries()]
