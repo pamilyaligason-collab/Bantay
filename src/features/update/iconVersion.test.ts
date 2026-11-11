@@ -1,0 +1,104 @@
+import { existsSync, readFileSync } from 'node:fs'
+import { describe, expect, it } from 'vitest'
+import { ICON_VERSION, WEB_ICONS, iconSlug, iconUrl, refreshIcons } from './iconVersion'
+
+const RES = 'android/app/src/main/res'
+const DPI: Record<string, number> = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 }
+const png = (p: string) => {
+  expect(existsSync(p), p).toBe(true)
+  const b = readFileSync(p)
+  expect(b.subarray(1, 4).toString('latin1'), p + ' is a PNG').toBe('PNG')
+  return [b.readUInt32BE(16), b.readUInt32BE(20)]
+}
+
+describe('S31 L2 generated icon set', () => {
+  it('version and slug', () => {
+    expect(ICON_VERSION).toBe('2026-11-11')
+    expect(iconSlug()).toBe('20261111')
+    expect(iconUrl('icon-192')).toBe('/icons/icon-192-20261111.png')
+  })
+  it('web icons exist at the right pixel size', () => {
+    for (const { name, size } of WEB_ICONS) expect(png('public' + iconUrl(name)), name).toEqual([size, size])
+  })
+  it('android launcher, adaptive layers, themed icon and notification icon exist at every density', () => {
+    for (const [d, k] of Object.entries(DPI)) {
+      expect(png(`${RES}/mipmap-${d}/ic_launcher.png`)).toEqual([48 * k, 48 * k])
+      expect(png(`${RES}/mipmap-${d}/ic_launcher_round.png`)).toEqual([48 * k, 48 * k])
+      expect(png(`${RES}/mipmap-${d}/ic_launcher_foreground.png`)).toEqual([108 * k, 108 * k])
+      expect(png(`${RES}/mipmap-${d}/ic_launcher_monochrome.png`)).toEqual([108 * k, 108 * k])
+      expect(png(`${RES}/drawable-${d}/ic_stat_icon_config_sample.png`)).toEqual([24 * k, 24 * k])
+    }
+  })
+  it('splash drawables keep the template sizes, portrait and landscape', () => {
+    const S: Record<string, number[]> = { mdpi: [320, 480], hdpi: [480, 800], xhdpi: [720, 1280], xxhdpi: [960, 1600], xxxhdpi: [1280, 1920] }
+    for (const [d, [w, h]] of Object.entries(S)) {
+      expect(png(`${RES}/drawable-port-${d}/splash.png`)).toEqual([w, h])
+      expect(png(`${RES}/drawable-land-${d}/splash.png`)).toEqual([h, w])
+    }
+    expect(png(`${RES}/drawable/splash.png`)).toEqual([480, 320])
+  })
+  it('adaptive xml carries a monochrome layer and points at files that exist', () => {
+    for (const f of ['ic_launcher', 'ic_launcher_round']) {
+      const x = readFileSync(`${RES}/mipmap-anydpi-v26/${f}.xml`, 'utf8')
+      expect(x).toContain('<monochrome android:drawable="@mipmap/ic_launcher_monochrome"/>')
+      expect(x).toContain('@mipmap/ic_launcher_foreground')
+      expect(x).toContain('@color/ic_launcher_background')
+    }
+    expect(readFileSync(`${RES}/values/ic_launcher_background.xml`, 'utf8')).toContain('#1E6B4E')
+  })
+  it('index.html icon links and the manifest icons resolve to generated files', () => {
+    const html = readFileSync('index.html', 'utf8')
+    const hrefs = [...html.matchAll(/<link rel="(?:icon|apple-touch-icon)"[^>]*href="([^"]+)"/g)].map((m) => m[1])
+    expect(hrefs).toContain('/icon.svg')
+    expect(hrefs).toContain(iconUrl('apple-touch-icon'))
+    for (const h of hrefs) expect(existsSync('public' + h), h).toBe(true)
+    const cfg = readFileSync('vite.config.ts', 'utf8')
+    for (const n of ['icon-192', 'icon-512', 'icon-maskable-512']) expect(cfg).toContain(`iconUrl('${n}')`)
+    expect(cfg).toContain("src: 'icon.svg', sizes: 'any'")
+  })
+  it('public icon.svg is the master', () => {
+    expect(readFileSync('public/icon.svg', 'utf8')).toBe(readFileSync('assets/icon/icon.svg', 'utf8'))
+  })
+})
+
+describe('refreshIcons (service worker update path)', () => {
+  const fakeStore = (names: string[]) => {
+    const caches = new Map<string, Map<string, Response>>(names.map((n) => [n, new Map()]))
+    return {
+      caches,
+      store: {
+        open: async (n: string) => {
+          if (!caches.has(n)) caches.set(n, new Map())
+          const m = caches.get(n)!
+          return { match: async (u: string) => m.get(u), put: async (u: string, r: Response) => void m.set(u, r) } as unknown as Cache
+        },
+        keys: async () => [...caches.keys()],
+        delete: async (n: string) => caches.delete(n)
+      }
+    }
+  }
+  it('fetches the new set and drops older icon caches but not other caches', async () => {
+    const { caches, store } = fakeStore(['bantay-icons-20200101', 'barangay-packs-v1'])
+    const asked: string[] = []
+    expect(await refreshIcons(store, async (u) => (asked.push(u), new Response('x')))).toBe(true)
+    expect(asked).toEqual(WEB_ICONS.map((i) => iconUrl(i.name)))
+    expect([...caches.keys()].sort()).toEqual(['bantay-icons-20261111', 'barangay-packs-v1'])
+    expect(caches.get('bantay-icons-20261111')!.size).toBe(WEB_ICONS.length)
+  })
+  it('a second run fetches nothing; an offline run keeps the old set and reports false', async () => {
+    const { caches, store } = fakeStore([])
+    await refreshIcons(store, async () => new Response('x'))
+    let n = 0
+    expect(await refreshIcons(store, async () => (n++, new Response('x')))).toBe(true)
+    expect(n).toBe(0)
+    const s2 = fakeStore(['bantay-icons-20200101'])
+    expect(await refreshIcons(s2.store, async () => { throw new Error('offline') })).toBe(false)
+    expect([...s2.caches.keys()]).toEqual(['bantay-icons-20200101'])
+    expect(caches.size).toBe(1)
+  })
+  it('a 404 for one file never leaves a half-filled current cache', async () => {
+    const { caches, store } = fakeStore([])
+    expect(await refreshIcons(store, async (u) => new Response('', { status: u.includes('favicon-16') ? 404 : 200 }))).toBe(false)
+    expect(caches.has('bantay-icons-20261111')).toBe(false)
+  })
+})

@@ -4,6 +4,7 @@ import { defineConfig, loadEnv } from 'vite'
 
 declare const process: { cwd(): string; env: Record<string, string | undefined> } // no @types/node in this repo
 import { VitePWA } from 'vite-plugin-pwa'
+import { WEB_ICONS, iconUrl } from './src/features/update/iconVersion'
 
 // A production build without Supabase env would open the app with no sign-in. Fail it, unless the e2e test build opts out.
 const allowNoAuth = process.env.BANTAY_ALLOW_NO_AUTH === '1'
@@ -28,7 +29,7 @@ export default defineConfig(({ command, mode }) => {
       filename: 'sw.ts',
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icon.svg', 'anatomy/body.svg'],
+      includeAssets: ['icon.svg', 'anatomy/body.svg', ...WEB_ICONS.map((i) => iconUrl(i.name).slice(1))], // S31 L2: the versioned icon set is precached and offline-ready
       // Jack 128, 256 and 384 sizes (JackArt serves 384 for the 96 and 112 slots) so the offline band's Jack shows with no network; the 1024s stay online-only.
       injectManifest: { globPatterns: ['**/*.{js,css,html}', 'assets/jack-*-{128,256,384}-*.webp', 'img/browse/*.webp', 'img/medlib/*.webp', 'assets/{sitaw,ampalaya,pipino,repolyo,upo,sayote}-*.webp'] },
       manifest: {
@@ -40,7 +41,12 @@ export default defineConfig(({ command, mode }) => {
         display: 'standalone',
         background_color: '#F6F1E7',
         theme_color: '#1F3D2B',
-        icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }]
+        icons: [
+          { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+          { src: iconUrl('icon-192'), sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: iconUrl('icon-512'), sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: iconUrl('icon-maskable-512'), sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+        ]
       }
     })
   ],
