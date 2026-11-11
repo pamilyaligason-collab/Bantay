@@ -1,0 +1,4 @@
+<!-- S31 L2 -> orchestrator: paste inside <application> of android/app/src/main/AndroidManifest.xml (L1's file).
+     Without it FCM pushes shown by the system use the launcher icon, not the generated status-bar icon. -->
+<meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_icon_config_sample" />
+<meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/ic_launcher_background" />
