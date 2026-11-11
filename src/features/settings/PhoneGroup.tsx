@@ -39,7 +39,7 @@ export default function PhoneGroup() {
         <NavRow icon="check" title="Set up everything" sub="Update, alerts, location and the rest, one step at a time" href="#setup/all" testId="settings-setup-all" />
       </div>
       {isNativeAndroid() && <div className="sh-card sh-list st-list">
-        <SwitchRow icon="dl" title="Update Bantay by itself" sub="Checks once in a while and installs new versions on Wi-Fi. Android may ask you to tap Install the first time." on={auto} onChange={setAuto} />
+        <SwitchRow icon="dl" title="Update Bantay by itself" sub="Checks once in a while for a new version on Wi-Fi and installs it, or tells you when one is ready to install." on={auto} onChange={setAuto} />
       </div>}
       {showPhones && (
         <div className="sh-card sh-list st-list">

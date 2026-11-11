@@ -21,7 +21,7 @@ describe('Settings > Phone > Update Bantay by itself', () => {
     render(<PhoneGroup />)
     const sw = await screen.findByRole('switch', { name: 'Update Bantay by itself' })
     expect(sw.getAttribute('aria-checked')).toBe('true')
-    expect(screen.getByText('Checks once in a while and installs new versions on Wi-Fi. Android may ask you to tap Install the first time.')).toBeTruthy()
+    expect(screen.getByText('Checks once in a while for a new version on Wi-Fi and installs it, or tells you when one is ready to install.')).toBeTruthy()
     fireEvent.click(sw)
     expect(sw.getAttribute('aria-checked')).toBe('false')
     await waitFor(async () => expect((await db.kv.get('update.auto'))?.value).toBe(false))

@@ -7,7 +7,7 @@ import { assertJackClear } from './v13'
 declare const process: { env: Record<string, string | undefined> }
 const SHOTS = process.env.S32_SHOTS
 const SIZES = [{ width: 390, height: 844 }, { width: 360, height: 740 }]
-const LINE = 'Checks once in a while and installs new versions on Wi-Fi. Android may ask you to tap Install the first time.'
+const LINE = 'Checks once in a while for a new version on Wi-Fi and installs it, or tells you when one is ready to install.'
 
 for (const size of SIZES) {
   for (const scheme of ['light', 'dark'] as const) {
