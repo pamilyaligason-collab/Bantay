@@ -39,12 +39,12 @@ export const SHELF_WORDS: Record<Shelf, { en: string[]; tl: string[]; not: strin
   prepping: {
     en: ['typhoon', 'storm', 'flood', 'earthquake', 'tsunami', 'volcano', 'landslide', 'evacuat', 'disaster', 'prepar', 'save a life','emergency', 'first aid', 'go bag', 'survival', 'safety', 'rescue', 'cpr!', 'drill', 'relief', 'resilien', 'hazard', 'signal no', 'tropical cyclone'],
     tl: ['bagyo', 'baha!', 'lindol', 'sunog', 'sakuna', 'kalamidad', 'handa', 'paghahanda', 'kaligtasan', 'ligtas', 'unang lunas', 'paglikas', 'bulkan', 'sagip'],
-    not: ['bulletin', 'forecast', 'advisory', 'briefing', 'situational', 'update', 'press conference']
+    not: ['bulletin', 'forecast', 'advisory', 'briefing', 'situational', 'update', 'press conference', 'news flash', 'donate', 'message', 'kinikilala', 'implementing rules', 'anniversary', 'awarding', 'rumesponde', 'responded', 'response!', 'patuloy ang paghatid'] // S34 first backfill: news, appeals and speeches are not how-to videos
   },
   'farm-diy': {
     en: ['farm', 'agri', 'crop', 'rice', 'palay', 'corn', 'vegetable', 'garden', 'plant', 'seedling', 'soil', 'fertilizer', 'organic', 'livestock', 'poultry', 'hog!', 'piggery', 'goat', 'aquaculture', 'tilapia', 'harvest', 'irrigation', 'compost', 'mushroom', 'hydroponic', 'coconut', 'banana', 'cacao', 'coffee', 'pest', 'training', 'kadiwa', 'diy!'],
     tl: ['magsasaka', 'sakahan', 'pananim', 'palayan', 'gulay', 'halaman', 'pataba', 'binhi', 'alaga', 'manok', 'baboy', 'isda', 'tanim', 'pagtatanim', 'pagsasaka', 'pag-aani', 'kabuhayan', 'sibuyas'],
-    not: ['press statement', 'press briefing', 'kadiwa ng pangulo']
+    not: ['press statement', 'press briefing', 'kadiwa ng pangulo', 'hymn', 'internship', 'anniversary', 'inauguration', 'celebration', 'ceremony', 'opening', 'exhibit', 'visit', 'month', 'modernization', 'projects', 'awarding'] // S34 first backfill: events and ceremonies are not how-to videos
   },
   recipes: {
     en: ['recipe', 'cook', 'bake', 'baking', 'fry', 'adobo', 'sinigang', 'stew', 'soup', 'chicken', 'pork', 'beef', 'fish', 'shrimp', 'rice', 'noodle', 'pancit', 'lomi', 'dessert', 'cake', 'bread', 'egg', 'vegetable', 'one-pan', 'one pan', 'kitchen', 'dinner', 'lunch', 'breakfast', 'snack', 'kakanin', 'leche flan', 'lumpia', 'sisig', 'kare-kare', 'tinola', 'how to make'],
