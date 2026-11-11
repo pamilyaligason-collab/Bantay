@@ -24,7 +24,7 @@ describe('channel list', () => {
   it('the budget in runWatch holds: 3 shelves x 10 candidates at most, checked 10 at a time', () => {
     expect(PER_SHELF).toBe(10)
     expect(KEEP_DAYS).toBe(30)
-    expect(PER_CHANNEL).toBe(4)
+    expect(PER_CHANNEL).toBe(5)
   })
 })
 
@@ -65,10 +65,10 @@ describe('pickWatch', () => {
     const got = pickWatch([row('recipes', 'A', 'Recipe for a delivery day', 1), row('recipes', 'A', 'Recipe: how to stay alive in the kitchen', 2), row('recipes', 'A', 'Shortcut recipe', 3)], NOW)
     expect(got).toHaveLength(3)
   })
-  it('at most 4 per channel', () => {
+  it('at most 5 per channel', () => {
     const got = pickWatch(Array.from({ length: 9 }, (_, i) => row('recipes', 'A', 'Easy recipe ' + i, i + 1)), NOW)
-    expect(got).toHaveLength(4)
-    expect(got.map((r) => r.title)).toEqual(['Easy recipe 0', 'Easy recipe 1', 'Easy recipe 2', 'Easy recipe 3'])
+    expect(got).toHaveLength(5)
+    expect(got.map((r) => r.title)).toEqual(['Easy recipe 0', 'Easy recipe 1', 'Easy recipe 2', 'Easy recipe 3', 'Easy recipe 4'])
   })
   it('at most 10 per shelf (3 channels x 4 = 12 offered), the newest 10 win', () => {
     const rows = ['A', 'B', 'C'].flatMap((ch, c) => Array.from({ length: 4 }, (_, i) => row('prepping', ch, 'Typhoon safety ' + ch + i, c * 0.1 + i + 1)))
@@ -116,11 +116,20 @@ describe('runWatch', () => {
     expect(r.channels_ok).toBe(1)
     expect(r.channels_failed).toBe(6)
   })
-  it('the play check itself down (every call fails): not ok, nothing written or trimmed', async () => {
+  it('a quiet day (fewer than 5 candidates) whose videos all fail the play check is not a failure', async () => {
     const p = port()
     const r = await runWatch(p, fetchText, async () => { throw new Error('timeout') }, NOW)
-    expect(r.ok).toBe(false)
+    expect(r.ok).toBe(true)
     expect(r.kept).toBe(0)
+    expect(p.upsert).not.toHaveBeenCalled()
+  })
+  it('the play check itself down (5 or more candidates, every call fails): not ok, nothing written or trimmed', async () => {
+    const entry = (id: string, ch: string, h: number) => `<entry><yt:videoId>${id}</yt:videoId><yt:channelId>${ch}</yt:channelId><title>Easy recipe ${id}</title><link rel="alternate" href="https://www.youtube.com/watch?v=${id}"/><published>${new Date(NOW - h * 3_600_000).toISOString()}</published></entry>`
+    const rec = CHANNELS.filter((c) => c.shelf === 'recipes')
+    const xmls = Object.fromEntries(rec.map((c, j) => [FEED_URL + c.id, `<feed>${Array.from({ length: 5 }, (_, i) => entry('rcp' + j + String(i).padStart(7, '0'), c.id, i + 1)).join('')}</feed>`]))
+    const p = port()
+    const r = await runWatch(p, async (u) => xmls[u] ?? '<feed></feed>', async () => { throw new Error('timeout') }, NOW)
+    expect(r.ok).toBe(false)
     expect(p.upsert).not.toHaveBeenCalled()
     expect(p.purge).not.toHaveBeenCalled()
   })
@@ -131,7 +140,7 @@ describe('runWatch', () => {
     expect(p.upsert).not.toHaveBeenCalled()
     expect(p.purge).toHaveBeenCalledTimes(1)
   })
-  it('checks at most 10 videos at a time and never more than 26 here (10 prepping, 8 farm, 8 recipes)', async () => {
+  it('checks at most 10 videos at a time and never more than 30 here (10 prepping, 10 farm, 10 recipes)', async () => {
     const entry = (id: string, ch: string, title: string, h: number) => `<entry><yt:videoId>${id}</yt:videoId><yt:channelId>${ch}</yt:channelId><title>${title}</title><link rel="alternate" href="https://www.youtube.com/watch?v=${id}"/><published>${new Date(NOW - h * 3_600_000).toISOString()}</published></entry>`
     let k = 0
     const word: Record<string, string> = { prepping: 'Typhoon safety', 'farm-diy': 'Farm tips', recipes: 'Easy recipe' }
@@ -139,10 +148,10 @@ describe('runWatch', () => {
     let live = 0, peak = 0, calls = 0
     const p = port()
     const r = await runWatch(p, async (u) => xmls[u]!, async () => { calls++; live++; peak = Math.max(peak, live); await new Promise((res) => setTimeout(res, 2)); live--; return true }, NOW)
-    expect(calls).toBe(10 + 8 + 8)
+    expect(calls).toBe(10 + 10 + 10)
     expect(peak).toBe(10)
-    expect(r).toMatchObject({ ok: true, rows: 35, kept: 26, channels_ok: 7 })
-    expect(p.upsert.mock.calls[0]![0]).toHaveLength(26)
+    expect(r).toMatchObject({ ok: true, rows: 35, kept: 30, channels_ok: 7 })
+    expect(p.upsert.mock.calls[0]![0]).toHaveLength(30)
   })
 })
 

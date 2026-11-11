@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     return res.status === 200
   }
   let result
-  try { result = await runWatch(port, fetchText, playable, Date.now()) } catch { result = { ok: false, rows: 0, kept: 0, dropped: 0, channels_ok: 0, channels_failed: 0 } }
+  try { result = await runWatch(port, fetchText, playable, Date.now()) } catch { result = { ok: false } } // counts unknown after a throw: none rather than zeros
   await heartbeat(sb, 'watch-feed', result.ok, { rows: result.rows, kept: result.kept, dropped: result.dropped, channels_ok: result.channels_ok, channels_failed: result.channels_failed })
   return reply(result.ok ? 200 : 502, result)
 })

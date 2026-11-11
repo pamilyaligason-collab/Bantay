@@ -13,14 +13,14 @@ const CURATED = DISCOVER_VIDEOS.filter(playable)
 const TOPICS = [...new Set(CURATED.map((v) => v.topic))] // from the checked list only, so the chips never move when fresh rows arrive
 
 /** "Recipe videos" already says videos; "Be prepared" does not. One noun, whatever the topic's own label. */
-export const videosOf = (t: string | null) => (t === null ? 'checked videos' : /videos$/i.test(t) ? t : `${t} videos`)
+export const videosOf = (t: string | null) => (t === null ? 'videos' : /videos$/i.test(t) ? t : `${t} videos`)
 const chipId = (t: string | null) => 'dc-watch-chip-' + (t ?? 'all').replace(/\W+/g, '-')
 
 /** The Discover overview stores the tapped video's id here; Watch opens it once and clears it. */
 export const WATCH_PICK = 'dc.watch'
 const readPick = () => { try { return sessionStorage.getItem(WATCH_PICK) } catch { return null } }
 
-/** Discover > Watch: a checked list of official videos. One column of 4 video cards with Show more (D-156, D-180), the chosen video in a player that loads only after a second tap (LiteVideo, no-cookie address,
+/** Discover > Watch: official videos: new ones from trusted channels (marked New, refreshed daily) and a hand-checked list. One column of 4 video cards with Show more (D-156, D-180), the chosen video in a player that loads only after a second tap (LiteVideo, no-cookie address,
  *  with an "Open in YouTube" link), and Live TV (coming). S30 L6: the topic chips sit directly above the videos they swap (tabs with a selected state, a heading that names the topic, a polite announcement). */
 export default function Watch() {
   const fresh = useFreshWatch() // S33: today's videos from the trusted channels (watch_videos), "New", before the checked list; [] and no error when they cannot be read
@@ -56,7 +56,7 @@ export default function Watch() {
       </div>
       <div ref={panel} id="dc-watch-panel" className="dc-wpanel" role="tabpanel" aria-labelledby={chipId(topic)} key={topic ?? 'all'}>
         <div className="dc-sh"><h2 className="sh-h2">{`Watch · ${topic ?? 'All videos'}`}</h2><span className="sub">{list.length}</span></div>
-        <MediaList label={topic ? videosOf(topic) : 'Checked videos'} testId="watch-grid">
+        <MediaList label={topic ? videosOf(topic) : 'All videos'} testId="watch-grid">
           {list.map((v) => <MediaCard key={v.id} variant="row" id={v.id} title={v.title} channel={v.source} minutes={v.minutes} tag={v.fresh ? 'New' : undefined} pressed={v.id === sel} onClick={() => pick(v.id)} />)}
         </MediaList>
       </div>

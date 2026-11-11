@@ -11,7 +11,7 @@ export interface WatchRow { video_id: string; shelf: Shelf; channel_id: string; 
 export const KEEP_DAYS = 30 // newest first: nothing older is shown
 export const PURGE_DAYS = 60
 export const PER_SHELF = 10
-export const PER_CHANNEL = 4 // so one chatty channel (a daily forecast, a recipe a day) cannot fill a shelf alone
+export const PER_CHANNEL = 5 // so one chatty channel (a daily forecast, a recipe a day) cannot fill a shelf alone
 export const OEMBED = 'https://www.youtube.com/oembed?format=json&url='
 
 /** Every channel id below was read from the channel's own page and its RSS feed fetched on VERIFIED_ON: the feed answered 200, its author name matches, and the newest upload is under 60 days old.
@@ -128,7 +128,7 @@ export async function runWatch(port: Port, fetchText: (url: string) => Promise<s
     await Promise.all(cand.slice(i, i + 10).map(async (r) => { try { if (await playable(r.video_id)) alive.add(r.video_id) } catch { /* not playable now: left out */ } }))
   }
   const keep = cand.filter((r) => alive.has(r.video_id))
-  if (cand.length && !keep.length) return fail // the play check itself is down, not 30 bad videos
+  if (cand.length >= 5 && !keep.length) return fail // 5+ candidates all failing means the play check is down; 1-2 removed videos on a quiet day is not a failure
   const fetched_at = new Date(now).toISOString()
   if (keep.length) await port.upsert(keep.map((r) => ({ ...r, fetched_at })))
   await port.purge(new Date(now - PURGE_DAYS * 86_400_000).toISOString())

@@ -91,7 +91,7 @@ describe('Watch with fresh rows', () => {
     expect(n.slice(0, 3)).toEqual(['Video, Authentic Pinakbet in one pan, Kawaling Pinoy, New', 'Video, Typhoon safety: what to pack, Philippine Red Cross, New', 'Video, Gulayan sa Pamayanan, ATI Central Office, New'])
     expect(n[3]).toBe('Video, Disaster Wais: the go bag, Philippine Red Cross') // the first checked video follows, untagged
     expect(screen.getAllByText('New')).toHaveLength(3)
-    expect(screen.getByTestId('watch-live').textContent).toBe(`Showing ${CURATED.length + 3} checked videos`)
+    expect(screen.getByTestId('watch-live').textContent).toBe(`Showing ${CURATED.length + 3} videos`)
   })
   it('the chips stay the same (no chip appears or moves) and a topic keeps its fresh video first', async () => {
     s.answer = () => ({ data: fresh, error: null })
