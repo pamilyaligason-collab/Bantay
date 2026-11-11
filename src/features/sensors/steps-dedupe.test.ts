@@ -130,17 +130,17 @@ describe('old per-sample rows are ignored at read', () => {
     expect(sum(await ldb.activity.toArray())).toBe(7000) // 4000 hourly + 3000 manual
     expect(sum(await ldb.activity.where('personId').equals('me-p').filter((a) => a.startedAt >= at(0)).toArray())).toBe(7000)
     expect(sum(await ldb.activity.where('startedAt').aboveOrEqual(at(0)).toArray())).toBe(7000)
-    // the family chart reads the day through stepDayTotals (L2 round 3): per source, then the source with the most steps, never the sum of two sources. Hand count:
+    // the family chart reads the day through stepDayTotals (L2 round 3): per source, then the device source with the most steps (never the sum of two devices), plus typed steps (Lloyd 2026-11-11). Hand count:
     //   health-connect: the hourly row 4000 over 06:00-07:00; the two 3000 rows 1 ms and 2 ms in sit inside that span and add nothing = 4000
-    //   healthkit: one standalone zero-length row = 3000;  manual: one standalone zero-length row = 3000
-    //   day = max(4000, 3000, 3000) = 4000. The raw-table sums above (7000) are not a day total, they only prove the rows are still stored.
-    expect(stepSeries(await ldb.activity.toArray(), ['me-p'], new Date(T0 + 6 * H))[0].latest).toBe(4000)
+    //   healthkit: one standalone row = 3000;  manual: one standalone row = 3000 (typed, added)
+    //   day = max(4000, 3000) + 3000 typed = 7000.
+    expect(stepSeries(await ldb.activity.toArray(), ['me-p'], new Date(T0 + 6 * H))[0].latest).toBe(7000)
   })
-  it('hand values: a manual entry is its own source and is not added to a device total; without the hourly row the two per-sample rows count', () => {
+  it('hand values: a manual entry adds to the device total (Lloyd 2026-11-11); without the hourly row the two per-sample rows count', () => {
     const row = (steps: number, source: string, startedAt: string, minutes: number | null = null) => ({ kind: 'steps', steps, source, startedAt, minutes })
     const total = (rows: ReturnType<typeof row>[]) => [...stepDayTotals(rows).values()].reduce((a, b) => a + b, 0) // all rows sit between 12:00 and 15:00 UTC: one local day in every zone from UTC-12 to UTC+8
-    // 4000 on the watch + 3000 typed by hand: the larger source, 4000 (a watch and a phone count the same walk; a hand entry is judged the same way)
-    expect(total([row(4000, 'health-connect', '2026-10-01T12:00:00.000Z', 60), row(3000, 'manual', '2026-10-01T14:00:00.000Z')])).toBe(4000)
+    // 4000 on the watch + 3000 typed by hand: 7000 (typed steps are deliberate, a walk without the phone; two devices still never add)
+    expect(total([row(4000, 'health-connect', '2026-10-01T12:00:00.000Z', 60), row(3000, 'manual', '2026-10-01T14:00:00.000Z')])).toBe(7000)
     // a hand entry alone is the day
     expect(total([row(3000, 'manual', '2026-10-01T14:00:00.000Z')])).toBe(3000)
     // old per-sample rows with no hourly row: both stand-alone rows (1 ms apart, different instants) count, 3000 + 3000

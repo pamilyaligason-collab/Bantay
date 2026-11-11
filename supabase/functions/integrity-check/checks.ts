@@ -217,7 +217,9 @@ export function stepsFindings(rows: ActivityRow[], skip: ReadonlySet<string>, of
   const out = groupItems(items)
   for (const [k, d] of g) {
     let shown = 0, overlaps = 0
-    for (const list of d.by.values()) { const s = shownSteps(list); shown = Math.max(shown, s.total); overlaps += s.overlaps }
+    let typed = 0
+    for (const [src, list] of d.by) { const s = shownSteps(list); if (src === 'manual') typed = s.total; else shown = Math.max(shown, s.total); overlaps += s.overlaps } // mirrors stepDayTotals: best device + typed steps (Lloyd 2026-11-11)
+    shown += typed
     shown = Math.round(shown)
     if (shown > MAX_STEPS_DAY) out.push({ kind: 'impossible', table_name: 'activity', row_ref: `steps:${k}`, person_id: d.person, detail: { metric: 'steps', day: d.day, reason: 'over_100000_a_day', steps: shown } })
     if (d.total - shown > 1) out.push({ kind: 'tile_mismatch', table_name: 'activity', row_ref: `steps:${k}`, person_id: d.person, detail: { metric: 'steps', day: d.day, rows_total: Math.round(d.total), shown_total: shown, overlapping_rows: overlaps } })

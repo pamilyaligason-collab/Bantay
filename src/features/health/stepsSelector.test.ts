@@ -36,9 +36,9 @@ describe('stepDayTotals: overlapping step rows count once', () => {
   it('two sources for one walk take the best source, not the sum', () => {
     expect(stepDayTotals([row(at(8), 3000, 60, 'health-connect'), row(at(8), 2500, 60, 'healthkit')]).get(DAY)).toBe(3000)
   })
-  it('a manual entry on a day with no sensor data counts; beside a sensor day it does not add', () => {
+  it('a manual entry on a day with no sensor data counts; beside a sensor day it adds (typed steps are deliberate, Lloyd 2026-11-11)', () => {
     expect(stepDayTotals([row(at(9), 2000, null, 'manual')]).get(DAY)).toBe(2000)
-    expect(stepDayTotals([row(at(9), 2000, null, 'manual'), row(at(10), 5000, 60)]).get(DAY)).toBe(5000)
+    expect(stepDayTotals([row(at(9), 2000, null, 'manual'), row(at(10), 5000, 60)]).get(DAY)).toBe(7000)
   })
   it('zero-length rows: an exact repeat counts once, different times both count', () => {
     expect(stepDayTotals([row(at(9), 700, null), row(at(9), 700, null), row(at(11), 300, null)]).get(DAY)).toBe(1000)
