@@ -82,7 +82,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
   return (
     <>
       <SafetyHead view="world" actions={<ZonePicker loc={l} />} />
-      {stale && <p className="sf-note" role="status">{outdatedLine(shownCheck(official, saved, down)).replace('Alerts have not been checked on this phone yet.', 'Warnings have not been checked yet.')}</p>}
+      {stale && <p className="sf-note" role="status">{outdatedLine(shownCheck(official, saved, down))}</p>}
       {/* above the map: below it, Jack's corner covered the last segment (D-128 allows whole-card links only) */}
       <Segmented label="Filter" value={filter} onChange={setFilter} options={[{ id: 'all', label: 'All' }, { id: 'near', label: 'Near family' }, { id: 'ph', label: 'Philippines' }, { id: 'world', label: 'World' }]} />
       <div className="wd-bleed"><LazyMap height={300} center={[12, 122]} zoom={4} label="Map of active alerts" testId="world-map" depKey={`${pins.map((p) => p.id).join()}|${here?.lat}|${here?.lon}`}

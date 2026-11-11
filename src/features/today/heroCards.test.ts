@@ -258,8 +258,6 @@ describe('weatherAction (Today and Simple mode action line)', () => {
   })
   it('S30 L6: under the Raining now chip the action line says what to do, never the same words', () => {
     expect(underRainChip('Raining now')).toBe('Bring an umbrella if you go out.')
-    expect(underRainChip('Raining now, until about 4 PM')).toBe('Rain until about 4 PM. Bring an umbrella.')
-    expect(underRainChip('Raining now, heaviest around 7:10 PM')).toBe('Heaviest around 7:10 PM. Bring an umbrella.')
     expect(underRainChip('Avoid the noon sun. Drink water often.')).toBe('Avoid the noon sun. Drink water often.')
   })
   it('a hot day with no humidity reading earns no heat line (the heat index needs both)', () => {

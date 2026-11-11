@@ -84,6 +84,6 @@ describe('AlertBand: does it affect us, and how fresh', () => {
   it('no check time at all reads as never checked with the amber line', async () => {
     await show([quake({ lat: 6.2015121 + 0.27, checkedAt: null })])
     expect(await screen.findByText('Never checked')).toBeTruthy()
-    expect(screen.getByText(/not been checked on this phone yet/)).toBeTruthy()
+    expect(screen.getByText(/Warnings have not been checked yet/)).toBeTruthy()
   })
 })

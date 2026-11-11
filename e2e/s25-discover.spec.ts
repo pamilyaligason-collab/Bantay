@@ -71,6 +71,34 @@ for (const [w, h] of [[360, 640], [390, 844], [412, 915]] as const) {
   })
 }
 
+// S30 L6 round 2: the topic crossfade is on by default and off under prefers-reduced-motion; a new topic brings its list back into view.
+for (const reduce of [false, true]) {
+  test(`Watch topic crossfade is ${reduce ? 'off' : 'on'} with reducedMotion=${reduce ? 'reduce' : 'no-preference'}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: reduce ? 'reduce' : 'no-preference' })
+    await page.setViewportSize({ width: 390, height: 844 })
+    await skipOnboarding(page)
+    await page.goto('/#discover/watch')
+    await expect(page.getByRole('heading', { name: 'Watch · All videos' })).toBeVisible()
+    await page.getByRole('tab', { name: 'Listen' }).click()
+    const panel = page.getByRole('tabpanel')
+    await expect(page.getByRole('heading', { name: 'Watch · Listen' })).toBeVisible()
+    const name = await panel.evaluate((el) => getComputedStyle(el).animationName)
+    expect(name).toBe(reduce ? 'none' : 'dc-wfade')
+  })
+}
+
+test('Watch: choosing a topic from a scrolled-down list brings the new list back into view', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await skipOnboarding(page)
+  await page.goto('/#discover/watch')
+  await expect(page.getByRole('heading', { name: 'Watch · All videos' })).toBeVisible()
+  await page.evaluate(() => { const s = document.querySelector('.bt .scroll') as HTMLElement; s.scrollTop = s.scrollHeight }) // past the list, down at the foot links
+  await page.getByRole('tab', { name: 'Recipe videos' }).evaluate((el: HTMLElement) => el.click()) // the chips are above the fold here: click without Playwright scrolling first
+  const h = page.getByRole('heading', { name: 'Watch · Recipe videos' })
+  await expect(h).toBeVisible()
+  await expect.poll(async () => h.evaluate((el) => { const r = el.getBoundingClientRect(); return r.top >= 0 && r.bottom <= window.innerHeight })).toBe(true)
+})
+
 test('shots: Discover top to bottom, then Watch', async ({ page }) => {
   test.skip(!process.env.S25_SHOTS, 'shots only when S25_SHOTS is set')
   await page.setViewportSize({ width: 390, height: 844 })

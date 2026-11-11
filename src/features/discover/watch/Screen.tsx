@@ -8,6 +8,8 @@ import { playable } from '../../health/library/videosLogic'
 import { DISCOVER_VIDEOS } from '../learn/ready'
 import { trackWatch } from '../channels'
 
+/** "Recipe videos" already says videos; "Be prepared" does not. One noun, whatever the topic's own label. */
+export const videosOf = (t: string | null) => (t === null ? 'checked videos' : /videos$/i.test(t) ? t : `${t} videos`)
 const chipId = (t: string | null) => 'dc-watch-chip-' + (t ?? 'all').replace(/\W+/g, '-')
 
 /** The Discover overview stores the tapped video's id here; Watch opens it once and clears it. */
@@ -49,11 +51,11 @@ export default function Watch() {
       </div>
       <div ref={panel} id="dc-watch-panel" className="dc-wpanel" role="tabpanel" aria-labelledby={chipId(topic)} key={topic ?? 'all'}>
         <div className="dc-sh"><h2 className="sh-h2">{`Watch · ${topic ?? 'All videos'}`}</h2><span className="sub">{list.length}</span></div>
-        <MediaList label={topic ? `${topic} videos` : 'Checked videos'} testId="watch-grid">
+        <MediaList label={topic ? videosOf(topic) : 'Checked videos'} testId="watch-grid">
           {list.map((v) => <MediaCard key={v.id} variant="row" id={v.id} title={v.title} channel={v.source} minutes={v.minutes} pressed={v.id === sel} onClick={() => pick(v.id)} />)}
         </MediaList>
       </div>
-      <p className="dc-vh" role="status" aria-live="polite" data-testid="watch-live">{`Showing ${list.length} ${topic ?? 'checked'} videos`}</p>
+      <p className="dc-vh" role="status" aria-live="polite" data-testid="watch-live">{`Showing ${list.length} ${videosOf(topic)}`}</p>
       {chosen && (
         <div ref={player} className="card dc-player" data-testid="watch-player" onClickCapture={(e) => { if ((e.target as Element).closest('.lv-play')) trackWatch(chosen.source) }}>
           <LiteVideo key={chosen.id} id={chosen.id} title={chosen.title} minutes={chosen.minutes} />
