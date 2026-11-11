@@ -5,6 +5,7 @@ import { NavigationRoute, registerRoute } from 'workbox-routing'
 import { subscribeAndSave, vapidKey } from './features/notify/subscribe'
 import { claimNudge, handlePush } from './features/notify/push'
 import { initZone } from './features/time/zone'
+import { iconUrl } from './features/update/iconVersion'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -51,7 +52,7 @@ self.addEventListener('push', (e) => {
   e.waitUntil(
     handlePush(raw, {
       claimNudge,
-      show: (n) => self.registration.showNotification(n.title, { body: n.body, data: n.data, tag: n.tag, icon: 'icon.svg', ...(n.silent ? { silent: true } : {}) })
+      show: (n) => self.registration.showNotification(n.title, { body: n.body, data: n.data, tag: n.tag, icon: iconUrl('icon-192'), ...(n.silent ? { silent: true } : {}) })
     })
   )
 })

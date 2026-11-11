@@ -12,6 +12,7 @@
     "test:affected": "vitest run --changed origin/main",
     "test:changed": "vitest run --changed",
     "test:related": "vitest related --run",
+    "icons": "node scripts/icons/generate.mjs",
     "e2e": "playwright test",
     "e2e:changed": "playwright test --only-changed=origin/main"
   },

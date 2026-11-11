@@ -32,6 +32,9 @@ export default function PhoneGroup() {
         <div className="sh-sech"><b>Setup checklist</b></div>
         <SetupCard />
       </div>
+      <div className="sh-card sh-list st-list">
+        <NavRow icon="check" title="Set up everything" sub="Update, alerts, location and the rest, one step at a time" href="#setup/all" testId="settings-setup-all" />
+      </div>
       {showPhones && (
         <div className="sh-card sh-list st-list">
           <NavRow icon="phone" title="Family phones" sub="Can each phone wake its owner for alarms?" href="#me/phone/phones" />

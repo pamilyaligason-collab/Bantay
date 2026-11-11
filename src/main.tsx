@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './native/links'
 import './features/auth/nativeOAuth'
+import './features/setup/all/deepLink' // S31: ph.bantay.family://setup opens #setup/all
 import { AuthGate } from './features/auth/AuthGate'
 import { OnboardingGate } from './screens/Onboarding'
 import './styles/tokens.css'

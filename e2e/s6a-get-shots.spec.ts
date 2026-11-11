@@ -5,6 +5,8 @@ import { shotPath } from './shotPath'
 // S6a shots of the static Get Bantay page (public/get): start-get (Android) and start-iphone, 390x844, light and dark.
 // start-invite is a Messenger chat outside the app and start-dependent is the Family person page (S4/S7), so neither has a shot here.
 const SHOTS = shotPath('docs/session-10/shots/S6a')
+// S31: /get tells the phone from a computer, so this page is drawn for an Android phone
+test.use({ userAgent: 'Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 Chrome/141 Mobile Safari/537.36' })
 
 for (const scheme of ['light', 'dark'] as const) {
   test(`get page: start-get and start-iphone, ${scheme}`, async ({ page }) => {
