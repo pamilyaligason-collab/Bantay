@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UCIjw46txjW6oD4NU6FHaj_w"/>
+ <id>yt:channel:Ijw46txjW6oD4NU6FHaj_w</id>
+ <yt:channelId>Ijw46txjW6oD4NU6FHaj_w</yt:channelId>
+ <title>Panlasang Pinoy</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UCIjw46txjW6oD4NU6FHaj_w"/>
+ <author>
+  <name>Panlasang Pinoy</name>
+  <uri>https://www.youtube.com/channel/UCIjw46txjW6oD4NU6FHaj_w</uri>
+ </author>
+ <published>2009-03-09T04:26:47+00:00</published>
+ <entry>
+  <id>yt:video:ZJvkQgGqFxE</id>
+  <yt:videoId>ZJvkQgGqFxE</yt:videoId>
+  <yt:channelId>UCIjw46txjW6oD4NU6FHaj_w</yt:channelId>
+  <title>Gawin Mo Ito Sa Puso ng Saging, Napakasarap!</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=ZJvkQgGqFxE"/>
+  <author>
+   <name>Panlasang Pinoy</name>
+   <uri>https://www.youtube.com/channel/UCIjw46txjW6oD4NU6FHaj_w</uri>
+  </author>
+  <published>2026-11-08T04:49:46+00:00</published>
+  <updated>2026-11-10T13:54:35+00:00</updated>
+  
+ </entry>
+<entry>
+  <id>yt:video:tTZn4gHl8qs</id>
+  <yt:videoId>tTZn4gHl8qs</yt:videoId>
+  <yt:channelId>UCIjw46txjW6oD4NU6FHaj_w</yt:channelId>
+  <title>Tiktok Lomi #batangas</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/tTZn4gHl8qs"/>
+  <author>
+   <name>Panlasang Pinoy</name>
+   <uri>https://www.youtube.com/channel/UCIjw46txjW6oD4NU6FHaj_w</uri>
+  </author>
+  <published>2026-11-07T09:38:35+00:00</published>
+  <updated>2026-11-08T21:48:59+00:00</updated>
+  
+ </entry>
+<entry>
+  <id>yt:video:QxuO9K8rfUg</id>
+  <yt:videoId>QxuO9K8rfUg</yt:videoId>
+  <yt:channelId>UCIjw46txjW6oD4NU6FHaj_w</yt:channelId>
+  <title>Pancit Chami</title>
+  <link rel="alternate" href="https://www.youtube.com/shorts/QxuO9K8rfUg"/>
+  <author>
+   <name>Panlasang Pinoy</name>
+   <uri>https://www.youtube.com/channel/UCIjw46txjW6oD4NU6FHaj_w</uri>
+  </author>
+  <published>2026-11-06T08:42:52+00:00</published>
+  <updated>2026-11-09T23:37:51+00:00</updated>
+  
+ </entry>
+<entry>
+  <id>yt:video:dS1qP3W7rg0</id>
+  <yt:videoId>dS1qP3W7rg0</yt:videoId>
+  <yt:channelId>UCIjw46txjW6oD4NU6FHaj_w</yt:channelId>
+  <title>Gawin Mo Ito Sa Chicken Afritada, Ang Sarap!</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=dS1qP3W7rg0"/>
+  <author>
+   <name>Panlasang Pinoy</name>
+   <uri>https://www.youtube.com/channel/UCIjw46txjW6oD4NU6FHaj_w</uri>
+  </author>
+  <published>2026-11-06T01:03:13+00:00</published>
+  <updated>2026-11-10T00:16:28+00:00</updated>
+  
+ </entry>
+</feed>

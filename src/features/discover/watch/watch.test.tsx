@@ -97,7 +97,7 @@ describe('Watch', () => {
     const topics = [...new Set(DISCOVER_VIDEOS.filter(playable).map((v) => v.topic))]
     expect(topics).toEqual(['Be prepared', 'Farming and DIY', 'Listen', 'Recipe videos'])
     const want: Record<string, string> = { 'Be prepared': 'Showing 20 Be prepared videos', 'Farming and DIY': 'Showing 23 Farming and DIY videos', Listen: 'Showing 7 Listen videos', 'Recipe videos': 'Showing 5 Recipe videos' }
-    expect(screen.getByTestId('watch-live').textContent).toBe('Showing 55 checked videos')
+    expect(screen.getByTestId('watch-live').textContent).toBe('Showing 55 videos')
     for (const t of topics) {
       fireEvent.click(screen.getByRole('tab', { name: t }))
       expect(screen.getByTestId('watch-live').textContent).toBe(want[t])
