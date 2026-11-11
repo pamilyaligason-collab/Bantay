@@ -94,6 +94,8 @@ describe('World', () => {
     render(<World />)
     expect((await screen.findAllByText(/Warnings have not been checked yet, so Bantay cannot say/)).length).toBe(3)
     expect(screen.queryByText(/Not checked lately/)).toBeNull()
+    expect(screen.queryByText(/Alerts have not been checked on this phone/)).toBeNull() // S30 L6: one wording, banner included
+    expect(screen.getAllByText(/^Warnings have not been checked yet\. They may be out of date/).length).toBe(1)
   })
   it('hides the feed sections and the volcano row while their flags are off', () => {
     render(<World />)

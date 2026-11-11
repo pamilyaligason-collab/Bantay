@@ -1,3 +1,4 @@
+import { zoneOf } from '../time/zone'
 import { lastDays } from '../today/myWeekLogic'
 import { manilaDaysEnding } from '../today/nextPick'
 import { countDoses } from './doseCount'
@@ -76,7 +77,7 @@ export function computeNudge(i: { personId: string; readings: Reading[]; takes: 
   }
   const goals: Goal[] = [goal({ id: 'bp', label: 'Blood pressure', n: daysOf(mine, BP), target: BP_DAYS, unitWord: 'days', cta: { label: 'Add BP', sheet: 'bp' }, step: 'Check your BP now (1 minute)' })]
   if (mine.some((r) => SUGAR.includes(r.test))) goals.push(goal({ id: 'sugar', label: 'Sugar', n: daysOf(mine, SUGAR), target: SUGAR_DAYS, unitWord: 'days', cta: { label: 'Add sugar', sheet: 'fasting_glucose' }, step: 'Check your sugar - about 2 minutes' }))
-  const doses = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days: manilaDaysEnding(i.now, 7) })
+  const doses = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days: manilaDaysEnding(i.now, 7, zoneOf(i.personId)) })
   if (doses.want > 0) goals.push(goal({ id: 'meds', label: 'Medicines', n: doses.done, target: doses.want, unitWord: 'doses', cta: { label: 'Open medicines', href: '#health/meds' }, step: "Mark today's medicines - 30 seconds" }))
   const mealDays = new Set(i.food.filter((f) => f.personId === i.personId && valid(f.eatenAt) && days.includes(dayOf(f.eatenAt))).map((f) => dayOf(f.eatenAt))).size
   goals.push(goal({ id: 'meals', label: 'Meals', n: mealDays, target: MEAL_DAYS, unitWord: 'days', cta: { label: 'Log a meal', href: '#health/nutrition' }, step: 'Log what you ate - 1 minute' }))

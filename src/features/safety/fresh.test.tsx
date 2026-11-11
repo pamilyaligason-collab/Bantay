@@ -29,7 +29,7 @@ describe('AlertCard freshness and plain words', () => {
   })
   it('amber line when the check is over an hour old and the row is not stale', () => {
     render(<AlertCard alert={{ ...gdacs, checkedAt: minAgo(75), stale: false }} />)
-    expect(screen.getByRole('status').textContent).toMatch(/^Alerts last checked .*\. They may be out of date\. Check PAGASA or listen to the radio\.$/)
+    expect(screen.getByRole('status').textContent).toMatch(/^Warnings last checked .*\. They may be out of date\. Check PAGASA or listen to the radio\.$/)
   })
   it('a stale row keeps the source-unreachable note and does not double up', () => {
     render(<AlertCard alert={{ ...gdacs, checkedAt: minAgo(75), stale: true }} />)
@@ -129,6 +129,6 @@ describe('FreshLine', () => {
   it('an empty list is unknown: never checked, amber line (not a calm "all clear")', async () => {
     render(<FreshLine />)
     expect(await screen.findByText('Never checked')).toBeTruthy()
-    expect(screen.getByRole('status').textContent).toMatch(/not been checked on this phone yet/)
+    expect(screen.getByRole('status').textContent).toMatch(/Warnings have not been checked yet/)
   })
 })

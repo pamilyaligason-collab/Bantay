@@ -48,6 +48,13 @@ describe('parseBulletins', () => {
     expect(parseBulletins(fx('bulletin-none.html'))).toEqual({ rows: [], errors: 0 })
     const tabsGone = fx('bulletin-active.html').replace(/<div role="tabpanel"[^>]*id="tcwb-1">/, '<div>')
     expect(parseBulletins(tabsGone)).toEqual({ rows: [], errors: 1 })
+    // real 2026-11-10 shape: no active cyclone, but an Archive section with tabs and a signal block
+    expect(parseBulletins(fx('bulletin-none-archive.html'))).toEqual({ rows: [], errors: 0 })
+    // the same Archive below real live tabs must not change the live read, and a tab control ABOVE the archive still fails
+    const live = fx('bulletin-active.html') + fx('bulletin-none-archive.html').slice(fx('bulletin-none-archive.html').indexOf('<div class="col-md-12 fixed-sidebar  col-lg-10 col-lg-offset-1">\n<div class="article-header">\n<span style="padding-left:15px;">Archive'))
+    expect(parseBulletins(live.replace(/\r/g, ''))?.errors).toBe(0)
+    const tabAbove = fx('bulletin-none-archive.html').replace('<h3>No Active', '<a href="#x" data-toggle="tab">x</a><h3>No Active')
+    expect(parseBulletins(tabAbove)).toEqual({ rows: [], errors: 1 })
     expect(parseBulletins('<html><body>Page not found</body></html>')).toBeNull()
     expect(parseBulletins(undefined)).toBeNull()
   })

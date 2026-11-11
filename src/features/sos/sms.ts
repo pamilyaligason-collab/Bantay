@@ -1,4 +1,5 @@
 import type { SosContact } from './contacts'
+import { toE164 } from '../location/phoneRegion'
 
 export { SOS_ACTIVE_KEY, SOS_CONTACTS_KEY, type SosActive } from './active'
 
@@ -6,10 +7,7 @@ export const MAPS = 'https://maps.google.com/?q='
 export const mapLink = (lat: number, lon: number) => `${MAPS}${lat},${lon}`
 
 /** Digits and a leading + only: spaces and dashes in a stored number would break the sms: link. */
-export const smsNumber = (p: string): string => {
-  const s = p.trim()
-  return (s.startsWith('+') ? '+' : '') + s.replace(/\D/g, '')
-}
+export const smsNumber = (p: string): string => toE164(p) // S30 L8 (D4): digits and a leading +; a Philippine 09xx number becomes +63 when this phone is outside the Philippines (the sms: and tel: of an SOS must connect)
 export const usableNumber = (p: string) => smsNumber(p).replace(/\D/g, '').length >= 10
 
 /** The text the contacts get. `gps` false = the phone could not find itself, so any place is the home zone (say so, never pretend);

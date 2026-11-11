@@ -25,6 +25,7 @@ import WeatherCard from './WeatherCard'
 import { JackArt } from '../look'
 import { IncomingSos } from '../family/IncomingSos'
 import { TalkCard } from '../calm/CrisisCard'
+import { toE164 } from '../location/phoneRegion'
 
 /** S16-L1 (C-5): L6 adds a trailing `personId` to logFeeling; the L0 signature lacks it until that merges, so call through this type (same one-liner as QuickLog). */
 
@@ -41,7 +42,7 @@ const FACE_CLASS: Record<Feeling, string> = { great: 'good', ok: 'good', notgrea
 export default function SimpleToday({ onExit, notify }: { onExit: () => void; notify: (msg: string) => void }) {
   const raw = useKv<unknown>('sos.contacts', [])
   const contact = normalizeContacts(raw, loadFamily()).find((c) => validPhone(c.phone))
-  const phone = contact?.phone.replace(/[^\d+]/g, '')
+  const phone = contact ? toE164(contact.phone) : undefined
   const { due, review, tick } = useDueMeds()
   const storm = useStorm()
   const place = usePlace()

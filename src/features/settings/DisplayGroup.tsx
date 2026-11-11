@@ -4,6 +4,7 @@ import { applyTheme, THEME_KEY, type ThemePref } from '../shell/theme'
 import { applyTextSize, isTextSize, TEXT_SIZE_KEY, TEXT_SIZES, type TextSize } from '../shell/textSize'
 import { useKv } from '../shell/useKv'
 import { isLang, LANG_KEY, LANGS, setLang, type Lang } from '../../lib/i18n'
+import { defaultWxUnits, isWxUnits, WX_UNIT_OPTIONS, WX_UNITS_KEY } from '../weather/units'
 import ChoiceSheet from './ChoiceSheet'
 import Group, { NavRow } from './Group'
 
@@ -15,7 +16,9 @@ export default function DisplayGroup() {
   const [theme, setTheme] = useKv<ThemePref>(THEME_KEY, 'system')
   const [textSize, setTextSize] = useKv<TextSize>(TEXT_SIZE_KEY, 'normal')
   const [lang, setLangKv] = useKv<Lang>(LANG_KEY, 'en')
-  const [open, setOpen] = useState<'text' | 'theme' | 'lang' | null>(null)
+  const [units, setUnits] = useKv<unknown>(WX_UNITS_KEY, null) // S30 L8 (B2): weather units, the phone's country by default
+  const [open, setOpen] = useState<'text' | 'theme' | 'lang' | 'units' | null>(null)
+  const wxUnits = isWxUnits(units) ? units : defaultWxUnits()
   const size = isTextSize(textSize) ? textSize : 'normal'
   const lg = isLang(lang) ? lang : 'en'
   const close = () => setOpen(null)
@@ -25,10 +28,12 @@ export default function DisplayGroup() {
         <NavRow icon="search" title="Text size" sub={label(TEXT_SIZES, size)} onClick={() => setOpen('text')} popup />
         <NavRow icon="moon" title="Theme" sub={label(THEMES, theme)} onClick={() => setOpen('theme')} popup />
         <NavRow icon="chat" title="Language" sub={label(LANGS, lg)} onClick={() => setOpen('lang')} popup />
+        <NavRow icon="sun" title="Weather units" sub={label(WX_UNIT_OPTIONS, wxUnits)} onClick={() => setOpen('units')} popup />
       </div>
       <p className="sh-sub sh-note">Filipino changes medicine reminders, weather advice, Quick dial and SOS status. The rest of the app stays in English{Capacitor.isNativePlatform() ? '.' : '. Reminders are on the Android app.'}</p>
       {open === 'text' && <ChoiceSheet title="Text size" value={size} options={TEXT_SIZES} note="Bigger text makes words and buttons larger." onClose={close} onPick={(t) => { setTextSize(t); applyTextSize(t) }} />}
       {open === 'theme' && <ChoiceSheet title="Theme" value={theme} options={THEMES} onClose={close} onPick={(t) => { setTheme(t); applyTheme(t) }} />}
+      {open === 'units' && <ChoiceSheet title="Weather units" value={wxUnits} options={WX_UNIT_OPTIONS} note="Temperature and wind on the weather screens. Rain stays in millimetres." onClose={close} onPick={setUnits} />}
       {open === 'lang' && <ChoiceSheet title="Language" value={lg} options={LANGS} onClose={close} onPick={(l) => { setLangKv(l); void setLang(l) }} />}
     </Group>
   )

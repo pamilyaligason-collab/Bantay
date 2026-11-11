@@ -3,7 +3,7 @@
 // Function secrets (set by Lloyd): ALERTS_CRON_SECRET; DOSE_WATCH_CRON_SECRET (the same value dose-watch uses, so a new wind signal can trigger its Web Push flush; optional). SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { heartbeat } from '../_shared/heartbeat.ts'
-import { type Existing, type Port, runIngest } from './ingest.ts'
+import { type Existing, type FailKind, isUndefinedColumn, type Port, runIngest } from './ingest.ts'
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 
@@ -49,6 +49,12 @@ Deno.serve(async (req) => {
       if (error) throw new Error('read')
       return (data ?? []).map((r) => r.id as string)
     },
+    async zones() {
+      // S30 G4: before 0065 the tz column is missing: everyone is Manila. Only that error falls back; any other one throws so a failed read is never taken for "all Manila".
+      const { data, error } = await sb.from('people').select('id,tz').not('auth_user_id', 'is', null).is('archived_at', null)
+      if (error) { if (isUndefinedColumn(error)) return new Map(); throw new Error('read') }
+      return new Map((data ?? []).map((r) => [r.id as string, (r.tz ?? null) as string | null]))
+    },
     async notify(personId, template, ref) {
       const { data, error } = await sb.rpc('notify_family', { p_person: personId, p_kind: 'hazard', p_template: template, p_ref: ref, p_scope: 'self' })
       if (error) throw new Error('write')
@@ -68,9 +74,10 @@ Deno.serve(async (req) => {
     if (!res.ok) throw new Error(`HTTP${res.status}`)
     return res.text()
   }
-  const sources = await runIngest(port, fetchText, Date.now())
+  const why = new Map<string, FailKind>()
+  const sources = await runIngest(port, fetchText, Date.now(), Date.now, (s, k) => why.set(s, k))
   const ok = Object.values(sources).some((r) => r.ok) // every source failed: 502 so pg_net/cron health shows it
   // heartbeat (S8): counts only; a failed PAGASA feed shows as ok=false so the admin System page flags it while GDACS and Open-Meteo carry on
-  await heartbeat(sb, 'alerts-ingest', ok && sources['PAGASA']?.ok !== false, { pagasa_ok: sources['PAGASA']?.ok === true, usgs_ok: sources['USGS']?.ok === true, gdacs_ok: sources['GDACS']?.ok === true, eonet_ok: sources['EONET']?.ok === true, air_ok: sources['Open-Meteo']?.ok === true, sources_ok: Object.values(sources).filter((r) => r.ok).length, sources_failed: Object.values(sources).filter((r) => !r.ok).length, rows: Object.values(sources).reduce((n, r) => n + r.rows, 0) })
+  await heartbeat(sb, 'alerts-ingest', ok && sources['PAGASA']?.ok !== false, { pagasa_ok: sources['PAGASA']?.ok === true, usgs_ok: sources['USGS']?.ok === true, gdacs_ok: sources['GDACS']?.ok === true, eonet_ok: sources['EONET']?.ok === true, air_ok: sources['Open-Meteo']?.ok === true, sources_ok: Object.values(sources).filter((r) => r.ok).length, sources_failed: Object.values(sources).filter((r) => !r.ok).length, pagasa_timeout: why.get('PAGASA') === 'timeout', pagasa_http: why.get('PAGASA') === 'http', pagasa_payload: why.get('PAGASA') === 'payload', rows: Object.values(sources).reduce((n, r) => n + r.rows, 0) })
   return reply(ok ? 200 : 502, { ok, sources })
 })

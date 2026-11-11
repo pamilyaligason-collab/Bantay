@@ -4,7 +4,7 @@ import { STEP_GOAL } from '../../today/myWeekLogic'
 import { useFamilyPeople } from '../../family/roster'
 import { useLinkedPeople } from '../../family/useFamilyScope'
 import { ldb } from '../../log/store'
-import { localDay, type Activity } from '../model'
+import { localDay, stepDayTotals, type Activity } from '../model'
 import { familyRows, monthVsYear, stepsSummary, type FamilyRow } from './activityLogic'
 import './detail.css'
 
@@ -62,7 +62,7 @@ export function FamilyToday({ now }: { now: Date }) {
   useEffect(() => {
     const ids = key ? key.split(',') : []
     const sub = liveQuery(() => ldb.activity.where('personId').anyOf(ids).filter((a) => a.kind === 'steps' && typeof a.steps === 'number' && localDay(a.startedAt) === today).toArray()).subscribe({
-      next: (rows) => { const m: Record<string, number | null> = {}; for (const r of rows) m[r.personId] = (m[r.personId] ?? 0) + (r.steps ?? 0); setSteps(m) },
+      next: (rows) => { const m: Record<string, number | null> = {}; for (const id of new Set(rows.map((r) => r.personId))) m[id] = stepDayTotals(rows.filter((r) => r.personId === id)).get(today) ?? null; setSteps(m) }, // same selector as the tile, so the table equals it for the same person and day
       error: () => setSteps({})
     })
     return () => sub.unsubscribe()

@@ -1,4 +1,6 @@
 import { manilaDay, matchDoses, slotsFor } from '../health/meds'
+import { zoneOf } from '../time/zone'
+import { stepDayTotals } from '../health/model'
 import { manilaDaysEnding } from '../today/nextPick'
 import { GUIDE, type Reading } from '../health/ranges'
 import { BP_WORDS, bpPairLevel, type BpArg } from '../health/verdict'
@@ -10,9 +12,10 @@ export type Metric = 'bp' | 'steps' | 'meds'
 export interface Series { personId: string; points: (number | null)[]; latest: number | null; empty: boolean }
 
 /** 7 Manila YYYY-MM-DD keys, oldest first, the last one today. */
-export function dayKeys(now: Date): string[] {
-  return manilaDaysEnding(now, DAYS)
+export function dayKeys(now: Date, tz?: string): string[] {
+  return manilaDaysEnding(now, DAYS, tz)
 }
+const keysOf = (now: Date, id: string) => dayKeys(now, zoneOf(id)) // each person's seven days on their own clock (the chart columns are positions: oldest to today)
 
 const finish = (personId: string, points: (number | null)[]): Series => {
   const latest = [...points].reverse().find((p) => p != null) ?? null
@@ -20,26 +23,23 @@ const finish = (personId: string, points: (number | null)[]): Series => {
 }
 
 export function bpSeries(readings: Reading[], ids: string[], now: Date): Series[] {
-  const keys = dayKeys(now)
-  return ids.map((id) => finish(id, keys.map((k) => {
-    const v = readings.filter((r) => r.personId === id && r.test === 'bp_systolic' && Number.isFinite(r.value) && manilaDay(r.takenAt) === k).map((r) => r.value)
+  return ids.map((id) => finish(id, keysOf(now, id).map((k) => {
+    const v = readings.filter((r) => r.personId === id && r.test === 'bp_systolic' && Number.isFinite(r.value) && manilaDay(r.takenAt, zoneOf(id)) === k).map((r) => r.value)
     return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length) : null
   })))
 }
 
 export function stepSeries(acts: Activity[], ids: string[], now: Date): Series[] {
-  const keys = dayKeys(now)
-  return ids.map((id) => finish(id, keys.map((k) => {
-    const v = acts.filter((a) => a.personId === id && a.kind === 'steps' && typeof a.steps === 'number' && manilaDay(a.startedAt) === k).map((a) => a.steps!)
-    return v.length ? v.reduce((a, b) => a + b, 0) : null
+  return ids.map((id) => finish(id, keysOf(now, id).map((k) => {
+    const t = [...stepDayTotals(acts.filter((a) => a.personId === id && manilaDay(a.startedAt, zoneOf(id)) === k)).values()] // the one shared selector (an overlapping pair counts once); a device-zone split of one Manila day adds back up
+    return t.length ? t.reduce((a, b) => a + b, 0) : null
   })))
 }
 
 /** Percent of the day's doses taken (taken / all slots); a day with no slots is null. Future days of today's slots count as pending, so today is low until the evening. */
 export function doseSeries(meds: Medication[], takes: MedTaken[], ids: string[], now: Date): Series[] {
-  const keys = dayKeys(now)
-  return ids.map((id) => finish(id, keys.map((k) => {
-    const d = matchDoses(slotsFor(meds, id, k), takes.filter((t) => t.personId === id), k, manilaDay)
+  return ids.map((id) => finish(id, keysOf(now, id).map((k) => {
+    const d = matchDoses(slotsFor(meds, id, k), takes.filter((t) => t.personId === id), k, (v) => manilaDay(v, zoneOf(id)))
     return d.length ? Math.round((d.filter((x) => x.state === 'taken').length / d.length) * 100) : null
   })))
 }

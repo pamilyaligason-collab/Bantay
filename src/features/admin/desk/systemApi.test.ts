@@ -34,10 +34,11 @@ describe('alerts feed (red when the newest alerts-ingest run is over 60 minutes 
   it('uses 60 minutes for the feed and 30 for the other jobs', () => {
     expect(ALERTS_FEED_STALE_MIN).toBe(60)
     expect(feed.staleMin).toBe(60)
-    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news' && j.job !== 'lotto-pcso' && j.job !== 'yt-feed' && j.job !== 'pagasa-drought').map((j) => j.staleMin)).toEqual([30, 30])
+    expect(JOBS.filter((j) => j.job !== 'alerts-ingest' && j.job !== 'alerts-digest' && j.job !== 'world-news' && j.job !== 'lotto-pcso' && j.job !== 'yt-feed' && j.job !== 'pagasa-drought' && j.job !== 'integrity-check').map((j) => j.staleMin)).toEqual([30, 30])
     expect(JOBS.find((j) => j.job === 'world-news')!.staleMin).toBe(480)
     expect(JOBS.find((j) => j.job === 'lotto-pcso')!.staleMin).toBe(480)
     expect(JOBS.find((j) => j.job === 'yt-feed')!.staleMin).toBe(90)
+    expect(JOBS.find((j) => j.job === 'integrity-check')!.staleMin).toBe(1590)
     expect(JOBS.find((j) => j.job === 'alerts-digest')!.staleMin).toBe(1560)
   })
   it('59 and 60 minutes are fine, 61 is red', () => {
@@ -173,7 +174,7 @@ describe('migrations.json', () => {
   it('lists every migration file in the repo, so a new file cannot be forgotten', () => {
     expect(files.length).toBeGreaterThan(20)
     // Written but not yet applied, so absent from migrations.json (which lists applied versions only). Each entry leaves this list when applied.
-    const writtenNotApplied: string[] = ['0060', '0061', '0062', '0063'] // a written migration waits here until the owner applies it (0055 news_videos applied 2026-11-09; 0056 is applied by the owner before merge)
+    const writtenNotApplied: string[] = ['0060', '0061', '0062', '0063', '0064', '0065', '0066'] // a written migration waits here until the owner applies it (0055 news_videos applied 2026-11-09; 0056 is applied by the owner before merge)
     expect(writtenNotApplied.filter((v) => KNOWN_MIGRATIONS.includes(v))).toEqual([]) // an applied version must leave the allowlist
     expect(files.filter((v) => !KNOWN_MIGRATIONS.includes(v) && !writtenNotApplied.includes(v))).toEqual([])
   })

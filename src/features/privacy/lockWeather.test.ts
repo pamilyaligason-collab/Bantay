@@ -22,7 +22,7 @@ const fc = (over: Partial<Forecast> = {}): Forecast => ({
 
 describe('glanceOf (lock screen weather)', () => {
   it('temperature rounded, words from the code, first likely-rain hour after now in the place clock', () => {
-    expect(glanceOf(fc(), NOW)).toEqual({ temp: 31, words: 'partly cloudy', kind: 'cloud', rain: 'rain likely after 3 PM' })
+    expect(glanceOf(fc(), NOW)).toEqual({ temp: 31, tempC: 30.6, words: 'partly cloudy', kind: 'cloud', rain: 'rain likely after 3 PM' })
   })
   it('an hour already past (08:00 at 90%) is not "rain likely after"', () => {
     expect(glanceOf(fc({ hourly: hours([['2026-10-26T08:00', 90]]) }), NOW)?.rain).toBeNull()

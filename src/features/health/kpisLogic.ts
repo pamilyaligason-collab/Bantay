@@ -3,6 +3,7 @@ import type { MedTaken, Medication } from '../log/store'
 import { computeMyWeek, STEP_GOAL, type StepRow } from '../today/myWeekLogic'
 import { dayOf } from './meds'
 import { rangeState, toCanonicalReading, type Position, type Reading, type RangeState } from './ranges'
+import { stepDayTotals } from './model'
 import { positionOf } from './vitals'
 import type { BpArg } from './verdict'
 
@@ -64,9 +65,10 @@ export function computeKpis(i: { personId: string; readings: Reading[]; activity
 
   // steps: the newest day that has a row, as a day total. A 0 day is true data, the same as latestSteps on Move
   const stepRows = i.activity.filter((a) => (a.personId == null || a.personId === i.personId) && a.kind === 'steps' && typeof a.steps === 'number' && a.steps >= 0)
-  const lastDay = stepRows.map((a) => dayOf(a.startedAt)).sort().at(-1)
+  const stepTotals = stepDayTotals(stepRows)
+  const lastDay = [...stepTotals.keys()].sort().at(-1)
   if (lastDay) {
-    const total = stepRows.filter((a) => dayOf(a.startedAt) === lastDay).reduce((s, a) => s + (a.steps ?? 0), 0)
+    const total = stepTotals.get(lastDay)!
     const today = lastDay === dayOf(i.now)
     out.push({ code: 'steps', href: '#health/metric/steps', label: 'Steps', value: total.toLocaleString('en-US'), unit: '', when: today ? 'today so far' : whenWords(`${lastDay}T12:00:00`, i.now), sub: `Goal ${STEP_GOAL.toLocaleString('en-US')}`, spark: spark('steps') })
   }

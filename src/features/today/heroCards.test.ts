@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Alert } from '../safety/alerts'
-import { doseKey, dueDoses, heroCards, parseDose, rainLine, rainOutlook, skyOf, weatherAction, zoneAlert, type Wx } from './heroCards'
+import { doseKey, dueDoses, heroCards, parseDose, rainLine, rainOutlook, skyOf, underRainChip, weatherAction, zoneAlert, type Wx } from './heroCards'
 
 const alert = (o: Partial<Alert>): Alert => ({
   id: 'a1', kind: 'tcws', level: 'Signal No. 2', title: 'Typhoon signal no. 2', what: 'w', where: 'Bohol', when: 'Tonight', doNow: 'Charge phones.',
@@ -255,6 +255,10 @@ describe('weatherAction (Today and Simple mode action line)', () => {
   it('ML-51 A3: Today decides raining like Weather: a rain code with no rainingNow reading says Raining now; an observed dry beats the rain code', () => {
     expect(weatherAction(w({ temp: 28, humidity: 60, code: 61 }), now)).toBe('Raining now')
     expect(weatherAction(w({ temp: 28, humidity: 60, code: 61, rainingNow: { value: false, source: 'observed' as const, ageMin: 10 } }), now)).toBeNull()
+  })
+  it('S30 L6: under the Raining now chip the action line says what to do, never the same words', () => {
+    expect(underRainChip('Raining now')).toBe('Bring an umbrella if you go out.')
+    expect(underRainChip('Avoid the noon sun. Drink water often.')).toBe('Avoid the noon sun. Drink water often.')
   })
   it('a hot day with no humidity reading earns no heat line (the heat index needs both)', () => {
     expect(weatherAction(w({ temp: 36, humidity: null }), now)).toBeNull()

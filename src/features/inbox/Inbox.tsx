@@ -12,13 +12,14 @@ import { groupInbox, iconOf, type InboxIcon, type InboxItem } from './build'
 import { MissedDoseActions } from './MissedDoseActions'
 import type { Inbox as InboxState } from './useInbox'
 import './inbox.css'
+import { getZone } from '../time/zone'
 
 const ICON: Record<InboxIcon, IconName> = { alert: 'warn', dose: 'pill', weather: 'cloud', family: 'shield', record: 'shield', update: 'shield' }
 const TINT: Record<InboxIcon, Tint> = { alert: 'red', dose: 'blue', weather: 'teal', family: 'purple', record: 'green', update: 'none' }
 const INTRO_KEY = 'notif.intro'
-const manilaDay = (ms: number) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(ms)
+const manilaDay = (ms: number) => new Intl.DateTimeFormat('en-CA', { timeZone: getZone() }).format(ms) // S30 L8 (A5): this phone's day (Asia/Manila until the app sets the zone)
 /** The row's time: the clock for something from today (Manila), the date for an earlier day. */
-const clock = (i: InboxItem, now: Date) => i.at == null ? undefined : new Intl.DateTimeFormat('en-PH', manilaDay(i.at) === manilaDay(now.getTime()) ? { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' } : { month: 'short', day: 'numeric', timeZone: 'Asia/Manila' }).format(i.at)
+const clock = (i: InboxItem, now: Date) => i.at == null ? undefined : new Intl.DateTimeFormat('en-PH', manilaDay(i.at) === manilaDay(now.getTime()) ? { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: getZone() } : { month: 'short', day: 'numeric', timeZone: getZone() }).format(i.at)
 
 /** Alerts (v13 board): one Row per alert (title, sub, time); the actions sit behind a tap in the alert's sheet. Unread are grouped under "New (n)" with Mark all read in that title row. */
 export function Inbox({ inbox, now }: { inbox: Omit<InboxState, 'openRow' | 'markOne'> & { openRow?: InboxState['openRow']; markOne?: InboxState['markOne'] }; now?: Date }) {

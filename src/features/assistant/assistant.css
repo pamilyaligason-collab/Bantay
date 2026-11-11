@@ -42,8 +42,8 @@
 .as-eyebrow { font-size: 13px; font-weight: 600; letter-spacing: .02em; color: #FFD9D2; }
 .as-foot { text-align: center; font-weight: 400; }
 .as-emerg-h { font-size: 22px; line-height: 1.2; }
-.as-911 { min-height: 52px; border: 0; border-radius: 14px; font-size: 18px; font-weight: 700; background: #fff; color: #7A2620; }
-.as-911-alt { background: rgba(255,243,239,.16); color: #FFF3EF; font-size: 16px; }
+.as-911 { display: flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; min-height: 52px; border: 0; border-radius: 14px; font-size: 18px; font-weight: 700; background: #fff; color: #7A2620; }
+.as-911-alt, .as-emerg a.as-911-alt { background: rgba(255,243,239,.16); color: #FFF3EF; font-size: 16px; }
 /* Offline (mockup ask-offline) */
 .as-offline { display: flex; flex-direction: column; gap: 8px; }
 .as-off-banner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--fill); color: var(--ink); font-weight: 600; }

@@ -8,6 +8,7 @@ import {
 import type { PageProps } from './types'
 import { useDeskPeople } from './people'
 import { Empty, Kpi, PageHead, Tag, type Tone } from './ui'
+import IntegrityCard from '../../integrity/IntegrityCard'
 import './system.css'
 import './files.css'
 
@@ -98,6 +99,8 @@ export default function System(_: PageProps) {
           {pending.data && (pending.data.length === 0 ? <div className="dk-card-b"><Empty>Nothing waiting.</Empty></div>
             : <div className="dk-card-b sy-tags">{pending.data.map((v) => <Tag key={v} tone="warn">{v}</Tag>)}</div>)}
         </Card>
+
+        <IntegrityCard tick={tick} />
 
         <Card id="sy-week" title="This week" cls="dk-s6" src={join(kpis)}>
           {kpis.data && (

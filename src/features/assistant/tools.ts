@@ -19,9 +19,10 @@ export type Card =
   | { kind: 'records'; id: string; person: string; test: string }
 
 /** Never more than the last 10 messages, and only role + content leave the device. Card-only replies have no text and are not sent. */
-export const buildRequest = (messages: Msg[], screen: string) => ({
+export const buildRequest = (messages: Msg[], screen: string, region: 'ph' | 'us' | 'unknown' = 'unknown') => ({
   messages: messages.filter((m) => m.content.trim()).slice(-MAX_MESSAGES).map(({ role, content }) => ({ role, content })),
-  screen
+  screen,
+  region // coarse country only (S30 E1); never a position
 })
 
 const str = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 300) : '')
@@ -31,7 +32,7 @@ export const FIELDS: Record<DraftTool, string[]> = {
   log_activity: ['person', 'kind', 'minutes', 'steps', 'startedAt']
 }
 
-/** The server's 911 card: `emergency.call` lists the numbers (['911'] or ['1553','911']); only plain digit strings are kept. */
+/** The server's 911 card: `emergency.call` lists the numbers (['911'], ['1553','911'], ['988','911'] or ['988','1553','911'] by region); only plain digit strings are kept. */
 export interface ReplyEmergency { kind: string; call: string[]; text: string }
 
 /** Server reply -> text + cards (+ the 911 card when the server gate fired). Unknown tools and bad arguments are dropped, never executed. */

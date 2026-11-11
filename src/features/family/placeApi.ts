@@ -17,7 +17,7 @@ export const PLACE_NOTICE_KEY = 'place.notice.seen'
 export const placeKey = (personId: string): string => `${PLACE_KEY}:${personId}`
 export const placeNoticeKey = (personId: string): string => `${PLACE_NOTICE_KEY}:${personId}`
 export const placeSharingOn = async (personId: string): Promise<boolean> => (await db.kv.get(placeKey(personId)).catch(() => undefined))?.value !== false
-const placeNoticeSeen = async (personId: string): Promise<boolean> => (await db.kv.get(placeNoticeKey(personId)).catch(() => undefined))?.value === true
+export const placeNoticeSeen = async (personId: string): Promise<boolean> => (await db.kv.get(placeNoticeKey(personId)).catch(() => undefined))?.value === true
 export const setPlaceSharing = (personId: string, on: boolean): Promise<unknown> => db.kv.put({ key: placeKey(personId), value: on }).catch(() => undefined)
 
 /** Save the phone's latest point for the family map. Called after a real GPS fix. Skipped (no call at all) while the feature flag is off, the first-open notice is not yet answered, the cached switch is off, or the fix is not a real position.

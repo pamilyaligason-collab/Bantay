@@ -1,14 +1,15 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { db } from '../../db'
+import { getZone } from '../time/zone'
 
 /** kv key written by sync.ts after each successful push and pull (ms): what an offline person is looking at is data from then. */
 export const LAST_ONLINE_KEY = 'sync.lastPull'
 
 const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false
 
-/** "10:42 AM" in the family's time zone (the same 12-hour style as the rest of the app). */
-export const clockText = (ms: number) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' }).format(new Date(ms))
+/** "10:42 AM" on this phone's clock (S30 L8, A6; Asia/Manila until the app sets the zone), the same 12-hour style as the rest of the app. */
+export const clockText = (ms: number) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: getZone() }).format(new Date(ms))
 
 /** The one line of the offline bar. `since` is null when the phone has never recorded a time. */
 export function offlineText(since: number | null): string {

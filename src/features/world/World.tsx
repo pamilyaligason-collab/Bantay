@@ -65,7 +65,7 @@ function WorldView({ l, place }: { l: ReturnType<typeof useLocation>; place: Ret
   const saved = useKv<unknown>(CHECKED_KEY, null)
   const down = useKv<StaleSources>(STALE_KEY, NO_STALE)
   const stale = feedStale(official, saved, down) // the same test as Safety: no "none" wording without a fresh check
-  const NOT_SAID = `${neverChecked(official, saved, down) ? 'Warnings have not been checked yet' : 'Not checked lately'}, so Bantay cannot say there is none.` // ML-51: same never-checked split as Weather
+  const NOT_SAID = `${neverChecked(official, saved, down) ? 'Warnings have not been checked yet' : 'Not checked lately'}, so Bantay cannot say there is none.` // ML-51: same never-checked split as Weather; S30 L6: the banner below uses the same words
   const prefs = readPrefs(useKv<unknown>(ALERT_KEY, undefined))
   const [filter, setFilter] = useState<Filter>('all')
   const [managing, setManaging] = useState(false)

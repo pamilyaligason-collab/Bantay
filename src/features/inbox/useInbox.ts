@@ -11,13 +11,21 @@ import { useSelf } from '../sos/useSelf'
 import { useFamilyPeople } from '../family/roster'
 import { useAlertRows } from '../notify/useAlerts'
 import { markAllSeen, markSeen } from '../notify/store'
-import { useArchivedIds } from '../notify/archive'
+import { addArchived, useArchivedIds } from '../notify/archive'
+import type { AlertRow } from '../notify/store'
 import { buildInbox, countUnread, type InboxItem } from './build'
 
 const NO_ALERTS: Alert[] = []
 const NO_NAMES: string[] = []
 const NO_SKIP = { day: '', names: NO_NAMES }
 const SEEN_KEY = 'notif.seen'
+
+/** The bell's "Mark all read" for family alerts (S30 L4): everything up to now is marked seen (local first, then the server's seen_at) and filed in the local archive, which the inbox hides.
+ *  A live SOS row is read but never archived, as in Archive all. Nothing is deleted. */
+export async function readAndArchiveFamily(rows: AlertRow[]): Promise<void> {
+  await markAllSeen()
+  addArchived(rows.filter((r) => r.kind !== 'sos'))
+}
 
 /** The inbox list, built from what is already on this phone (plus two admin lookups). Seen ids live in kv so the bell dot and the list agree. */
 export function useInbox(isAdmin: boolean) {
@@ -67,7 +75,7 @@ export function useInbox(isAdmin: boolean) {
     familyAlerts, nameOf
   }), [now, alerts, profile, taken, medications, self.personId, skip, decision, pins, queue.count, isAdmin, familyAlerts, nameOf])
   const unread = countUnread(items, seen)
-  const markAllRead = () => { void putKv(SEEN_KEY, items.filter((i) => i.kind !== 'family').map((i) => i.id)).catch(() => undefined); void markAllSeen().catch(() => undefined) }
+  const markAllRead = () => { void putKv(SEEN_KEY, items.filter((i) => i.kind !== 'family').map((i) => i.id)).catch(() => undefined); void readAndArchiveFamily(familyAlerts).catch(() => undefined) }
   /** Opening a family row marks it seen (local first, then the server's seen_at). */
   const openRow = (rowId: string) => void markSeen(rowId).catch(() => undefined)
   /** Mark one row read: a family row by its server seen_at, any other by adding its id to the kv list. */

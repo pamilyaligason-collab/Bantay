@@ -269,6 +269,24 @@ describe('Today weather card, expanded', () => {
     expect(container.querySelectorAll('.td-hs li').length).toBe(12)
     expect(container.querySelector('.td-hs')!.textContent).not.toContain('–')
   })
+  it('S30 L6: raining now with a low chance shows the chip once; the action line says what to do, not Raining now again', () => {
+    m.wx = { ...base, code: 61, rainingNow: { value: true, source: 'model', ageMin: null } }
+    const { container } = render(<WeatherCard />)
+    expect(screen.getByTestId('rain-now').textContent).toMatch(/^Raining now/)
+    expect(container.querySelector('.td-wxh-line')!.textContent).toBe('Bring an umbrella if you go out.')
+    expect((container.textContent!.match(/Raining now/g) ?? []).length).toBe(1)
+  })
+  it('S30 L6: raining now with rain ending later shows the chip once and a plain end time, never Raining now twice', () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date('2026-10-20T02:00:00Z')) // 10:00 in Manila
+    const time = Array.from({ length: 12 }, (_, i) => `2026-10-20T${String(10 + i).padStart(2, '0')}:00`)
+    m.place = { weather: { lat: 9.645705, lon: 123.877951 }, zone: 'dampas', source: 'zone', settled: true, picked: true }
+    m.wx = { ...base, code: 61, rainingNow: { value: true, source: 'model', ageMin: null }, hourly: { time, prob: time.map((_, i) => (i < 3 ? 70 : 10)) } } // 70% for 10, 11, 12; dry from 1 PM
+    const { container } = render(<WeatherCard />)
+    expect(screen.getByTestId('rain-now').textContent).toMatch(/^Raining now/)
+    expect(container.querySelector('.td-wxh-line')!.textContent).toBe('Rain until 1 PM. Bring an umbrella.')
+    expect((container.textContent!.match(/Raining now/g) ?? []).length).toBe(1)
+    vi.useRealTimers()
+  })
   it('"as of" uses the place time zone when abroad, not Manila', () => {
     m.place = { weather: { lat: 32.78, lon: -96.8 }, zone: 'dampas', source: 'gps-abroad' }
     m.wx = { ...base, utcOffset: -5 * 3600, tz: 'America/Chicago', at: '2026-10-20T05:00:00Z' }

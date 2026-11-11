@@ -1,3 +1,4 @@
+import { zoneOf } from '../time/zone'
 import { countDoses } from '../health/doseCount'
 import { dayOf } from '../health/meds'
 import type { Reading } from '../health/ranges'
@@ -27,7 +28,7 @@ export function recap(i: { personId: string; readings: Reading[]; meds: Medicati
   const morning = new Set(top.concat(bottom).filter((r) => new Date(r.takenAt).getHours() < 12).map((r) => dayOf(r.takenAt)))
   let want = 0
   let done = 0
-  for (const d of manilaDaysEnding(i.now, 7)) {
+  for (const d of manilaDaysEnding(i.now, 7, zoneOf(i.personId))) {
     const c = countDoses({ meds: i.meds, takes: i.takes, personId: i.personId, now: i.now, days: [d] })
     if (c.want === 0) continue
     want++

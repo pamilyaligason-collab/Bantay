@@ -1,5 +1,6 @@
 import { Section } from '../look'
 import { usePlace } from '../location/useLocation'
+import { placeRegion } from '../location/region'
 import { cut, manilaTime, PAGASA_HOME, shownRows, signalLines, tone, usePagasa, usePlaceNames, type PagasaPlace } from './pagasa'
 import './pagasa.css'
 import { Icon } from '../shell/Icon'
@@ -9,13 +10,15 @@ export const PAGASA_NONE = 'No PAGASA bulletin read in the last 2 hours. Check P
 /** S27: points at the PAGASA bulletin and says what it says. Always renders; never says a place is safe. `place` picks the names looked for in the signal areas. */
 export function PagasaCard({ place }: { place: PagasaPlace | null }) {
   const d = usePagasa()
+  const away = placeRegion(place) === 'us' // S30 L8 (D4a): a member in the US keeps the Philippine alerts for the family home, labelled as the Philippines
   const names = usePlaceNames(place)
   if (d === undefined) return null
   const rows = shownRows(d)
   return (
-    <Section title="PAGASA" testId="pagasa-section">
+    <Section title={away ? 'Philippines: PAGASA' : 'PAGASA'} testId="pagasa-section">
       <div className="card pg" data-testid="pagasa-card" data-tone={tone(rows)}>
         {d?.saved && rows.length > 0 && <span className="pg-chip" role="status">Not updated since {manilaTime(d.readAt)}</span>}
+        {away && <p className="pg-sub">Philippine weather bulletin for your family's home area, not for where you are.</p>}
         {rows.length === 0 && <p>{PAGASA_NONE}</p>}
         {rows.map((r) => (
           <div key={r.dedupe_key} className="pg-row">

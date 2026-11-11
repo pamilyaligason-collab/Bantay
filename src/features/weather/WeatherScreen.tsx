@@ -9,6 +9,7 @@ import { track } from '../admin/events'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, feedStale, neverChecked, type Alert, type StaleSources } from '../safety/alerts'
 import { putKv, useKv } from '../safety/store'
 import { useOnline } from '../safety/LiveMaps'
+import { tempText, useWxUnits, windText } from './units'
 import { Icon, type IconName } from '../shell/Icon'
 import { GroupedList } from '../look/GroupedList'
 import { LargeTitle } from '../look/LargeTitle'
@@ -58,7 +59,6 @@ const Glyph = ({ kind }: { kind: Kind }) => <Icon name={kind} tone="weather" />
 /** Icon for the warning that tops the action line: cyclone, quake, flood, storm, heat, else a plain warning triangle. */
 const WARN_ICON: Record<string, IconName> = { tcws: 'typhoon', quake: 'quake', rainfall: 'flood', thunderstorm: 'storm', heat: 'therm', tsunami: 'flood' }
 
-const deg = (n: number | null) => (n == null ? 'n/a' : `${Math.round(n)}°`)
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
 const dayLabel = (date: string, i: number) => (i === 0 ? 'Today' : new Date(`${date}T12:00:00Z`).toLocaleDateString('en-PH', { weekday: 'short', timeZone: 'UTC' }))
@@ -195,6 +195,8 @@ function WarnRow({ warn, unchecked, never, name }: { warn: ReturnType<typeof wea
 
 function Body({ fc, name, locationOff, unchecked, never, point, stormFrom, stormPlace, alerts, warn, offline, online, bl, pause }: { fc: Forecast; name: string; locationOff: string | null; unchecked: boolean; never: boolean; point: LatLon; stormFrom: LatLon; stormPlace: string; alerts: Alert[]; warn: ReturnType<typeof weatherWarning>; offline: boolean; online: boolean; bl: BlendedState; pause: ReturnType<typeof useWxPause> }) {
   const now = Date.now()
+  const units = useWxUnits() // S30 L8 (B2): °F and mph on a US phone, °C and km/h otherwise; changeable in Settings > Display
+  const deg = (n: number | null) => tempText(n, units)
   const nl = nowLocal(fc, now)
   const today: Day | undefined = fc.daily[0]
   const c = fc.current
@@ -306,7 +308,7 @@ function Body({ fc, name, locationOff, unchecked, never, point, stormFrom, storm
       <SunArc fc={fc} now={now} />
 
       <section aria-label="Details" className="wx-tiles" data-testid="wx-details">
-        <div className="wx-tile"><span className="eyebrow">Wind</span><b>{c.wind == null ? 'n/a' : `${Math.round(c.wind)} km/h`}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${Math.round(c.gust)}`}</span></div>
+        <div className="wx-tile"><span className="eyebrow">Wind</span><b>{windText(c.wind, units)}</b><span className="wx-sub">{c.gust == null ? 'Gusts unknown' : `Gusts ${windText(c.gust, units).replace(/ (km\/h|mph)$/, '')}`}</span></div>
         <div className="wx-tile"><span className="eyebrow">Humidity</span><b>{c.humidity == null ? 'n/a' : `${Math.round(c.humidity)}%`}</b><span className="wx-sub">{c.humidity == null ? 'No data' : humidWord(c.humidity)}</span></div>
         <div className="wx-tile"><span className="eyebrow">UV today</span><b>{today?.uvMax == null ? 'n/a' : Math.round(today.uvMax)}</b><span className="wx-sub">{today?.uvMax == null ? 'No data' : uvWord(today.uvMax)}</span></div>
         <div className="wx-tile"><span className="eyebrow">Sunrise</span><b>{today?.sunrise ? clockIn(`${today.sunrise}:00Z`, 'UTC') : 'n/a'}</b><span className="wx-sub">{today?.sunset ? `Sunset ${clockIn(`${today.sunset}:00Z`, 'UTC')}` : 'No data'}</span></div>

@@ -3,6 +3,7 @@
 // an access token (cached until 5 minutes before it expires), and the message goes to the HTTP v1 API. No SDK, no dependency.
 // B-7: a message is built ONLY from a templates.ts id (fcmMessageFor): title/body = renderTemplate(id, {}) exactly, data = {t}. Never a name, a reading or a place.
 import { buildNotification, renderTemplate, TEMPLATES } from './templates.ts'
+import { hourIn, safeZone } from './tz.ts'
 
 export interface ServiceAccount { client_email: string; private_key: string; project_id: string; token_uri?: string }
 export type FcmChannel = 'carer_alerts' | 'carer_quiet'
@@ -88,28 +89,28 @@ export async function sendFcm(sa: ServiceAccount, token: string, msg: FcmMessage
   } catch { return null }
 }
 
-/** Is it 10 PM to 6 AM in Manila (the hours the Me screen promises quiet)? */
-export const inQuietHours = (d: Date) => { const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }).format(d)) % 24; return h >= 22 || h < 6 }
+/** Is it 10 PM to 6 AM on the recipient's clock (the hours the Me screen promises quiet)? tz = people.tz of the carer, Asia/Manila when unknown (S30 L8). */
+export const inQuietHours = (d: Date, tz?: string | null) => { const h = hourIn(safeZone(tz), d.getTime()); return h >= 22 || h < 6 }
 
 /** Alerts that must always ring loud, whatever the hour (decision 2.1.13). */
 const ALWAYS_LOUD_KINDS = new Set(['sos', 'mood_unwell', 'dose_missed'])
 const ALWAYS_LOUD_TEMPLATES = new Set(['rollcall_help'])
 /** carer_alerts (importance 5) or carer_quiet (importance 2): only a tone-normal alert between 22:00 and 06:00 Manila is quiet. */
-export function channelFor(o: { kind?: string | null; template: string; tone: 'urgent' | 'normal' }, now: Date): FcmChannel {
+export function channelFor(o: { kind?: string | null; template: string; tone: 'urgent' | 'normal' }, now: Date, tz?: string | null): FcmChannel {
   if ((o.kind && ALWAYS_LOUD_KINDS.has(o.kind)) || ALWAYS_LOUD_TEMPLATES.has(o.template)) return 'carer_alerts'
-  return o.tone === 'normal' && inQuietHours(now) ? 'carer_quiet' : 'carer_alerts'
+  return o.tone === 'normal' && inQuietHours(now, tz) ? 'carer_quiet' : 'carer_alerts'
 }
 
 /** The FCM message for a carer_alerts row, or null for a template this build does not know (not pushed, like web push).
  *  A carer's missed dose is the carer-class 'dose_watch' text (the same one the web push and the phone render), never the user's own dose_missed nudge. */
-export function fcmMessageFor(row: { kind?: string | null; template: string }, now: Date): FcmMessage | null {
+export function fcmMessageFor(row: { kind?: string | null; template: string }, now: Date, tz?: string | null): FcmMessage | null {
   if (row.kind === 'dose_missed') {
     const n = buildNotification({ t: 'dose_watch' })!
     return { notification: { title: n.title, body: n.body }, data: { t: 'dose_watch' }, android: { priority: 'high', notification: { channel_id: 'carer_alerts', tag: 'dose_watch' } } }
   }
   if (!Object.hasOwn(TEMPLATES, row.template)) return null
   const r = renderTemplate(row.template, {})
-  return { notification: { title: r.title, body: r.body }, data: { t: row.template }, android: { priority: 'high', notification: { channel_id: channelFor({ kind: row.kind, template: row.template, tone: r.tone }, now), tag: row.template } } }
+  return { notification: { title: r.title, body: r.body }, data: { t: row.template }, android: { priority: 'high', notification: { channel_id: channelFor({ kind: row.kind, template: row.template, tone: r.tone }, now, tz), tag: row.template } } }
 }
 
 /** What the caller does with a send status: 'ok' (count it, stamp last_ok_at), 'gone' (delete the row), 'bad' (this token was refused: count a failure),

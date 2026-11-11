@@ -1,3 +1,4 @@
+import { zoneOf } from '../time/zone'
 import type { MedTaken, Medication } from '../log/store'
 import type { AlertRow } from '../notify/store'
 import { manilaDaysEnding } from '../today/nextPick'
@@ -43,10 +44,11 @@ const at = (day: string) => new Date(`${day}T12:00:00`)
  *  taken (every due slot taken within 2 hours of its time, early or late), missed (a due slot was not), not due (no dose scheduled, or before it started) or pending (today, a slot still inside its 2 hours).
  *  A day with several slots shows its worst state. `taken` and `due` count doses, the same numbers countDoses gives for these 7 days. */
 export function weekStrip(med: Medication, takes: MedTaken[], now: Date): { cells: DayCell[]; taken: number; due: number } {
-  const today = manilaDay(now)
+  const tz = zoneOf(med.personId)
+  const today = manilaDay(now, tz)
   let taken = 0
   let due = 0
-  const cells = manilaDaysEnding(now, 7).map((day): DayCell => {
+  const cells = manilaDaysEnding(now, 7, tz).map((day): DayCell => {
     const n = countDoses({ meds: [med], takes, personId: med.personId, now, days: [day] })
     taken += n.done
     due += n.want
@@ -75,6 +77,6 @@ export function missNote(cells: DayCell[], alerts: AlertRow[], med: Medication):
 
 /** "5 of 7 doses on time this week" for the list, from the one shared counter; null when no dose has come due yet. */
 export function weekCounter(i: { meds: Medication[]; takes: MedTaken[]; personId: string; now: Date }): string | null {
-  const { done, want } = countDoses({ ...i, days: manilaDaysEnding(i.now, 7) })
+  const { done, want } = countDoses({ ...i, days: manilaDaysEnding(i.now, 7, zoneOf(i.personId)) })
   return want > 0 ? `${done} of ${want} ${want === 1 ? 'dose' : 'doses'} on time this week` : null
 }

@@ -54,6 +54,7 @@ export default function Overview() {
 
       <div className="sh-card sh-list st-list" data-testid="settings-list">
         {!out && member?.role === 'admin' && <NavRow icon="gear" title="Family admin tools" sub="Admins only" href="#admin" />}
+        {!out && member?.role === 'admin' && <NavRow icon="users" tint="amber" title="Admin dashboard" sub="Add, edit or remove members" href="/admin#/members" testId="admin-dashboard-row" />}
         {!out && <ViewAsRow />}
         <NavRow icon="bell" tint="red" title="Alerts and reminders" sub={quiet ? 'Quiet hours on · 10 PM to 6 AM' : 'Quiet hours off'} href="#me/alerts" />
         <NavRow icon="screen" tint="blue" title="Display" sub={`${label(TEXT_SIZES, isTextSize(textSize) ? textSize : 'normal')} text · ${label(THEMES, theme)}`} href="#me/display" />

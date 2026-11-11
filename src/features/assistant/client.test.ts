@@ -4,13 +4,15 @@ import { db } from '../../db'
 
 const tok = vi.hoisted(() => ({ value: null as string | null }))
 vi.mock('../auth/session', () => ({ getAccessToken: async () => tok.value }))
+const reg = vi.hoisted(() => ({ value: null as 'ph' | 'us' | null }))
+vi.mock('../location/region', () => ({ viewerRegion: async () => reg.value }))
 
 import { ask, assistantUrl } from './client'
 
 const res = (status: number, body: unknown = {}) => vi.fn(async (..._a: unknown[]) => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch & ReturnType<typeof vi.fn>
 
 describe('ask', () => {
-  beforeEach(async () => { tok.value = null; await db.kv.clear() })
+  beforeEach(async () => { tok.value = null; reg.value = null; await db.kv.clear() })
   it('maps 429 to limit and 503 to the generic failure', async () => {
     expect(await ask([], 'today', 'https://x.test', res(429))).toEqual({ error: 'limit' })
     expect(await ask([], 'today', 'https://x.test', res(503, { error: 'unavailable' }))).toEqual({ error: 'failed' })
@@ -24,6 +26,14 @@ describe('ask', () => {
     const g = res(429)
     await ask([], 'today', 'https://x.test', g)
     expect((g.mock.calls[0]![1] as RequestInit).headers).not.toHaveProperty('Authorization')
+  })
+  it.each([['us', 'us'], ['ph', 'ph'], [null, 'unknown']] as const)('sends the coarse region only (%s -> %s), never a position', async (viewer, sent) => {
+    reg.value = viewer
+    const g = res(429)
+    await ask([{ role: 'user', content: 'hi' }], 'today', 'https://x.test', g)
+    const body = JSON.parse(String((g.mock.calls[0]![1] as RequestInit).body))
+    expect(body.region).toBe(sent)
+    expect(Object.keys(body).sort()).toEqual(['messages', 'region', 'screen'])
   })
   it('privacy.ai off: no request is made at all (not even the token read), and the result is off', async () => {
     await db.kv.put({ key: 'privacy.ai', value: false })

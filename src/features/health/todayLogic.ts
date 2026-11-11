@@ -5,7 +5,7 @@ import { STEP_GOAL } from '../today/myWeekLogic'
 import { whenWords } from './kpisLogic'
 import { dayOf, type DoseState } from './meds'
 import { bpHeadlineArg } from './MetricScreen'
-import { bodyNodes, type Activity } from './model'
+import { bodyNodes, localDay, stepDayTotals, type Activity } from './model'
 import { toCanonicalReading, type Reading } from './ranges'
 import { dailyActivity, dailyCount, dailyMean, type Series } from './trendLogic'
 
@@ -28,8 +28,7 @@ export function todayTiles(i: { personId: string; readings: Reading[]; activity:
   const hr = latestToday(mine, 'heart_rate', i.now)
   const glasses = i.water.filter((w) => w.personId === i.personId && dayOf(w.drunkAt) === dayOf(i.now)).length
   const goalGl = i.goalMl == null ? null : goalGlasses(i.goalMl, i.goalSource) // null = no goal (the Water tile is dropped below)
-  const stepRows = i.activity.filter((a) => a.kind === 'steps' && typeof a.steps === 'number' && a.steps >= 0 && dayOf(a.startedAt) === dayOf(i.now)) // activity is already this person's (useActivity)
-  const steps = stepRows.reduce((s, a) => s + (a.steps ?? 0), 0)
+  const steps = stepDayTotals(i.activity).get(localDay(i.now.toISOString())) ?? null // activity is already this person's (useActivity); overlaps and a second source count once
   const sleep = bodyNodes([], i.activity, i.now).find((n) => n.id === 'sleep')!
   const taken = i.doses?.filter((d) => d.state === 'taken').length ?? 0
   const unit = (n: number, of: number) => (of > 0 ? Math.min(1, n / of) : null)
@@ -38,7 +37,7 @@ export function todayTiles(i: { personId: string; readings: Reading[]; activity:
     { code: 'bp', label: 'BP', tint: 'blue', href: '#health/metric/bp_systolic', empty: !sys, value: sys ? (dia != null ? `${formatNumber(sys.value)}/${formatNumber(dia)}` : formatNumber(sys.value)) : '--', sub: sys ? clock(sys.takenAt) : NONE, spark: dailyMean(mine, 'bp_systolic', i.now), ring: null },
     { code: 'pulse', label: 'Pulse', tint: 'red', href: '#health/metric/heart_rate', empty: !hr, value: hr ? formatNumber(hr.value) : '--', sub: hr ? `${hr.unit || 'bpm'} · ${clock(hr.takenAt)}` : NONE, spark: dailyMean(mine, 'heart_rate', i.now), ring: null },
     { code: 'water', label: 'Water', tint: 'teal', href: '#health/metric/water', empty: glasses === 0, value: glasses ? `${glasses}/${goalGl}` : '--', sub: glasses ? (glasses === 1 ? 'glass' : 'glasses') : 'Nothing logged today', spark: dailyCount(i.water.filter((w) => w.personId === i.personId).map((w) => w.drunkAt), i.now), ring: glasses > 0 && goalGl != null ? unit(glasses, goalGl) : null },
-    { code: 'steps', label: 'Steps', tint: 'amber', href: '#health/metric/steps', empty: stepRows.length === 0, value: stepRows.length ? steps.toLocaleString('en-US') : '--', sub: stepRows.length ? `of ${STEP_GOAL.toLocaleString('en-US')}` : NONE, spark: dailyActivity(i.activity, 'steps', i.now), ring: stepRows.length ? unit(steps, STEP_GOAL) : null },
+    { code: 'steps', label: 'Steps', tint: 'amber', href: '#health/metric/steps', empty: steps == null, value: steps != null ? steps.toLocaleString('en-US') : '--', sub: steps != null ? `of ${STEP_GOAL.toLocaleString('en-US')}` : NONE, spark: dailyActivity(i.activity, 'steps', i.now), ring: steps != null ? unit(steps, STEP_GOAL) : null },
     { code: 'sleep', label: 'Sleep', tint: 'purple', href: '#health/metric/sleep', empty: sleep.empty, value: sleep.value, sub: sleep.empty ? NONE : sleep.note, spark: dailyActivity(i.activity, 'sleep', i.now), ring: null },
     { code: 'meds', label: 'Medicines', tint: 'green', href: '#health/meds', empty: !i.doses?.length, value: i.doses?.length ? `${taken}/${i.doses.length}` : '--', sub: i.doses?.length ? 'taken' : i.doses ? (i.hasMeds === false ? 'No medicines yet' : 'None due today') : '', spark: [], ring: i.doses?.length ? unit(taken, i.doses.length) : null }
   ]

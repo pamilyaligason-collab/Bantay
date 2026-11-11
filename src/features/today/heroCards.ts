@@ -204,6 +204,11 @@ export function weatherActionLine(w: Wx | null, now: Date = new Date(), warning:
   // ML-51: the Weather screen says "Raining now" when no hour reaches 60%; Today says the same
   return (kept.some((l) => l.id === 'rain') ? kept : [...kept, { id: 'rain' as const, rank: 50, text: 'Raining now' }].sort((a, b) => b.rank - a.rank))[0] ?? null
 }
+/** S30 L6 (S29 leftover): the hero already shows the "Raining now" chip, so its action line never says those words again; it says what to do. Other text passes through (a run with an end time is worded by rainSummary in WeatherCard, so only the bare line reaches here). */
+export function underRainChip(text: string): string {
+  if (text === 'Raining now') return 'Bring an umbrella if you go out.'
+  return text
+}
 export function weatherAction(w: Wx | null, now: Date = new Date(), warning: WarningIn | null = null): string | null {
   return weatherActionLine(w, now, warning, w ? isRainingNow(w) : false)?.text ?? null
 }

@@ -105,6 +105,14 @@ describe('LockScreen start-finger', () => {
     render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
     expect(await screen.findByText('31° partly cloudy')).toBeTruthy()
   })
+  it('S30 L8 r2: the glance uses the Today units: 30.6 C is 87°F when Fahrenheit is chosen (the same helper as Today)', async () => {
+    hang()
+    await db.kv.put({ key: 'wx.units', value: 'us' })
+    await db.kv.put({ key: 'weather.forecast.6.11,125.17', value: { fetchedAt: new Date().toISOString(), tz: 'Asia/Manila', utcOffset: 28800, current: { time: '', temp: 30.6, humidity: 70, feels: 36, code: 2, wind: 10, gust: 20, uv: 6 }, hourly: [], daily: [] } })
+    render(<LockScreen name="Mama" onUnlocked={() => {}} onUsePin={() => {}} onNotYou={() => {}} />)
+    expect(await screen.findByText('87°F partly cloudy')).toBeTruthy()
+    await db.kv.delete('wx.units')
+  })
   it('names the place when the cached forecast is for a home zone', async () => {
     hang()
     await db.kv.put({ key: 'weather.forecast.6.2,125.19', value: { fetchedAt: new Date().toISOString(), tz: 'Asia/Manila', utcOffset: 28800, current: { time: '', temp: 30.6, humidity: 70, feels: 36, code: 2, wind: 10, gust: 20, uv: 6 }, hourly: [], daily: [] } })

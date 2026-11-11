@@ -3,6 +3,8 @@
 import { type AlertRow, gdacsCurrentIds, parseAir, parseGdacs, parseUsgs, ZONES } from './parse.ts'
 import { capUrls, FEED_URL, parseFeed, parsePagasa, signalOf } from './pagasa.ts'
 import { EONET_URL, parseEonet } from './eonet.ts'
+import { DEFAULT_TZ, safeZone } from '../_shared/tz.ts'
+import { TEMPLATES } from '../_shared/templates.ts'
 
 // Sources verified WORKS in research (2026-10-17, PAGASA feed 2026-10-26, EONET 2026-11-04). PHIVOLCS quake and volcano pages and PAGASA bulletin PDFs are
 // HTML or PDF scrape only: skipped on purpose (see docs/ALERTS.md). phivolcs.ts has parsers for them that are NOT listed here; wiring them is a change to this list, made only when the owner says so. GDACS and Open-Meteo keep running when the PAGASA feed fails.
@@ -51,6 +53,8 @@ export interface Port {
   end?(ids: string[], endedAt: string): Promise<void>
   /** Person ids of members with a login (the family watches both home zones, D-27). */
   members(): Promise<string[]>
+  /** S30 G4: person id -> people.tz. Empty before migration 0065 (the column is not there yet: everyone is Asia/Manila). Any other read error throws. Optional so older fakes still type. */
+  zones?(): Promise<Map<string, string | null>>
   /** notify_family(person, 'hazard', template, ref, 'self') with the service role: rows inserted (0 for a repeated ref). */
   notify(personId: string, template: string, ref: string): Promise<number>
   /** dose-watch {mode:'flush'}: Web Push for the new rows (browser users only). */
@@ -98,6 +102,16 @@ export function tier1(rows: AlertRow[], now: number, prior: Map<string, { level?
   })
 }
 
+/** The error a read gives when people.tz is not there yet (0065 not applied): Postgres 42703 or PostgREST's message naming column tz. A copy of dose-watch/logic.ts isUndefinedColumn (a test keeps them equal); any other error is NOT this. */
+export const isUndefinedColumn = (e: unknown): boolean => {
+  const x = e as { code?: unknown; message?: unknown } | null
+  return !!x && (x.code === '42703' || (typeof x.message === 'string' && /column[^\n]*\btz\b[^\n]*does not exist/i.test(x.message)))
+}
+
+/** S30 G4 (owner decision a): every tier-1 hazard row here is a Philippine one, so a recipient who is not on Asia/Manila gets the `<id>_ph` twin of the template, whose title starts "Philippines:".
+ *  Only when that twin exists in the shared templates: an older template file keeps the plain id, so a push is never lost to a missing id. */
+export const phTemplate = (template: string): string => (Object.hasOwn(TEMPLATES, `${template}_ph`) ? `${template}_ph` : template)
+
 /** One hazard row per member per live tier-1 notice (the database drops a repeated ref), then one flush when anything new was written. Never throws. */
 export async function notifyTier1(port: Port, rows: AlertRow[], now: number, mayFlush: () => boolean = () => true, prior?: Existing): Promise<number> {
   const notices = tier1(rows, now, prior)
@@ -110,9 +124,11 @@ async function sendNotices(port: Port, notices: { ref: string; template: string 
   let written = 0
   let failed = false
   try {
+    const zones = (await port.zones?.()) ?? new Map<string, string | null>()
     for (const person of await port.members()) {
+      const abroad = safeZone(zones.get(person)) !== DEFAULT_TZ // unknown tz is Manila: unchanged
       for (const n of notices) {
-        try { written += await port.notify(person, n.template, n.ref) } catch { failed = true /* one member failing must not stop the others */ }
+        try { written += await port.notify(person, abroad ? phTemplate(n.template) : n.template, n.ref) } catch { failed = true /* one member failing must not stop the others */ }
       }
     }
   } catch { return { written, failed: true } }
@@ -120,7 +136,17 @@ async function sendNotices(port: Port, notices: { ref: string; template: string 
   return { written, failed }
 }
 
-export async function runIngest(port: Port, fetchText: (url: string) => Promise<string>, now: number, clock: () => number = Date.now): Promise<Result> {
+/** Why a source failed, as a word that can become a flag in the counts-only heartbeat (no error text ever leaves): the fetch timed out, the host answered HTTP 4xx/5xx, the payload was not what the parser knows, or anything else (a write). */
+export type FailKind = 'timeout' | 'http' | 'payload' | 'other'
+export function failKind(e: unknown): FailKind {
+  const { name, message: msg } = (typeof e === 'object' && e !== null ? e : {}) as { name?: string; message?: string } // duck-typed: a DOMException from AbortSignal.timeout is not always an Error
+  if (name === 'TimeoutError' || name === 'AbortError') return 'timeout'
+  if (/^HTTP\d{3}$/.test(msg ?? '')) return 'http'
+  if (name === 'SyntaxError' || msg === 'unexpected payload') return 'payload'
+  return 'other'
+}
+
+export async function runIngest(port: Port, fetchText: (url: string) => Promise<string>, now: number, clock: () => number = Date.now, onFail: (source: string, kind: FailKind) => void = () => undefined): Promise<Result> {
   const result: Result = {}
   const started = clock()
   const mayFlush = () => clock() - started <= FLUSH_BUDGET_MS
@@ -160,7 +186,8 @@ export async function runIngest(port: Port, fetchText: (url: string) => Promise<
       await port.setStale(s.source, false)
       result[s.source] = { ok: true, rows: rows.length }
       await notifyTier1(port, rows, now, mayFlush, old) // every source: tier1() picks only the five urgent cases
-    } catch {
+    } catch (e) {
+      onFail(s.source, failKind(e))
       // Degraded comms is the design centre (B-4): keep what we had, say it is old. A failing stale-flag write is swallowed: the next run retries.
       await port.setStale(s.source, true).catch(() => undefined)
       result[s.source] = { ok: false, rows: 0 }

@@ -90,9 +90,9 @@ describe('freshness', () => {
   })
   it('the amber line names the time (Manila) and the radio', () => {
     const t = outdatedLine('2026-10-27T06:00:00Z')
-    expect(t).toMatch(/^Alerts last checked .*2026.*\. They may be out of date\. Check PAGASA or listen to the radio\.$/)
+    expect(t).toMatch(/^Warnings last checked .*2026.*\. They may be out of date\. Check PAGASA or listen to the radio\.$/)
     expect(t).toContain('2:00') // 06:00 UTC is 2:00 pm in Manila
-    expect(outdatedLine(null)).toMatch(/not been checked on this phone yet\. They may be out of date\./)
+    expect(outdatedLine(null)).toMatch(/not been checked yet. They may be out of date\./)
   })
 })
 

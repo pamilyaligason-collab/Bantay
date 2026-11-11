@@ -182,7 +182,7 @@ function QuickDial({ place }: { place: Place }) {
               return rows.length ? (
                 <div key={k} className="sf-kind">
                   <h3 className="sf-kind-h">{k}</h3>
-                  <GroupedList label={`${set.header}: ${k}`}>{rows.map((e) => <DialRow key={e.id} e={e} onInfo={setInfo} abroad={plan.abroad} />)}</GroupedList>
+                  <GroupedList label={`${set.header}: ${k}`}>{rows.map((e) => <DialRow key={e.id} e={e} onInfo={setInfo} abroad={plan.intl} />)}</GroupedList>
                 </div>
               ) : null
             })}

@@ -5,7 +5,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { extractItems } from './extract.ts'
-import { type Port, runDaPrices } from './prices.ts'
+import { getSameSite, type Port, runDaPrices } from './prices.ts'
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 const MAX_PDF = 5_000_000 // the real file is about 100 KB; a bigger answer is not it
@@ -18,7 +18,7 @@ function same(a: string, b: string): boolean {
   return d === 0
 }
 
-const get = (url: string, accept: string) => fetch(url, { signal: AbortSignal.timeout(20_000), headers: { 'User-Agent': 'FamilyBantay/1.0 (+market prices card)', Accept: accept } })
+const get = (url: string, accept: string) => getSameSite((u) => fetch(u, { signal: AbortSignal.timeout(20_000), redirect: 'manual', headers: { 'User-Agent': 'FamilyBantay/1.0 (+market prices card)', Accept: accept } }), url)
 
 Deno.serve(async (req) => {
   if (req.method !== 'POST') return reply(405, { ok: false, error: 'bad_input' })
@@ -50,7 +50,8 @@ Deno.serve(async (req) => {
     return await extractItems(buf)
   }
   let result
-  try { result = await runDaPrices(port, fetchText, fetchItems, Date.now()) } catch { result = { ok: false, rows: 0 } }
-  await heartbeat(sb, 'da-prices', result.ok, { rows: result.rows })
+  let blocked = false
+  try { result = await runDaPrices(port, fetchText, fetchItems, Date.now()) } catch (e) { result = { ok: false, rows: 0 }; blocked = e instanceof Error && e.message === 'blocked' }
+  await heartbeat(sb, 'da-prices', result.ok, { rows: result.rows, blocked })
   return reply(result.ok ? 200 : 502, result)
 })
