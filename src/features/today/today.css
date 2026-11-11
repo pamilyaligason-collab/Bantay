@@ -1,6 +1,7 @@
 /* Today (mockup v6, D-66). Everything is scoped with td-. Colours come from tokens.css so dark mode follows. */
 .td-h1 { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .td-sub { font-size: 14px; color: var(--muted); }
+.td-sub.td-both { font-size: 17px; font-weight: 600; color: var(--ink); } /* S30 L9: the typed temperature in both units is a value the person needs, so it keeps the 17 px body floor */
 .td-grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .td-row { display: flex; align-items: center; gap: 12px; }
 .td-row.between { justify-content: space-between; }

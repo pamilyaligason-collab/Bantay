@@ -210,7 +210,7 @@ function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: stri
               </div>
             )}
             <label>{open === 'temp' ? `Temperature (°${tempUnit})` : 'Hours slept last night'}<input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} placeholder={open === 'temp' ? (tempUnit === 'F' ? '98.6' : '36.8') : '7'} /></label>
-            {open === 'temp' && parseTemp(a, tempUnit) && <p className="td-sub" aria-live="polite">{tempBoth(parseTemp(a, tempUnit)!)}</p>}
+            {open === 'temp' && parseTemp(a, tempUnit) && <p className="td-sub td-both" aria-live="polite">{tempBoth(parseTemp(a, tempUnit)!)}</p>}
             {err && <p className="td-err" role="alert">{err}</p>}
             <button type="submit" className="td-pill light solid" disabled={busy}>Save</button>
           </form>

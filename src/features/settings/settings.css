@@ -46,3 +46,4 @@
 .st-search input { min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); font: inherit; font-size: 17px; padding: 0 14px; }
 .st-rad[aria-pressed="true"] { font-weight: 700; }
 .st-radios .sh-sub { margin: 8px 4px; }
+.sh-sub.st-note15 { font-size: 15px; line-height: 21px; } /* the home place sheet keeps the 15 px meta floor */

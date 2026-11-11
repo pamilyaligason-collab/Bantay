@@ -50,16 +50,16 @@ function HomeSheet({ saved, onClose }: { saved: ReturnType<typeof asHome>; onClo
       <div className="sh-sheet" role="dialog" aria-modal="true" aria-label="My home place" onClick={(e) => e.stopPropagation()}>
         <span className="sh-grab" />
         <h2 className="sh-h2">My home place</h2>
-        <p className="sh-sub">Bantay uses it for your weather, your place name and your local time when your phone has no position. It stays on this phone. Alerts for the family in the Philippines do not change.</p>
-        <label className="st-search"><span className="sh-sub">Search a city</span><input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder="Houston" autoComplete="off" /></label>
+        <p className="sh-sub st-note15">Bantay uses it for your weather, your place name and your local time when your phone has no position. It stays on this phone. Alerts for the family in the Philippines do not change.</p>
+        <label className="st-search"><span className="sh-sub st-note15">Search a city</span><input type="search" value={text} onChange={(e) => setText(e.target.value)} placeholder="Houston" autoComplete="off" /></label>
         <div role="group" aria-label="Places" className="st-radios">
-          {results.length === 0 && <p className="sh-sub" role="status">No city in the list. Use your phone's place below.</p>}
+          {results.length === 0 && <p className="sh-sub st-note15" role="status">No city in the list. Use your phone's place below.</p>}
           {results.map((c) => (
             <button key={c.name} type="button" className="st-rad" aria-pressed={saved?.name === c.name} onClick={() => void pick(c)}>{c.name}</button>
           ))}
         </div>
         <button type="button" className="sh-pill sh-primary sh-block" disabled={busy} onClick={() => void useHere()}>Use my phone's place now</button>
-        {msg && <p className="sh-sub" role="status">{msg}</p>}
+        {msg && <p className="sh-sub st-note15" role="status">{msg}</p>}
         {saved && <button type="button" className="sh-pill sh-ghost sh-block" onClick={() => void clearHome().then(close)}>Remove my home place</button>}
         <button type="button" className="sh-pill sh-ghost sh-block" onClick={close}>Cancel</button>
       </div>
