@@ -27,6 +27,7 @@ export const JOBS = [
   { job: 'world-news', label: 'World news feed', every: 'Every 6 hours', staleMin: 8 * 60 }, // red after a missed run plus two hours
   { job: 'lotto-pcso', label: 'Lotto results feed', every: 'Every 6 hours', staleMin: 8 * 60 },
   { job: 'yt-feed', label: 'Regional news videos', every: 'Every 30 min', staleMin: 90 }, // red after two missed runs plus half an hour
+  { job: 'watch-feed', label: 'Watch shelves feed', every: 'Daily 05:00', staleMin: 26 * 60 + 30 }, // S33: red after one missed daily run plus margin
   { job: 'pagasa-drought', label: 'PAGASA climate outlook', every: 'Daily', staleMin: 26 * 60 + 30 }, // red after one missed daily run plus margin
   { job: 'integrity-check', label: 'Data integrity check', every: 'Nightly 03:30', staleMin: 26 * 60 + 30 } // red after one missed night plus margin
 ] as const
