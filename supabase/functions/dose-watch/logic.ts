@@ -43,7 +43,7 @@ export const manilaDay = (ms: number) => new Date(ms + MANILA_OFFSET_MS).toISOSt
 /** True for the error a read gives when people.tz is not there yet (migration 0065 not applied): Postgres 42703 (undefined column), or PostgREST's message naming column tz. Any other error (a timeout, a policy, a dropped link) is NOT this. */
 export const isUndefinedColumn = (e: unknown): boolean => {
   const x = e as { code?: unknown; message?: unknown } | null
-  return !!x && (x.code === '42703' || (typeof x.message === 'string' && /column[^\n]*\btz\b/i.test(x.message)))
+  return !!x && (x.code === '42703' || (typeof x.message === 'string' && /column[^\n]*\btz\b[^\n]*does not exist/i.test(x.message)))
 }
 /** The zone a medicine's person lives on (people.tz), Asia/Manila when unknown. A bad name never reaches Intl. */
 export const zoneOfMed = (m: Pick<MedRow, 'people'>): string => safeZone(m.people?.tz ?? DEFAULT_TZ)
