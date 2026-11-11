@@ -1,4 +1,4 @@
-// watch-feed back catalogue (S34): older uploads of the same 7 verified channels -> watch_videos rows with evergreen = true (the Watch shelves' "More from these channels").
+// watch-feed back catalogue (S34): older uploads of the same 7 verified channels -> watch_videos rows with evergreen = true (shown after the New videos, no tag).
 // Needs YT_API_KEY (YouTube Data API playlistItems on each channel's uploads playlist; the RSS feed holds only the newest 15). Same filters as the daily run EXCEPT the age limit; only videos older than KEEP_DAYS,
 // so a fresh row (the daily run's) is never flipped to evergreen. Existing evergreen rows are re-checked with oEmbed and deleted when they no longer play.
 import { API_URL, parsePlaylist, uploadsPlaylist } from '../yt-feed/feed.ts'

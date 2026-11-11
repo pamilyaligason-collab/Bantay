@@ -13,6 +13,8 @@ export const PURGE_DAYS = 60
 export const PER_SHELF = 10
 export const PER_CHANNEL = 5 // so one chatty channel (a daily forecast, a recipe a day) cannot fill a shelf alone
 export const OEMBED = 'https://www.youtube.com/oembed?format=json&url='
+/** YouTube oEmbed answer for one video: 200 plays here; 400, 401 (embedding off) and 404 (removed or private) are definite no; anything else (429 rate limit, 5xx, 403) is unknown and throws, so a passing YouTube outage never deletes a stored video. */
+export const oembedPlayable = (status: number): boolean => { if (status === 200) return true; if (status === 400 || status === 401 || status === 404) return false; throw new Error(`oembed ${status}`) }
 
 /** Every channel id below was read from the channel's own page and its RSS feed fetched on VERIFIED_ON: the feed answered 200, its author name matches, and the newest upload is under 60 days old.
  *  PAGASA and Philippine Red Cross are also the channels of the checked videos already in ready.json. */

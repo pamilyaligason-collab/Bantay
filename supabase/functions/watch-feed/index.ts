@@ -4,7 +4,7 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { type BackfillPort, type BackfillResult, runBackfill } from './backfill.ts'
-import { OEMBED, type Port, runWatch, type WatchRow } from './feed.ts'
+import { OEMBED, oembedPlayable, type Port, runWatch, type WatchRow } from './feed.ts'
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 
@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
   const playable = async (id: string) => {
     const res = await fetch(OEMBED + encodeURIComponent('https://www.youtube.com/watch?v=' + id), { signal: AbortSignal.timeout(8_000), headers: HEADERS })
     await res.body?.cancel() // only the status matters
-    return res.status === 200
+    return oembedPlayable(res.status)
   }
   if (mode === 'backfill') {
     // S34: the back catalogue (needs YT_API_KEY, and migration 0068 for the evergreen column). Counts only in the heartbeat.
