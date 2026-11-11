@@ -25,3 +25,11 @@ A lane that needs a file another lane owns writes it in `needs`, never edits it.
 - Rule A (D-184) still holds for any UI change (e2e/s29-cards.spec.ts at 4 sizes).
 - Never deploy, push, apply SQL or call live functions with writes. The orchestrator does.
 - Playwright: `--workers=1` (memory is tight; another project runs dev servers on 5182/5183/5191/5291).
+
+## Wave 3 (Lloyd 2026-11-11: "proceed and close all open items")
+| Lane | Owns (only these) | PW_PORT | Migration no. |
+|---|---|---|---|
+| L6 round 2 | L6 files above + src/features/safety/alerts.ts outdatedLine wording (one shared never-checked sentence) | 5316 | none |
+| L8 (merged) | Texas round 1-2: time zone per person, units, 988, labelled PH alerts | 5318 | 0065 |
+| L9 Texas client leftovers | src/features/location/** (home place), src/features/settings/** (My home place, digest time), src/features/garden/** (Plant route outside PH), src/features/family/** (map fit, CarerCards), src/features/health/** temperature input + zone-reactive hooks, src/features/time/**, e2e/s30-texas*.spec.ts | 5319 | none (home place stays on the phone) |
+| L10 Server + Jack region + base test fixes | supabase/functions/ask/**, supabase/functions/alerts-ingest/** (push titles), supabase/functions/world-news/**, src/features/assistant/** request body only, src/features/notify/inApp*, src/features/sensors/** steps-dedupe test | 5320 | none |
