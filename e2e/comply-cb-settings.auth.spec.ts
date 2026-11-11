@@ -37,7 +37,7 @@ for (const scheme of ['light', 'dark'] as const) {
       await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
       await expect(page.getByText('Family admin tools')).toBeVisible()
       const rows = await rowBoxes(page, '[data-testid="settings-list"] > .st-row')
-      expect(rows.length).toBe(8) // admin: Family admin tools, Alerts, Display, Family, Phone, Privacy, Sign-in, About (View as is a look/Row)
+      expect(rows.length).toBe(10) // admin: Family admin tools, Admin dashboard, Alerts, Display, My home place, Family, Phone, Privacy, Sign-in, About (View as is a look/Row)
       for (const r of rows) { expect(r.h).toBeGreaterThanOrEqual(56); expect(r.chip).toBe(32); expect(r.title).toBe(17) } // board: 56 px rows, 32 px chip, 17 px title
       const radius = await page.locator('[data-testid="settings-list"]').evaluate((e) => getComputedStyle(e).borderRadius)
       expect(radius).toBe('16px') // board .grp
