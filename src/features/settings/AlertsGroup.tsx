@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useKv } from '../shell/useKv'
 import { digestTimeLine } from '../time/digestTime'
+import { getZone, subscribeZones } from '../time/zone'
 import { AlarmHealthRow } from '../phonecheck/AlarmHealthRow'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
 import { useKvValue } from '../phonecheck/useKvValue'
@@ -36,7 +37,7 @@ function WorldAlertsLater() {
       <div className="sh-card sh-list st-list" data-testid="world-alerts-later">
         <LaterRow icon="warn" tint="red" title="Hazards near family" sub="Instant. Home zones, plus members who share their place." />
         <LaterRow icon="bolt" tint="amber" title="Philippines-wide warnings" sub="Instant when urgent, otherwise in the digest." />
-        <LaterRow icon="clock" tint="green" title="Daily digest time" sub={`World big events and news, once a day, at ${digestTimeLine()}.`} />
+        <LaterRow icon="clock" tint="green" title="Daily digest time" sub="Pick your own time. Everyone gets it at the same time for now." />
         <LaterRow icon="msg" tint="blue" title="SMS fallback" sub="Text message if push does not arrive. Carrier charges may apply." />
       </div>
       <div className="sh-card st-later-card">Not on yet. These need Bantay's server to remember a choice for each person. Today Bantay alerts everyone when a PAGASA wind signal covers a home zone, and admins can send a storm, flood or heat warning. Other warnings show on Safety when you open Bantay. Your phone's own carrier alerts (cell broadcast) work even without Bantay.</div>
@@ -47,10 +48,11 @@ function WorldAlertsLater() {
 /** Settings > Alerts and reminders (#me/alerts), as the Settings board: Alerts list, "This phone" (push, quiet hours, alarms), "For carers" (the 8 PM summary: carers only), World alerts (Later). */
 export default function AlertsGroup() {
   const [quiet, setQuiet] = useKv<boolean>('quiet.on', true)
+  const tz = useSyncExternalStore(subscribeZones, getZone, getZone) // the digest time is read on this member's own clock, and follows a zone change
   return (
     <Group title="Alerts and reminders" testId="settings-alerts">
       <div className="sh-card sh-list st-list">
-        <NavRow icon="file" tint="red" title="Alerts list" sub="Alert list and history" href="#notif" />
+        <NavRow icon="file" tint="red" title="Alerts list" sub={`Alert list and history. The daily safety digest comes at ${digestTimeLine(new Date(), tz)}.`} href="#notif" />
       </div>
       <div className="st-h"><h2>This phone</h2></div>
       <div className="sh-card sh-list st-list">

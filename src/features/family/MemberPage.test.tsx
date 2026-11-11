@@ -1,5 +1,5 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('./roster', async (orig) => ({
@@ -9,11 +9,12 @@ vi.mock('./roster', async (orig) => ({
 }))
 const acc = vi.hoisted(() => ({ v: true as boolean | null }))
 vi.mock('./reportData', async (orig) => ({ ...(await orig<typeof import('./reportData')>()), useReportAccess: () => acc.v }))
-import MemberPage, { todayView, whenAgo } from './MemberPage'
+import MemberPage, { todayView, useToday, whenAgo } from './MemberPage'
+import { setPersonZones, setSelf } from '../time/zone'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 
-afterEach(() => { cleanup(); vi.useRealTimers() })
+afterEach(() => { cleanup(); vi.useRealTimers(); setPersonZones({}, null); setSelf(null) })
 const now = new Date(2026, 9, 27, 14, 0) // 2:00 PM
 const med = (name: string, time: string, id: string) => ({ personId: 'p2', name, medStatus: 'active', schedule: { v: 1, times: [time] }, serverId: id }) as never
 const iso = (h: number, m = 0, d = 27) => new Date(2026, 9, d, h, m).toISOString()
@@ -44,6 +45,20 @@ describe('todayView (hand-computed at 2:00 PM)', () => {
     expect(todayView({ ...none, readings: [r('bp_systolic', 118, 7)] }).bp).toBeNull()
   })
   it('whenAgo says Yesterday for yesterday', () => expect(whenAgo(iso(21, 5, 26), now)).toBe('Yesterday 9:05 PM'))
+})
+
+describe('useToday follows the person\'s zone (S30 L9)', () => {
+  it('a 7:30 PM dose is Later on the Manila clock (10:00 AM) and Due now once people.tz says Chicago (Mon 8:00 PM)', async () => {
+    await ldb.medications.clear()
+    await ldb.medications.add({ personId: 'p2', name: 'Evening', medStatus: 'active', schedule: { v: 1, times: ['19:30'] }, serverId: 'ev', clientId: 'c-ev', startedOn: '2026-11-01' } as never)
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-12-01T02:00:00Z')) // Manila Tue 10:00, Chicago Mon 20:00
+    setSelf('me')
+    const { result } = renderHook(() => useToday('p2'))
+    await waitFor(() => expect(result.current.doses.map((d) => d.word)).toEqual(['Later']))
+    act(() => setPersonZones({ p2: 'America/Chicago' }, 'me'))
+    expect(result.current.doses.map((d) => d.word)).toEqual(['Due now'])
+  })
 })
 
 describe('MemberPage', () => {

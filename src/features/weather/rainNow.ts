@@ -31,5 +31,7 @@ export function isRainingNow(w: { code?: number | null; precip?: number | null; 
 
 /** "Location off: showing your home area" (the place itself is the header pill's, so it is not said twice) when no fix was found and no zone was picked by hand (the home zone is only the fallback); else null. */
 export function locationOffNote(place: { source: string; zone: string; picked?: boolean; settled?: boolean } | null): string | null {
-  return place && place.settled !== false && place.source === 'zone' && place.picked === false ? 'Location off: showing your home area' : null
+  if (place?.settled === false) return null
+  if (place?.source === 'home') return 'Location off: showing your home place' // S30 L9: the member's own saved place stands in for the zone
+  return place && place.source === 'zone' && place.picked === false ? 'Location off: showing your home area' : null
 }

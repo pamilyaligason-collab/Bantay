@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Medication } from '../log/store'
 import { setPersonZones, setSelf, setZone } from '../time/zone'
@@ -30,6 +30,15 @@ describe('MissedDoseActions (lock-missed)', () => {
     render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
     expect(screen.getByRole('link', { name: 'Call Mama Rosa' }).getAttribute('href')).toBe('tel:+639171234567')
     expect(screen.getByRole('link', { name: 'Message the family' }).getAttribute('href')).toBe('#family/messages')
+  })
+  it("re-renders when the person's zone arrives late: 02:10Z is Manila 10-26 but Chicago 10-25, so the 10-26 slot is no longer today's", () => {
+    setSelf('me')
+    render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
+    expect(screen.getByRole('button', { name: 'Mark taken for Mama Rosa' })).toBeTruthy() // people.tz not known yet: Manila
+    act(() => setPersonZones({ p1: 'America/Chicago' }, 'me'))
+    expect(screen.queryByRole('button', { name: 'Mark taken for Mama Rosa' })).toBeNull()
+    act(() => setPersonZones({ p1: 'Asia/Manila' }, 'me'))
+    expect(screen.getByRole('button', { name: 'Mark taken for Mama Rosa' })).toBeTruthy()
   })
   it('no phone number: no tel link, a link to her page instead (never a blank number)', () => {
     h.phone = null

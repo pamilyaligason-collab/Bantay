@@ -43,7 +43,7 @@ function HomeSheet({ saved, onClose }: { saved: ReturnType<typeof asHome>; onClo
     setBusy(false)
     if (l?.source !== 'gps') return setMsg('We could not find your location. Turn on Location on your phone, go near a window, and try again.')
     const near = nearestCity(l)
-    await pick({ name: near?.name ?? 'My current place', lat: r2(l.lat), lon: r2(l.lon), tz: usable(phoneZone()) ?? near?.tz })
+    await pick({ name: near?.name ?? 'My current place', lat: r2(l.lat), lon: r2(l.lon), tz: near?.tz ?? usable(phoneZone()) }) // a listed city knows its own zone; a phone still on Manila time after a flight must not save Houston as Asia/Manila
   }
   return createPortal(
     <div className="sh sh-sheet-wrap" onClick={close}>

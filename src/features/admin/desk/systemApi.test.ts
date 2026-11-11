@@ -21,6 +21,16 @@ describe('job status (red when failed or older than 30 minutes)', () => {
     const failed = jobStatus({ job: 'dose-watch', ran_at: min(1), ok: false }, NOW)
     expect(failed.tone).toBe('bad'); expect(failed.text).toMatch(/Failed 8:59/)
   })
+  it('a run with 4 of 5 sources fine is amber "Working, one source down", not red; all five down, or none counted, is red', () => {
+    const r = (summary: Record<string, unknown> | null, ok = false) => jobStatus({ job: 'alerts-ingest', ran_at: min(5), ok, summary }, NOW, 60)
+    expect(r({ sources_ok: 4, sources_failed: 1 })).toEqual({ tone: 'warn', text: 'Working, one source down (8:55 AM)' })
+    expect(r({ sources_ok: 3, sources_failed: 2 }).text).toBe('Working, 2 sources down (8:55 AM)')
+    expect(r({ sources_ok: 0, sources_failed: 5 }).tone).toBe('bad')
+    expect(r({ rows: 3 }).tone).toBe('bad') // a failed run with no source counts stays failed
+    expect(r(null).tone).toBe('bad')
+    expect(r({ sources_ok: 5, sources_failed: 0 }, true).tone).toBe('ok')
+    expect(jobStatus({ job: 'alerts-ingest', ran_at: min(90), ok: false, summary: { sources_ok: 4, sources_failed: 1 } }, NOW, 60).tone).toBe('bad') // partial but stale: stopped
+  })
   it('never ran or unreadable time is amber (unknown), not red', () => {
     expect(jobStatus(null, NOW).tone).toBe('warn')
     expect(jobStatus(undefined, NOW).tone).toBe('warn')

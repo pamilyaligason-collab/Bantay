@@ -88,8 +88,15 @@ for (const size of SIZES) {
         await expect.poll(() => pinInside(page, 'Mama Rosa')).toBe(true) // the Philippines fills the map, not a corner of the Pacific
         await expect.poll(() => pinInside(page, 'Joy')).toBe(true)
         expect(await pinInside(page, 'Rey')).toBe(false) // the Texas pin is far outside the box
+        // ML-44: every far chip sits inside the map box, inset like the "Online map" chip (8px), at both widths
+        const insets = () => page.evaluate(() => {
+          const map = document.querySelector('[data-testid="place-map"]')!.getBoundingClientRect()
+          return [...document.querySelectorAll('[data-testid="place-far"] button')].map((b) => { const r = b.getBoundingClientRect(); return { top: r.top - map.top, right: map.right - r.right, left: r.left - map.left } })
+        })
+        for (const i of await insets()) { expect(i.top).toBeGreaterThanOrEqual(7.5); expect(i.right).toBeGreaterThanOrEqual(7.5); expect(i.left).toBeGreaterThanOrEqual(7.5) }
         await shot(page, 'family-map-far', size, scheme)
         await chip.click()
+        for (const i of await insets()) { expect(i.right).toBeGreaterThanOrEqual(7.5); expect(i.left).toBeGreaterThanOrEqual(7.5) }
         await expect.poll(() => pinInside(page, 'Mama Rosa')).toBe(false)
         await expect(far.getByRole('button', { name: 'Back to everyone nearby' })).toBeVisible()
         await shot(page, 'family-map-panned', size, scheme)
@@ -99,9 +106,10 @@ for (const size of SIZES) {
 
       test('Settings > Alerts says the daily digest time on this phone\'s clock', async ({ page }) => {
         await open(page, '/#me/alerts', size, scheme)
-        const row = page.getByTestId('world-alerts-later')
-        await expect(row).toContainText('6:45 AM Manila time (4:45 PM Texas time)')
-        await row.scrollIntoViewIfNeeded()
+        const live = page.getByRole('link', { name: /Alerts list/ }) // the live row carries the time, the Later row does not
+        await expect(live).toContainText('6:45 AM Manila time (4:45 PM Texas time)')
+        await expect(page.getByTestId('world-alerts-later')).not.toContainText('Manila')
+        await live.scrollIntoViewIfNeeded()
         await shot(page, 'settings-alerts-digest', size, scheme)
       })
     })

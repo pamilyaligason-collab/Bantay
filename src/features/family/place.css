@@ -16,6 +16,7 @@
 .pl-note-actions button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; font-size: 15px; font-weight: 600; background: var(--soft); color: var(--green); }
 .pl-note-actions .pl-ok { background: var(--btn); color: var(--btn-fg); }
 /* S30 L9 (F2): chips for family members far from the fitted group; each pans the map to that person. */
-.pm-far { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-width: calc(100vw - 72px); }
+/* .mapc-ov sits 10px inside the CARD; the map is the card's 16px padding further in. margin 14px puts the chips 8px inside the map, the same inset as the "Online map" chip (.lm-src); width = map (100vw - 64px) - 16px. */
+.pm-far { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; margin: 14px 14px 0 0; max-width: calc(100vw - 80px); }
 .pm-chip { min-height: 44px; max-width: 100%; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 15px; font-weight: 600; line-height: 20px; text-align: left; box-shadow: var(--shadow-float); overflow-wrap: anywhere; }
 .pm-chip.pm-back { background: var(--btn); color: var(--btn-fg); border-color: transparent; }

@@ -45,6 +45,21 @@ describe('Settings > My home place', () => {
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: "Use my phone's place now" }))
     await waitFor(async () => expect(await saved()).toEqual({ name: 'Houston, Texas', lat: 29.76, lon: -95.37, tz: 'America/Chicago' }))
   })
+  it('the listed city\'s zone wins over the phone\'s: a phone still on Manila time in Houston saves America/Chicago', async () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({ timeZone: 'Asia/Manila' } as Intl.ResolvedDateTimeFormatOptions)
+    render(<HomePlaceRow />)
+    fireEvent.click(await row())
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: "Use my phone's place now" }))
+    await waitFor(async () => expect(await saved()).toEqual({ name: 'Houston, Texas', lat: 29.76, lon: -95.37, tz: 'America/Chicago' }))
+  })
+  it('a place with no listed city keeps the phone\'s zone', async () => {
+    h.loc = { source: 'gps', lat: 45.5, lon: -100.4 }
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({ timeZone: 'America/Chicago' } as Intl.ResolvedDateTimeFormatOptions)
+    render(<HomePlaceRow />)
+    fireEvent.click(await row())
+    fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: "Use my phone's place now" }))
+    await waitFor(async () => expect(await saved()).toEqual({ name: 'My current place', lat: 45.5, lon: -100.4, tz: 'America/Chicago' }))
+  })
   it('no position from the phone: nothing is saved and the sheet says why', async () => {
     h.loc = { source: 'home', lat: 9.64, lon: 123.87 }
     render(<HomePlaceRow />)
