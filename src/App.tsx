@@ -46,6 +46,7 @@ const CalmScreen = lazy(() => import('./features/calm/CalmScreen')) // #calm (la
 const ScanFlow = lazy(() => import('./features/scan/ScanFlow')) // camera, crop and the scanner plugin load only when someone scans
 
 const SharingScreen = lazy(() => import('./features/sharing/SharingScreen'))
+const AllScreen = lazy(() => import('./features/setup/AllScreen')) // #setup/all (S31)
 
 const SCREENS: Record<Tab, { label: string; Screen: ComponentType }> = {
   today: { label: 'Today', Screen: Today },
@@ -86,7 +87,7 @@ export default function App() {
 
   // Me, notifications and admin are full views with no active tab; swipe and pull-to-refresh belong to the four tabs.
   const view = route.view === 'admin' && !isAdmin ? null : route.view
-  const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan' || view === 'sharing')
+  const isTabView = !(view === 'me' || view === 'notif' || view === 'admin' || view === 'scan' || view === 'sharing' || view === 'setup')
   const tab: Tab = route.tab ?? 'today'
   const idx = TABS.indexOf(tab)
   useForgetPersonOutsideHealth(tab, hash)
@@ -107,7 +108,7 @@ export default function App() {
   useEffect(() => startLibraryAuto(), []) // full medical library downloads on Wi-Fi by saved consent, not only while the Library page is open
   useEffect(() => watchDoseReminders(), []) // keeps dose reminders in step with the medications table
   useEffect(() => watchTaskReminders(), []) // family task rings follow pulls and app resume, not only the open Calendar
-  const title = view === 'me' ? 'Settings' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'calm' ? 'Calm' : view === 'sharing' ? 'Sharing' : SCREENS[tab].label
+  const title = view === 'me' ? 'Settings' : view === 'notif' ? 'Notifications' : view === 'admin' ? 'Admin' : view === 'scan' ? 'Scan & Capture' : view === 'weather' ? 'Weather' : view === 'calm' ? 'Calm' : view === 'sharing' ? 'Sharing' : view === 'setup' ? 'Set up everything' : SCREENS[tab].label
   useEffect(() => { document.title = `${title} - Family Bantay` }, [title])
   useEffect(() => {
     const el = scroll.current
@@ -132,7 +133,7 @@ export default function App() {
       <main className="scroll" ref={(el) => { scroll.current = el; swipe.current = el; ptr.ref.current = el }}>
         <PullIndicator indicator={ptr.indicator} refreshing={ptr.refreshing} armed={ptr.armed} />
         <ScreenBoundary resetKey={hash}>
-        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'calm' ? <Suspense fallback={null}><CalmScreen /></Suspense> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : <UnreadContext.Provider value={inbox.unread}><Tabbed /></UnreadContext.Provider>}
+        {view === 'admin' ? <AdminScreen /> : view === 'scan' ? <Suspense fallback={null}><ScanFlow /></Suspense> : view === 'me' ? <Me /> : view === 'notif' ? <Inbox inbox={inbox} /> : view === 'docs' ? <DocsScreen /> : view === 'weather' ? <WeatherScreen /> : view === 'calm' ? <Suspense fallback={null}><CalmScreen /></Suspense> : view === 'privacy' ? <PrivacyScreen acting={acting} /> : view === 'sharing' ? <Suspense fallback={null}><SharingScreen /></Suspense> : view === 'setup' ? <Suspense fallback={null}><AllScreen /></Suspense> : <UnreadContext.Provider value={inbox.unread}><Tabbed /></UnreadContext.Provider>}
         </ScreenBoundary>
       </main>
       <TabBar active={isTabView ? tab : null} />

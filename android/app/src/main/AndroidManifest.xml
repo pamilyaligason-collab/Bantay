@@ -27,6 +27,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="ph.bantay.family" android:host="auth-callback" />
+                <!-- S31: the /get page opens the installed app here (intent://setup), which lands on the Set up everything screen. -->
+                <data android:scheme="ph.bantay.family" android:host="setup" />
             </intent-filter>
 
         </activity>

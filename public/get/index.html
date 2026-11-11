@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Get Bantay</title>
-<meta name="description" content="Install the Bantay family app on Android, or add it to an iPhone home screen.">
+<meta name="description" content="Install the Bantay family app on Android, or add it to an iPhone home screen. Already installed? This link opens it.">
 <meta name="robots" content="noindex">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <style>
@@ -19,43 +19,49 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--ground);color:var(--ink);font:16px/1.45 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+body{margin:0;background:var(--ground);color:var(--ink);font:17px/1.45 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 main{max-width:480px;margin:0 auto;padding:28px 16px calc(40px + env(safe-area-inset-bottom,0px));display:grid;gap:16px}
+.stack{display:grid;gap:16px}
 .center{text-align:center;display:grid;gap:6px}
-.eyebrow{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.eyebrow{font-size:15px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);font-weight:600}
 h1{font:600 30px/1.1 Fraunces,Georgia,"Times New Roman",serif;letter-spacing:-.015em;margin:0;text-wrap:balance}
 .muted{color:var(--muted);margin:0}
-.sub{color:var(--muted);font-size:14px}
+.sub{color:var(--muted);font-size:15px}
 .card{background:var(--card);border-radius:24px;padding:16px;box-shadow:var(--shadow)}
 .quiet{background:var(--card2);box-shadow:none;display:grid;gap:10px}
-ol.steps{list-style:none;margin:0;padding:16px;display:grid;gap:14px}
+ol.steps{list-style:none;margin:0;padding:16px;display:grid;gap:16px}
 ol.steps li{display:flex;gap:12px;align-items:flex-start}
-.n{flex:none;width:40px;height:40px;border-radius:12px;background:var(--green);color:var(--on-green);display:grid;place-items:center;font-weight:700}
+.n{flex:none;width:44px;height:44px;border-radius:12px;background:var(--green);color:var(--on-green);display:grid;place-items:center;font-weight:700;font-size:19px}
+.steps .t{flex:1;min-width:0}
 .steps b{display:block}
-.pill{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 18px;border-radius:999px;border:0;font-family:inherit;font-weight:600;font-size:16px;background:var(--green);color:var(--on-green);text-decoration:none;cursor:pointer;width:100%}
-.pill.ghost{background:var(--card2);color:var(--ink);min-height:44px;font-size:14px;width:auto}
-.link{background:none;border:0;color:var(--green2);font-family:inherit;font-weight:600;font-size:14px;text-decoration:underline;padding:12px;justify-self:center;cursor:pointer}
+.steps .pic{width:32px;height:32px;color:var(--green2);margin-left:auto}
+@media (prefers-color-scheme: dark){.steps .pic{color:var(--amber)}}
+.pill{display:flex;align-items:center;justify-content:center;min-height:56px;padding:0 18px;border-radius:999px;border:0;font-family:inherit;font-weight:600;font-size:17px;background:var(--green);color:var(--on-green);text-decoration:none;cursor:pointer;width:100%;text-align:center}
+.pill.ghost{background:var(--card2);color:var(--ink);min-height:48px;font-size:16px}
+.link{background:none;border:0;color:var(--green2);font-family:inherit;font-weight:600;font-size:16px;text-decoration:underline;padding:12px;justify-self:center;cursor:pointer}
 @media (prefers-color-scheme: dark){.link{color:var(--amber)}}
 :focus-visible{outline:2px solid var(--amber);outline-offset:2px}
-.meta{font-size:12px;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.meta{font-size:15px;color:var(--muted);text-align:center;overflow-wrap:anywhere}
 .row{display:flex;gap:10px;align-items:flex-start}
-svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.row svg{width:24px;height:24px}
+svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.big{font-size:19px;font-weight:600;overflow-wrap:anywhere;text-align:center;color:var(--ink)}
 </style>
 </head>
 <body>
 <main>
   <!-- ===== Android ===== -->
-  <div id="android" class="stack" style="display:grid;gap:16px">
+  <div id="android" class="stack">
     <div class="center">
       <div class="eyebrow">bantay.pages.dev/get</div>
       <h1>Get the Bantay app</h1>
-      <p class="muted">For our family's Android phones. About 2 minutes. Then open the family invite link.</p>
+      <p class="muted">For our family's Android phones. About 2 minutes. Already installed? This link opens Bantay and helps you set it up.</p>
     </div>
 
-    <a id="dl" class="pill" hidden href="https://github.com/pamilyaligason-collab/Bantay/releases/latest/download/bantay.apk">Download Bantay <span id="ver" style="margin-left:.35em"></span></a>
+    <a id="open" class="pill" hidden href="#">Open or install Bantay</a>
+    <a id="dl" class="pill ghost" hidden href="https://github.com/pamilyaligason-collab/Bantay/releases/latest/download/bantay.apk">Download Bantay <span id="ver" style="margin-left:.35em"></span></a>
     <p id="notready" class="card quiet" role="status" hidden>The app download is not ready yet. Check back soon.</p>
     <p id="facts" class="meta" hidden></p>
-
 
     <div id="inapp" class="card quiet" hidden>
       <div class="row"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
@@ -64,10 +70,12 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
     </div>
 
     <ol class="card steps" aria-label="Install steps">
-      <li><span class="n" aria-hidden="true">1</span><div><b>Download</b><span class="sub">Chrome may warn about the file. Tap Download anyway, then Open.</span></div></li>
-      <li><span class="n" aria-hidden="true">2</span><div><b>Allow Chrome to install apps</b><span class="sub">Android asks once: tap Settings, turn on "Allow from this source", then go Back.</span></div></li>
-      <li><span class="n" aria-hidden="true">3</span><div><b>Install</b><span class="sub">If Play Protect asks to scan the app, let it scan, then tap Install.</span></div></li>
-      <li><span class="n" aria-hidden="true">4</span><div><b>Open Bantay</b><span class="sub">Jack Jack meets you there.</span></div></li>
+      <li><span class="n" aria-hidden="true">1</span><div class="t"><b>Wait for the download</b><span class="sub">It starts by itself. If Chrome warns about the file, tap Download anyway.</span></div>
+        <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg></li>
+      <li><span class="n" aria-hidden="true">2</span><div class="t"><b>Tap Install</b><span class="sub">The first time, Android asks to allow installs from Chrome: tap Settings, turn it on, go Back, then tap Install. Play Protect may scan first.</span></div>
+        <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 12l2.5 2.5L15.5 10"/></svg></li>
+      <li><span class="n" aria-hidden="true">3</span><div class="t"><b>Open Bantay</b><span class="sub">It opens on Set up everything and helps with the rest. Jack Jack meets you there.</span></div>
+        <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></li>
     </ol>
 
     <div class="card quiet">
@@ -85,41 +93,70 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
   </div>
 
   <!-- ===== iPhone ===== -->
-  <div id="ios" style="display:grid;gap:16px" hidden>
+  <div id="ios" class="stack" hidden>
     <div class="center">
       <div class="eyebrow">bantay.pages.dev/get</div>
       <h1>Bantay on iPhone stays a web app</h1>
       <p class="muted">Nothing to download. About 2 minutes. Then open the family invite link.</p>
     </div>
     <ol class="card steps" aria-label="iPhone steps">
-      <li><span class="n" aria-hidden="true">1</span><div><b>Open this link in Safari</b><span class="sub">Opened it from Messenger? Tap the Safari icon or Open in browser first.</span></div></li>
-      <li><span class="n" aria-hidden="true">2</span><div><b>Tap Share</b><span class="sub">The square with an arrow, at the bottom of Safari.</span></div></li>
-      <li><span class="n" aria-hidden="true">3</span><div><b>Tap Add to Home Screen, then Add</b><span class="sub">Bantay now opens from its own icon, like an app.</span></div></li>
+      <li><span class="n" aria-hidden="true">1</span><div class="t"><b>Open this link in Safari</b><span class="sub">Opened it from Messenger? Tap the Safari icon or Open in browser first.</span></div>
+        <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg></li>
+      <li><span class="n" aria-hidden="true">2</span><div class="t"><b>Tap Share</b><span class="sub">The square with an arrow, at the bottom of Safari.</span></div>
+        <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m0 0L8.5 7.5M12 4l3.5 3.5M6 11H5a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1h-1"/></svg></li>
+      <li><span class="n" aria-hidden="true">3</span><div class="t"><b>Tap Add to Home Screen, then Add</b><span class="sub">Bantay now opens from its own icon, like an app.</span></div>
+        <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8.5v7M8.5 12h7"/></svg></li>
     </ol>
     <div class="card quiet"><div class="row"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
       <div class="sub">iPhone has no app file to install. Sign in with Face ID or Touch ID through a passkey. Alerts on iPhone work only after you add Bantay to the home screen.</div></div></div>
-    <a class="pill" href="/">I added it, open Bantay</a>
+    <a class="pill" href="/#setup/all">I added it, open Bantay</a>
     <button type="button" class="link" data-show="android">Android phone? See the Android steps</button>
   </div>
+
+  <!-- ===== Computer ===== -->
+  <div id="desktop" class="stack" hidden>
+    <div class="center">
+      <div class="eyebrow">bantay.pages.dev/get</div>
+      <h1>Open this link on your phone</h1>
+      <p class="muted">Bantay is a phone app. Send yourself this link, or type it into your phone's browser.</p>
+    </div>
+    <div class="card quiet"><p class="big" id="addr">bantay.pages.dev/get</p>
+      <button type="button" id="copy2" class="pill ghost">Copy link</button></div>
+    <button type="button" class="link" data-show="android">See the Android steps</button>
+    <button type="button" class="link" data-show="ios">See the iPhone steps</button>
+  </div>
 </main>
+<script src="detect.js"></script>
 <script>
 (function () {
+  var G = window.BantayGet
   var ua = navigator.userAgent
-  var android = document.getElementById('android'), ios = document.getElementById('ios')
-  function show(which) { android.hidden = which !== 'android'; ios.hidden = which !== 'ios' }
-  // iPadOS Safari sends a Mac user agent, so it is told apart by touch points
-  show(/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'ios' : 'android')
+  var panes = { android: document.getElementById('android'), ios: document.getElementById('ios'), desktop: document.getElementById('desktop') }
+  function show(which) { for (var k in panes) panes[k].hidden = k !== which }
+  var standalone = false
+  try { standalone = !!(window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true } catch (e) { /* no matchMedia */ }
+  var native = !!(window.Capacitor && typeof Capacitor.isNativePlatform === 'function' && Capacitor.isNativePlatform())
+  var kind = G.platform(ua, navigator.maxTouchPoints, { standalone: standalone, native: native })
+  // Already inside Bantay (its webview or the installed web app): nothing to install, go straight to setup.
+  if (kind === 'app') { location.replace('/#setup/all'); return }
+  show(kind)
+  document.documentElement.setAttribute('data-kind', kind)
+  var addr = location.host + '/get'
+  document.getElementById('addr').textContent = addr
   Array.prototype.forEach.call(document.querySelectorAll('[data-show]'), function (b) {
     b.addEventListener('click', function () { show(b.getAttribute('data-show')); window.scrollTo(0, 0) })
   })
-  if (/FBAN|FBAV|Messenger|Instagram|Line\//.test(ua)) document.getElementById('inapp').hidden = false
-  document.getElementById('copy').addEventListener('click', function () {
-    var b = this
+  var inapp = G.inAppBrowser(ua)
+  if (inapp) document.getElementById('inapp').hidden = false
+  function copy(b) {
     var done = function () { b.textContent = 'Link copied' }
-    if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(done, function () { b.textContent = 'Long-press the address to copy' })
-    else b.textContent = 'Long-press the address to copy'
-  })
-  // The Download button shows only when /latest.json is readable and valid (versionCode int, url string); otherwise a not-ready note.
+    var miss = function () { b.textContent = 'Long-press the address to copy' }
+    if (navigator.clipboard) navigator.clipboard.writeText(location.origin + '/get').then(done, miss)
+    else miss()
+  }
+  ;['copy', 'copy2'].forEach(function (id) { var b = document.getElementById(id); b.addEventListener('click', function () { copy(b) }) })
+
+  // The buttons show only when /latest.json is readable and valid (versionCode int, url string); otherwise a not-ready note.
   // Version, size and checksum come from the same file. Same-origin copy (release script commits public/latest.json); GitHub release assets send no CORS headers.
   function notReady() { document.getElementById('notready').hidden = false }
   fetch('/latest.json', { cache: 'no-store' })
@@ -127,6 +164,17 @@ svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke
     .then(function (l) {
       if (!l || typeof l.versionCode !== 'number' || l.versionCode % 1 !== 0 || typeof l.url !== 'string') return notReady()
       document.getElementById('dl').hidden = false
+      if (kind === 'android') {
+        var intent = G.intentUrl(G.apkUrl(l))
+        var open = document.getElementById('open')
+        open.href = intent
+        open.hidden = false
+        document.documentElement.setAttribute('data-intent', intent)
+        // Installed: Chrome opens the app. Not installed: Chrome follows the fallback and the download starts by itself. Tried once per visit; Chrome may ask for a tap first, so the button above does the same.
+        var tried = false
+        try { tried = sessionStorage.getItem('bantay.get.tried') === '1'; sessionStorage.setItem('bantay.get.tried', '1') } catch (e) { /* storage blocked */ }
+        if (!inapp && !tried) location.href = intent
+      }
       if (typeof l.versionName !== 'string' || typeof l.size !== 'number' || !/^[0-9a-f]{64}$/i.test(l.sha256 || '')) return
       document.getElementById('ver').textContent = l.versionName
       var f = document.getElementById('facts')

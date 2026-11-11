@@ -5,12 +5,12 @@ const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebK
 const LATEST = { versionCode: 2000001, versionName: '2.0.1', url: 'x' }
 const MESSENGER = 'Mozilla/5.0 (Linux; Android 15) Chrome/141 Mobile [FBAN/Messenger;FBAV/480.0]'
 
-test('Android visitor sees 4 steps and the APK link', async ({ browser }) => {
+test('Android visitor sees 3 steps and the APK link', async ({ browser }) => {
   const ctx = await browser.newContext({ userAgent: ANDROID, viewport: { width: 390, height: 844 } })
   const page = await ctx.newPage()
   await page.route('**/latest.json', (r) => r.fulfill({ json: LATEST }))
   await page.goto('/get/')
-  await expect(page.getByRole('listitem')).toHaveCount(4)
+  await expect(page.getByRole('listitem')).toHaveCount(3)
   await expect(page.getByRole('link', { name: /Download Bantay/ })).toHaveAttribute('href', /releases\/latest\/download\/bantay\.apk$/)
   await expect(page.getByText(/Open in Chrome first/)).toBeHidden()
   await ctx.close()
