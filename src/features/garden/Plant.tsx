@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Section } from '../look'
 import { SubHeader } from '../shell/SubHeader'
+import { useOutsidePh } from '../location/region'
 import type { ClimateType } from '../../data/provinceClimate'
 import { CLIMATE_TYPES, cropsFor, MONTH_NAMES, useClimate, useMonth } from './climate'
 import { priceDay, priceFor, priceText, useDaPrices, type DaPrices, type DaRow } from './daPrices'
@@ -10,6 +11,8 @@ import './garden.css'
 
 export const PLANT_FOOTER = 'General guide from the planting calendar of PCARRD, now PCAARRD (bulletin 200, 2000), with data from the Bureau of Plant Industry.'
 export const PRICE_NOTE = 'Prices are Metro Manila; local prices may differ.'
+/** S30 L9: outside the Philippines the calendar does not apply, and nothing asks for a Philippine climate type. */
+export const PLANT_AWAY = 'Planting guide covers the Philippines.'
 /** The climate type in plain words for the sub-line (the four types are in CLIMATE_TYPES). */
 const TYPE_WORD: Record<ClimateType, string> = { 1: 'Dry and wet seasons', 2: 'No dry season', 3: 'No clear season', 4: 'Rain all year' }
 /** " · No dry season" for the sub-line, left out when the province's PAGASA outlook shows a dry spell or drought ahead, so it never contradicts the Climate outlook card above (S29 A4). */
@@ -78,6 +81,8 @@ export function PlantCard() {
   const d = useDaPrices()
   const month = useMonth()
   const dryIn = useDry(c.province)
+  const away = useOutsidePh()
+  if (away) return null // the Today entry point is hidden outside the Philippines (the poster page, if opened by a link, says why)
   if (!c.ready) return null
   if (!c.type) return <Section title="Plant this month" testId="today-plant"><div className="card gpl-card"><ClimatePicker onPick={c.pick} /></div></Section>
   const { guided, others } = plantList(c.type, month, !!dryIn)
@@ -133,7 +138,9 @@ export function PlantPoster() {
   const [change, setChange] = useState(false)
   const month = useMonth()
   const dryIn = useDry(c.province)
+  const away = useOutsidePh()
   const head = <SubHeader title="Plant this month" backHref="#today" backLabel="Today" />
+  if (away) return <section className="gpl-page" data-testid="plant-page">{head}<div className="card gpl-card"><p className="gpl-sub" data-testid="plant-away" role="note">{PLANT_AWAY}</p></div></section>
   if (!c.ready) return <section className="gpl-page">{head}</section>
   const picker = !c.type || change
   const list = c.type ? plantList(c.type, month, !!dryIn) : null

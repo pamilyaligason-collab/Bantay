@@ -18,6 +18,9 @@ export const isLink = (e: Entry): e is Entry & { sourceUrl: string } => e.link =
 export const needsCheck = (e: Entry) => e.status === 'UNVERIFIED' && !e.link
 export const CHECK_LABEL = 'number not yet confirmed'
 
+/** S30 L9: the header says "You are in" only for a live phone position; the home zone and the member's saved home place both say "Your home area is". */
+export const fromPhone = (source: string): boolean => source !== 'zone' && source !== 'home'
+
 /** Where to look up the emergency number of a country we have no list for. Never a guessed number. */
 export const ABROAD_SOURCE = { label: 'Emergency numbers by country', url: 'https://en.wikipedia.org/wiki/List_of_emergency_telephone_numbers' }
 

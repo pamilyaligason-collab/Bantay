@@ -27,13 +27,16 @@ export function countsOnly(summary: Record<string, unknown> | undefined): Record
   return out
 }
 
+/** True when the run got data from at least one source and at least one other source failed (alerts-ingest: sources_ok and sources_failed). */
+export const partialSources = (summary: Record<string, unknown> | undefined): boolean => Number(summary?.sources_ok) > 0 && Number(summary?.sources_failed) > 0
+
 export async function heartbeat(sb: HeartbeatClient, job: string, ok: boolean, summary: Record<string, unknown> = {}): Promise<void> {
   try {
     const name = String(job ?? '').slice(0, 64)
     if (!name) return
     const from = (t: string) => sb.from(t) as Table
     await from('job_runs').insert({ job: name, ok, summary: countsOnly(summary) })
-    if (ok) return
+    if (ok || partialSources(summary)) return // a partial run (some source gave data, one is down) shows on System health only, never as a failed-run banner
     const admins = (await from('app_roles').select('user_id').eq('role', 'admin').eq('disabled', false)).data ?? []
     const ref = systemRef(name, Date.now())
     for (const a of admins) {

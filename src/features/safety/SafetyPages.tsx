@@ -10,7 +10,7 @@ import { GroupedList, LargeTitle, Row } from '../look'
 import SosHistory from '../sos/SosHistory'
 import { HISTORY_KEY } from '../sos/history'
 import { getMember, onAuthChange } from '../auth/session'
-import { ABROAD_SOURCE, coversHere, isLink, needsCheck, planDial, splitDial } from './dial'
+import { ABROAD_SOURCE, coversHere, fromPhone, isLink, needsCheck, planDial, splitDial } from './dial'
 import { dialNumber, type Entry, firstNumber, OVERRIDES_KEY, type Overrides, telHref, withFamilyAdded, withOverrides } from './entries'
 import { ExtRow } from './ExtRow'
 import EntryList, { EditForm } from './EntryList'
@@ -164,7 +164,7 @@ function QuickDial({ place }: { place: Place }) {
     const off = onAuthChange(check)
     return () => { live = false; off() }
   }, [])
-  const plan = planDial(place.weather, withFamilyAdded(hotlines as Entry[], overrides), place.source !== 'zone')
+  const plan = planDial(place.weather, withFamilyAdded(hotlines as Entry[], overrides), fromPhone(place.source))
   return (
     <div className="sf">
       {plan.note && <p className="sf-note" role="status">{plan.note}</p>}

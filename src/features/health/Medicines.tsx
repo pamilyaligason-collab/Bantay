@@ -11,7 +11,8 @@ import { addManilaDays } from '../today/nextPick'
 import { stockInfo, weekCounter } from './medDetailLogic'
 import { stockRows } from './stock'
 import { Row, Section, GroupedList } from '../look'
-import { tzMidnight, zoneOf } from '../time/zone'
+import { tzMidnight } from '../time/zone'
+import { usePersonZone } from '../time/usePersonZone'
 import { answeredBy, isLive, manilaDay, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
 import { QueuedBadge } from '../sync/OfflineBar'
 import { useQueuedDoseIds } from '../sync/useOffline'
@@ -26,15 +27,15 @@ const TOAST_MS = 3500
 const UNDO_MS = 6000
 
 /** Doses logged since `day` (the start of the 7-day window) for one person, live. Full rows: the medication id, slot and skipped flag decide what is taken. */
-function useTakesSince(personId: string, day: string): MedTaken[] | undefined {
+function useTakesSince(personId: string, day: string, tz: string): MedTaken[] | undefined {
   const [got, setGot] = useState<{ id: string; rows: MedTaken[] } | undefined>(undefined)
   const id = `${personId}|${day}`
   useEffect(() => {
     if (!personId) return
-    const since = tzMidnight(day, zoneOf(personId)).toISOString()
+    const since = tzMidnight(day, tz).toISOString()
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id, rows }), error: () => setGot({ id, rows: NONE }) })
     return () => sub.unsubscribe()
-  }, [personId, day, id])
+  }, [personId, day, id, tz])
   return got && got.id === id ? got.rows : personId ? undefined : NONE
 }
 
@@ -53,9 +54,9 @@ function settledBy(d: DoseState, takes: MedTaken[]): MedTaken | undefined {
 /** Today's doses for one person, shared by the screen and the Health summary. */
 export function useToday(personId: string) {
   const meds = useMedicationRows(personId)
-  const tz = zoneOf(personId) // the dose day is the PERSON's (this phone's for me), never the viewer's
+  const tz = usePersonZone(personId) // the dose day is the PERSON's (this phone's for me), never the viewer's; live, so it moves when people.tz arrives
   const day = manilaDay(new Date(), tz)
-  const week = useTakesSince(personId, addManilaDays(day, -6))
+  const week = useTakesSince(personId, addManilaDays(day, -6), tz)
   const takes = useMemo(() => (week ?? NONE).filter((t) => manilaDay(t.takenAt, tz) === day), [week, day, tz])
   const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day, (v) => manilaDay(v, tz)), [meds, personId, day, takes, tz])
   return { meds, takes, week, doses, day }

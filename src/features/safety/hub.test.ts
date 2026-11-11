@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DAMPAS } from '../location/geo'
 import hotlines from '../../data/safety/hotlines.json'
-import { CHECK_LABEL, coversHere, needsCheck, planDial, splitDial } from './dial'
+import { CHECK_LABEL, coversHere, fromPhone, needsCheck, planDial, splitDial } from './dial'
 import type { Entry } from './entries'
 import { hazardsFor, hazardStatus, quakeMeaning, toneOf } from './hazardCards'
 import { hasOwnHeader, parseHash } from '../shell/routes'
@@ -86,6 +86,13 @@ describe('planDial: one local set by place', () => {
   })
   it('Texas: Texas set, then OFW and teleconsult, no Philippine national', () => {
     expect(ids(29.76, -95.37)).toEqual(['texas', 'ofw', 'tele'])
+  })
+  it('the saved home place says "Your home area is Texas", a live phone position "You are in Texas" (S30 L9)', () => {
+    const header = (source: string) => planDial({ lat: 29.76, lon: -95.37 }, rows, fromPhone(source)).sets[0]!.header
+    expect(header('home')).toBe('Your home area is Texas')
+    expect(header('zone')).toBe('Your home area is Texas')
+    expect(header('gps-abroad')).toBe('You are in Texas')
+    expect(header('gps')).toBe('You are in Texas')
   })
   it('abroad, not Texas: OFW only (plus teleconsult), a source link, and no guessed local number', () => {
     const p = planDial({ lat: 1.35, lon: 103.82 }, rows, true)

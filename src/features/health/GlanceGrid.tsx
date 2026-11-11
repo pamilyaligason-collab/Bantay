@@ -4,7 +4,8 @@ import { ldb, type Activity, type FoodEntry, type MedTaken, type WaterEntry } fr
 import { Ring } from '../look/Ring'
 import { lastDays } from '../today/myWeekLogic'
 import { labDate, groupLabs, labRow } from './labsLogic'
-import { tzMidnight, zoneOf } from '../time/zone'
+import { tzMidnight } from '../time/zone'
+import { usePersonZone } from '../time/usePersonZone'
 import { dayOf, manilaDay, matchDoses, slotsFor, type DoseState } from './meds'
 import { localDay, readingPosition } from './model'
 import { cadenceWord, computeNudge, type Goal } from './nudgeLogic'
@@ -45,19 +46,20 @@ export function labsLine(readings: Reading[], thresholds: Thresholds): string {
 /** Today's dose slots (taken, skipped, pending) and whether this person has any medicine, live. Null until the medicines are read. */
 export function useTodayDoses(personId: string): { doses: DoseState[]; hasMeds: boolean } | null {
   const meds = useMedicationRows(personId)
+  const tz = usePersonZone(personId) // live: recomputes when people.tz arrives
   const [takes, setTakes] = useState<MedTaken[]>([])
   useEffect(() => {
     if (!personId) return setTakes([])
-    const since = tzMidnight(manilaDay(new Date(), zoneOf(personId)), zoneOf(personId)) // midnight of the person's day
+    const since = tzMidnight(manilaDay(new Date(), tz), tz) // midnight of the person's day
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since.toISOString()).filter((m) => m.personId === personId).toArray()).subscribe({ next: setTakes, error: () => setTakes([]) })
     return () => sub.unsubscribe()
-  }, [personId])
+  }, [personId, tz])
   return useMemo(() => {
     if (meds === undefined) return null
-    const tz = zoneOf(personId) // the person's day, not the viewer's phone (a carer in Texas reading a Manila parent)
+    // the person's day, not the viewer's phone (a carer in Texas reading a Manila parent)
     const day = manilaDay(new Date(), tz)
     return { doses: matchDoses(slotsFor(meds, personId, day), takes, day, (v) => manilaDay(v, tz)), hasMeds: meds.length > 0 }
-  }, [meds, takes, personId])
+  }, [meds, takes, personId, tz])
 }
 
 /** The week's goals and streak (nudgeLogic), live. Same data the old NudgeCard read. */

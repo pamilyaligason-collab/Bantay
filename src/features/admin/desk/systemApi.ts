@@ -13,7 +13,9 @@ async function guard<T>(f: () => PromiseLike<Res<T>>): Promise<Res<T>> { if (!su
 const clock = (iso: string) => new Date(iso).toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Manila' })
 
 // ---------- Scheduled jobs ----------
-export type JobRun = { job: string; ran_at: string; ok: boolean }
+export type JobRun = { job: string; ran_at: string; ok: boolean; summary?: Record<string, unknown> | null }
+/** A run that saved ok:false but still got data from at least one source (alerts-ingest: PAGASA's own server down, the other four fine). It is working with a source down, not failed. Returns how many sources are down, 0 when it is not partial. */
+export const partialRun = (run: JobRun): number => { const s = run.summary; return !run.ok && s && typeof s.sources_ok === 'number' && s.sources_ok > 0 && typeof s.sources_failed === 'number' && s.sources_failed > 0 ? s.sources_failed : 0 }
 /** The jobs that call heartbeat() (contract). Red when the last run failed or is older than `staleMin` (30 by default: every job here runs at least every 15).
  *  The alerts feed gets 60, the same hour the app uses to call alerts out of date (safety/alerts.ts FRESH_AMBER_MIN), so the desk and the phones go red together. */
 export const ALERTS_FEED_STALE_MIN = 60
@@ -34,14 +36,16 @@ export function jobStatus(run: JobRun | null | undefined, now = Date.now(), stal
   if (!run) return { tone: 'warn', text: 'No run recorded yet' } // unknown, not red: the job may simply not be deployed yet
   const t = Date.parse(run.ran_at)
   if (Number.isNaN(t)) return { tone: 'warn', text: 'Last run unreadable' }
-  if (!run.ok) return { tone: 'bad', text: `Failed ${clock(run.ran_at)}` }
+  const down = partialRun(run)
+  if (!run.ok && !down) return { tone: 'bad', text: `Failed ${clock(run.ran_at)}` }
   if (now - t > staleMin * 60_000) return { tone: 'bad', text: `Stopped, last ran ${ago(run.ran_at, now)}` }
+  if (down) return { tone: 'warn', text: `Working, ${down === 1 ? 'one source' : `${down} sources`} down (${clock(run.ran_at)})` } // Admin > System health only: heartbeat raises no Today banner for it
   return { tone: 'ok', text: clock(run.ran_at) }
 }
 
 export const loadJobRuns = () => guard<Record<string, JobRun | null>>(async () => {
   const one = async (job: string) => {
-    const { data, error } = await supabase!.from('job_runs').select('job, ran_at, ok').eq('job', job).order('ran_at', { ascending: false }).limit(1)
+    const { data, error } = await supabase!.from('job_runs').select('job, ran_at, ok, summary').eq('job', job).order('ran_at', { ascending: false }).limit(1)
     return error ? undefined : ((data ?? [])[0] as JobRun | undefined) ?? null
   }
   const rs = await Promise.all(JOBS.map((j) => one(j.job)))

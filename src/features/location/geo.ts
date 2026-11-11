@@ -10,6 +10,17 @@ export interface Loc extends LatLon {
   accuracy?: number
 }
 
+/** S30 L9 (F1): the place a member says is home, saved on this phone (kv loc.home; the setup wizard writes the same key without a tz). tz is an IANA name, optional. */
+export interface HomePlace {
+  name: string
+  lat: number
+  lon: number
+  tz?: string
+}
+
+/** A point within this many km of the saved home place is "at home" (place words, the home place's time zone). Kept here, not in place.ts: place.ts re-exports the weather screens, so importing it from placeWords would make a cycle. */
+export const HOME_NEAR_KM = 25
+
 /** D-11 fallback: Barangay Dampas, Tagbilaran City, Bohol. */
 export const DAMPAS = { name: 'Barangay Dampas, Tagbilaran City, Bohol', lat: 9.645705, lon: 123.877951 }
 

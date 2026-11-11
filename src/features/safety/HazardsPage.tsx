@@ -106,13 +106,13 @@ export default function HazardPage({ place }: { place: Place }) {
     const awayLs = layerState(layer, null, hzs.levels)
     return (
       <div className="hz">
-        {!away && <p className="sf-empty" role="status">No hazard readings for {place.source === 'zone' ? 'this zone' : 'where you are'} yet. Check HazardHunterPH or NOAH for your street.</p>}
+        {!away && <p className="sf-empty" role="status">No hazard readings for {place.source === 'zone' ? 'this zone' : place.source === 'home' ? 'your home place' : 'where you are'} yet. Check HazardHunterPH or NOAH for your street.</p>}
         {away && (
           <Section title="This place" meta="NOAH">
             <div className="card hz-zone" data-testid="hazards-zone">
               <div className="hz-zone-top">
                 <span className="rw-lead rw-ic" data-tint="red"><Icon name="pin" size={24} /></span>
-                <div className="rw-txt"><b className="hz-name">{(unit && PACK_NAMES[unit]) ?? 'Where you are'}</b><span className="rw-sub">{place.source === 'zone' ? 'Picked zone' : 'Where you are now'}</span></div>
+                <div className="rw-txt"><b className="hz-name">{(unit && PACK_NAMES[unit]) ?? 'Where you are'}</b><span className="rw-sub">{place.source === 'zone' ? 'Picked zone' : place.source === 'home' ? 'Your home place' : 'Where you are now'}</span></div>
               </div>
               <p className="hz-status" data-tone={away.tone}>{away.text}.</p>
               <div className="hz-rings" data-testid="hz-rings">{ringsFor(null, hzs.levels).filter((r) => r.id === 'flood' || r.id === 'landslide' || r.id === 'surge').map((r) => <HzRing key={r.id} r={r} away />)}</div>

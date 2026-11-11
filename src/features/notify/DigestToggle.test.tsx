@@ -1,7 +1,8 @@
 import 'fake-indexeddb/auto'
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
+import { setZone } from '../time/zone'
 
 const h = vi.hoisted(() => ({
   carers: [] as { person_id: string }[],
@@ -43,6 +44,19 @@ describe('DigestToggle', () => {
     const sw = await screen.findByRole('switch', { name: '8 PM summary' })
     expect(sw.getAttribute('aria-checked')).toBe('true')
     expect(screen.getByText('Turning this off never stops missed-medicine or Unwell alerts.')).toBeTruthy()
+  })
+
+  it('says the 8 PM time on the member\'s own clock: Manila time, then Manila with the Texas time when the zone changes (winter: 8:00 PM Manila = 6:00 AM Chicago)', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-12-01T03:00:00Z'))
+    try {
+      h.carers = [{ person_id: 'p-mom' }]
+      render(<DigestToggle />)
+      await screen.findByRole('switch', { name: '8 PM summary' })
+      expect(screen.getByText('One calm note at 8:00 PM Manila time about who still has medicine to take.')).toBeTruthy()
+      act(() => setZone('America/Chicago'))
+      expect(screen.getByText('One calm note at 8:00 PM Manila time (6:00 AM Texas time) about who still has medicine to take.')).toBeTruthy()
+    } finally { setZone(null); vi.useRealTimers() }
   })
 
   it('reads the saved choice from the server: off stays off', async () => {

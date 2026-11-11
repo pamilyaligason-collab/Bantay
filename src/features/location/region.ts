@@ -37,11 +37,14 @@ export async function viewerRegion(): Promise<Region> {
 /** The fix and the phone's country must agree; when both say something and differ (an old fix, a trip), nothing is known. */
 const agree = (byFix: Region, byPhone: Region): Region => (byFix && byPhone && byFix !== byPhone ? null : byFix ?? byPhone)
 
-/** Where the phone's owner is, from a place (usePlace): a real fix (the phone's own position, not the saved home) decides, and it must agree with the phone's country. */
+/** Where the phone's owner is, from a place (usePlace): a real fix, or the member's own home place abroad (S30 L9, F1; the Philippine home zones never count), decides, and it must agree with the phone's country. */
 export function placeRegion(place: { source?: string; weather?: LatLon } | null | undefined): Region {
-  const fix = place && (place.source === 'gps' || place.source === 'last' || place.source === 'gps-abroad') && place.weather ? place.weather : null
+  const fix = place && (place.source === 'gps' || place.source === 'last' || place.source === 'gps-abroad' || place.source === 'home') && place.weather ? place.weather : null
   return agree(fix ? regionOf(fix, null) : null, regionOf(null))
 }
+/** True when the member is known to be outside the Philippines: a fix or home place abroad, or a phone set to the US. The Philippine-only screens (Plant, Climate) hide on it. Unknown is false. */
+export const placeOutsidePh = (place: { source?: string; weather?: LatLon } | null | undefined): boolean => placeRegion(place) === 'us' || (!!place && (place.source === 'gps-abroad' || place.source === 'home'))
+export const useOutsidePh = (): boolean => placeOutsidePh(usePlace())
 /** For the screens that are Philippine-only (Climate, Plant, DA prices, Lotto, the PH bulletin labels): 'us' means hide them and label the Philippine alerts; ph or unknown changes nothing. */
 export const usePlaceRegion = (): Region => placeRegion(usePlace())
 

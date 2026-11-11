@@ -1,7 +1,8 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useState } from 'react'
 import { ldb } from '../log/store'
-import { getZone, tzMidnight, zoneOf } from '../time/zone'
+import { getZone, tzMidnight } from '../time/zone'
+import { usePersonZone } from '../time/usePersonZone'
 import { manilaDay } from './meds'
 import type { Activity } from './model'
 
@@ -26,12 +27,13 @@ export function useActivity(personId: string, days = 120): Activity[] {
 /** Skipped rows are not takes: they are left out unless `includeSkipped` (the new id-based screens read skips themselves). */
 export function useTakenToday(personId: string, opts: { includeSkipped?: boolean } = {}): TakenToday[] {
   const includeSkipped = !!opts.includeSkipped
+  const tz = usePersonZone(personId) // recomputes when people.tz arrives
   const [rows, setRows] = useState<TakenToday[]>(NO_TAKEN)
   useEffect(() => {
     if (!personId) return setRows(NO_TAKEN)
-    const since = startOfDay(zoneOf(personId)).toISOString()
+    const since = startOfDay(tz).toISOString()
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId && (includeSkipped || !m.skipped)).toArray()).subscribe({ next: setRows, error: () => setRows(NO_TAKEN) })
     return () => sub.unsubscribe()
-  }, [personId, includeSkipped])
+  }, [personId, includeSkipped, tz])
   return rows
 }

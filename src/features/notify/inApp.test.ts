@@ -9,7 +9,13 @@ describe('inAppText system row', () => {
       expect(t.title).toBe(`${j.label} had a failed run`)
       expect(t.body).toBe('Open System health to see if it is still failing.')
     }
-    expect(Object.keys(JOB_LABELS).sort()).toEqual(JOBS.map((j) => j.job).sort())
+    for (const j of JOBS) expect(JOB_LABELS[j.job]).toBe(j.label)
+  })
+  it('every scheduled job in supabase cron has a label, so the banner never shows a raw id', () => {
+    const cron = ['alerts-digest', 'alerts-ingest', 'da-prices', 'dose-watch', 'integrity-check', 'lotto-pcso', 'pagasa-drought', 'pagasa-warnings', 'records-extract', 'world-news', 'yt-feed']
+    for (const job of cron) expect(JOB_LABELS[job], job).toBeTruthy()
+    expect(inAppText({ template: 'system', ref: 'da-prices:81234' }).title).toBe('Market prices feed had a failed run')
+    expect(inAppText({ template: 'system', ref: 'pagasa-warnings:81234' }).title).toBe('PAGASA warnings feed had a failed run')
   })
   it('keeps the saved name for an unknown job', () => {
     expect(inAppText({ template: 'system', ref: 'new-job:1' }).title).toBe('new-job had a failed run')

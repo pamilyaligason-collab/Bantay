@@ -18,7 +18,7 @@ export function phoneZone(): string | null {
 let zone: string = DEFAULT_TZ
 /** The zone own dose days are read on. Manila until the app starts and sets the phone's zone (tests stay on Manila unless they set one). */
 export const getZone = (): string => zone
-export const setZone = (tz: string | null | undefined): void => { zone = validZone(tz) ?? DEFAULT_TZ }
+export const setZone = (tz: string | null | undefined): void => { const z = validZone(tz) ?? DEFAULT_TZ; if (z === zone) return; zone = z; notify() }
 /** Called once at app start: own days follow this phone. */
 export const initZone = (): void => setZone(phoneZone())
 
@@ -76,12 +76,17 @@ export const addDays = (day: string, n: number): string => new Date(Date.parse(`
 // ---- other people's zones (A5/A8) ----
 let personZones: Record<string, string> = {}
 let selfId: string | null = null
+// A tiny store: a hook that read zoneOf() re-renders when people.tz arrives (usePersonZone, useSyncExternalStore).
+const listeners = new Set<() => void>()
+const notify = (): void => { for (const l of [...listeners]) l() }
+export const subscribeZones = (l: () => void): (() => void) => { listeners.add(l); return () => { listeners.delete(l) } }
 /** The person this phone belongs to (the last signed-in one, until the server says): their clock is this phone's zone. */
-export const setSelf = (id: string | null): void => { selfId = id }
+export const setSelf = (id: string | null): void => { if (id === selfId) return; selfId = id; notify() }
 export const setPersonZones = (m: Record<string, string | null | undefined>, self: string | null = selfId): void => {
   personZones = {}
   for (const [id, tz] of Object.entries(m)) { const z = validZone(tz); if (z) personZones[id] = z }
   selfId = self
+  notify()
 }
 /** The zone a person's own clock runs on: this phone's for me, their saved one, else Asia/Manila. */
 export const zoneOf = (personId: string | null | undefined): string => (personId && personId === selfId ? zone : (personId && personZones[personId]) || DEFAULT_TZ)

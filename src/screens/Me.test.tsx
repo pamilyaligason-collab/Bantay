@@ -1,8 +1,9 @@
 import 'fake-indexeddb/auto'
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../db'
+import { setZone } from '../features/time/zone'
 const call = vi.hoisted(() => ({ perm: vi.fn(), ask: vi.fn() }))
 vi.mock('../features/sos/call', () => ({ callPermission: call.perm, requestCallPermission: call.ask }))
 const role = vi.hoisted(() => ({ v: 'member', owner: false }))
@@ -161,6 +162,20 @@ describe('Alerts and reminders (#me/alerts)', () => {
     expect(screen.getByText('10 PM to 6 AM. SOS and storm alerts still ring; other family updates are silent')).toBeTruthy()
     await new Promise((r) => setTimeout(r, 50)) // DigestToggle reads the carer list first
     expect(screen.queryByRole('switch', { name: '8 PM summary' })).toBeNull() // not a carer: no row
+  })
+  it('the 06:45 Manila digest time is on the live Alerts list row in the member\'s own zone, and not on the Later row', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-12-01T03:00:00Z'))
+    try {
+      at('#me/alerts')
+      const live = await screen.findByRole('link', { name: /Alerts list/ })
+      expect(live.textContent).toContain('The daily safety digest comes at 6:45 AM Manila time.')
+      const later = screen.getByTestId('world-alerts-later')
+      expect(later.textContent).not.toMatch(/6:45|Manila/)
+      expect(later.textContent).toContain('Daily digest time')
+      act(() => setZone('America/Chicago')) // winter: 6:45 AM Manila = 4:45 PM the day before in Chicago
+      expect(screen.getByRole('link', { name: /Alerts list/ }).textContent).toContain('6:45 AM Manila time (4:45 PM Texas time)')
+    } finally { setZone(null); vi.useRealTimers() }
   })
   it('Quiet hours is saved', async () => {
     at('#me/alerts')
