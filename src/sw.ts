@@ -5,7 +5,7 @@ import { NavigationRoute, registerRoute } from 'workbox-routing'
 import { subscribeAndSave, vapidKey } from './features/notify/subscribe'
 import { claimNudge, handlePush } from './features/notify/push'
 import { initZone } from './features/time/zone'
-import { iconUrl, refreshIcons } from './features/update/iconVersion'
+import { iconUrl } from './features/update/iconVersion'
 
 declare let self: ServiceWorkerGlobalScope
 
@@ -45,9 +45,6 @@ registerRoute(
     return r
   }
 )
-
-// S31 L2: a new icon set (new file names) is fetched into its own cache when the app updates; older icon caches are dropped.
-self.addEventListener('install', (e) => { e.waitUntil(refreshIcons(caches, (u) => fetch(u))) })
 
 // L5: push, click and resubscribe. All logic lives in features/notify (tested); this is wiring only.
 self.addEventListener('push', (e) => {

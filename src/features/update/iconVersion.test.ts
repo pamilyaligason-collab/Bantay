@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { ICON_VERSION, WEB_ICONS, iconSlug, iconUrl, refreshIcons } from './iconVersion'
+import { ICON_VERSION, WEB_ICONS, iconSlug, iconUrl } from './iconVersion'
 
 const RES = 'android/app/src/main/res'
 const DPI: Record<string, number> = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 }
@@ -56,49 +56,16 @@ describe('S31 L2 generated icon set', () => {
     for (const n of ['icon-192', 'icon-512', 'icon-maskable-512']) expect(cfg).toContain(`iconUrl('${n}')`)
     expect(cfg).toContain("src: 'icon.svg', sizes: 'any'")
   })
+  it('notification small icon: local config names the generated drawable, push snippet points at it', () => {
+    const cfg = readFileSync('capacitor.config.ts', 'utf8')
+    const name = /smallIcon: '(\w+)'/.exec(cfg)![1]
+    expect(cfg).toContain("iconColor: '#1E6B4E'")
+    for (const d of Object.keys(DPI)) expect(existsSync(`${RES}/drawable-${d}/${name}.png`), d).toBe(true)
+    const snip = readFileSync('docs/s31/manifest-icon-snippet.xml', 'utf8')
+    expect(snip).toContain(`android:resource="@drawable/${name}"`)
+    expect(snip).toContain('com.google.firebase.messaging.default_notification_icon')
+  })
   it('public icon.svg is the master', () => {
     expect(readFileSync('public/icon.svg', 'utf8')).toBe(readFileSync('assets/icon/icon.svg', 'utf8'))
-  })
-})
-
-describe('refreshIcons (service worker update path)', () => {
-  const fakeStore = (names: string[]) => {
-    const caches = new Map<string, Map<string, Response>>(names.map((n) => [n, new Map()]))
-    return {
-      caches,
-      store: {
-        open: async (n: string) => {
-          if (!caches.has(n)) caches.set(n, new Map())
-          const m = caches.get(n)!
-          return { match: async (u: string) => m.get(u), put: async (u: string, r: Response) => void m.set(u, r) } as unknown as Cache
-        },
-        keys: async () => [...caches.keys()],
-        delete: async (n: string) => caches.delete(n)
-      }
-    }
-  }
-  it('fetches the new set and drops older icon caches but not other caches', async () => {
-    const { caches, store } = fakeStore(['bantay-icons-20200101', 'barangay-packs-v1'])
-    const asked: string[] = []
-    expect(await refreshIcons(store, async (u) => (asked.push(u), new Response('x')))).toBe(true)
-    expect(asked).toEqual(WEB_ICONS.map((i) => iconUrl(i.name)))
-    expect([...caches.keys()].sort()).toEqual(['bantay-icons-20261111', 'barangay-packs-v1'])
-    expect(caches.get('bantay-icons-20261111')!.size).toBe(WEB_ICONS.length)
-  })
-  it('a second run fetches nothing; an offline run keeps the old set and reports false', async () => {
-    const { caches, store } = fakeStore([])
-    await refreshIcons(store, async () => new Response('x'))
-    let n = 0
-    expect(await refreshIcons(store, async () => (n++, new Response('x')))).toBe(true)
-    expect(n).toBe(0)
-    const s2 = fakeStore(['bantay-icons-20200101'])
-    expect(await refreshIcons(s2.store, async () => { throw new Error('offline') })).toBe(false)
-    expect([...s2.caches.keys()]).toEqual(['bantay-icons-20200101'])
-    expect(caches.size).toBe(1)
-  })
-  it('a 404 for one file never leaves a half-filled current cache', async () => {
-    const { caches, store } = fakeStore([])
-    expect(await refreshIcons(store, async (u) => new Response('', { status: u.includes('favicon-16') ? 404 : 200 }))).toBe(false)
-    expect(caches.has('bantay-icons-20261111')).toBe(false)
   })
 })

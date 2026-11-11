@@ -21,7 +21,7 @@ for (const [d, k] of Object.entries(DPI)) {
   job(`${res}/mipmap-${d}/ic_launcher_round.png`, legacy, legacy, 'icon.svg', '50%')
   job(`${res}/mipmap-${d}/ic_launcher_foreground.png`, adaptive, adaptive, 'foreground.svg')
   job(`${res}/mipmap-${d}/ic_launcher_monochrome.png`, adaptive, adaptive, 'monochrome.svg')
-  job(`${res}/drawable-${d}/ic_stat_icon_config_sample.png`, 24 * k, 24 * k, 'notification.svg') // Capacitor's default small-icon name; no code sets another
+  job(`${res}/drawable-${d}/ic_stat_icon_config_sample.png`, 24 * k, 24 * k, 'notification.svg') // capacitor.config.ts LocalNotifications.smallIcon and the FCM manifest meta-data name this drawable
 }
 // Splash: cream ground with the mark in a rounded tile. Same pixel sizes the Capacitor template shipped.
 const SPLASH = { mdpi: [320, 480], hdpi: [480, 800], xhdpi: [720, 1280], xxhdpi: [960, 1600], xxxhdpi: [1280, 1920] }
