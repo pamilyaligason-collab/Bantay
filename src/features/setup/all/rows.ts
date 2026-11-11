@@ -92,7 +92,7 @@ export function buildRows(f: Facts): Row[] {
   if (f.native && f.bg && f.bg !== 'none') {
     add(f.bg === 'on'
       ? { id: 'bg', title: 'Daily check-in', say: 'Bantay tells family the phone is on and its battery once a day, even when the app is closed. No place is sent.', status: 'done', button: 'Done' }
-      : { id: 'bg', title: 'Daily check-in', say: 'Lets Bantay tell family once a day that the phone is on and its battery, even when the app is closed. No place is sent. Nothing is asked.', status: 'tap', button: 'Turn on' })
+      : { id: 'bg', title: 'Daily check-in', say: 'Lets Bantay tell family once a day that the phone is on and its battery, even when the app is closed. No place is sent. It switches on by itself when family sharing is on; if it has not, tap to try again.', status: 'tap', button: 'Try again' })
   }
 
   if (f.location === 'unsupported') add({ id: 'location', title: 'Where you are', say: 'This phone cannot share its location with Bantay.', status: 'na', button: 'Not available' })
@@ -117,13 +117,13 @@ export function buildRows(f: Facts): Row[] {
   if (f.maps !== 'none') {
     add(f.maps === 'on'
       ? { id: 'maps', title: 'Offline maps', say: 'Maps of your area download on Wi-Fi.', status: 'done', button: 'Done' }
-      : { id: 'maps', title: 'Offline maps', say: 'Saves a map of your area on this phone, only on Wi-Fi, so it works without signal. Nothing is asked.', status: 'tap', button: 'Download on Wi-Fi' })
+      : { id: 'maps', title: 'Offline maps', say: 'Saves a map of your area on this phone, only on Wi-Fi, so it works without signal. Nothing is asked.', status: 'tap', button: 'Download on Wi-Fi', manual: true }) // the person switched it off themselves: Do all must not reverse that
   }
 
   if (f.native) {
     const ready = f.notif.display
     add(f.testSent
-      ? { id: 'test', title: 'Send a test reminder', say: f.testDate ? `Sent on ${f.testDate}. Look for the notification. If you see it, reminders work on this phone.` : 'Look for the notification. If you see it, reminders work on this phone.', status: 'done', button: 'Send again' }
+      ? { id: 'test', title: 'Send a test reminder', say: f.testDate ? `Sent on ${new Date(f.testDate + "T12:00:00").toLocaleDateString("en-PH", { month: "long", day: "numeric" })}. Look for the notification. If you see it, reminders work on this phone.` : 'Look for the notification. If you see it, reminders work on this phone.', status: 'done', button: 'Send again' }
       : { id: 'test', title: 'Send a test reminder', say: ready ? 'Bantay shows a reminder in 5 seconds. Nothing is asked.' : 'Turn on reminders first, then send the test.', status: 'tap', button: 'Send in 5 seconds', disabled: !ready })
   }
   return rows.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id))

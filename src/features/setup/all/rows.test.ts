@@ -86,7 +86,7 @@ describe('Set up everything rows', () => {
     expect(buildRows(base({ library: 'off' })).find((x) => x.id === 'library')).toMatchObject({ status: 'tap', manual: true })
     const t = buildRows(base({ testSent: true, testDate: '2026-11-11' })).find((x) => x.id === 'test')!
     expect(t).toMatchObject({ status: 'done', button: 'Send again' })
-    expect(t.say).toContain('2026-11-11')
+    expect(t.say).toContain('Sent on November 11')
     expect(allSet(buildRows(base({ testSent: true, testDate: '2026-11-11' })))).toBe(true)
   })
   it('web shows only the rows that apply: no update, alarms, battery, health or test', () => {

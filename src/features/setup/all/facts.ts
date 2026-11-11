@@ -18,7 +18,7 @@ import type { Facts } from './rows'
 /** kv keys that keep a done state across visits (the phone cannot be asked about these). */
 export const TEST_KEY = 'setup.test'
 export const AUTOSTART_KEY = 'setup.autostart'
-export const today = () => new Date().toISOString().slice(0, 10)
+export const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` } // the phone's own day, not UTC (a Manila test before 08:00 is still today)
 
 /** What this screen sets to "test sent" for the visit (the test reminder leaves nothing to read back). */
 export const visit = { testSent: false }

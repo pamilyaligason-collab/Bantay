@@ -56,12 +56,12 @@ describe('S31 L2 generated icon set', () => {
     for (const n of ['icon-192', 'icon-512', 'icon-maskable-512']) expect(cfg).toContain(`iconUrl('${n}')`)
     expect(cfg).toContain("src: 'icon.svg', sizes: 'any'")
   })
-  it('notification small icon: local config names the generated drawable, push snippet points at it', () => {
+  it('notification small icon: local config names the generated drawable, the manifest FCM default icon points at it', () => {
     const cfg = readFileSync('capacitor.config.ts', 'utf8')
     const name = /smallIcon: '(\w+)'/.exec(cfg)![1]
     expect(cfg).toContain("iconColor: '#1E6B4E'")
     for (const d of Object.keys(DPI)) expect(existsSync(`${RES}/drawable-${d}/${name}.png`), d).toBe(true)
-    const snip = readFileSync('docs/s31/manifest-icon-snippet.xml', 'utf8')
+    const snip = readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8') // the merged manifest, so removing the line fails this test
     expect(snip).toContain(`android:resource="@drawable/${name}"`)
     expect(snip).toContain('com.google.firebase.messaging.default_notification_icon')
   })
