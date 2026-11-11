@@ -38,6 +38,7 @@ import { loadLang } from './lib/i18n'
 import { RequiresUpdate } from './features/update/RequiresUpdate'
 import { watchPushForSession } from './features/notify/fcm'
 import { UpdatedToast } from './features/update/UpdatedToast'
+import { AutoUpdater } from './features/update/AutoUpdater'
 import { useUpdateCheckOnOpen } from './features/update/useUpdate'
 import { useLocation } from './features/location/useLocation'
 import { useAutoBasemap } from './features/safety/autoMaps'
@@ -143,6 +144,7 @@ export default function App() {
       <ApprovePinSheet />
       <RequiresUpdate />
       <UpdatedToast />
+      <AutoUpdater />
     </div>
   )
 }

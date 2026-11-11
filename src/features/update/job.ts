@@ -27,6 +27,8 @@ const set = (p: Partial<Job>) => {
   subs.forEach((f) => f())
 }
 export const getJob = () => job
+/** A verified APK of this versionCode is already on the phone (install needs no data). */
+export const hasVerifiedFile = (versionCode: number) => !!path && cur?.latest.versionCode === versionCode
 export const useJob = (): Job => useSyncExternalStore((f) => { subs.add(f); return () => { subs.delete(f) } }, () => job)
 const unlisten = () => { handles.forEach((h) => void h.then((x) => x?.remove()).catch(() => undefined)); handles = [] }
 export function resetJob() { unlisten(); path = null; cur = null; set({ phase: 'idle', done: 0, total: 0 }) }
