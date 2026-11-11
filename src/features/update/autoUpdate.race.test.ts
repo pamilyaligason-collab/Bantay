@@ -22,7 +22,7 @@ const L = { versionCode: 2009000, versionName: '2.9.0', url: APK, sha256: 'a'.re
 describe('cold start: App open check and runAuto together (real checkForUpdate, mocked fetch)', () => {
   beforeEach(async () => {
     await db.kv.clear(); vi.clearAllMocks(); resetJob()
-    h.p.info.mockResolvedValue({ versionCode: 2008000, versionName: '2.8.0', canInstall: true })
+    h.p.info.mockResolvedValue({ versionCode: 2008000, versionName: '2.8.0', canInstall: true, silentInstall: true })
     h.p.download.mockResolvedValue({ path: '/cache/update/bantay.apk' })
     h.p.addListener.mockResolvedValue({ remove: () => undefined })
     h.ln.checkPermissions.mockResolvedValue({ display: 'granted' })
@@ -49,6 +49,24 @@ describe('cold start: App open check and runAuto together (real checkForUpdate, 
     expect(h.p.install).toHaveBeenCalledTimes(1)
     expect(h.p.install.mock.calls[0]![0].silent).toBe(true)
     expect(h.ln.schedule).toHaveBeenCalledTimes(1)
+  })
+  it('old shell (info() has no silentInstall): notice only, download and install never called', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => L })))
+    h.p.info.mockResolvedValue({ versionCode: 2008000, versionName: '2.8.0', canInstall: true })
+    await runAuto(Date.now())
+    expect(h.p.download).not.toHaveBeenCalled()
+    expect(h.p.install).not.toHaveBeenCalled()
+    expect(h.ln.schedule).toHaveBeenCalledTimes(1)
+  })
+  it('new shell, pending result: needs_tap, nothing opened, remembered for that version', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => L })))
+    h.p.install.mockResolvedValue({ status: 'needs_tap' })
+    await runAuto(Date.now())
+    expect((await db.kv.get('update.needsTapFor'))?.value).toBe(2009000)
+    await db.kv.delete(AUTO_AT_KEY)
+    await runAuto(Date.now() + 7 * 3600_000)
+    expect(h.p.download).toHaveBeenCalledTimes(1) // the second run went straight to the notice
+    expect(h.p.install).toHaveBeenCalledTimes(1)
   })
   it('canInstall false: notice only, no download and no install call', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => L })))

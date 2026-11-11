@@ -111,6 +111,7 @@ public class AppUpdaterPlugin extends Plugin {
       r.put("versionCode", PackageInfoCompat.getLongVersionCode(pi));
       r.put("versionName", pi.versionName == null ? "" : pi.versionName);
       r.put("canInstall", c.getPackageManager().canRequestPackageInstalls());
+      r.put("silentInstall", true); // this build honours install({silent:true}); older shells lack the key and open the box
       call.resolve(r);
     } catch (Exception e) {
       call.reject("info failed", e);

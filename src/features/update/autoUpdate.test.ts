@@ -5,7 +5,7 @@ const h = vi.hoisted(() => ({
   native: true, cellular: false, phase: 'idle' as string, have: false,
   ln: { checkPermissions: vi.fn(), schedule: vi.fn(), addListener: vi.fn() },
   state: { latest: null as unknown, failed: false },
-  info: { versionCode: 2008000, versionName: '2.8.0', canInstall: true },
+  info: { versionCode: 2008000, versionName: '2.8.0', canInstall: true, silentInstall: true } as { versionCode: number; versionName: string; canInstall: boolean; silentInstall?: boolean },
   runJob: vi.fn(), install: vi.fn(), sos: null as unknown
 }))
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native }, registerPlugin: () => ({}) }))
@@ -17,9 +17,10 @@ vi.mock('./job', () => ({ getJob: () => ({ phase: h.phase }), onCellular: () => 
 vi.mock('../sos/active', () => ({ loadActive: () => Promise.resolve(h.sos) }))
 
 import { db } from '../../db'
-import { AUTO_AT_KEY, AUTO_KEY, NOTIFIED_KEY, NOTICE_ID, autoGate, decideAuto, mayNotify, runAuto, type AutoInput } from './autoUpdate'
+import { AUTO_AT_KEY, AUTO_KEY, NEEDS_TAP_KEY, NOTIFIED_KEY, NOTICE_ID, autoGate, decideAuto, mayNotify, runAuto, type AutoInput } from './autoUpdate'
 import { dayKey } from '../family/events'
 import { TASK_ID_BASE, TASK_ID_SPAN } from '../family/taskReminders'
+import { ID_SPAN, REMINDER_ID_BASE } from '../health/reminders'
 import { BP_ID_BASE, BP_ID_TOP } from '../nudge/bpReminder'
 import { BAT_ID } from '../today/batteryReminder'
 import { RAIN_ID } from '../weather/rainRemind'
@@ -29,12 +30,16 @@ const APK = 'https://github.com/pamilyaligason-collab/Bantay/releases/download/v
 const L = { versionCode: 2009000, versionName: '2.9.0', url: APK, sha256: 'a'.repeat(64), size: 15779070, minShell: 2000000, notes: 'n' }
 const HOUR = 3600_000
 const NOW = new Date(2026, 10, 11, 12, 0).getTime()
-const base: AutoInput = { native: true, enabled: true, lastCheck: null, now: NOW, versionCode: 2008000, latest: L, wifiOnly: true, onWifi: true, callActive: false, canInstall: true }
+const base: AutoInput = { native: true, enabled: true, lastCheck: null, now: NOW, versionCode: 2008000, latest: L, wifiOnly: true, onWifi: true, callActive: false, canInstall: true, silentInstall: true }
 
 describe('decideAuto', () => {
   it('newer on Wi-Fi downloads', () => expect(decideAuto(base)).toEqual({ kind: 'download' }))
   it('a verified file on hand installs, even on mobile data', () => expect(decideAuto({ ...base, haveFile: true, onWifi: false })).toEqual({ kind: 'install' }))
   it('Install unknown apps off: notify-tap', () => expect(decideAuto({ ...base, canInstall: false })).toEqual({ kind: 'notify-tap' }))
+  it('an old shell (no silentInstall flag) gets notify-tap, never download or install', () => {
+    expect(decideAuto({ ...base, silentInstall: undefined })).toEqual({ kind: 'notify-tap' })
+    expect(decideAuto({ ...base, silentInstall: false, haveFile: true })).toEqual({ kind: 'notify-tap' })
+  })
   it('web build skips', () => expect(decideAuto({ ...base, native: false })).toEqual({ kind: 'skip', reason: 'web' }))
   it('setting off skips', () => expect(decideAuto({ ...base, enabled: false })).toEqual({ kind: 'skip', reason: 'off' }))
   it('SOS active skips', () => expect(decideAuto({ ...base, callActive: true })).toEqual({ kind: 'skip', reason: 'busy' }))
@@ -71,7 +76,8 @@ describe('one notice a day (phone-local day)', () => {
 
 describe('NOTICE_ID', () => {
   it('sits in no other notification id range', () => {
-    expect(NOTICE_ID < BP_ID_BASE && NOTICE_ID > 1_700_031_000).toBe(true) // above the dose reminders (31000 + 1.7e9 span)
+    expect(NOTICE_ID < BP_ID_BASE && NOTICE_ID >= 100_000 + ID_SPAN).toBe(true) // idFor() hands doses ids in [100000, 100000 + ID_SPAN)
+    expect(NOTICE_ID >= REMINDER_ID_BASE && NOTICE_ID < REMINDER_ID_BASE + 100).toBe(false) // legacy dose range
     expect([BAT_ID, RAIN_ID, SNOOZE_BASE, 1_999_999_999].includes(NOTICE_ID)).toBe(false)
     expect(NOTICE_ID >= BP_ID_BASE && NOTICE_ID <= BP_ID_TOP).toBe(false)
     expect(NOTICE_ID >= TASK_ID_BASE && NOTICE_ID < TASK_ID_BASE + TASK_ID_SPAN).toBe(false)
@@ -83,7 +89,7 @@ describe('runAuto', () => {
     await db.kv.clear(); vi.clearAllMocks()
     Object.assign(h, { native: true, cellular: false, phase: 'idle', have: false, sos: null })
     h.state = { latest: L, failed: false }
-    h.info = { versionCode: 2008000, versionName: '2.8.0', canInstall: true }
+    h.info = { versionCode: 2008000, versionName: '2.8.0', canInstall: true, silentInstall: true }
     h.ln.checkPermissions.mockResolvedValue({ display: 'granted' })
     h.ln.schedule.mockResolvedValue(undefined)
     h.runJob.mockResolvedValue(undefined)
@@ -153,6 +159,25 @@ describe('runAuto', () => {
     expect((await runAuto(NOW)).kind).toBe('notify-tap')
     expect(h.runJob).not.toHaveBeenCalled()
     expect(h.ln.schedule).toHaveBeenCalledTimes(1)
+  })
+  it('an old shell (info() without silentInstall) never downloads or installs: notice only', async () => {
+    h.info = { versionCode: 2008000, versionName: '2.8.0', canInstall: true }
+    expect((await runAuto(NOW)).kind).toBe('notify-tap')
+    expect(h.runJob).not.toHaveBeenCalled()
+    expect(h.install).not.toHaveBeenCalled()
+    expect(h.ln.schedule).toHaveBeenCalledTimes(1)
+  })
+  it('needs_tap is remembered per versionCode: later runs go straight to the notice', async () => {
+    h.runJob.mockResolvedValue('needs_tap')
+    await runAuto(NOW)
+    expect((await db.kv.get(NEEDS_TAP_KEY))?.value).toBe(2009000)
+    await db.kv.delete(AUTO_AT_KEY)
+    expect((await runAuto(NOW + 7 * HOUR)).kind).toBe('notify-tap')
+    expect(h.runJob).toHaveBeenCalledTimes(1)
+    h.state = { latest: { ...L, versionCode: 2010000, versionName: '2.10.0' }, failed: false } // a newer version tries silently again
+    await db.kv.delete(AUTO_AT_KEY)
+    expect((await runAuto(NOW + 8 * HOUR)).kind).toBe('download')
+    expect(h.runJob).toHaveBeenCalledTimes(2)
   })
   it('notification permission denied: no notice, no stamp', async () => {
     h.info = { ...h.info, canInstall: false }

@@ -33,7 +33,7 @@ export const REPEATS = 3 // +0, +10, +20
 export const HORIZON_DAYS = 7
 export const PENDING_CAP = 450 // Android keeps at most 500 alarms per app on many phones; stay clear of it
 export const CARER_AFTER_MIN = 30 // dose-watch's DOSE_WATCH_AFTER_MIN default: the family sees a missed dose this long after the slot
-const ID_SPAN = 1_700_000_000
+export const ID_SPAN = 1_700_000_000
 const KEY_IDS = 'health.doseReminderIds'
 export const REMIND_FOR = 'remind.for'
 

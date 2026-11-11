@@ -16,7 +16,8 @@ import { checkForUpdate } from './useUpdate'
 export const AUTO_KEY = 'update.auto'
 export const AUTO_AT_KEY = 'update.autoAt'
 export const NOTIFIED_KEY = 'update.notifiedOn'
-export const NOTICE_ID = 1_810_000_000 // free base: below the BP 1.82e9, battery 1.83e9, rain 1.84e9, tasks 1.85e9..1.89e9 and snooze 1.9e9 ranges, above the dose reminders (<1.7e9+31000)
+export const NOTICE_ID = 1_810_000_000 // free: above the dose reminders (ids 100000..100000+ID_SPAN, about 1.7e9) and below BP 1.82e9, battery 1.83e9, rain 1.84e9, tasks 1.85e9..1.89e9 and snooze 1.9e9
+export const NEEDS_TAP_KEY = 'update.needsTapFor' // versionCode whose silent install said needs_tap
 export const NOTICE_TEXT = { title: 'Bantay update ready', body: 'Tap to install' }
 
 export interface AutoInput {
@@ -35,6 +36,10 @@ export interface AutoInput {
   canInstall: boolean
   /** A verified APK of latest.versionCode is already on the phone. */
   haveFile?: boolean
+  /** The shell's info() said silentInstall === true. Without it (2.9.0 and older) nothing is downloaded: a tap on the notice does the normal flow. */
+  silentInstall?: boolean
+  /** This versionCode already answered needs_tap once. */
+  needsTap?: boolean
 }
 export type AutoDecision =
   | { kind: 'skip'; reason: 'web' | 'off' | 'busy' | 'throttled' | 'no-latest' | 'bad-latest' | 'same' | 'downgrade' | 'mobile-data' }
@@ -57,7 +62,7 @@ export function decideAuto(i: AutoInput): AutoDecision {
   if (!l) return { kind: 'skip', reason: 'bad-latest' }
   if (l.versionCode === i.versionCode) return { kind: 'skip', reason: 'same' }
   if (l.versionCode < i.versionCode) return { kind: 'skip', reason: 'downgrade' }
-  if (!i.canInstall) return { kind: 'notify-tap' } // Install unknown apps is off: Android needs the person first
+  if (!i.canInstall || i.silentInstall !== true || i.needsTap) return { kind: 'notify-tap' } // Install unknown apps off, an old shell that would open Android's box, or a version that already needed a tap: the person first
   if (i.haveFile) return { kind: 'install' } // needs no data
   if (i.wifiOnly && !i.onWifi) return { kind: 'skip', reason: 'mobile-data' }
   return { kind: 'download' }
@@ -104,14 +109,15 @@ export async function runAuto(now = Date.now()): Promise<AutoDecision> {
     const s = await checkForUpdate(true)
     if (s.failed) return { kind: 'skip', reason: 'no-latest' } // offline: try again at the next start, no 6 h wait
     const wifiOnly = (await kvGet<boolean>('update.wifiOnly')) !== false
-    const d = decideAuto({ ...base, versionCode: shell.versionCode, latest: s.latest, wifiOnly, onWifi: !onCellular(), canInstall: shell.canInstall, haveFile: !!s.latest && hasVerifiedFile(s.latest.versionCode) })
+    const needsTap = !!s.latest && (await kvGet<number>(NEEDS_TAP_KEY)) === s.latest.versionCode
+    const d = decideAuto({ ...base, versionCode: shell.versionCode, latest: s.latest, wifiOnly, onWifi: !onCellular(), canInstall: shell.canInstall, silentInstall: shell.silentInstall === true, needsTap, haveFile: !!s.latest && hasVerifiedFile(s.latest.versionCode) })
     // mobile data is waiting for Wi-Fi, and no latest.json is an unfinished check: neither uses up the 6 h
     if (!(d.kind === 'skip' && (d.reason === 'mobile-data' || d.reason === 'no-latest'))) await kvPut(AUTO_AT_KEY, now)
     if (d.kind === 'notify-tap') await noticeOnce(now)
     else if ((d.kind === 'download' || d.kind === 'install') && s.latest) {
       // silent: if Android needs a tap, the box is NOT opened from here; only the once-a-day notice is posted, and the box opens when the person taps the notice or the update sheet
       const r = await runJob(s.latest, AppUpdater, true)
-      if (r === 'needs_tap' || getJob().phase === 'pending') await noticeOnce(now)
+      if (r === 'needs_tap' || getJob().phase === 'pending') { await kvPut(NEEDS_TAP_KEY, s.latest.versionCode); await noticeOnce(now) }
     }
     return d
   } catch { return { kind: 'skip', reason: 'no-latest' } } finally { running = false }

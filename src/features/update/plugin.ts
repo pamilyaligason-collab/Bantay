@@ -4,7 +4,8 @@ import type { PluginListenerHandle } from '@capacitor/core'
 /** Contract with android/.../AppUpdaterPlugin.java. download() rejects with err.code (native: message == code) one of 'network' | 'checksum' | 'space' | 'busy' | 'bad_args'; a size mismatch is 'checksum'. */
 export interface AppUpdaterPlugin {
   /** canInstall = packageManager.canRequestPackageInstalls() */
-  info(): Promise<{ versionCode: number; versionName: string; canInstall: boolean }>
+  /** silentInstall: true only in a shell whose install() honours {silent:true}; absent in 2.9.0 and older (they would open Android's box), so automatic installs need it === true. */
+  info(): Promise<{ versionCode: number; versionName: string; canInstall: boolean; silentInstall?: boolean }>
   /** Opens Android's "Install unknown apps" screen for Bantay. */
   openInstallPermission(): Promise<void>
   download(o: { url: string; sha256: string; size: number }): Promise<{ path: string }>
