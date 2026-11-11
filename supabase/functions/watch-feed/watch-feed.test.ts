@@ -188,3 +188,13 @@ describe('oembedPlayable', () => {
     for (const s of [403, 429, 500, 503]) expect(() => oembedPlayable(s)).toThrow()
   })
 })
+
+describe('S34 not-words from the first back-catalogue run', () => {
+  it('drops events, speeches and news; keeps the how-to videos', async () => {
+    const { matchesShelf: shelfOf } = await import('./feed.ts')
+    const drop: [string, string][] = [['farm-diy', 'Department of Agriculture (DA) Hymn'], ['farm-diy', 'Bureau of Plant Industry 94th Anniversary'], ['farm-diy', 'Farmers & Fishersfolks Month 2023 Celebration'], ['farm-diy', 'Bataan Farm Visit'], ['prepping', 'PRC News Flash | World First Aid Day'], ['prepping', 'DONATE NOW | Philippine Red Cross Relief Kits'], ['prepping', 'PRC Typhoon Uwan Response']]
+    const keep: [string, string][] = [['farm-diy', 'AgriTalk2Easy Learning Series on VCO processing EP18: Paggawa ng VCO Body Lotion'], ['farm-diy', 'Agritalk Video Series: Banana-based Recipes'], ['prepping', 'FLOOD PREPAREDNESS: IMPROVISED FLOATATION DEVICE'], ['prepping', '4th Quarter National Simultaneous Earthquake Drill 2025'], ['prepping', 'OCD, Pinaiigting ang Paghahanda sa Epekto ng El Niño']]
+    for (const [sh, t] of drop) expect(shelfOf(sh as never, t), t).toBe(false)
+    for (const [sh, t] of keep) expect(shelfOf(sh as never, t), t).toBe(true)
+  })
+})
