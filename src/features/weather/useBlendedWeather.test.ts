@@ -47,6 +47,16 @@ describe('useBlendedWeather', () => {
     expect((await db.kv.get(forecastKey(P)))?.key).toBe(forecastKey(P))
   })
 
+  it('Texas (B1): on, but the point is outside the Philippines, so the function is never called and the position is never sent; the direct forecast is used', async () => {
+    const HOUSTON = { lat: 29.76, lon: -95.37 }
+    const { result } = renderHook(() => useBlendedWeather(HOUSTON, { on: true, invoke: good }))
+    await waitFor(() => expect(result.current.fc).not.toBeNull())
+    expect(good).not.toHaveBeenCalled()
+    expect(result.current.blended).toBe(false)
+    expect(direct).toHaveBeenCalledTimes(1)
+    expect(String((direct.mock.calls as unknown as string[][])[0]?.[0])).toContain('timezone=auto')
+  })
+
   it('on but the function fails: falls back to the direct forecast', async () => {
     const { result } = renderHook(() => useBlendedWeather(P, { on: true, invoke: down }))
     await waitFor(() => expect(result.current.fc).not.toBeNull())

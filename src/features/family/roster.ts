@@ -5,6 +5,7 @@ import { ldb } from '../log/store'
 import { usePeople } from '../records/useRecordsServer'
 import { useProfiles, useSelfPersonId } from '../setup/useProfile'
 import { useMessengers } from './messengerApi'
+import { toE164 } from '../location/phoneRegion'
 
 export interface FamilyPerson {
   id: string
@@ -86,7 +87,7 @@ export function ageOf(birthdate: string | null, now = new Date()): number | null
 }
 
 /** Digits (and a leading +) of a phone number for tel: and sms: links, or null when there are no digits. */
-export const dial = (phone: string | null) => { const d = (phone ?? '').replace(/[^\d+]/g, ''); return /\d/.test(d) ? d : null }
+export const dial = (phone: string | null) => { const d = (phone ?? '').replace(/[^\d+]/g, ''); return /\d/.test(d) ? toE164(d) : null } // S30 L8 (D4): a Philippine 09xx number gets +63 when this phone is outside the Philippines
 
 /** The grey-avatar nudge: someone else who has not checked in today gets "Not checked in today: send a hello", which opens a text to them.
  *  Nothing for the person themself or for someone who is OK. With no phone saved there is no nudge. */

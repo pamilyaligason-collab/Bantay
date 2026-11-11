@@ -3,7 +3,7 @@ import { wxFlag } from '../weather/flags'
 import { conditionWords, getForecast, type Forecast } from '../weather/forecast'
 import { creditIds } from '../weather/ForecastNote'
 import { useBlendedWeather } from '../weather/useBlendedWeather'
-import { rainLine, type Wx } from './heroCards'
+import type { Wx } from './heroCards'
 
 // Lane M4: the forecast itself lives in features/weather/forecast.ts (one request, one cache, shared by every surface).
 // This file keeps the small Wx shape Today, Safety and the Assistant already use, derived from that cache.
@@ -50,9 +50,4 @@ export function useWeather(p: LatLon | null): Wx | null {
   return toWx(fc, offline, creditIds(bl))
 }
 
-/** The one weather sentence for the app, e.g. "27° partly cloudy. Rain likely from 3 PM for about 2 hours. Chance: 80%."
- *  Today and Safety both use it so the numbers never disagree. null when the temperature is unknown (never a made-up 0). */
-export function weatherLine(w: Wx | null, now: Date = new Date()): string | null {
-  if (!w || w.temp == null) return null
-  return `${Math.round(w.temp)}° ${w.words}. ${rainLine(w, now)}`
-}
+

@@ -3,11 +3,13 @@ import { useFamilyPeople } from '../family/roster'
 import { useTakenToday } from '../health/useActivity'
 import { useMedications } from '../health/useMedications'
 import { manilaDay, matchDoses, slotsFor } from '../health/meds'
+import { zoneOf } from '../time/zone'
 import { logDose } from '../log/store'
 import { Icon } from '../shell/Icon'
 import { useActingCan, useActingPersonId } from '../viewas/viewAs'
 import type { MyTake } from '../today/useMyTakes'
 import { shortName } from './build'
+import { toE164 } from '../location/phoneRegion'
 
 /** The slot ("HH:MM") and Manila day a missed-dose row is about, read from its dedupe ref ("<id>:2026-10-26:09:00"); null parts when the ref has no such text. */
 export function doseRef(ref: string | null): { day: string | null; slot: string | null } {
@@ -29,9 +31,10 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
   const [ask, setAsk] = useState(false)
   const [done, setDone] = useState(false)
   const { day, slot } = doseRef(refText)
-  const today = manilaDay(now) // the ref's day is the server's Manila day
+  const tz = zoneOf(personId) // the ref's day is the server's day on THEIR zone (people.tz), not this phone's
+  const today = manilaDay(now, tz)
   const open = personId && slot && (day == null || day === today)
-    ? matchDoses(slotsFor(meds, personId, today), takes, today, manilaDay).filter((d) => d.slot === slot && d.state === 'pending')
+    ? matchDoses(slotsFor(meds, personId, today), takes, today, (v) => manilaDay(v, tz)).filter((d) => d.slot === slot && d.state === 'pending')
     : []
   const mark = async () => {
     for (const d of open) { const med = meds.find((m) => m.serverId === d.medicationId && m.name === d.name) ?? meds.find((m) => m.name === d.name); if (med) await logDose(med, d.slot) }
@@ -40,7 +43,7 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
   return (
     <div className="in-actions" role="group" aria-label="What you can do">
       {person?.phone
-        ? <a className="btn in-act" href={`tel:${person.phone}`}>Call {name}</a>
+        ? <a className="btn in-act" href={`tel:${toE164(person.phone)}`}>Call {name}</a>
         : personId ? <a className="btn in-act" href={`#family/people/${personId}`}>Open {name}</a> : null}
       {done
         ? <span className="sh-sub" role="status">Marked as taken</span>

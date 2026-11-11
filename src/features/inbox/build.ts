@@ -1,3 +1,4 @@
+import { getZone, zoneOf } from '../time/zone'
 import { DOSE_WINDOW_MIN, dueDoses } from '../today/heroCards'
 import { rankAlerts, type Alert } from '../safety/alerts'
 import { manilaDay, manilaMinutes, matchDoses, slotsFor } from '../health/meds'
@@ -34,7 +35,7 @@ export function shortName(full: string | null | undefined): string | null {
   if (!w.length) return null
   return (w[0] && TITLE_WORDS.has(w[0].toLowerCase()) && w.length > 1 ? w.slice(0, 2) : w.slice(0, 1)).join(' ')
 }
-const manilaClock = (ms: number) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Asia/Manila' }).format(ms)
+const manilaClock = (ms: number) => new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: getZone() }).format(ms)
 
 /** One inbox row per unexpired carer_alerts row. Template ids carry no values, so the title is the fixed copy with the person's name filled in from this phone. */
 export function familyItems(rows: AlertRow[], nameOf: (personId: string | null) => string | null, now: Date): InboxItem[] {
@@ -86,9 +87,10 @@ const clock = (m: number) => `${Math.floor(m / 60)}:${String(m % 60).padStart(2,
 /** Today's doses that are due now or already past their window and not marked taken or skipped. */
 export function pendingDoses(s: Pick<InboxSources, 'now' | 'profile' | 'taken' | 'skipped' | 'medications' | 'personId'>) {
   if (s.medications && s.personId) {
-    const nowMin = manilaMinutes(s.now) // the dose day and clock are Manila's, not this phone's (ML-38; useTakenToday reads from Manila midnight)
-    const day = manilaDay(s.now)
-    return matchDoses(slotsFor(s.medications, s.personId, day), s.taken, day, manilaDay)
+    const tz = zoneOf(s.personId) // the dose day and clock are the person's (this phone's for me), never the viewer's (ML-38)
+    const nowMin = manilaMinutes(s.now, tz)
+    const day = manilaDay(s.now, tz)
+    return matchDoses(slotsFor(s.medications, s.personId, day), s.taken, day, (v) => manilaDay(v, tz))
       .filter((d) => d.state === 'pending' && d.at <= nowMin)
       .map((d) => ({ name: d.name, at: d.at, missed: nowMin >= d.at + DOSE_WINDOW_MIN }))
   }
@@ -102,7 +104,7 @@ export function buildInbox(s: InboxSources): InboxItem[] {
   for (const a of rankAlerts(s.alerts, null).slice(0, MAX_ALERTS)) {
     out.push({ id: `alert:${a.id}:${a.issuedAt}`, kind: 'alert', title: a.title, sub: `Alert · ${a.where || a.source}`, href: '#safety', alertKind: a.kind, ...(Number.isNaN(Date.parse(a.issuedAt)) ? {} : { at: Date.parse(a.issuedAt) }) })
   }
-  const day = manilaDay(s.now)
+  const day = manilaDay(s.now, s.personId ? zoneOf(s.personId) : getZone())
   for (const d of pendingDoses(s)) {
     out.push(d.missed
       ? { id: `dose:${day}:${d.name}:${d.at}:missed`, kind: 'dose', title: `${d.name} was not marked today`, sub: `Medicine · was due ${clock(d.at)}`, href: '#today' }

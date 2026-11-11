@@ -11,6 +11,7 @@ import { addManilaDays } from '../today/nextPick'
 import { stockInfo, weekCounter } from './medDetailLogic'
 import { stockRows } from './stock'
 import { Row, Section, GroupedList } from '../look'
+import { tzMidnight, zoneOf } from '../time/zone'
 import { answeredBy, isLive, manilaDay, matchDoses, parseSchedule, slotsFor, type DoseState } from './meds'
 import { QueuedBadge } from '../sync/OfflineBar'
 import { useQueuedDoseIds } from '../sync/useOffline'
@@ -30,7 +31,7 @@ function useTakesSince(personId: string, day: string): MedTaken[] | undefined {
   const id = `${personId}|${day}`
   useEffect(() => {
     if (!personId) return
-    const since = new Date(`${day}T00:00:00+08:00`).toISOString()
+    const since = tzMidnight(day, zoneOf(personId)).toISOString()
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id, rows }), error: () => setGot({ id, rows: NONE }) })
     return () => sub.unsubscribe()
   }, [personId, day, id])
@@ -52,10 +53,11 @@ function settledBy(d: DoseState, takes: MedTaken[]): MedTaken | undefined {
 /** Today's doses for one person, shared by the screen and the Health summary. */
 export function useToday(personId: string) {
   const meds = useMedicationRows(personId)
-  const day = manilaDay(new Date()) // the dose day is Manila's
+  const tz = zoneOf(personId) // the dose day is the PERSON's (this phone's for me), never the viewer's
+  const day = manilaDay(new Date(), tz)
   const week = useTakesSince(personId, addManilaDays(day, -6))
-  const takes = useMemo(() => (week ?? NONE).filter((t) => manilaDay(t.takenAt) === day), [week, day])
-  const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day, manilaDay), [meds, personId, day, takes])
+  const takes = useMemo(() => (week ?? NONE).filter((t) => manilaDay(t.takenAt, tz) === day), [week, day, tz])
+  const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day, (v) => manilaDay(v, tz)), [meds, personId, day, takes, tz])
   return { meds, takes, week, doses, day }
 }
 

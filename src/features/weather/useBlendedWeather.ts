@@ -3,6 +3,7 @@ import type { Air, Alert, Blended, Check, Slot, Source } from '../../../supabase
 import { db } from '../../db'
 import { supabase } from '../auth/client'
 import type { LatLon } from '../location/geo'
+import { inPhilippines } from '../location/place'
 import { type Forecast, forecastKey, KEEP_MS, pruneForecasts, readCached, REFRESH_MS, useForecast } from './forecast'
 
 // The server-side blend (lane Q: Open-Meteo + MET Norway + OpenWeather, median per hour, see supabase/functions/weather-blend).
@@ -60,7 +61,8 @@ export interface BlendedState {
 
 /** Blended weather when `on` (default WEATHER_BLEND_ON), else, or when the blend fails, the direct forecast. `invoke` must be stable (tests). */
 export function useBlendedWeather(p: LatLon | null, o: { on?: boolean; invoke?: Invoke } = {}): BlendedState {
-  const on = o.on ?? WEATHER_BLEND_ON
+  // S30 L8 (B1): the blend is Philippines-only (its function refuses a point outside the PH box with a 400): outside it, go straight to the direct forecast and never send the position
+  const on = (o.on ?? WEATHER_BLEND_ON) && (!p || inPhilippines(p))
   const invoke = o.invoke
   const key = p ? forecastKey(p) : ''
   const lat = p?.lat

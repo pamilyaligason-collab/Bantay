@@ -22,6 +22,7 @@ import RainMini, { miniSlots } from './RainMini'
 import './weatherHero.css'
 
 import { useWeather } from './weather'
+import { tempText, useWxUnits } from '../weather/units'
 
 export const WEATHER_HREF = '#weather'
 export const WEATHER_ACTION_HREF = '#weather?from=action' // from=action counts weather_opened_action: only when an action line is on the card
@@ -52,7 +53,6 @@ function mmGated(wx: Wx): Wx {
   return { ...wx, hourly: { ...h, prob: h.prob.map((p, i) => (h.mm![i] === 0 ? 0 : p)) } }
 }
 
-const deg = (n: number) => `${Math.round(n)}°`
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
 
 /** The next three 3-hour slots from the current place-local hour: time, sky icon, rain chance. Empty without hourly data. */
@@ -71,6 +71,8 @@ const whereOf = (place: Parameters<typeof placeLineOf>[0]) => placeLineOf(place)
 export function WeatherStrip() {
   const { place, point } = useWeatherPlace()
   const wx = useWeather(point)
+  const units = useWxUnits() // S30 L8 (B2)
+  const deg = (n: number) => tempText(n, units)
   if (!wx || wx.temp == null || !place) return null
   const rain = wx.rainPct == null ? null : (wx.rainPct < 10 ? 'Low chance of rain' : `Rain chance ${Math.round(wx.rainPct)}%`)
   return (
@@ -96,6 +98,8 @@ export default function WeatherCard({ expanded = false, review = 0, noJack = fal
   const { place, point } = useWeatherPlace()
   const ready = !!place && !!point && place.settled !== false // X7: no forecast for the home zone while the first position is still being found
   const wx = useWeather(ready ? point : null)
+  const units = useWxUnits() // S30 L8 (B2): °F and mph on a US phone, Settings > Display can change it
+  const deg = (n: number) => tempText(n, units)
   if (!wx || wx.temp == null || !place || !ready) { // v13: Today keeps its hero slot with a plain empty state (never a made-up temperature)
     return hero ? (
       <a className="td-wxs td-wxs-empty" href={WEATHER_HREF} data-hero="" data-testid="weather-hero" aria-label="Weather">

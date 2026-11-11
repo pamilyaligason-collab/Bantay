@@ -1,3 +1,4 @@
+import { tzMidnight, zoneOf } from '../time/zone'
 import { manilaDay, matchDoses, slotsFor, type DoseState } from '../health/meds'
 import { addManilaDays, manilaDaysEnding } from '../today/nextPick'
 import { recentlyTaken } from '../today/useDueMeds'
@@ -14,10 +15,11 @@ const NOON = 12 * 60
 const halfOf = (at: number): Half => (at < NOON ? 'am' : 'pm')
 
 export function pillbox(i: { personId: string; meds: Medication[]; takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped' | 'personId'>[]; now: Date }): PillDay[] {
-  const today = manilaDay(i.now)
+  const tz = zoneOf(i.personId)
+  const today = manilaDay(i.now, tz)
   const mine = i.takes.filter((t) => t.personId === i.personId)
-  return manilaDaysEnding(i.now, 7).map((day) => {
-    const doses = matchDoses(slotsFor(i.meds, i.personId, day), mine, day, manilaDay)
+  return manilaDaysEnding(i.now, 7, tz).map((day) => {
+    const doses = matchDoses(slotsFor(i.meds, i.personId, day), mine, day, (v) => manilaDay(v, tz))
     const cell = (h: Half): PillCell => {
       const ds = doses.filter((d) => halfOf(d.at) === h)
       if (!ds.length) return { state: 'none', doses: ds }
@@ -32,11 +34,12 @@ export function pillbox(i: { personId: string; meds: Medication[]; takes: Pick<M
 /** Log the still-open doses of TODAY's morning or evening for this person, through the same logDose the Taken button uses. Re-reads the local tables first, so a dose already logged
  *  (here, from a reminder or on another screen) is never logged twice. Resolves to the rows logged. Only today's cells can be logged. */
 export async function logHalf(personId: string, half: Half, now = new Date()): Promise<number> {
-  const day = manilaDay(now)
-  const yest = new Date(`${addManilaDays(day, -1)}T00:00:00+08:00`)
+  const tz = zoneOf(personId)
+  const day = manilaDay(now, tz)
+  const yest = tzMidnight(addManilaDays(day, -1), tz)
   const [meds, takes] = await Promise.all([ldb.medications.filter((m) => m.personId === personId).toArray(), ldb.meds.where('takenAt').aboveOrEqual(yest.toISOString()).filter((t) => t.personId === personId).toArray()])
   // Same rule as markTaken: the day match alone misses a dose just after midnight tapped before midnight.
-  const open = matchDoses(slotsFor(meds, personId, day), takes, day, manilaDay).filter((d) => halfOf(d.at) === half && d.state === 'pending' && !recentlyTaken(takes, personId, d, now.getTime()))
+  const open = matchDoses(slotsFor(meds, personId, day), takes, day, (v) => manilaDay(v, tz)).filter((d) => halfOf(d.at) === half && d.state === 'pending' && !recentlyTaken(takes, personId, d, now.getTime()))
   for (const d of open) await logDose({ personId, name: d.name, serverId: d.medicationId ?? undefined }, d.slot, { at: now })
   return open.length
 }

@@ -11,7 +11,8 @@ import webpush from 'npm:web-push@3.6.7'
 import { fcmMessageFor, fcmOutcome, parseServiceAccount, sendFcm } from '../_shared/fcm.ts'
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { TEMPLATES } from '../_shared/templates.ts'
-import { DOSE_RETRY_MS, manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
+import { dayIn, safeZone, slotInstant } from '../_shared/tz.ts'
+import { DOSE_RETRY_MS, manilaDay, isUndefinedColumn, normaliseDrug, recipients, runDoseWatch, scheduleTimes, zoneOfMed, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
 
 const PAGE = 1000
 /** Read every row, PAGE at a time (the API caps one response at 1000 rows). */
@@ -19,7 +20,7 @@ async function pages<T>(q: (from: number, to: number) => PromiseLike<{ data: unk
   const all: T[] = []
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await q(from, from + PAGE - 1)
-    if (error) throw new Error('read')
+    if (error) throw Object.assign(new Error('read'), { cause: error }) // the cause stays so a caller can tell a missing column from a real failure
     all.push(...((data ?? []) as T[]))
     if (!data || data.length < PAGE) return all
   }
@@ -103,7 +104,10 @@ Deno.serve(async (req) => {
 
   const port: PortExt = {
     async medications() {
-      return pages<MedRow>((from, to) => sb.from('medications').select('id,person_id,name,med_status,deleted_at,as_needed,schedule,started_on,stopped_on,people!inner(archived_at)').is('deleted_at', null).eq('med_status', 'active').eq('as_needed', false).is('people.archived_at', null).order('id').range(from, to))
+      const read = (embed: string) => pages<MedRow>((from, to) => sb.from('medications').select(`id,person_id,name,med_status,deleted_at,as_needed,schedule,started_on,stopped_on,${embed}`).is('deleted_at', null).eq('med_status', 'active').eq('as_needed', false).is('people.archived_at', null).order('id').range(from, to))
+      // S30 L8: the person's own zone (people.tz, 0065). Before 0065 is applied the column is not there: read without it and everyone is Asia/Manila, exactly as before.
+      // Only the missing-column error falls back; any other error is rethrown so a failed read is never mistaken for "everyone is Manila" (a Texas dose would be judged on the wrong clock).
+      try { return await read('people!inner(archived_at,tz)') } catch (e) { if (!isUndefinedColumn((e as { cause?: unknown }).cause)) throw e; return await read('people!inner(archived_at)') }
     },
     async taken(sinceIso) {
       return pages<TakenRow>((from, to) => sb.from('meds_taken').select('person_id,medication_id,slot,taken_at,name').gte('taken_at', sinceIso).order('id').range(from, to))
@@ -157,6 +161,10 @@ Deno.serve(async (req) => {
     const subs = await subsOf(users)
     const tokenRows = await tokensOf(users)
     const tokens = tokenRows ?? []
+    // S30 L8: quiet hours run on the RECIPIENT's clock (people.tz). Before 0065 the read fails: everyone stays on Asia/Manila.
+    const zoneByUser = new Map<string, string>()
+    const zr = await sb.from('people').select('auth_user_id,tz').in('auth_user_id', users)
+    if (!zr.error) for (const p of (zr.data ?? []) as { auth_user_id: string; tz: string | null }[]) zoneByUser.set(p.auth_user_id, safeZone(p.tz))
     let webPushed = 0
     let fcmPushed = 0
     let fcmRetried = 0
@@ -178,7 +186,7 @@ Deno.serve(async (req) => {
           if (status != null && status >= 200 && status < 300) webPushed++
           else if (status === 404 || status === 410) await removeSub(sub.endpoint)
         }
-        const msg = fcmAccount ? fcmMessageFor(r, now) : null
+        const msg = fcmAccount ? fcmMessageFor(r, now, zoneByUser.get(r.carer_user_id)) : null
         if (msg && !tokenRows) retry = true // tokens could not be read: try this row again next run
         if (msg) {
           for (const t of tokens.filter((x) => x.user_id === r.carer_user_id)) {
@@ -230,15 +238,17 @@ Deno.serve(async (req) => {
    *  or their phone is the Android app (phone_health.platform 'android': its local alarm rings). shortcut: the dedupe is the 15 minute window plus the
    *  notification tag, not a stored claim; upgrade if the cron ever runs more often than every 15 minutes. */
   async function doseDue(now: Date): Promise<number> {
-    const day = manilaDay(now.getTime())
     const meds = await port.medications()
     const taken = await port.taken(new Date(now.getTime() - 86_400_000).toISOString())
     const slots = new Set<string>() // person|slot
-    const open = (m: MedRow, t: string) => !taken.some((r) => r.person_id === m.person_id && r.slot === t && manilaDay(Date.parse(r.taken_at)) === day && (r.medication_id ? r.medication_id === m.id : !!normaliseDrug(r.name) && normaliseDrug(r.name) === normaliseDrug(m.name)))
+    // S30 L8: the slot is the person's own wall clock (their zone, DST aware), so a Texas 08:00 pings at 08:00 there
+    const open = (m: MedRow, t: string, day: string, tz: string) => !taken.some((r) => r.person_id === m.person_id && r.slot === t && dayIn(tz, Date.parse(r.taken_at)) === day && (r.medication_id ? r.medication_id === m.id : !!normaliseDrug(r.name) && normaliseDrug(r.name) === normaliseDrug(m.name)))
     for (const m of meds) {
+      const tz = zoneOfMed(m)
+      const day = dayIn(tz, now.getTime())
       for (const t of scheduleTimes(m.schedule)) {
-        const late = now.getTime() - Date.parse(`${day}T${t}:00+08:00`)
-        if (late >= 0 && late < DOSE_DUE_WINDOW_MS && open(m, t)) slots.add(`${m.person_id}|${t}`)
+        const late = now.getTime() - slotInstant(tz, day, t)
+        if (late >= 0 && late < DOSE_DUE_WINDOW_MS && open(m, t, day, tz)) slots.add(`${m.person_id}|${t}`)
       }
     }
     const personIds = [...new Set([...slots].map((s) => s.split('|')[0]!))]

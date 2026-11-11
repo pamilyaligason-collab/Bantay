@@ -1,4 +1,5 @@
 import { Icon } from '../shell/Icon'
+import { tempText, useWxUnits } from '../weather/units'
 import { kindOf } from '../weather/forecast'
 import { reconcileNow } from '../weather/rainNow'
 import '../weather/rainNow.css'
@@ -6,7 +7,6 @@ import { wxLocal, type Wx } from './heroCards'
 import { stormSlots, type Slot } from './stormView'
 
 export const STRIP_HOURS = 12
-const deg = (n: number) => `${Math.round(n)}°`
 const hourLabel = (t: string) => { const h = Number(t.slice(11, 13)); return `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}` }
 
 /** The next 12 hours from the place-local current hour, current hour first, from the hourly forecast the hero already loaded. Fewer when the forecast is shorter (nothing invented); empty without hourly data.
@@ -27,6 +27,8 @@ export function hourlySlots(wx: Wx, now: Date, storm = false): HourSlot[] {
 
 /** A horizontally scrollable strip of the next 12 hours: time, icon, temperature, rain chance. Focusable so the arrow keys scroll it; each item is 44 px or more. */
 export default function HourlyStrip({ slots }: { slots: HourSlot[] }) {
+  const units = useWxUnits() // S30 L8 (B2)
+  const deg = (n: number) => tempText(n, units)
   if (!slots.length) return null
   return (
     <ul className="td-hs" aria-label="Next 12 hours" tabIndex={0} data-testid="hourly-strip">

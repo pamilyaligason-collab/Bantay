@@ -5,9 +5,29 @@ import css from './calm.css?raw'
 import { parse, ratio } from '../look/contrastMath'
 const tr = vi.hoisted(() => vi.fn(async () => true))
 vi.mock('../admin/events', () => ({ track: tr }))
+const where = vi.hoisted(() => ({ r: 'ph' as 'ph' | 'us' | null }))
+vi.mock('../location/region', () => ({ useViewerRegion: () => where.r })) // the card follows where the phone is (S30 L8); the machine's own zone must not decide a test
 import hotlines from '../../data/safety/hotlines.json'
 import CrisisCard, { TalkCard } from './CrisisCard'
-afterEach(cleanup)
+afterEach(() => { cleanup(); where.r = 'ph' })
+
+describe('CrisisCard in Texas (S30 L8, D1)', () => {
+  it('a phone in the US gets 988, never 1553 or a Philippine number', () => {
+    where.r = 'us'
+    render(<CrisisCard />)
+    expect(screen.getByRole('link', { name: 'Call 911' }).getAttribute('href')).toBe('tel:911')
+    expect(screen.getByRole('link', { name: 'Call 988' }).getAttribute('href')).toBe('tel:988')
+    expect(screen.getByText(/988 Suicide & Crisis Lifeline/)).toBeTruthy()
+    expect(screen.queryByText(/1553/)).toBeNull()
+    expect(screen.queryByText(/NCMH/)).toBeNull()
+  })
+  it('an unknown place shows both lines, each under its own name', () => {
+    where.r = null
+    render(<CrisisCard />)
+    expect(screen.getByRole('link', { name: 'Call 988' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Call 1553' })).toBeTruthy()
+  })
+})
 
 describe('CrisisCard', () => {
   it('Call 911 is a real tel link with a 44 px target, even with no rows', () => {

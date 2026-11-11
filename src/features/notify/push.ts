@@ -1,4 +1,5 @@
 import { db } from '../../db'
+import { dayIn, getZone, hourIn } from '../time/zone'
 import { buildNotification, FALLBACK, HEALTH_IDS, type Built, type TemplateId } from './templates'
 
 export const MAX_NUDGES_PER_DAY = 2
@@ -16,8 +17,8 @@ export interface PushDeps {
 
 export const MAX_CARER_PER_DAY = 6
 export const readQuietOn = async () => (await db.kv.get('quiet.on').catch(() => undefined))?.value !== false
-/** 10 PM to 6 AM Manila, the hours the Me screen promises. */
-export const inQuietHours = (d: Date) => { const h = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Manila', hour: '2-digit', hour12: false }).format(d)) % 24; return h >= 22 || h < 6 }
+/** 10 PM to 6 AM on this phone's clock, the hours the Me screen promises. */
+export const inQuietHours = (d: Date, tz: string = getZone()) => hourIn(tz, d) >= 22 || hourIn(tz, d) < 6 // S30 L8 (A2): the recipient's own clock = this phone's zone (Asia/Manila until the app sets it at start)
 
 /** Own small cap for carer alerts (their own kv key, so health nudges never use it up). It counts distinct tags per Manila day: a re-sent push for a tag already claimed today
  *  replaces the shown one (same tag) and is free, so dose-watch retries cannot use the cap up and silence a later, different alert. */
@@ -33,8 +34,8 @@ export const claimCarer = (day: string, max: number, tag = '') =>
     return true
   })
 
-/** Calendar day in Manila (the family's day), whatever the phone's timezone says. */
-export const dayKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(d)
+/** Calendar day on this phone's zone (the dose day of its owner; Asia/Manila until the zone is set at start). */
+export const dayKey = (d: Date, tz: string = getZone()) => dayIn(tz, d)
 
 /** Read and increment inside one Dexie rw transaction so two pushes cannot both pass the cap. */
 export const claimNudge = (day: string, max: number) =>

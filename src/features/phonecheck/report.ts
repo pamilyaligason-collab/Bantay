@@ -4,6 +4,7 @@ import { isNativeAndroid } from '../safety/settingsOpener'
 import { ALARM_SHELL, shellVersionNow, versionAtLeast } from './appInfo'
 import { KEY_ALARM_HEALTH, KEY_PHONE_SENT, type AlarmHealth } from './keys'
 import { BLANK_PROBE, probe, type ProbeResult } from './probe'
+import { reportMyZone, syncPersonZones } from '../time/reportZone'
 
 export const RESEND_MS = 12 * 3_600_000 // the family's "not opened for 48 h" sweep only needs a fresh last_open_at now and then (ML-06: bounded outbox)
 
@@ -16,6 +17,7 @@ export async function reportPhoneHealth(opts: { now?: Date; result?: ProbeResult
     const now = opts.now ?? new Date()
     const userId = supabase ? (await supabase.auth.getSession()).data.session?.user.id : undefined
     if (!userId) return false // signed out or auth not configured: nobody to report for
+    void reportMyZone(userId).then(() => syncPersonZones(userId)) // S30 L8: the phone's own zone to people.tz (self only, weekly or when it changes), then everyone's zones for the clock labels
     const native = isNativeAndroid()
     const r = opts.result ?? (native ? await probe() : BLANK_PROBE)
     const ver = native ? await shellVersionNow() : webVersion()

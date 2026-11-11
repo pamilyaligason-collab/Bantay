@@ -13,7 +13,7 @@ import { nextDoses, type DuePerson } from './nextPick'
 const NO_MEDS: Medication[] = []
 const NO_IDS: string[] = []
 const NO_TAKES: MedTaken[] = []
-const startOfYesterday = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - 1); return d } // yesterday's late doses count at the midnight edge
+const startOfYesterday = () => new Date(Date.now() - 3 * 86_400_000) // a 3-day window covers yesterday's late doses on ANY person's clock (zones differ by up to 26 h); matchDoses picks the day
 
 /** Medicines for Next up: the dose due soon (or just missed) for me only, from the medications table (no profile text).
  *  N-3 (the owner 2026-10-30): Today shows the signed-in person's own items; a carer's dependants live in Family and, for an admin, View as.

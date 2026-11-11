@@ -34,6 +34,8 @@ export interface DialPlan {
   /** Local area with no entry at all, or Philippines outside every area: admins may add numbers. */
   noLocal: boolean
   abroad: boolean
+  /** S30 L8 (D2): dial the numbers in international form (+63 ...). True abroad AND in the Texas area: a person in Texas is outside the Philippines, so a Philippine number typed 1348 or (02) 8722-1144 cannot connect without +63. */
+  intl: boolean
 }
 
 const inSet = (entries: Entry[], id: string) => entries.filter((e) => e.zone === id)
@@ -54,7 +56,7 @@ export function planDial(pos: LatLon, entries: Entry[], fromGps: boolean): DialP
   sets.push({ id: 'tele', header: 'Talk to a doctor by phone', entries: inSet(entries, 'tele') })
   const family = inSet(entries, FAMILY_SET)
   if (family.length) sets.push({ id: FAMILY_SET, header: 'Family-added', entries: family })
-  return { where: pick.where, note, sets, noLocal: pick.where === 'ph' || (pick.where === 'area' && sets[0]!.entries.length === 0), abroad: pick.where === 'abroad' }
+  return { where: pick.where, note, sets, noLocal: pick.where === 'ph' || (pick.where === 'area' && sets[0]!.entries.length === 0), abroad: pick.where === 'abroad', intl: pick.where === 'abroad' || (pick.where === 'area' && pick.area.id === 'texas') }
 }
 
 /** True when our per-area data (places, hazard readings) was gathered for where the person is: the home zone chosen, or a phone position inside that zone's hotline area. */
