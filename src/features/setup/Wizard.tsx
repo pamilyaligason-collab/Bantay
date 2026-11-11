@@ -245,6 +245,7 @@ export default function Wizard({ start, onDone }: { start?: StepId; onDone: () =
         <div className="hdr"><h1>{TITLES[step]}</h1></div>
         {BODY[step]()}
         <button type="button" className="btn" onClick={cont}>{last ? 'Finish' : 'Continue'}</button>
+        {last && <button type="button" className="btn2" onClick={() => { onDone(); location.hash = '#setup/all' }}>Set up everything else</button>}
       </main>
     </div>
   )

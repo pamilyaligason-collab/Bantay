@@ -262,7 +262,7 @@ describe('About, Sign-in, Phone', () => {
     await screen.findByRole('heading', { name: 'Phone' })
     await new Promise((r) => setTimeout(r, 50))
     expect(screen.queryByRole('button', { name: /Family phones/ })).toBeNull()
-    expect(rowsOf(container)).toEqual([])
+    expect(rowsOf(container)).toEqual(['Set up everything'])
     expect(screen.getByText('Setup checklist')).toBeTruthy()
     expect(container.querySelector('.sh-me-sensors')).not.toBeNull()
   })
