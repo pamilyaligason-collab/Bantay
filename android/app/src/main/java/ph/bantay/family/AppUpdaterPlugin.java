@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Contract (src/features/update/plugin.ts): info, openInstallPermission, download, install.
  * download rejects with message == code, one of 'network' | 'checksum' | 'space' | 'busy' | 'bad_args'.
  * A downloaded size that differs from latest.json (short or long) rejects 'checksum'.
+ * install({path, silent:true}) resolves 'needs_tap' instead of opening Android's box (automatic updates).
  * After install resolves 'pending_user', the final status arrives as an 'installResult' event.
  */
 @CapacitorPlugin(name = "AppUpdater")
@@ -56,6 +57,7 @@ public class AppUpdaterPlugin extends Plugin {
   private BroadcastReceiver receiver;
   private PluginCall installCall;
   private int sessionId = -1;
+  private boolean silentOnly; // install({silent:true}): never open Android's box; answer 'needs_tap' instead
 
   // ---- pure helpers (JVM-tested) ----
 
@@ -109,6 +111,7 @@ public class AppUpdaterPlugin extends Plugin {
       r.put("versionCode", PackageInfoCompat.getLongVersionCode(pi));
       r.put("versionName", pi.versionName == null ? "" : pi.versionName);
       r.put("canInstall", c.getPackageManager().canRequestPackageInstalls());
+      r.put("silentInstall", true); // this build honours install({silent:true}); older shells lack the key and open the box
       call.resolve(r);
     } catch (Exception e) {
       call.reject("info failed", e);
@@ -223,6 +226,7 @@ public class AppUpdaterPlugin extends Plugin {
   @PluginMethod
   public void install(PluginCall call) {
     final String path = call.getString("path");
+    final boolean silent = Boolean.TRUE.equals(call.getBoolean("silent", false));
     try {
       File apk = new File(getContext().getCacheDir(), "update/bantay.apk");
       // Only our own verified download may be installed.
@@ -245,6 +249,7 @@ public class AppUpdaterPlugin extends Plugin {
       int id = pi.createSession(params);
       sessionId = id;
       installCall = call;
+      silentOnly = silent;
       registerReceiver(c);
       PackageInstaller.Session session = pi.openSession(id);
       try {
@@ -278,6 +283,14 @@ public class AppUpdaterPlugin extends Plugin {
         if (i.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -2) != sessionId) return;
         int status = i.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
         PluginCall call = installCall;
+        if (status == PackageInstaller.STATUS_PENDING_USER_ACTION && silentOnly) {
+          // automatic update: Android wants a tap, so do not open its box from the background; the person taps the notice or the sheet
+          int sid = sessionId;
+          cleanupInstall();
+          try { ctx.getPackageManager().getPackageInstaller().abandonSession(sid); } catch (Exception ignored) { }
+          if (call != null) result(call, "needs_tap", null);
+          return;
+        }
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
           Intent confirm = Build.VERSION.SDK_INT >= 33
             ? i.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class)
@@ -322,6 +335,7 @@ public class AppUpdaterPlugin extends Plugin {
     unregisterReceiver();
     installCall = null;
     sessionId = -1;
+    silentOnly = false;
   }
 
   private static void result(PluginCall call, String status, String message) {

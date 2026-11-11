@@ -30,6 +30,27 @@ describe('checkForUpdate', () => {
     expect(s.failed).toBe(true)
     expect(s.decision.kind).toBe('ready')
   })
+  it('a forced check that arrives during an unforced one (served from the cache) waits, then fetches fresh', async () => {
+    await checkForUpdate(false, ok() as unknown as typeof fetch) // cache now fresh
+    let release!: () => void
+    vi.mocked(AppUpdater.info).mockImplementationOnce(() => new Promise((r) => { release = () => r({ versionCode: 2000000, versionName: '2.0.0', canInstall: true }) }))
+    const f = ok()
+    const unforced = checkForUpdate(false, f as unknown as typeof fetch)
+    const forced = checkForUpdate(true, f as unknown as typeof fetch)
+    release()
+    await Promise.all([unforced, forced])
+    expect(f).toHaveBeenCalledTimes(1) // only the forced one reached the network
+  })
+  it('a forced check during an unforced one that DID fetch reuses it', async () => {
+    let release!: () => void
+    vi.mocked(AppUpdater.info).mockImplementationOnce(() => new Promise((r) => { release = () => r({ versionCode: 2000000, versionName: '2.0.0', canInstall: true }) }))
+    const f = ok()
+    const unforced = checkForUpdate(false, f as unknown as typeof fetch) // empty cache: fetches
+    const forced = checkForUpdate(true, f as unknown as typeof fetch)
+    release()
+    await Promise.all([unforced, forced])
+    expect(f).toHaveBeenCalledTimes(1)
+  })
   it('web build never fetches', async () => {
     vi.mocked(AppUpdater.info).mockResolvedValue({ versionCode: 0, versionName: 'web', canInstall: false })
     const f = ok()
