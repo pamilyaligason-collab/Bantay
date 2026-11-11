@@ -7,13 +7,13 @@ import { AppUpdater } from '../update/plugin'
 import { checkForUpdate, useUpdate } from '../update/useUpdate'
 import { act as run, type Ctx } from './all/actions'
 import { readFacts } from './all/facts'
-import { allSet, buildRows, rowsLeft, walk, type Facts, type Row, type RowId } from './all/rows'
+import { allSet, buildRows, doAllLeft, rowsLeft, walk, type Facts, type Row, type RowId } from './all/rows'
 import { updateFact } from './all/updateFact'
 import { onResume } from './steps'
 import '../shell/shell.css'
 import './all/all.css'
 
-const ICON: Record<RowId, IconName> = { update: 'dl', notifications: 'bell', exact: 'clock', battery: 'bolt', location: 'pin', health: 'heart', library: 'cross', maps: 'map', test: 'send' }
+const ICON: Record<RowId, IconName> = { update: 'dl', notifications: 'bell', exact: 'clock', battery: 'bolt', autostart: 'bolt', bg: 'bell', location: 'pin', health: 'heart', library: 'cross', maps: 'map', test: 'send' }
 
 /** Set up everything (#setup/all): one ordered list. Each row says what the phone will ask and has one button; Do all walks them in order and stops at each prompt. */
 export default function AllScreen() {
@@ -64,22 +64,27 @@ export default function AllScreen() {
   const doAll = async () => {
     if (!ctx || !base) return
     setBusy('all'); setNote('')
+    let last = rows
     const read = async () => {
       const [b, info] = await Promise.all([readFacts(), AppUpdater.info().catch(() => null)])
       setBase(b)
       const ci = info?.versionCode ? info.canInstall : null
       setCanInstall(ci)
-      return buildRows({ ...b, update: updateFact(u, getJob(), ci) })
+      last = buildRows({ ...b, update: updateFact(u, getJob(), ci) })
+      return last
     }
     const stoppedAt = await walk(rows, read, (id) => run(id, ctx))
     if (!alive.current) return
     setBusy(null)
     const t = stoppedAt && rows.find((r) => r.id === stoppedAt)?.title
+    const mine = rowsLeft(last).filter((r) => r.manual).map((r) => r.title)
     if (t) setNote(`Waiting on "${t}". Finish it on your phone, then tap Do all again.`)
+    else if (mine.length) setNote(`Left for you: ${mine.join(' and ')}. Do all never starts those; tap their own button when you want them.`)
   }
 
   const left = rowsLeft(rows).length
   const done = allSet(rows)
+  const mineLeft = rowsLeft(rows).filter((r) => r.manual).map((r) => r.title)
   const web = base ? !base.native : false
 
   return (
@@ -91,10 +96,10 @@ export default function AllScreen() {
             <span className="sa-ic" data-on={done}><Icon name={done ? 'check' : 'gear'} size={24} /></span>
             <div>
               <b>{done ? 'All set' : `${left} ${left === 1 ? 'step' : 'steps'} left`}</b>
-              <div className="sa-say">{done ? 'Bantay is ready on this phone.' : 'Each step says what your phone will ask. Nothing is switched on without your tap.'}</div>
+              <div className="sa-say">{done ? 'Bantay is ready on this phone.' : `Each step says what your phone will ask. Nothing is switched on without your tap.${mineLeft.length ? ` Do all leaves ${mineLeft.join(' and ')} for your own tap.` : ''}`}</div>
             </div>
           </div>
-          {!done && (
+          {doAllLeft(rows).length > 0 && (
             <button type="button" className="sa-btn sa-primary" data-testid="do-all" disabled={busy !== null} onClick={() => void doAll()}>
               {busy === 'all' ? 'Working. Answer your phone.' : 'Do all'}
             </button>
@@ -111,7 +116,7 @@ export default function AllScreen() {
 }
 
 function RowView({ row, busy, working, onTap }: { row: Row; busy: boolean; working: boolean; onTap: () => void }) {
-  const showBtn = row.status === 'tap' || (row.status === 'done' && row.id === 'test')
+  const showBtn = row.status === 'tap' || (row.status === 'done' && (row.id === 'test' || row.id === 'autostart'))
   return (
     <li className="sa-row" data-row={row.id} data-status={row.status}>
       <span className="sa-ic" data-on={row.status === 'done'}><Icon name={row.status === 'done' ? 'check' : ICON[row.id]} size={20} /></span>

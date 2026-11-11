@@ -23,7 +23,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
   useEffect(() => {
     ensureSubscribed()
     void flushConsent() // a consent notice that could not be sent at start-done goes now
-    db.kv.get('onboarded').then((r) => setState(r?.value || flagged() || (location.hash !== '' && location.hash !== '#welcome') ? 'done' : 'show'))
+    db.kv.get('onboarded').then((r) => setState(r?.value || flagged() || (location.hash !== '' && location.hash !== '#welcome' && location.hash !== '#setup/all') ? 'done' : 'show'))
   }, [])
   if (state === 'loading') return null
   return state === 'show' ? <Onboarding onDone={() => setState('done')} /> : <>{children}</>

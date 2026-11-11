@@ -1,7 +1,7 @@
 import { db } from '../../../db'
 import { enableAlerts } from '../../notify/alerts'
 import { tryAutoLibrary, CONSENT_KEY } from '../../health/library/autoStart'
-import { applyFix } from '../../phonecheck/fix'
+import { applyFix, openAutostart } from '../../phonecheck/fix'
 import { OFFLINE_PREFS_KEY } from '../../safety/autoMaps'
 import { openFix } from '../../safety/settingsOpener'
 import { capgoBridge } from '../../sensors/bridge'
@@ -11,7 +11,8 @@ import type { Latest } from '../../update/check'
 import { startJob } from '../../update/job'
 import { AppUpdater } from '../../update/plugin'
 import { scheduleTest } from '../steps'
-import { visit } from './facts'
+import { bgPlaceSync } from '../../family/bgPlace'
+import { AUTOSTART_KEY, TEST_KEY, today, visit } from './facts'
 import type { Facts, RowId } from './rows'
 
 export interface Ctx {
@@ -36,6 +37,8 @@ export async function act(id: RowId, c: Ctx): Promise<void> {
       case 'notifications':
         if (c.native) await applyFix('notif'); else await enableAlerts()
         return
+      case 'autostart': if (await openAutostart()) await put(AUTOSTART_KEY, today()); return
+      case 'bg': await bgPlaceSync(await import('../../sync/profile').then((m) => m.selfIdOrCached()).catch(() => null)); return
       case 'exact': await applyFix('exact'); return
       case 'battery': await applyFix('battery'); return
       case 'location':
@@ -48,7 +51,7 @@ export async function act(id: RowId, c: Ctx): Promise<void> {
         const prev = ((await db.kv.get(OFFLINE_PREFS_KEY))?.value ?? {}) as Record<string, unknown>
         await put(OFFLINE_PREFS_KEY, { ...prev, autoDownload: true }); return
       }
-      case 'test': await scheduleTest(); visit.testSent = true; return
+      case 'test': await scheduleTest(); visit.testSent = true; await put(TEST_KEY, today()); return
     }
   } catch { /* the row shows what is still off */ }
 }

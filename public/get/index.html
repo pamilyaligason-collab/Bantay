@@ -74,7 +74,7 @@ svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-l
         <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg></li>
       <li><span class="n" aria-hidden="true">2</span><div class="t"><b>Tap Install</b><span class="sub">The first time, Android asks to allow installs from Chrome: tap Settings, turn it on, go Back, then tap Install. Play Protect may scan first.</span></div>
         <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="3"/><path d="M9 12l2.5 2.5L15.5 10"/></svg></li>
-      <li><span class="n" aria-hidden="true">3</span><div class="t"><b>Open Bantay</b><span class="sub">It opens on Set up everything and helps with the rest. Jack Jack meets you there.</span></div>
+      <li><span class="n" aria-hidden="true">3</span><div class="t"><b>Open Bantay</b><span class="sub">Open it from the installer or your home screen. It walks you through setup, then Set up everything finishes the phone settings.</span></div>
         <svg class="pic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></li>
     </ol>
 
@@ -173,7 +173,7 @@ svg{stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-l
         // Installed: Chrome opens the app. Not installed: Chrome follows the fallback and the download starts by itself. Tried once per visit; Chrome may ask for a tap first, so the button above does the same.
         var tried = false
         try { tried = sessionStorage.getItem('bantay.get.tried') === '1'; sessionStorage.setItem('bantay.get.tried', '1') } catch (e) { /* storage blocked */ }
-        if (!inapp && !tried) location.href = intent
+        if (!inapp && !tried) { document.documentElement.setAttribute('data-tried', '1'); location.href = intent }
       }
       if (typeof l.versionName !== 'string' || typeof l.size !== 'number' || !/^[0-9a-f]{64}$/i.test(l.sha256 || '')) return
       document.getElementById('ver').textContent = l.versionName

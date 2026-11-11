@@ -13,8 +13,8 @@ const READY: NonNullable<Facts['update']> = { kind: 'ready', versionName: '2.9.0
 
 describe('Set up everything rows', () => {
   it('lists every step on the Android app, in the fixed order, update first and the test reminder last', () => {
-    const r = buildRows(base({ testSent: false }))
-    expect(ids(r)).toEqual(['update', 'notifications', 'exact', 'battery', 'location', 'health', 'library', 'maps', 'test'])
+    const r = buildRows(base({ testSent: false, autostart: 'off', bg: 'off' }))
+    expect(ids(r)).toEqual(['update', 'notifications', 'exact', 'battery', 'autostart', 'bg', 'location', 'health', 'library', 'maps', 'test'])
     expect(ids(r)).toEqual(ORDER)
   })
   it('a fresh phone: every step but the update needs a tap, nothing is called done', () => {
@@ -63,6 +63,32 @@ describe('Set up everything rows', () => {
     expect(ids(buildRows(base({ library: 'none', maps: 'none' })))).not.toContain('library')
     expect(ids(buildRows(base({ library: 'none', maps: 'none' })))).not.toContain('maps')
   })
+  it('location copy: Android says Android, other phones say Your phone; the family line shows only when family places are on', () => {
+    const say = (o: Partial<Facts>) => buildRows(base({ location: 'ask', ...o })).find((x) => x.id === 'location')!.say
+    expect(say({ native: true, familyPlaces: true })).toBe('Android asks for your location. Choose While using the app. It is used for weather and quake warnings and stays on this phone unless you share it with family.')
+    expect(say({ native: true, familyPlaces: false })).toBe('Android asks for your location. Choose While using the app. It is used for weather and quake warnings and stays on this phone.')
+    expect(say({ native: false, update: null, familyPlaces: true })).toBe('Your phone asks for your location. It is used for weather and quake warnings and stays on this phone unless you share it with family.')
+  })
+  it('autostart: only for makers that have it, one tap until opened, done (with a way to open again) after; Do all leaves it alone', () => {
+    expect(ids(buildRows(base({ autostart: 'none' })))).not.toContain('autostart')
+    expect(ids(buildRows(base()))).not.toContain('autostart')
+    const off = buildRows(base({ autostart: 'off' }))
+    expect(off.find((x) => x.id === 'autostart')).toMatchObject({ status: 'tap', manual: true, button: 'Open the switch' })
+    expect(buildRows(base({ autostart: 'done' })).find((x) => x.id === 'autostart')).toMatchObject({ status: 'done', button: 'Open again' })
+    expect(ids(buildRows(base({ autostart: 'off', native: false, update: null })))).not.toContain('autostart')
+  })
+  it('daily check-in row: shown only when allowed; one tap when off, done when armed', () => {
+    expect(ids(buildRows(base({ bg: 'none' })))).not.toContain('bg')
+    expect(buildRows(base({ bg: 'off' })).find((x) => x.id === 'bg')).toMatchObject({ status: 'tap' })
+    expect(buildRows(base({ bg: 'on' })).find((x) => x.id === 'bg')).toMatchObject({ status: 'done' })
+  })
+  it('the library is a manual row and the test reminder remembers the day it was sent', () => {
+    expect(buildRows(base({ library: 'off' })).find((x) => x.id === 'library')).toMatchObject({ status: 'tap', manual: true })
+    const t = buildRows(base({ testSent: true, testDate: '2026-11-11' })).find((x) => x.id === 'test')!
+    expect(t).toMatchObject({ status: 'done', button: 'Send again' })
+    expect(t.say).toContain('2026-11-11')
+    expect(allSet(buildRows(base({ testSent: true, testDate: '2026-11-11' })))).toBe(true)
+  })
   it('web shows only the rows that apply: no update, alarms, battery, health or test', () => {
     const r = buildRows(base({ native: false, update: null, health: 'unavailable', notif: { display: false, exact: true, battery: true }, location: 'ask' }))
     expect(ids(r)).toEqual(['notifications', 'location', 'library', 'maps'])
@@ -108,6 +134,12 @@ describe('Do all walk', () => {
     const s = sim({ update: READY, location: 'ask' }, (id, f) => (id === 'update' ? { update: { ...READY, phase: 'downloading', pct: 3 } } : id === 'location' ? { location: 'granted' as const } : (f && null)))
     expect(await s.run()).toBeNull()
     expect(s.acted).toEqual(['update', 'location'])
+  })
+  it('a manual step (the 178 MB library, Autostart) is never run by Do all, and the others still are', async () => {
+    const s = sim({ library: 'off', autostart: 'off', location: 'ask' }, (id) => (id === 'location' ? { location: 'granted' as const } : id === 'library' ? { library: 'on' as const } : null))
+    expect(await s.run()).toBeNull()
+    expect(s.acted).toEqual(['location'])
+    expect(rowsLeft(buildRows({ ...base({ library: 'off', autostart: 'off' }) })).map((r) => r.id)).toEqual(['autostart', 'library'])
   })
   it('a disabled step is not run before the step it waits for', async () => {
     const s = sim({ notif: NONE, testSent: false }, (id, f) => (id === 'notifications' ? { notif: { ...f.notif, display: true } } : id === 'exact' ? { notif: { ...f.notif, exact: true } } : id === 'battery' ? { notif: { ...f.notif, battery: true } } : id === 'test' ? { testSent: true } : null))

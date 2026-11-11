@@ -48,6 +48,14 @@ describe('Set up everything screen (Android app)', () => {
     await screen.findByText(/Waiting on "Reminders and alerts"/)
     expect(m.acted).toEqual(['notifications'])
   })
+  it('Do all leaves the large library download for its own tap and says so', async () => {
+    m.facts = { ...m.facts, notif: ON, location: 'granted', testSent: true, library: 'off' }
+    render(<AllScreen />)
+    await screen.findByText(/1 step left/)
+    expect(screen.getByText(/Do all leaves Medical library on this phone for your own tap/)).toBeTruthy()
+    expect(screen.queryByTestId('do-all')).toBeNull() // only a manual step is left: nothing for Do all to run
+    expect(m.acted).toEqual([])
+  })
   it('with everything on it says All set and offers no Do all', async () => {
     m.facts = { ...m.facts, notif: ON, location: 'granted', testSent: true }
     render(<AllScreen />)

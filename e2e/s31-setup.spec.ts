@@ -13,6 +13,8 @@ const SHA = 'b'.repeat(64)
 const LATEST = { versionCode: 2009000, versionName: '2.9.0', url: APK, sha256: SHA, size: 15779070, minShell: 2000000, notes: 'n' }
 const SIZES = [{ width: 390, height: 844 }, { width: 360, height: 740 }]
 
+// Headless Chromium can report Notification.permission as denied while the Permissions API says granted; the web plugin reads the first, so pin it.
+const grantNotifications = (page: Page) => page.addInitScript(() => { Object.defineProperty(Notification, 'permission', { get: () => 'granted' }) })
 const stubLatest = (page: Page) => page.route('**/latest.json', (r) => r.fulfill({ json: LATEST }))
 const noGithub = (page: Page) => page.route('https://github.com/**', (r) => r.abort()) // nothing here may leave the box
 const noSideways = (page: Page) => page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)
@@ -28,10 +30,18 @@ for (const size of SIZES) {
       await expect(open).toBeVisible()
       const intent = 'intent://setup#Intent;scheme=ph.bantay.family;package=ph.bantay.family;S.browser_fallback_url=' + encodeURIComponent(APK) + ';end'
       await expect(open).toHaveAttribute('href', intent)
-      await expect(page.locator('html')).toHaveAttribute('data-intent', intent) // the page tried it once on load
+      await expect(page.locator('html')).toHaveAttribute('data-intent', intent)
+      await expect(page.locator('html')).toHaveAttribute('data-tried', '1') // the load-time attempt at the app link really ran
+      expect(await page.evaluate(() => sessionStorage.getItem('bantay.get.tried'))).toBe('1')
+      await page.reload() // same tab, same visit: the guard keeps it from trying again
+      await expect(page.locator('html')).toHaveAttribute('data-intent', intent)
+      await expect(page.locator('html')).not.toHaveAttribute('data-tried', /.*/)
       await expect(page.getByRole('link', { name: /Download Bantay/ })).toHaveAttribute('href', /releases\/latest\/download\/bantay\.apk$/)
       await expect(page.getByRole('listitem')).toHaveCount(3)
       await expect(page.getByText(/allow installs from Chrome/i)).toBeVisible()
+      // step 3 says what really happens: opened from the installer or launcher there is no deep link, so onboarding runs first
+      await expect(page.getByText(/It walks you through setup, then Set up everything finishes the phone settings/)).toBeVisible()
+      await expect(page.getByText(/opens on Set up everything/)).toHaveCount(0)
       await expect(page.getByText(`Version 2.9.0 · 15.0 MB · SHA-256 ${SHA}`)).toBeVisible()
       expect(await noSideways(page)).toBe(true)
       for (const t of await page.locator('a.pill, button.pill').all()) { const b = await t.boundingBox(); if (b) expect(b.height).toBeGreaterThanOrEqual(44) }
@@ -77,6 +87,22 @@ test('/get inside the app goes straight to Set up everything', async ({ browser 
   await page.waitForURL(/#setup\/all$/)
   expect(new URL(page.url()).pathname).toBe('/')
   await ctx.close()
+})
+
+test('a deep-linked setup page on a phone that has not finished onboarding runs onboarding first, then lands on Set up everything', async ({ page }) => {
+  await page.goto('/#setup/all')
+  await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible()
+  await expect(page.getByTestId('setup-all')).toHaveCount(0)
+  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Skip' }).click()
+  await expect(page.getByTestId('setup-all')).toBeVisible()
+  await expect(page).toHaveURL(/#setup\/all$/)
+})
+
+test('the setup page on a phone that finished onboarding opens straight away', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#setup/all')
+  await expect(page.getByTestId('setup-all')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Skip' })).toHaveCount(0)
 })
 
 test('/get in a Messenger browser still asks for Chrome and does not try the app link', async ({ browser }) => {
@@ -129,10 +155,35 @@ for (const size of SIZES) {
       await expect(page.locator('[data-row="library"]')).toHaveAttribute('data-status', 'done')
     })
 
+    test('the location row says what is true: Your phone asks, stays on this phone, and the family line only while family places are on', async ({ page }) => {
+      await page.goto('/#setup/all')
+      const say = page.locator('[data-row="location"] .sa-say')
+      await expect(say).toContainText('Your phone asks for your location.')
+      await expect(say).not.toContainText('Android')
+      await expect(say).toContainText('stays on this phone unless you share it with family.')
+      await page.evaluate(() => localStorage.setItem('bantay.flag.places', '0'))
+      await page.reload()
+      await expect(page.locator('[data-row="location"] .sa-say')).toContainText(/stays on this phone\.$/)
+    })
+
+    test('Do all never starts the library download: that row stays one tap, and the screen says so', async ({ browser }) => {
+      const ctx = await browser.newContext({ viewport: size, permissions: ['notifications', 'geolocation'] })
+      const page = await ctx.newPage()
+      await skipOnboarding(page); await grantNotifications(page)
+      let medlib = 0
+      await page.route('**/medlib/**', (r) => { medlib++; return r.abort() })
+      await page.goto('/#setup/all')
+      await expect(page.locator('[data-row="library"]')).toHaveAttribute('data-status', 'tap')
+      await expect(page.getByText(/Do all leaves Medical library on this phone for your own tap/)).toBeVisible()
+      await expect(page.getByTestId('do-all')).toHaveCount(0) // only manual rows are left: nothing for Do all to run
+      expect(medlib).toBe(0)
+      await ctx.close()
+    })
+
     test('with notifications and location allowed those rows read Done and the count drops', async ({ browser }) => {
       const ctx = await browser.newContext({ viewport: size, permissions: ['notifications', 'geolocation'] })
       const page = await ctx.newPage()
-      await skipOnboarding(page)
+      await skipOnboarding(page); await grantNotifications(page)
       await page.route('**/medlib/**', (r) => r.abort())
       await page.goto('/#setup/all')
       await expect(page.locator('[data-row="notifications"]')).toHaveAttribute('data-status', 'done')
