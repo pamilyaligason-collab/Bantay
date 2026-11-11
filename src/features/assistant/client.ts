@@ -1,5 +1,6 @@
 import { getAccessToken } from '../auth/session'
 import { aiOn } from '../privacy/ai'
+import { viewerRegion } from '../location/region'
 import { buildRequest, parseReply, type Msg } from './tools'
 
 export type AskResult = ReturnType<typeof parseReply> | { error: 'off' | 'unconfigured' | 'signin' | 'limit' | 'failed' }
@@ -16,11 +17,12 @@ export async function ask(messages: Msg[], screen: string, url = assistantUrl(),
   if (!(await aiOn())) return { error: 'off' } // privacy.ai: no request leaves the phone
   if (!url) return { error: 'unconfigured' }
   const token = await getAccessToken()
+  const region = (await viewerRegion()) ?? 'unknown'
   try {
     const res = await f(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-      body: JSON.stringify(buildRequest(messages, screen)),
+      body: JSON.stringify(buildRequest(messages, screen, region)),
       signal: AbortSignal.timeout(65_000) // the function may try up to three models in turn (about 60 s worst case); never wait forever
     })
     if (res.status === 401) return { error: 'signin' }

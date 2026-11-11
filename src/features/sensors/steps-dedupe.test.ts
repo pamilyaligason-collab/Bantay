@@ -2,6 +2,7 @@ import 'fake-indexeddb/auto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { stepSeries } from '../family/weekSeries'
+import { stepDayTotals } from '../health/model'
 import { ldb } from '../log/store'
 import { hdb } from '../records/store'
 import { disableType, enableType, getState, STATE_KEY, syncAll, type HealthBridge, type RawSample } from './health'
@@ -129,7 +130,25 @@ describe('old per-sample rows are ignored at read', () => {
     expect(sum(await ldb.activity.toArray())).toBe(7000) // 4000 hourly + 3000 manual
     expect(sum(await ldb.activity.where('personId').equals('me-p').filter((a) => a.startedAt >= at(0)).toArray())).toBe(7000)
     expect(sum(await ldb.activity.where('startedAt').aboveOrEqual(at(0)).toArray())).toBe(7000)
-    expect(stepSeries(await ldb.activity.toArray(), ['me-p'], new Date(T0 + 6 * H))[0].latest).toBe(7000)
+    // the family chart reads the day through stepDayTotals (L2 round 3): per source, then the source with the most steps, never the sum of two sources. Hand count:
+    //   health-connect: the hourly row 4000 over 06:00-07:00; the two 3000 rows 1 ms and 2 ms in sit inside that span and add nothing = 4000
+    //   healthkit: one standalone zero-length row = 3000;  manual: one standalone zero-length row = 3000
+    //   day = max(4000, 3000, 3000) = 4000. The raw-table sums above (7000) are not a day total, they only prove the rows are still stored.
+    expect(stepSeries(await ldb.activity.toArray(), ['me-p'], new Date(T0 + 6 * H))[0].latest).toBe(4000)
+  })
+  it('hand values: a manual entry is its own source and is not added to a device total; without the hourly row the two per-sample rows count', () => {
+    const row = (steps: number, source: string, startedAt: string, minutes: number | null = null) => ({ kind: 'steps', steps, source, startedAt, minutes })
+    const total = (rows: ReturnType<typeof row>[]) => [...stepDayTotals(rows).values()].reduce((a, b) => a + b, 0) // all rows sit between 12:00 and 15:00 UTC: one local day in every zone from UTC-12 to UTC+8
+    // 4000 on the watch + 3000 typed by hand: the larger source, 4000 (a watch and a phone count the same walk; a hand entry is judged the same way)
+    expect(total([row(4000, 'health-connect', '2026-10-01T12:00:00.000Z', 60), row(3000, 'manual', '2026-10-01T14:00:00.000Z')])).toBe(4000)
+    // a hand entry alone is the day
+    expect(total([row(3000, 'manual', '2026-10-01T14:00:00.000Z')])).toBe(3000)
+    // old per-sample rows with no hourly row: both stand-alone rows (1 ms apart, different instants) count, 3000 + 3000
+    expect(total([row(3000, 'health-connect', '2026-10-01T12:00:00.001Z'), row(3000, 'health-connect', '2026-10-01T12:00:00.002Z')])).toBe(6000)
+    // an exact repeat of one standalone row counts once
+    expect(total([row(3000, 'manual', '2026-10-01T14:00:00.000Z'), row(3000, 'manual', '2026-10-01T14:00:00.000Z')])).toBe(3000)
+    // two hourly rows that overlap by half an hour: 4000 + the not-yet-covered half of the second (2000 of 4000) = 6000
+    expect(total([row(4000, 'health-connect', '2026-10-01T12:00:00.000Z', 60), row(4000, 'health-connect', '2026-10-01T12:30:00.000Z', 60)])).toBe(6000)
   })
   it('the old shape stays in the table and sync adds the hourly row beside it', async () => {
     const id = await ldb.activity.add({ ...old, startedAt: at(0) })

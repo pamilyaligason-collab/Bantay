@@ -6,6 +6,8 @@ import { FAST_TOKENS, route, spendOf } from './router.ts'
 import { detectLanguage, emergencyGate, type EmergencyKind, type Lang } from './gate.ts'
 
 export const SCREENS = ['today', 'health', 'records', 'family', 'safety'] as const
+export const REGIONS = ['ph', 'us', 'unknown'] as const
+export type Region = (typeof REGIONS)[number]
 export const MAX_MESSAGES = 10
 export const MAX_CHARS = 1000
 export const DAILY_CAP = 30
@@ -50,14 +52,14 @@ export interface Port {
 }
 
 // ---------------- request ----------------
-export interface Parsed { messages: Msg[]; screen: (typeof SCREENS)[number]; last: string }
+export interface Parsed { messages: Msg[]; screen: (typeof SCREENS)[number]; last: string; region: Region }
 
 /** Same rules as the n8n "Build request" node: last 10 plain messages, 1000 characters each. A last message that is not the person's is refused. */
 export function parseBody(raw: string): Parsed | null {
   let b: unknown
   try { b = JSON.parse(raw) } catch { return null }
   if (!b || typeof b !== 'object') return null
-  const o = b as { messages?: unknown; screen?: unknown }
+  const o = b as { messages?: unknown; screen?: unknown; region?: unknown }
   if (!Array.isArray(o.messages) || o.messages.length > 200) return null
   const messages = o.messages
     .filter((m): m is Msg => !!m && typeof m === 'object' && ((m as Msg).role === 'user' || (m as Msg).role === 'assistant') && typeof (m as Msg).content === 'string')
@@ -67,7 +69,8 @@ export function parseBody(raw: string): Parsed | null {
   const last = messages[messages.length - 1]
   if (!last || last.role !== 'user') return null
   const screen = (SCREENS as readonly string[]).includes(String(o.screen)) ? (o.screen as Parsed['screen']) : 'today'
-  return { messages, screen, last: last.content }
+  const region = (REGIONS as readonly string[]).includes(String(o.region)) ? (o.region as Region) : 'ph' // coarse country only, never a position; anything else is the app's home country
+  return { messages, screen, last: last.content, region }
 }
 
 // ---------------- fixed replies (no model) ----------------
@@ -84,13 +87,17 @@ const CARD_TL = 'Maaaring emergency ito. Tumawag sa 911 ngayon o pumunta sa pina
 const SELF_EN = 'I am sorry you are going through this. You are not alone. Please call the NCMH crisis hotline 1553 (free) now, or 911 if you are in danger. If you can, stay with someone you trust.'
 const SELF_TL = 'Pasensya na at pinagdadaanan mo ito. Hindi ka nag-iisa. Tumawag po sa NCMH crisis hotline 1553 (libre) ngayon, o sa 911 kung nasa panganib ka. Kung kaya, manatili sa piling ng taong pinagkakatiwalaan mo.'
 
-export function emergencyReply(kind: EmergencyKind, lang: Lang): Out {
+export function emergencyReply(kind: EmergencyKind, lang: Lang, region: Region = 'ph'): Out {
   const self = kind === 'selfharm'
   const tl = lang === 'tl' || lang === 'taglish'
-  const text = self ? (tl ? SELF_TL : SELF_EN) : tl ? CARD_TL : CARD_EN
-  const call = self ? ['1553', '911'] : ['911']
+  const us = region === 'us' // 1553 cannot be dialled from the US: a US member gets 988, as the app's own card does
+  const text = self ? (us ? (tl ? SELF_US_TL : SELF_US_EN) : tl ? SELF_TL : SELF_EN) : tl ? CARD_TL : CARD_EN
+  const call = self ? (us ? ['988', '911'] : ['1553', '911']) : ['911']
   return { status: 200, body: { reply: withDisclaimer(text, lang), tool_calls: [], emergency: { kind, call } }, meta: { status: 200, emergency: kind, lang } }
 }
+
+const SELF_US_EN = 'I am sorry you are going through this. You are not alone. Please call or text 988, the Suicide and Crisis Lifeline (free), now, or 911 if you are in danger. If you can, stay with someone you trust.'
+const SELF_US_TL = 'Pasensya na at pinagdadaanan mo ito. Hindi ka nag-iisa. Tumawag o mag-text po sa 988, ang Suicide and Crisis Lifeline (libre), ngayon, o sa 911 kung nasa panganib ka. Kung kaya, manatili sa piling ng taong pinagkakatiwalaan mo.'
 
 const OTHER_LANG = 'Sorry, I can answer in English or Tagalog only. Please write again in English or Tagalog. For anything urgent, call 911.'
 
@@ -98,8 +105,8 @@ const OTHER_LANG = 'Sorry, I can answer in English or Tagalog only. Please write
 export const TOOLS = [{"type":"function","function":{"name":"log_reading","description":"Draft a health reading (for example blood sugar, blood pressure, HbA1c) for the user to confirm.","parameters":{"type":"object","properties":{"person":{"type":"string","description":"Name of the family member, as the user said it"},"test":{"type":"string","description":"Test name, for example HbA1c or fasting glucose"},"value":{"type":"number"},"unit":{"type":"string","description":"Unit, for example mg/dL"},"takenAt":{"type":"string","description":"ISO date or time, empty means now"}},"required":["person","test","value"]}}},{"type":"function","function":{"name":"log_med_taken","description":"Draft a note that a medicine was taken, for the user to confirm.","parameters":{"type":"object","properties":{"person":{"type":"string","description":"Name of the family member, as the user said it"},"name":{"type":"string","description":"Medicine name as the user said it"},"takenAt":{"type":"string","description":"ISO time, empty means now"}},"required":["person","name"]}}},{"type":"function","function":{"name":"log_activity","description":"Draft an activity (walk, exercise) for the user to confirm.","parameters":{"type":"object","properties":{"person":{"type":"string","description":"Name of the family member, as the user said it"},"kind":{"type":"string","description":"walk, exercise, and so on"},"minutes":{"type":"number"},"steps":{"type":"number"},"startedAt":{"type":"string","description":"ISO time, empty means now"}},"required":["person","kind"]}}},{"type":"function","function":{"name":"open_screen","description":"Offer to open one screen of the app.","parameters":{"type":"object","properties":{"tab":{"type":"string","enum":["today","health","records","family","safety"]}},"required":["tab"]}}},{"type":"function","function":{"name":"explain_term","description":"Explain a medical or safety word in plain English, with the best public source.","parameters":{"type":"object","properties":{"term":{"type":"string"},"answer":{"type":"string","description":"At most three short sentences"},"source":{"type":"string","enum":["medlineplus","wikipedia","kiwix"]}},"required":["term","answer","source"]}}},{"type":"function","function":{"name":"whats_the_weather","description":"Show the current weather for where the user is.","parameters":{"type":"object","properties":{}}}}]
 export const TOOL_NAMES = TOOLS.map((t) => t.function.name)
 
-const SYSTEM = [
-  'You are Jack, the helper inside a private family health and safety app used by one family in the Philippines. The person asking is a family member or their carer, and this is personal family use, not a clinic. Talk like a knowledgeable, calm relative: plain words, no jargon, kind, and direct.',
+export const systemFor = (region: Region = 'ph'): string => [
+  'You are Jack, the helper inside a private family health and safety app used by one family' + (region === 'us' ? ', some of whom live in the Philippines. The person asking is in the United States right now' : ' in the Philippines') + '. The person asking is a family member or their carer, and this is personal family use, not a clinic. Talk like a knowledgeable, calm relative: plain words, no jargon, kind, and direct.',
   'Answer the question first, in the first sentence, unless rule 3 applies: urgent signs are named first, before anything else. Then give the real context and the practical steps they can do now (what to check, what to do at home, what to watch for, what to ask the doctor). Otherwise do not open with a refusal, a warning or "I am not a doctor". Do not hedge every line. Short for a simple question; for a bigger one use short steps, up to about 150 words.',
   'Shape every answer for a reader who loses track easily (Lloyd 2026-11-10, ADHD-friendly): the direct answer in one short first line; then at most 5 bullets, one idea each, the most useful first; no preamble, no recap, no closing pleasantries; end with one line that starts "Next:" and names ONE small thing they can do now (under 2 minutes), unless the answer is a single sentence.',
   'Write for an older adult: short sentences, everyday words, about a grade 6 reading level. Explain any medical word the first time you use it.',
@@ -110,7 +117,9 @@ const SYSTEM = [
   '2. Never tell anyone to start, stop or change a medicine, and never give a dose beyond what the family already logged or what is printed on their own prescription. Explaining what a medicine is for, how it works and its usual side effects is fine. For a dose question say to check the label, the doctor or the pharmacist. If someone wants to stop or skip a medicine, for example because of a side effect, tell them not to change it before talking to their doctor or pharmacist.',
   '3. If something sounds urgent (chest pain, trouble breathing, stroke signs, very high or low sugar with symptoms, fainting, bleeding, a seizure, sudden confusion, swelling of the face or throat, taking too much of a medicine or poison, a very unwell child or older person, thoughts of self harm), say so first and plainly: call 911 now, or go to the nearest hospital, and tell the doctor. Do not try to manage it at home.',
   "4. For a lab result, you may say what the test measures and what it usually means when high or low. Whether it is in range is only what the printed range on their paper says; the doctor's own target can differ.",
-  '5. Never claim Bantay warns of earthquakes or local tsunamis. For hazards, point to PHIVOLCS, PAGASA and the local DRRMO.',
+  region === 'us'
+    ? '5. Never claim Bantay warns of earthquakes, tornadoes, floods or other local hazards. For hazards, point to the National Weather Service (weather.gov) and the local emergency management office; for an emergency say 911, and for a mental health crisis say 988. Do not point to PHIVOLCS, PAGASA or a DRRMO for where the person is now; they apply only to family in the Philippines.'
+    : '5. Never claim Bantay warns of earthquakes or local tsunamis. For hazards, point to PHIVOLCS, PAGASA and the local DRRMO.',
   '6. To save anything (a reading, a medicine taken, an activity) you must call the matching tool. That only makes a draft. The person confirms it. Never say it is saved.',
   '7. Use explain_term for questions about a medical word. Keep the answer to three short sentences and general, not about one person.',
   '8. Use open_screen when the person wants to see a screen. Use whats_the_weather for weather questions.',
@@ -120,7 +129,7 @@ const SYSTEM = [
 
 const clean = (s: string, max: number) => s.replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max)
 
-export function buildPrompt(screen: string, lang: Lang, know: Knowledge[], topics: Topic[], own: OwnData): string {
+export function buildPrompt(screen: string, lang: Lang, know: Knowledge[], topics: Topic[], own: OwnData, region: Region = 'ph'): string {
   const ref = [
     ...know.map((k) => `- ${clean(lang === 'tl' ? k.title_tl : k.title_en, 120)} (${clean(k.source_name, 40)}): ${clean(k.summary, 700)}`),
     ...topics.map((t) => `- ${clean(t.title, 120)} (MedlinePlus): ${clean(t.summary, 600)}`)
@@ -131,7 +140,7 @@ export function buildPrompt(screen: string, lang: Lang, know: Knowledge[], topic
     own.allergies.length ? `Allergies: ${own.allergies.join('; ')}` : ''
   ].filter(Boolean)
   return [
-    SYSTEM,
+    systemFor(region),
     `Current screen: ${screen}`,
     `The person is writing in: ${lang === 'tl' ? 'Tagalog' : lang === 'taglish' ? 'Taglish' : 'English'}`,
     `REFERENCE (vetted public sources):\n${ref.length ? ref.join('\n') : '(none found)'}`,
@@ -212,7 +221,7 @@ export async function handleAsk(port: Port, env: Env, raw: string): Promise<Out>
 
   // Safety first: no model, no cap slot, so a person at their daily limit still gets the card.
   const hit = emergencyGate(p.last)
-  if (hit) return emergencyReply(hit.kind, lang)
+  if (hit) return emergencyReply(hit.kind, lang, p.region)
 
   const slot = await port.takeSlot(DAILY_CAP).catch(() => null)
   if (slot === null) return fail(503, 'unavailable')
@@ -223,7 +232,7 @@ export async function handleAsk(port: Port, env: Env, raw: string): Promise<Out>
   const [know, own] = await Promise.all([port.knowledge(p.last).catch(() => [] as Knowledge[]), port.own(p.last).catch(() => ({ meds: [], labs: [], allergies: [], tokens: [], lookups: [] }) as OwnData)])
   const topics = (await Promise.all(own.lookups.slice(0, 2).map((l) => port.medline(l).catch(() => null)))).filter((t): t is Topic => !!t)
   const top = know.slice(0, 3)
-  const system = buildPrompt(p.screen, lang, top, topics, own)
+  const system = buildPrompt(p.screen, lang, top, topics, own, p.region)
 
   const spendUsd = await port.spendUsd().catch(() => null)
   const rt = route({ question: p.last, turns: p.messages.length, records: own.meds.length + own.labs.length + own.allergies.length > 0, lookups: own.lookups.length, hits: top.length + topics.length, spendUsd, capUsd: env.capUsd ?? DEFAULT_CAP_USD, fast: env.model, strong: env.strong ?? '' })

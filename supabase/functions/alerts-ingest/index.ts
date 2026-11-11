@@ -3,7 +3,7 @@
 // Function secrets (set by Lloyd): ALERTS_CRON_SECRET; DOSE_WATCH_CRON_SECRET (the same value dose-watch uses, so a new wind signal can trigger its Web Push flush; optional). SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are provided by the platform.
 import { createClient } from 'npm:@supabase/supabase-js@2.118.0'
 import { heartbeat } from '../_shared/heartbeat.ts'
-import { type Existing, type FailKind, type Port, runIngest } from './ingest.ts'
+import { type Existing, type FailKind, isUndefinedColumn, type Port, runIngest } from './ingest.ts'
 
 const reply = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } })
 
@@ -48,6 +48,12 @@ Deno.serve(async (req) => {
       const { data, error } = await sb.from('people').select('id').not('auth_user_id', 'is', null).is('archived_at', null)
       if (error) throw new Error('read')
       return (data ?? []).map((r) => r.id as string)
+    },
+    async zones() {
+      // S30 G4: before 0065 the tz column is missing: everyone is Manila. Only that error falls back; any other one throws so a failed read is never taken for "all Manila".
+      const { data, error } = await sb.from('people').select('id,tz').not('auth_user_id', 'is', null).is('archived_at', null)
+      if (error) { if (isUndefinedColumn(error)) return new Map(); throw new Error('read') }
+      return new Map((data ?? []).map((r) => [r.id as string, (r.tz ?? null) as string | null]))
     },
     async notify(personId, template, ref) {
       const { data, error } = await sb.rpc('notify_family', { p_person: personId, p_kind: 'hazard', p_template: template, p_ref: ref, p_scope: 'self' })
