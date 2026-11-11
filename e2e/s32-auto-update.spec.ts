@@ -14,9 +14,11 @@ for (const size of SIZES) {
     test(`Phone group ${size.width}x${size.height} ${scheme}: switch on by default, plain line, saves off and on`, async ({ page }) => {
       await page.setViewportSize(size)
       await page.emulateMedia({ colorScheme: scheme })
+      await page.addInitScript(() => { (window as unknown as { androidBridge: unknown }).androidBridge = { postMessage() {} } }) // Capacitor reads this as a native Android phone, so the row shows
       await skipOnboarding(page)
       await page.goto('/#me/phone')
       const sw = page.getByRole('switch', { name: 'Update Bantay by itself' })
+      await expect(sw).toBeVisible()
       await sw.scrollIntoViewIfNeeded()
       await expect(sw).toHaveAttribute('aria-checked', 'true')
       await expect(page.getByText(LINE)).toBeVisible()
@@ -37,3 +39,10 @@ for (const size of SIZES) {
     })
   }
 }
+
+test('plain web: no Update Bantay by itself row', async ({ page }) => {
+  await skipOnboarding(page)
+  await page.goto('/#me/phone')
+  await expect(page.getByRole('button', { name: 'Set up everything' }).or(page.getByText('Set up everything')).first()).toBeVisible()
+  await expect(page.getByRole('switch', { name: 'Update Bantay by itself' })).toHaveCount(0)
+})

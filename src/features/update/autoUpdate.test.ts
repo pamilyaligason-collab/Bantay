@@ -6,18 +6,24 @@ const h = vi.hoisted(() => ({
   ln: { checkPermissions: vi.fn(), schedule: vi.fn(), addListener: vi.fn() },
   state: { latest: null as unknown, failed: false },
   info: { versionCode: 2008000, versionName: '2.8.0', canInstall: true },
-  runJob: vi.fn(), sos: null as unknown
+  runJob: vi.fn(), install: vi.fn(), sos: null as unknown
 }))
-vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native } }))
+vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native }, registerPlugin: () => ({}) }))
 vi.mock('@capacitor/app', () => ({ App: { addListener: vi.fn() } }))
 vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: h.ln }))
-vi.mock('./plugin', () => ({ AppUpdater: { info: () => Promise.resolve(h.info) } }))
+vi.mock('./plugin', () => ({ AppUpdater: { info: () => Promise.resolve(h.info), install: h.install } }))
 vi.mock('./useUpdate', () => ({ checkForUpdate: () => Promise.resolve(h.state) }))
 vi.mock('./job', () => ({ getJob: () => ({ phase: h.phase }), onCellular: () => h.cellular, hasVerifiedFile: () => h.have, runJob: h.runJob }))
 vi.mock('../sos/active', () => ({ loadActive: () => Promise.resolve(h.sos) }))
 
 import { db } from '../../db'
-import { AUTO_AT_KEY, AUTO_KEY, NOTIFIED_KEY, autoGate, decideAuto, localDay, mayNotify, runAuto, type AutoInput } from './autoUpdate'
+import { AUTO_AT_KEY, AUTO_KEY, NOTIFIED_KEY, NOTICE_ID, autoGate, decideAuto, mayNotify, runAuto, type AutoInput } from './autoUpdate'
+import { dayKey } from '../family/events'
+import { TASK_ID_BASE, TASK_ID_SPAN } from '../family/taskReminders'
+import { BP_ID_BASE, BP_ID_TOP } from '../nudge/bpReminder'
+import { BAT_ID } from '../today/batteryReminder'
+import { RAIN_ID } from '../weather/rainRemind'
+import { SNOOZE_BASE } from '../health/reminderActions'
 
 const APK = 'https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.9.0/bantay-2.9.0.apk'
 const L = { versionCode: 2009000, versionName: '2.9.0', url: APK, sha256: 'a'.repeat(64), size: 15779070, minShell: 2000000, notes: 'n' }
@@ -55,11 +61,20 @@ describe('decideAuto', () => {
 describe('one notice a day (phone-local day)', () => {
   it('23:59 and 00:01 are different days; same day is blocked', () => {
     const late = new Date(2026, 10, 11, 23, 59).getTime(), early = new Date(2026, 10, 12, 0, 1).getTime()
-    expect(localDay(late)).toBe('2026-11-11')
-    expect(localDay(early)).toBe('2026-11-12')
+    expect(dayKey(new Date(late))).toBe('2026-11-11')
+    expect(dayKey(new Date(early))).toBe('2026-11-12')
     expect(mayNotify('2026-11-11', late)).toBe(false)
     expect(mayNotify('2026-11-11', early)).toBe(true)
     expect(mayNotify(undefined, late)).toBe(true)
+  })
+})
+
+describe('NOTICE_ID', () => {
+  it('sits in no other notification id range', () => {
+    expect(NOTICE_ID < BP_ID_BASE && NOTICE_ID > 1_700_031_000).toBe(true) // above the dose reminders (31000 + 1.7e9 span)
+    expect([BAT_ID, RAIN_ID, SNOOZE_BASE, 1_999_999_999].includes(NOTICE_ID)).toBe(false)
+    expect(NOTICE_ID >= BP_ID_BASE && NOTICE_ID <= BP_ID_TOP).toBe(false)
+    expect(NOTICE_ID >= TASK_ID_BASE && NOTICE_ID < TASK_ID_BASE + TASK_ID_SPAN).toBe(false)
   })
 })
 
@@ -76,7 +91,7 @@ describe('runAuto', () => {
   it('downloads through the existing job and stamps update.autoAt; no notice when it installs', async () => {
     const d = await runAuto(NOW)
     expect(d.kind).toBe('download')
-    expect(h.runJob).toHaveBeenCalledWith(L, expect.anything())
+    expect(h.runJob).toHaveBeenCalledWith(L, expect.anything(), true) // silent: never opens Android's box
     expect((await db.kv.get(AUTO_AT_KEY))?.value).toBe(NOW)
     expect(h.ln.schedule).not.toHaveBeenCalled()
   })
@@ -110,6 +125,28 @@ describe('runAuto', () => {
     h.phase = 'idle'
     await runAuto(new Date(2026, 10, 12, 0, 30).getTime() + 7 * HOUR)
     expect(h.ln.schedule).toHaveBeenCalledTimes(2)
+  })
+  it('Android wants a tap (needs_tap): only the notice, no install call', async () => {
+    h.runJob.mockResolvedValue('needs_tap')
+    await runAuto(NOW)
+    expect(h.ln.schedule).toHaveBeenCalledTimes(1)
+    expect(h.ln.schedule.mock.calls[0]![0].notifications[0].id).toBe(NOTICE_ID)
+    expect(h.install).not.toHaveBeenCalled()
+  })
+  it('notice at 23:59, next check at 00:01 local posts a new one', async () => {
+    h.runJob.mockResolvedValue('needs_tap')
+    const late = new Date(2026, 10, 11, 23, 59).getTime()
+    await runAuto(late)
+    expect((await db.kv.get(NOTIFIED_KEY))?.value).toBe('2026-11-11')
+    await db.kv.delete(AUTO_AT_KEY) // clear the 6 h throttle so only the day rule is under test
+    await runAuto(late + 2 * 60_000)
+    expect(h.ln.schedule).toHaveBeenCalledTimes(2)
+    expect((await db.kv.get(NOTIFIED_KEY))?.value).toBe('2026-11-12')
+  })
+  it('an unfinished check (no latest, not failed) does not use up the 6 h', async () => {
+    h.state = { latest: null, failed: false }
+    expect(await runAuto(NOW)).toEqual({ kind: 'skip', reason: 'no-latest' })
+    expect(await db.kv.get(AUTO_AT_KEY)).toBeUndefined()
   })
   it('Install unknown apps off: notice, no download', async () => {
     h.info = { ...h.info, canInstall: false }

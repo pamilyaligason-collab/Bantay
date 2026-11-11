@@ -19,8 +19,13 @@ const kvGet = async <T,>(k: string) => (await db.kv.get(k).catch(() => undefined
 const kvPut = (key: string, value: unknown) => db.kv.put({ key, value }).catch(() => undefined)
 
 /** Same-origin /latest.json (Pages serves it; the release script commits public/latest.json). At most once per 6 h unless forced; between checks the cached copy still drives the card. */
-export async function checkForUpdate(force = false, fetcher: typeof fetch = fetch): Promise<UpdateState> {
-  if (state.checking) return state
+let inflight: Promise<UpdateState> | null = null
+/** One shared promise: a caller that arrives while a check runs (App's open check, then runAuto) gets that check's real result, not the 'checking' state. */
+export function checkForUpdate(force = false, fetcher: typeof fetch = fetch): Promise<UpdateState> {
+  inflight ??= doCheck(force, fetcher).finally(() => { inflight = null })
+  return inflight
+}
+async function doCheck(force: boolean, fetcher: typeof fetch): Promise<UpdateState> {
   set({ checking: true, failed: false })
   try {
     const shell = await AppUpdater.info().catch(() => ({ versionCode: 0, versionName: 'web', canInstall: false }))

@@ -8,7 +8,8 @@ export interface AppUpdaterPlugin {
   /** Opens Android's "Install unknown apps" screen for Bantay. */
   openInstallPermission(): Promise<void>
   download(o: { url: string; sha256: string; size: number }): Promise<{ path: string }>
-  install(o: { path: string }): Promise<{ status: 'success' | 'pending_user' | 'failure'; message?: string }>
+  /** silent: automatic update. If Android needs a tap, resolve 'needs_tap' and do NOT open its box (an older shell ignores this and opens it). */
+  install(o: { path: string; silent?: boolean }): Promise<{ status: 'success' | 'pending_user' | 'needs_tap' | 'failure'; message?: string }>
   addListener(
     event: 'progress',
     cb: (p: { done: number; total: number }) => void,

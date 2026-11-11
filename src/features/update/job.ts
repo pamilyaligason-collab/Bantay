@@ -59,13 +59,15 @@ function watchPending() {
   return () => { clearTimeout(t); document.removeEventListener('visibilitychange', back); void resume.then((h) => h?.remove()).catch(() => undefined) }
 }
 
-async function install(api: JobApi) {
+async function install(api: JobApi, silent = false): Promise<'needs_tap' | undefined> {
   try {
-    const r = await api.install({ path: path! })
+    const r = await api.install(silent ? { path: path!, silent: true } : { path: path! })
     if (r.status === 'success') { unlisten(); set({ phase: 'success' }) }
+    else if (r.status === 'needs_tap') { unlisten(); set({ phase: 'idle' }); return 'needs_tap' } // verified file kept; the notice or sheet opens Android's box later
     else if (r.status === 'pending_user') set({ phase: 'pending' })
     else { unlisten(); set({ phase: { error: 'install' } }) } // file stays: Try again re-runs only the install
   } catch (e) { unlisten(); path = null; set({ phase: { error: codeOf(e) || 'install' } }) } // unknown state: download again
+  return undefined
 }
 
 /** Pending view "Try again": open Android's box again for the verified file. */
@@ -88,8 +90,9 @@ export function startJob(latest: Latest, api: JobApi, wifiOnly: boolean) {
   void runJob(latest, api)
 }
 
-export async function runJob(latest: Latest, api: JobApi) {
-  if (job.phase === 'downloading' || job.phase === 'pending') return
+/** silent (automatic update): resolves 'needs_tap' when Android wants the person; no install box is opened. */
+export async function runJob(latest: Latest, api: JobApi, silent = false): Promise<'needs_tap' | undefined> {
+  if (job.phase === 'downloading' || job.phase === 'pending') return undefined
   if (cur && cur.latest.versionCode !== latest.versionCode) path = null
   cur = { latest, api }
   unlisten()
@@ -102,10 +105,10 @@ export async function runJob(latest: Latest, api: JobApi) {
       else set({ phase: { error: 'install' } }) // failure or cancel: file stays for a retry
     })
   ].filter(Boolean).map((h) => Promise.resolve(h).catch(() => undefined)) as typeof handles
-  if (path) { set({ phase: 'pending' }); await install(api); return }
+  if (path) { set({ phase: 'pending' }); return install(api, silent) }
   set({ phase: 'downloading', done: 0, total: latest.size })
   try {
     path = (await api.download({ url: latest.url, sha256: latest.sha256, size: latest.size })).path
-  } catch (e) { unlisten(); set({ phase: { error: codeOf(e) } }); return }
-  await install(api)
+  } catch (e) { unlisten(); set({ phase: { error: codeOf(e) } }); return undefined }
+  return install(api, silent)
 }

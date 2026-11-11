@@ -4,6 +4,7 @@ import { LocalNotifications } from '@capacitor/local-notifications'
 import { useSyncExternalStore } from 'react'
 import { db } from '../../db'
 import { loadActive } from '../sos/active'
+import { dayKey } from '../family/events'
 import { checkDue, parseLatest, type Latest } from './check'
 import { getJob, hasVerifiedFile, onCellular, runJob } from './job'
 import { AppUpdater } from './plugin'
@@ -15,7 +16,7 @@ import { checkForUpdate } from './useUpdate'
 export const AUTO_KEY = 'update.auto'
 export const AUTO_AT_KEY = 'update.autoAt'
 export const NOTIFIED_KEY = 'update.notifiedOn'
-export const NOTICE_ID = 1_860_000_000
+export const NOTICE_ID = 1_810_000_000 // free base: below the BP 1.82e9, battery 1.83e9, rain 1.84e9, tasks 1.85e9..1.89e9 and snooze 1.9e9 ranges, above the dose reminders (<1.7e9+31000)
 export const NOTICE_TEXT = { title: 'Bantay update ready', body: 'Tap to install' }
 
 export interface AutoInput {
@@ -63,8 +64,7 @@ export function decideAuto(i: AutoInput): AutoDecision {
 }
 
 /** The phone's own day, not UTC (a notice at 00:30 in Manila is a new day). */
-export const localDay = (ms: number) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
-export const mayNotify = (notifiedOn: unknown, now: number) => notifiedOn !== localDay(now)
+export const mayNotify = (notifiedOn: unknown, now: number) => notifiedOn !== dayKey(new Date(now))
 
 const kvGet = async <T,>(k: string) => (await db.kv.get(k).catch(() => undefined))?.value as T | undefined
 const kvPut = (key: string, value: unknown) => db.kv.put({ key, value }).catch(() => undefined)
@@ -81,7 +81,7 @@ export async function noticeOnce(now = Date.now()): Promise<boolean> {
     if (!mayNotify(await kvGet(NOTIFIED_KEY), now)) return false
     if ((await LocalNotifications.checkPermissions()).display !== 'granted') return false
     await LocalNotifications.schedule({ notifications: [{ id: NOTICE_ID, ...NOTICE_TEXT, extra: { kind: 'update' } }] })
-    await kvPut(NOTIFIED_KEY, localDay(now))
+    await kvPut(NOTIFIED_KEY, dayKey(new Date(now)))
     return true
   } catch { return false }
 }
@@ -105,11 +105,13 @@ export async function runAuto(now = Date.now()): Promise<AutoDecision> {
     if (s.failed) return { kind: 'skip', reason: 'no-latest' } // offline: try again at the next start, no 6 h wait
     const wifiOnly = (await kvGet<boolean>('update.wifiOnly')) !== false
     const d = decideAuto({ ...base, versionCode: shell.versionCode, latest: s.latest, wifiOnly, onWifi: !onCellular(), canInstall: shell.canInstall, haveFile: !!s.latest && hasVerifiedFile(s.latest.versionCode) })
-    if (!(d.kind === 'skip' && d.reason === 'mobile-data')) await kvPut(AUTO_AT_KEY, now) // mobile data is waiting for Wi-Fi, not a finished check
+    // mobile data is waiting for Wi-Fi, and no latest.json is an unfinished check: neither uses up the 6 h
+    if (!(d.kind === 'skip' && (d.reason === 'mobile-data' || d.reason === 'no-latest'))) await kvPut(AUTO_AT_KEY, now)
     if (d.kind === 'notify-tap') await noticeOnce(now)
     else if ((d.kind === 'download' || d.kind === 'install') && s.latest) {
-      await runJob(s.latest, AppUpdater)
-      if (getJob().phase === 'pending') await noticeOnce(now) // Android is waiting for the person
+      // silent: if Android needs a tap, the box is NOT opened from here; only the once-a-day notice is posted, and the box opens when the person taps the notice or the update sheet
+      const r = await runJob(s.latest, AppUpdater, true)
+      if (r === 'needs_tap' || getJob().phase === 'pending') await noticeOnce(now)
     }
     return d
   } catch { return { kind: 'skip', reason: 'no-latest' } } finally { running = false }

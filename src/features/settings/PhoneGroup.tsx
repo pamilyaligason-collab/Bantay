@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useKv } from '../shell/useKv'
+import { isNativeAndroid } from '../safety/settingsOpener'
 import { useCarerIds } from '../family/CarerCards'
 import FamilyPhones from '../family/FamilyPhones'
 import SensorSettings from '../sensors/SensorSettings'
@@ -37,9 +38,9 @@ export default function PhoneGroup() {
       <div className="sh-card sh-list st-list">
         <NavRow icon="check" title="Set up everything" sub="Update, alerts, location and the rest, one step at a time" href="#setup/all" testId="settings-setup-all" />
       </div>
-      <div className="sh-card sh-list st-list">
+      {isNativeAndroid() && <div className="sh-card sh-list st-list">
         <SwitchRow icon="dl" title="Update Bantay by itself" sub="Checks once in a while and installs new versions on Wi-Fi. Android may ask you to tap Install the first time." on={auto} onChange={setAuto} />
-      </div>
+      </div>}
       {showPhones && (
         <div className="sh-card sh-list st-list">
           <NavRow icon="phone" title="Family phones" sub="Can each phone wake its owner for alarms?" href="#me/phone/phones" />
