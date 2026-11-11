@@ -6,7 +6,7 @@ export const GAP_MS = 1_500 // polite delay between feeds
 export const BUDGET_MS = 110_000 // no new feed starts after this; one feed takes at most 12 s (index.ts), under the 150 s edge limit (ML-24)
 export const MAX_PER_FEED = 15
 export type Topic = 'prepping' | 'health' | 'national' | 'wellbeing'
-export interface Feed { url: string; source: string; world?: boolean; topic?: Topic; noImage?: boolean; geo?: boolean }
+export interface Feed { url: string; source: string; world?: boolean; topic?: Topic; noImage?: boolean; geo?: boolean; /** news_items.zone (0017): shown only to people in that Quick dial area; unset = everyone */ zone?: string }
 export const FEEDS: Feed[] = [
   { url: 'https://www.who.int/rss-feeds/news-english.xml', source: 'WHO', world: true, topic: 'health' }, // may be blocked from a datacenter; harmless
   { url: 'https://feeds.bbci.co.uk/news/world/rss.xml', source: 'BBC', world: true, noImage: true }, // no BBC images (licence)
@@ -21,11 +21,14 @@ export const FEEDS: Feed[] = [
   { url: 'https://www.rappler.com/feed/', source: 'Rappler', topic: 'national' },
   { url: 'https://data.gmanetwork.com/gno/rss/news/feed.xml', source: 'GMA News', topic: 'national' },
   { url: 'https://www.philstar.com/rss/headlines', source: 'Philstar', topic: 'national' },
+  // S30 C5: Texas members see Texas and US national headlines (zone texas, 0017). Both answered a valid RSS document with items on 2026-11-11 (checked by hand: 200, <item><title> present). No pictures: their licence is not checked.
+  { url: 'https://www.houstonpublicmedia.org/feed/', source: 'Houston Public Media', topic: 'national', zone: 'texas', noImage: true },
+  { url: 'https://feeds.npr.org/1001/rss.xml', source: 'NPR', topic: 'national', zone: 'texas', noImage: true },
   { url: 'https://news.google.com/rss/search?q=typhoon+OR+PAGASA+OR+%22oil+prices%22+OR+Hormuz+OR+peso+Philippines&hl=en-PH&gl=PH&ceid=PH:en', source: 'Google News PH', world: true } // PH-impact headlines from many outlets; the source tag names the outlet
 ]
 
 export interface WorldRow { id: string; title: string; url: string; source_domain: string; seen_at: string; lang: string; theme: string }
-export interface ItemRow { id: string; title: string; url: string; source: string; kind: 'article'; published_at: string; topic: Topic; image_url: string | null }
+export interface ItemRow { id: string; title: string; url: string; source: string; kind: 'article'; published_at: string; topic: Topic; image_url: string | null; zone?: string }
 export interface Entry { title: string; url: string; at: string; source: string; image: string | null; desc?: string; lat?: number; lon?: number; country?: string }
 
 /** Plain text, one line, at most 200 characters; control characters are dropped. */
@@ -99,7 +102,7 @@ export async function rowsFor(feed: Feed, entries: Entry[], now: number, seen: {
     if (feed.world && world.length < MAX_PER_FEED && !seen.world.has(id) && phImpact(title)) { seen.world.add(id); world.push({ id, title, url: e.url, source_domain: source, seen_at: e.at, lang: 'en', theme: 'world' }) }
     if (feed.topic && items.length < MAX_PER_FEED && !seen.items.has(id) && !(feed.geo && !gdacsKeep({ title, desc: e.desc, lat: e.lat, lon: e.lon, country: e.country })) && !(clean && isClickbait(title)) && !(feed.topic === 'wellbeing' && !isWellbeingStory(title))) {
       seen.items.add(id)
-      items.push({ id, title, url: e.url, source, kind: 'article', published_at: e.at, topic: feed.topic, image_url: feed.noImage ? null : e.image })
+      items.push({ id, title, url: e.url, source, kind: 'article', published_at: e.at, topic: feed.topic, image_url: feed.noImage ? null : e.image, ...(feed.zone ? { zone: feed.zone } : {}) })
     }
   }
   return { world, items }

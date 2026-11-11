@@ -19,9 +19,10 @@ export type Card =
   | { kind: 'records'; id: string; person: string; test: string }
 
 /** Never more than the last 10 messages, and only role + content leave the device. Card-only replies have no text and are not sent. */
-export const buildRequest = (messages: Msg[], screen: string) => ({
+export const buildRequest = (messages: Msg[], screen: string, region: 'ph' | 'us' | 'unknown' = 'unknown') => ({
   messages: messages.filter((m) => m.content.trim()).slice(-MAX_MESSAGES).map(({ role, content }) => ({ role, content })),
-  screen
+  screen,
+  region // coarse country only (S30 E1); never a position
 })
 
 const str = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v).slice(0, 300) : '')

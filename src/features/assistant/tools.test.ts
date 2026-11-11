@@ -127,6 +127,12 @@ describe('buildRequest', () => {
     expect(r.messages[0]!.content).toBe('m15')
     expect(Object.keys(r.messages[0]!)).toEqual(['role', 'content'])
     expect(r.screen).toBe('health')
+    expect(r.region).toBe('unknown') // no region given: the coarse unknown, never a position
+    expect(Object.keys(r).sort()).toEqual(['messages', 'region', 'screen'])
+  })
+  it('carries the coarse region and nothing else about where the person is', () => {
+    expect(buildRequest([{ role: 'user', content: 'hi' }], 'today', 'us').region).toBe('us')
+    expect(buildRequest([{ role: 'user', content: 'hi' }], 'today', 'ph').region).toBe('ph')
   })
 })
 

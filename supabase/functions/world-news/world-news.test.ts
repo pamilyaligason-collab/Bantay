@@ -119,18 +119,30 @@ describe('relevance at ingest (rules.ts)', () => {
   })
 })
 
+describe('zone tag (S30 C5)', () => {
+  it('a Texas feed writes zone texas on its items, no image, and every other feed writes no zone key at all', async () => {
+    const list = [{ title: 'Houston council passes budget', url: 'https://news.example.test/tx/1', at: '2026-11-04T10:00:00.000Z', source: '', image: 'https://img.example.test/x.jpg' }]
+    const tx = await rowsFor({ url: 'u', source: 'Houston Public Media', topic: 'national', zone: 'texas', noImage: true }, list, NOW, fresh())
+    expect(tx.items).toHaveLength(1)
+    expect(tx.items[0]).toMatchObject({ zone: 'texas', topic: 'national', source: 'Houston Public Media', image_url: null })
+    const ph = await rowsFor({ url: 'u', source: 'GMA News', topic: 'national' }, list, NOW, fresh())
+    expect(Object.keys(ph.items[0]!)).not.toContain('zone')
+  })
+})
+
 describe('topic mapping', () => {
   it('maps each Discover feed to the topic the brief names, and only WHO, BBC and Google News PH feed World', () => {
     const topics = (t: string) => FEEDS.filter((f) => f.topic === t).map((f) => f.source)
     expect(topics('health')).toEqual(['WHO', 'Inquirer', 'GMA News'])
     expect(topics('wellbeing')).toEqual(['Inquirer', 'GMA News'])
     expect(topics('prepping')).toEqual(['GDACS', 'Inquirer', 'Rappler'])
-    expect(topics('national')).toEqual(['Inquirer', 'Rappler', 'GMA News', 'Philstar'])
+    expect(topics('national')).toEqual(['Inquirer', 'Rappler', 'GMA News', 'Philstar', 'Houston Public Media', 'NPR'])
+    expect(FEEDS.filter((f) => f.zone).map((f) => [f.source, f.zone])).toEqual([['Houston Public Media', 'texas'], ['NPR', 'texas']]) // every other feed is for everyone (zone unset)
     expect(FEEDS.filter((f) => f.world).map((f) => f.source)).toEqual(['WHO', 'BBC', 'Google News PH'])
     expect(FEEDS.filter((f) => f.geo).map((f) => f.source)).toEqual(['GDACS'])
   })
-  it('feed list sanity: at most 14, all https, unique, one Google News PH feed, no CNN', () => {
-    expect(FEEDS.length).toBeLessThanOrEqual(14)
+  it('feed list sanity: at most 16, all https, unique, one Google News PH feed, no CNN', () => {
+    expect(FEEDS.length).toBeLessThanOrEqual(16)
     const urls = FEEDS.map((f) => f.url)
     expect(urls.every((u) => u.startsWith('https://'))).toBe(true)
     expect(new Set(urls).size).toBe(urls.length)
@@ -150,10 +162,10 @@ describe('runNews', () => {
     const { p, world, items, purged } = port()
     const sleep = vi.fn(async () => {})
     const res = await runNews(p, async () => xml, NOW, sleep)
-    expect(res).toMatchObject({ ok: true, queries_ok: 14, queries_failed: 0 })
+    expect(res).toMatchObject({ ok: true, queries_ok: 16, queries_failed: 0 })
     expect(res.rows).toBe(4) // the 4 distinct links, first world feed (WHO) wins
     expect(res.items).toBe(4) // topic feeds repeat the same links: first topic wins
-    expect(sleep.mock.calls.length).toBe(13)
+    expect(sleep.mock.calls.length).toBe(15)
     expect(sleep.mock.calls[0]).toEqual([GAP_MS])
     expect(world.length).toBe(1)
     expect(items.length).toBe(1)
@@ -164,12 +176,12 @@ describe('runNews', () => {
     const { p } = port()
     let n = 0
     const res = await runNews(p, async () => { if (++n === 2) throw new Error('HTTP429'); return xml }, NOW, async () => {})
-    expect(res).toMatchObject({ ok: true, queries_ok: 13, queries_failed: 1 })
+    expect(res).toMatchObject({ ok: true, queries_ok: 15, queries_failed: 1 })
   })
   it('every feed failing writes and purges nothing and reports not ok', async () => {
     const { p, purged } = port()
     const res = await runNews(p, async () => '<html>blocked</html>', NOW, async () => {})
-    expect(res).toEqual({ ok: false, rows: 0, items: 0, queries_ok: 0, queries_failed: 14 })
+    expect(res).toEqual({ ok: false, rows: 0, items: 0, queries_ok: 0, queries_failed: 16 })
     expect(p.upsertWorld).not.toHaveBeenCalled()
     expect(p.upsertItems).not.toHaveBeenCalled()
     expect(purged).toEqual([])
@@ -188,7 +200,7 @@ describe('runNews', () => {
     const fetchText = vi.fn(async () => { t += BUDGET_MS / 2 + 1; return xml })
     const res = await runNews(p, fetchText, NOW, async () => {}, clock)
     expect(fetchText).toHaveBeenCalledTimes(2) // clock reads 0, 55001, 110002: the third start is over budget
-    expect(res).toMatchObject({ queries_ok: 2, queries_failed: 12 })
+    expect(res).toMatchObject({ queries_ok: 2, queries_failed: 14 })
   })
 })
 
