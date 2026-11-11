@@ -70,11 +70,14 @@ describe('handleAsk region', () => {
     const tl = await handleAsk(port(), env, body('ayaw ko nang mabuhay', { region: 'us' }))
     expect((tl.body as { reply: string }).reply).toContain('Hindi ka nag-iisa')
     expect((tl.body as { reply: string }).reply).not.toContain('1553')
-    for (const extra of [{ region: 'ph' }, { region: 'unknown' }, {}]) {
+    for (const extra of [{ region: 'ph' }, {}]) { // {} = an older app that sends no region: the Philippine card, as before
       const o = await handleAsk(port(), env, body('I want to die', extra))
       expect((o.body as { emergency: { call: string[] } }).emergency.call).toEqual(['1553', '911'])
       expect((o.body as { reply: string }).reply).toContain('1553')
     }
+    const unk = await handleAsk(port(), env, body('I want to die', { region: 'unknown' }))
+    expect((unk.body as { emergency: { call: string[] } }).emergency.call).toEqual(['988', '1553', '911'])
+    expect((unk.body as { reply: string }).reply).toContain('In the United States, call or text 988 (free). In the Philippines, call the NCMH crisis hotline 1553 (free).')
   })
   it('a medical emergency card is 911 in every region, and takes no model call', async () => {
     for (const region of ['ph', 'us', 'unknown']) {

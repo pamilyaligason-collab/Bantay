@@ -62,7 +62,7 @@ describe('Phase 2 alert templates (D-78)', () => {
   it('every template has a tone, and the urgent set is the one in the contract', () => {
     for (const id of ALL) expect(['urgent', 'normal'], id).toContain(TEMPLATES[id].tone)
     const urgent = ALL.filter((i) => TEMPLATES[i].tone === 'urgent').sort()
-    expect(urgent).toEqual(['dose_missed', 'family_sos', 'flood_red', 'flood_watch', 'heat_alert', 'mood_unwell', 'pin_approve', 'pin_changed', 'quake_strong', 'reading_high', 'rollcall_help', 'storm_warning', 'system', 'tsunami_warning', 'volcano_raised'])
+    expect(urgent).toEqual(['dose_missed', 'family_sos', 'flood_red', 'flood_red_ph', 'flood_watch', 'heat_alert', 'mood_unwell', 'pin_approve', 'pin_changed', 'quake_strong', 'quake_strong_ph', 'reading_high', 'rollcall_help', 'storm_warning', 'storm_warning_ph', 'system', 'tsunami_warning', 'tsunami_warning_ph', 'volcano_raised', 'volcano_raised_ph'])
     expect(TEMPLATES.sos_late.tone).toBe('normal')
   })
   it('the contract titles are exact', () => {

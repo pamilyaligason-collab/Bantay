@@ -91,13 +91,16 @@ export function emergencyReply(kind: EmergencyKind, lang: Lang, region: Region =
   const self = kind === 'selfharm'
   const tl = lang === 'tl' || lang === 'taglish'
   const us = region === 'us' // 1553 cannot be dialled from the US: a US member gets 988, as the app's own card does
-  const text = self ? (us ? (tl ? SELF_US_TL : SELF_US_EN) : tl ? SELF_TL : SELF_EN) : tl ? CARD_TL : CARD_EN
-  const call = self ? (us ? ['988', '911'] : ['1553', '911']) : ['911']
+  const both = region === 'unknown' // an unknown place never counts as the Philippines for a life-safety number (location/region.ts): both lines, as the app's card shows
+  const text = self ? (both ? (tl ? SELF_BOTH_TL : SELF_BOTH_EN) : us ? (tl ? SELF_US_TL : SELF_US_EN) : tl ? SELF_TL : SELF_EN) : tl ? CARD_TL : CARD_EN
+  const call = self ? (both ? ['988', '1553', '911'] : us ? ['988', '911'] : ['1553', '911']) : ['911']
   return { status: 200, body: { reply: withDisclaimer(text, lang), tool_calls: [], emergency: { kind, call } }, meta: { status: 200, emergency: kind, lang } }
 }
 
 const SELF_US_EN = 'I am sorry you are going through this. You are not alone. Please call or text 988, the Suicide and Crisis Lifeline (free), now, or 911 if you are in danger. If you can, stay with someone you trust.'
 const SELF_US_TL = 'Pasensya na at pinagdadaanan mo ito. Hindi ka nag-iisa. Tumawag o mag-text po sa 988, ang Suicide and Crisis Lifeline (libre), ngayon, o sa 911 kung nasa panganib ka. Kung kaya, manatili sa piling ng taong pinagkakatiwalaan mo.'
+const SELF_BOTH_EN = 'I am sorry you are going through this. You are not alone. In the United States, call or text 988 (free). In the Philippines, call the NCMH crisis hotline 1553 (free). Call 911 if you are in danger. If you can, stay with someone you trust.'
+const SELF_BOTH_TL = 'Pasensya na at pinagdadaanan mo ito. Hindi ka nag-iisa. Sa United States, tumawag o mag-text sa 988 (libre). Sa Pilipinas, tumawag sa NCMH crisis hotline 1553 (libre). Tumawag sa 911 kung nasa panganib ka. Kung kaya, manatili sa piling ng taong pinagkakatiwalaan mo.'
 
 const OTHER_LANG = 'Sorry, I can answer in English or Tagalog only. Please write again in English or Tagalog. For anything urgent, call 911.'
 

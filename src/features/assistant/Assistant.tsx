@@ -332,7 +332,7 @@ export default function Assistant() {
     if ('error' in r && r.error === 'failed') void track('error', 'assistant_failed')
     let done: Item[]
     if ('emergency' in r && r.emergency) { // the server gate fired: same card as the local one, and this exchange never goes back to the model or onto the phone
-      // S30 L8: the server's self-harm text names 1553 only; the crisis line follows where the phone is (988 in the US), so a self-harm card is rebuilt on the phone
+      // S30 L8: the server now picks the crisis line by the region the phone sends, and the phone still rebuilds a self-harm card from where the phone is (988 in the US), so a self-harm card is rebuilt on the phone
       const em = r.emergency.kind === 'selfharm' ? (await localGate(content)) ?? r.emergency : r.emergency
       done = [...next.slice(0, -1), { role: 'user', content, local: true, sensitive: true }, { role: 'assistant', content: '', local: true, sensitive: true, emergency: em }]
     } else {

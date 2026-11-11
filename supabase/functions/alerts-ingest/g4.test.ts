@@ -31,7 +31,7 @@ function port(zones: Record<string, string | null> | 'none' | 'throw', people: s
 
 describe('phTemplate', () => {
   it('is the _ph twin when the shared templates have it, the plain id when they do not (no push lost to a missing id)', () => {
-    expect(phTemplate('quake_strong')).toBe('quake_strong')
+    expect(phTemplate('digest')).toBe('digest') // no twin: the plain id, so no push is lost
     addTwins()
     for (const id of TWINS) expect(phTemplate(id)).toBe(`${id}_ph`)
     expect(phTemplate('digest')).toBe('digest') // not a hazard of this function

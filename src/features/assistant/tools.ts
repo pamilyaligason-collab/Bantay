@@ -32,7 +32,7 @@ export const FIELDS: Record<DraftTool, string[]> = {
   log_activity: ['person', 'kind', 'minutes', 'steps', 'startedAt']
 }
 
-/** The server's 911 card: `emergency.call` lists the numbers (['911'] or ['1553','911']); only plain digit strings are kept. */
+/** The server's 911 card: `emergency.call` lists the numbers (['911'], ['1553','911'], ['988','911'] or ['988','1553','911'] by region); only plain digit strings are kept. */
 export interface ReplyEmergency { kind: string; call: string[]; text: string }
 
 /** Server reply -> text + cards (+ the 911 card when the server gate fired). Unknown tools and bad arguments are dropped, never executed. */
