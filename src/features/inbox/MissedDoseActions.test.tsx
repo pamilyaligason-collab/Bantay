@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Medication } from '../log/store'
+import { setPersonZones, setSelf, setZone } from '../time/zone'
 import { doseRef, MissedDoseActions } from './MissedDoseActions'
 
 const h = vi.hoisted(() => ({ times: ['09:00'], phone: '+639171234567' as string | null, takes: [] as unknown[], logDose: vi.fn(), can: null as { log: boolean; reason: string | null } | null }))
@@ -10,7 +11,7 @@ vi.mock('../health/useMedications', () => ({ useMedications: (id: string) => (id
 vi.mock('../health/useActivity', () => ({ useTakenToday: () => h.takes }))
 vi.mock('../viewas/viewAs', () => ({ useActingCan: () => h.can, useActingPersonId: () => (h.can ? 'p1' : null) }))
 vi.mock('../log/store', () => ({ logDose: (...a: unknown[]) => h.logDose(...a) }))
-afterEach(() => { cleanup(); vi.restoreAllMocks(); h.times = ['09:00']; h.phone = '+639171234567'; h.can = null; h.takes = []; h.logDose.mockReset() })
+afterEach(() => { setZone(null); setPersonZones({}, null); setSelf(null); cleanup(); vi.restoreAllMocks(); h.times = ['09:00']; h.phone = '+639171234567'; h.can = null; h.takes = []; h.logDose.mockReset() })
 
 const NOW = new Date('2026-10-26T10:10:00+08:00') // a Manila instant: the dose day is the Manila day (ML-38)
 const REF = 'm1:2026-10-26:09:00'
@@ -102,5 +103,21 @@ describe('MissedDoseActions (lock-missed)', () => {
     h.takes = [{ name: 'Losartan', takenAt: new Date('2026-10-27T00:20:00+08:00').toISOString(), medicationId: 'm1', slot: '00:15' }]
     render(<MissedDoseActions personId="p1" refText="m1:2026-10-27:00:15" now={now} />)
     expect(screen.queryByRole('button', { name: /Mark taken/ })).toBeNull()
+  })
+})
+
+describe('S30 L8 r2: a viewer in Chicago marking for a Manila person uses HER day', () => {
+  // NOW = 10:10 Manila on 10-26 = 02:10Z = 21:10 Chicago on 10-25 (CDT, UTC-5).
+  it('a take from 21:00 Manila on 10-25 (08:00 Chicago the same day) does not settle the 09:00 dose of today: Mark taken is offered', () => {
+    setZone('America/Chicago'); setSelf('me'); setPersonZones({ p1: 'Asia/Manila' })
+    h.takes = [{ personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '09:00', takenAt: '2026-10-25T13:00:00Z' }]
+    render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
+    expect(screen.getByRole('button', { name: 'Mark taken for Mama Rosa' })).toBeTruthy()
+  })
+  it('a take at 09:40 Manila on 10-26 (01:40Z) settles it: no Mark taken', () => {
+    setZone('America/Chicago'); setSelf('me'); setPersonZones({ p1: 'Asia/Manila' })
+    h.takes = [{ personId: 'p1', name: 'Losartan', medicationId: 'm1', slot: '09:00', takenAt: '2026-10-26T01:40:00Z' }]
+    render(<MissedDoseActions personId="p1" refText={REF} now={NOW} />)
+    expect(screen.queryByRole('button', { name: /Mark taken for/ })).toBeNull()
   })
 })

@@ -12,7 +12,7 @@ import { fcmMessageFor, fcmOutcome, parseServiceAccount, sendFcm } from '../_sha
 import { heartbeat } from '../_shared/heartbeat.ts'
 import { TEMPLATES } from '../_shared/templates.ts'
 import { dayIn, safeZone, slotInstant } from '../_shared/tz.ts'
-import { DOSE_RETRY_MS, manilaDay, normaliseDrug, recipients, runDoseWatch, scheduleTimes, zoneOfMed, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
+import { DOSE_RETRY_MS, manilaDay, isUndefinedColumn, normaliseDrug, recipients, runDoseWatch, scheduleTimes, zoneOfMed, type MedRow, type Port, type Report, type TakenRow } from './logic.ts'
 
 const PAGE = 1000
 /** Read every row, PAGE at a time (the API caps one response at 1000 rows). */
@@ -20,7 +20,7 @@ async function pages<T>(q: (from: number, to: number) => PromiseLike<{ data: unk
   const all: T[] = []
   for (let from = 0; ; from += PAGE) {
     const { data, error } = await q(from, from + PAGE - 1)
-    if (error) throw new Error('read')
+    if (error) throw Object.assign(new Error('read'), { cause: error }) // the cause stays so a caller can tell a missing column from a real failure
     all.push(...((data ?? []) as T[]))
     if (!data || data.length < PAGE) return all
   }
@@ -106,7 +106,8 @@ Deno.serve(async (req) => {
     async medications() {
       const read = (embed: string) => pages<MedRow>((from, to) => sb.from('medications').select(`id,person_id,name,med_status,deleted_at,as_needed,schedule,started_on,stopped_on,${embed}`).is('deleted_at', null).eq('med_status', 'active').eq('as_needed', false).is('people.archived_at', null).order('id').range(from, to))
       // S30 L8: the person's own zone (people.tz, 0065). Before 0065 is applied the column is not there: read without it and everyone is Asia/Manila, exactly as before.
-      try { return await read('people!inner(archived_at,tz)') } catch { return await read('people!inner(archived_at)') }
+      // Only the missing-column error falls back; any other error is rethrown so a failed read is never mistaken for "everyone is Manila" (a Texas dose would be judged on the wrong clock).
+      try { return await read('people!inner(archived_at,tz)') } catch (e) { if (!isUndefinedColumn((e as { cause?: unknown }).cause)) throw e; return await read('people!inner(archived_at)') }
     },
     async taken(sinceIso) {
       return pages<TakenRow>((from, to) => sb.from('meds_taken').select('person_id,medication_id,slot,taken_at,name').gte('taken_at', sinceIso).order('id').range(from, to))

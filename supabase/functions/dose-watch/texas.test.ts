@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { dayIn, hourIn, offsetMs, safeZone, slotInstant } from '../_shared/tz.ts'
 import { channelFor, inQuietHours } from '../_shared/fcm.ts'
 import { dayIn as clientDayIn, minutesIn, offsetMs as clientOffset, wallToMs } from '../../../src/features/time/zone'
-import { dueSlots, openToday, type MedRow, type TakenRow } from './logic.ts'
+import { dueSlots, isUndefinedColumn, openToday, type MedRow, type TakenRow } from './logic.ts'
 
 const CHI = 'America/Chicago'
 const med = (tz: string | undefined, over: Partial<MedRow> = {}): MedRow => ({ id: 'm1', person_id: 'p1', med_status: 'active', deleted_at: null, as_needed: false, schedule: { v: 1, times: ['08:00'] }, people: { archived_at: null, ...(tz ? { tz } : {}) }, ...over })
@@ -102,11 +102,25 @@ describe('A2: quiet hours follow the recipient\'s zone', () => {
 const src = readFileSync(new URL('./index.ts', import.meta.url), 'utf8')
 describe('index.ts wiring guard', () => {
   it('reads the person zone with a fallback for a database without 0065', () => {
-    expect(src).toContain("try { return await read('people!inner(archived_at,tz)') } catch { return await read('people!inner(archived_at)') }")
+    expect(src).toContain("try { return await read('people!inner(archived_at,tz)') } catch (e) { if (!isUndefinedColumn((e as { cause?: unknown }).cause)) throw e; return await read('people!inner(archived_at)') }")
   })
   it('the dose-due ping and the push quiet hours are zone aware, and no fixed +08:00 is left in the entry', () => {
     expect(src).toContain('slotInstant(tz, day, t)')
     expect(src).toContain('fcmMessageFor(r, now, zoneByUser.get(r.carer_user_id))')
     expect(src).not.toContain('+08:00')
+  })
+})
+
+describe('isUndefinedColumn: only the missing people.tz column (migration 0065 not applied) may fall back', () => {
+  it('true for Postgres 42703 and for the PostgREST message naming column tz', () => {
+    expect(isUndefinedColumn({ code: '42703', message: 'anything' })).toBe(true)
+    expect(isUndefinedColumn({ message: 'column people_1.tz does not exist' })).toBe(true)
+  })
+  it('false for a timeout, a policy error, a dropped link, null and a message about another column', () => {
+    expect(isUndefinedColumn({ code: '57014', message: 'canceling statement due to statement timeout' })).toBe(false)
+    expect(isUndefinedColumn({ code: '42501', message: 'permission denied for table people' })).toBe(false)
+    expect(isUndefinedColumn({ message: 'TypeError: fetch failed' })).toBe(false)
+    expect(isUndefinedColumn({ message: 'column people_1.nickname does not exist' })).toBe(false)
+    expect(isUndefinedColumn(null)).toBe(false)
   })
 })

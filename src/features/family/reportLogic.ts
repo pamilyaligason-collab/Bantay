@@ -1,3 +1,4 @@
+import { zoneOf } from '../time/zone'
 import { formatNumber } from '../../lib/labFormat'
 import { groupLabs, labInfo, labRow, labVerdict, type LabRow } from '../health/labsLogic'
 import { countDoses } from '../health/doseCount'
@@ -53,19 +54,20 @@ export interface Adherence { cells: DayCell[]; taken: number; due: number; misse
 
 /** Seven Manila days ending today (the dose day, whatever this phone's zone says). A day with no scheduled doses is "none". A past day with a dose not taken (or skipped) is "missed". Today's open doses are "pending", not missed. */
 export function adherence(meds: Medication[], takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped' | 'personId'>[], personId: string, now: Date): Adherence {
-  const today = manilaDay(now)
+  const tz = zoneOf(personId) // the person's seven days, not the viewer's
+  const today = manilaDay(now, tz)
   const cells: DayCell[] = []
   const missed: Adherence['missed'] = []
-  for (const day of manilaDaysEnding(now, 7)) {
+  for (const day of manilaDaysEnding(now, 7, tz)) {
     const wd = WD[new Date(`${day}T12:00:00Z`).getUTCDay()]!
-    const doses: DoseState[] = matchDoses(slotsFor(meds, personId, day), takes, day, manilaDay)
+    const doses: DoseState[] = matchDoses(slotsFor(meds, personId, day), takes, day, (v) => manilaDay(v, tz))
     const taken = doses.filter((x) => x.state === 'taken').length
     const open = doses.filter((x) => x.state !== 'taken')
     const state: CellState = doses.length === 0 ? 'none' : open.length === 0 ? 'taken' : day === today && open.every((x) => x.state === 'pending') ? 'pending' : 'missed'
     cells.push({ day, label: wd, state, taken, due: doses.length })
     if (state === 'missed') missed.push({ day, label: wd, names: [...new Set(open.map((x) => x.name))] })
   }
-  const n = countDoses({ meds, takes, personId, now, days: manilaDaysEnding(now, 7) }) // the one shared counter, so this total equals Today and the visit summary
+  const n = countDoses({ meds, takes, personId, now, days: manilaDaysEnding(now, 7, tz) }) // the one shared counter, so this total equals Today and the visit summary
   return { cells, taken: n.done, due: n.want, missed }
 }
 

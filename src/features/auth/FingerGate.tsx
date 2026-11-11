@@ -5,6 +5,7 @@ import { Icon } from '../shell/Icon'
 import { firstName } from '../shell/names'
 import { LockMedicalId } from '../medid/LockMedicalId'
 import { useLockGlance } from '../privacy/lockWeather'
+import { tempText, useWxUnits } from '../weather/units'
 import '../privacy/privacy.css'
 import './lock.css'
 
@@ -20,6 +21,7 @@ export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: {
   const [tried, setTried] = useState(false)
   const [medid, setMedid] = useState(false)
   const glance = useLockGlance()
+  const units = useWxUnits() // the same units as Today: F on a US phone, or the Settings > Display choice
   const [now, setNow] = useState(() => new Date())
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 15_000); return () => clearInterval(t) }, [])
   const alive = useRef(true)
@@ -50,7 +52,7 @@ export function LockScreen({ name, personId, onUnlocked, onUsePin, onNotYou }: {
       {glance && (
         <div className="lk2-wx">
           <Icon name={glance.kind} size={28} />
-          <div><b>{glance.temp}° {glance.words}</b>{glance.place && <div>{glance.place}</div>}{glance.rain && <div>{glance.rain}</div>}</div>
+          <div><b>{tempText(glance.tempC, units)} {glance.words}</b>{glance.place && <div>{glance.place}</div>}{glance.rain && <div>{glance.rain}</div>}</div>
         </div>
       )}
       <div className="lk2-mid">

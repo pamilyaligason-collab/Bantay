@@ -32,6 +32,7 @@ describe('own dose day follows the phone zone', () => {
   })
   it('pickSlot: an 08:10 Chicago take lands on the 08:00 slot of the Chicago day', () => {
     setZone(CHI)
+    setSelf('p1') // own medicine: this phone's zone
     expect(pickSlot(med, [], new Date('2026-12-01T14:10:00Z'))).toBe('08:00')
   })
   it('countDoses: 08:05 Chicago taken on time counts done, in the Chicago zone; the 7 days end on the Chicago day', () => {

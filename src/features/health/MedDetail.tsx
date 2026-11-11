@@ -44,7 +44,7 @@ function useWeekTakes(personId: string | undefined): MedTaken[] | undefined {
   const [got, setGot] = useState<{ id: string; rows: MedTaken[] } | undefined>(undefined)
   useEffect(() => {
     if (!personId) return
-    const since = tzMidnight(manilaDaysEnding(new Date(), 7)[0]!, zoneOf(personId)).toISOString()
+    const since = tzMidnight(manilaDaysEnding(new Date(), 7, zoneOf(personId))[0]!, zoneOf(personId)).toISOString()
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id: personId, rows }), error: () => setGot({ id: personId, rows: NONE }) })
     return () => sub.unsubscribe()
   }, [personId])

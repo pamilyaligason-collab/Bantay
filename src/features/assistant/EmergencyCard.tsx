@@ -12,8 +12,11 @@ export function EmergencyCard({ e, onSos }: { e: Emergency; onSos: () => void })
       <span className="as-eyebrow">This may be an emergency</span>
       <strong className="as-emerg-h">{emergencyTitle(e.kind)}</strong>
       <span>{e.text}</span>
-      <button type="button" className="as-911" onClick={() => void callFirstContact([], { emergency: true })}>Call 911</button>
-      {crisis.map((n) => <button key={n} type="button" className="as-911 as-911-alt" onClick={() => { window.location.href = `tel:${n}` }}>{CRISIS_BUTTON[n]}</button>)}
+      {crisis.map((n, i) => [
+        <button key={n} type="button" className={i === 0 ? 'as-911' : 'as-911 as-911-alt'} onClick={() => { window.location.href = `tel:${n}` }}>{CRISIS_BUTTON[n]}</button>,
+        n === '988' ? <a key={`${n}-text`} className="as-911 as-911-alt" href="sms:988">Text 988</a> : null // 988 takes texts too; a link so the phone's messages app opens (never auto-sent)
+      ])}
+      <button type="button" className={crisis.length ? 'as-911 as-911-alt' : 'as-911'} onClick={() => void callFirstContact([], { emergency: true })}>Call 911</button>
       <button type="button" className="as-911 as-911-alt" onClick={onSos}>Tell my family (SOS)</button>
       <span className="as-eyebrow as-foot">Checked on this phone before anything reaches the AI.</span>
     </div>

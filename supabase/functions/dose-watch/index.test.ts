@@ -13,6 +13,7 @@ const h = vi.hoisted(() => ({
   rpcs: [] as string[],
   failUpdate: new Set<string>(), // tables whose update answers an error
   failSelect: new Set<string>(), // tables whose read answers an error
+  failCols: null as null | { table: string; col: string; error: Record<string, unknown> }, // a read whose select text names this column answers this error
   afterSend: null as null | (() => void),
   serve: null as null | ((req: Request) => Promise<Response>),
   fcm: [] as { token: string; msg: { notification: { title: string; body: string }; data: { t: string }; android: { priority: string; notification: { channel_id: string; tag: string } } } }[],
@@ -32,7 +33,8 @@ function builder(name: string) {
   const val = (r: Row, c: string) => (r[c] === undefined ? null : r[c])
   const b: Record<string, unknown> = {}
   const f = (fn: (r: Row) => boolean) => { preds.push(fn); return b }
-  b.select = () => b
+  let cols = ''
+  b.select = (c?: string) => { cols = c ?? ''; return b }
   b.eq = (c: string, v: unknown) => f((r) => val(r, c) === v)
   b.is = (c: string, v: unknown) => f((r) => val(r, c) === v)
   b.not = (c: string, _op: string, v: unknown) => f((r) => val(r, c) !== v)
@@ -58,6 +60,7 @@ function builder(name: string) {
         return { data: null, error: null }
       }
       const hit = (rows ?? all).filter((r) => preds.every((p) => p(r)))
+      if (op === 'select' && h.failCols && h.failCols.table === name && cols.includes(h.failCols.col)) return { data: null, error: h.failCols.error }
       if (op === 'select' && h.failSelect.has(name)) return { data: null, error: { message: 'read failed' } }
       if (op === 'update' && h.failUpdate.has(name)) return { data: null, error: { message: 'write failed' } }
       if (op === 'update') { for (const r of hit) Object.assign(r, patch); return { data: null, error: null } }
@@ -118,7 +121,7 @@ beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(NOW)
   Object.assign(h, { tables: { carer_alerts: [], push_subscriptions: [], people: [{ id: 'p1', display_name: 'Lola Rosa Cruz', auth_user_id: 'u-p1', archived_at: null }], carers: [{ carer_id: 'c1', person_id: 'p1', can_write: true }, { carer_id: 'c2', person_id: 'p1', can_write: false }], medications: [], meds_taken: [], phone_health: [] }, claimed: new Set(), sent: [], rpcs: [], serve: null })
-  h.failWith.clear(); h.failUpdate.clear(); h.failSelect.clear(); h.afterSend = null; h.heartbeat.mockReset()
+  h.failWith.clear(); h.failUpdate.clear(); h.failSelect.clear(); h.failCols = null; h.afterSend = null; h.heartbeat.mockReset()
   h.fcm = []; h.fcmStatus.clear(); h.afterFcm = null; h.port = null; delete ENV.FIREBASE_SERVICE_ACCOUNT_B64
   ;(globalThis as { Deno?: unknown }).Deno = { env: { get: (k: string) => ENV[k] }, serve: (fn: (r: Request) => Promise<Response>) => { h.serve = fn } }
   vi.resetModules()
@@ -267,6 +270,30 @@ describe('dose_due push (hazard M4)', () => {
     expect(due.map((s) => s.endpoint)).toEqual(['https://push.test/u-p1/1'])
     expect(buildNotification(due[0]!.payload)!.cls).toBe('health')
     expect(due[0]!.opts).toMatchObject({ urgency: 'normal' })
+  })
+  it('S30 L8 r2: before 0065 (undefined column tz, 42703) the read falls back without tz and the dose still pings', async () => {
+    h.failCols = { table: 'medications', col: 'tz', error: { code: '42703', message: 'column people_1.tz does not exist' } }
+    h.tables.medications!.push(med())
+    h.tables.push_subscriptions!.push(sub('u-p1'))
+    const r = await call({})
+    expect(r.json.dose_due_failed).toBeUndefined()
+    expect(h.sent.filter((s) => (s.payload as { t: string }).t === 'dose_due')).toHaveLength(1)
+  })
+  it('S30 L8 r2: the PostgREST message naming column tz (no code) also falls back', async () => {
+    h.failCols = { table: 'medications', col: 'tz', error: { message: 'column people_1.tz does not exist' } }
+    h.tables.medications!.push(med())
+    h.tables.push_subscriptions!.push(sub('u-p1'))
+    await call({})
+    expect(h.sent.filter((s) => (s.payload as { t: string }).t === 'dose_due')).toHaveLength(1)
+  })
+  it('S30 L8 r2: any OTHER error (a timeout) is rethrown: no dose is judged on a guessed Manila clock, the run reports failed (500), nothing is pushed', async () => {
+    h.failCols = { table: 'medications', col: 'tz', error: { code: '57014', message: 'canceling statement due to statement timeout' } }
+    h.tables.medications!.push(med())
+    h.tables.push_subscriptions!.push(sub('u-p1'))
+    const r = await call({})
+    expect(r.status).toBe(500)
+    expect(r.json).toMatchObject({ ok: false })
+    expect(h.sent.filter((s) => (s.payload as { t: string }).t === 'dose_due')).toHaveLength(0)
   })
   it('not before the slot, not after the window, not when already taken, not for the Android app, and a person with no phone_health row still gets it', async () => {
     h.tables.push_subscriptions!.push(sub('u-p1'))

@@ -1,5 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { emergencyTitle, localGate } from './gateClient'
+
+afterEach(() => vi.restoreAllMocks())
 
 describe('localGate (same rules as the server gate)', () => {
   it('Taglish chest pain with trouble breathing is an emergency; the body is Tagalog', async () => {
@@ -33,11 +35,13 @@ describe('localGate (same rules as the server gate)', () => {
   it('other emergencies are the same in every place: 911 only', async () => {
     for (const r of ['ph', 'us', null] as const) expect((await localGate('I cant breathe', r))?.call).toEqual(['911'])
   })
-  it('with no region given it is read from the phone (the stored fix, then the phone country) and still answers', async () => {
-    const e = await localGate('I want to die')
-    expect(e?.kind).toBe('selfharm')
-    expect(e!.call).toContain('911')
-    expect(e!.call.length).toBeGreaterThanOrEqual(2)
+  it('with no region given and no stored fix, the phone country decides: a Chicago phone gets 988 then 911, a Manila phone 1553 then 911', async () => {
+    const zone = (tz: string) => vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({ timeZone: tz } as Intl.ResolvedDateTimeFormatOptions)
+    zone('America/Chicago')
+    expect((await localGate('I want to die'))?.call).toEqual(['988', '911'])
+    vi.restoreAllMocks()
+    zone('Asia/Manila')
+    expect((await localGate('I want to die'))?.call).toEqual(['1553', '911'])
   })
   it('English breathing is English text; ordinary questions and negated symptoms are not emergencies', async () => {
     expect((await localGate('I cant breathe'))?.text).toMatch(/^Jack won't answer this one/)

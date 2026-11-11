@@ -1,5 +1,7 @@
 import { db } from '../../db'
 import { supabase } from '../auth/client'
+import { familyPlacesOn } from '../family/flags'
+import { placeNoticeSeen, placeSharingOn } from '../family/placeApi'
 import { phoneZone, setPersonZones } from './zone'
 
 // S30 L8 (A1): the phone tells the server which clock its owner lives on (people.tz, migration 0065), so dose-watch judges a dose "late" on THEIR wall clock and push quiet hours follow it.
@@ -32,10 +34,19 @@ export async function syncPersonZones(userId: string): Promise<void> {
   } catch { /* offline or not migrated: keep the cache */ }
 }
 
+/** The phone's time zone is a coarse place (it names a region), so it follows the same switch as the family place (ML-45/ML-46): sent only while this person has answered the place notice and has sharing on.
+ *  Off, or not yet answered, or the person unknown: nothing is sent and nothing already on the server is cleared. */
+export async function zoneMaySend(): Promise<boolean> {
+  if (!familyPlacesOn()) return false
+  const me = await import('../sync/profile').then((m) => m.selfIdOrCached()).catch(() => null)
+  return !!me && (await placeNoticeSeen(me)) && (await placeSharingOn(me))
+}
+
 export async function reportMyZone(userId: string, now = Date.now()): Promise<boolean> {
   try {
     const tz = phoneZone()
     if (!tz || !supabase || /^(UTC|GMT|Etc\/)/.test(tz)) return false // UTC is what a browser that hides its zone says: never a person's clock
+    if (!(await zoneMaySend())) return false
     const last = (await db.kv.get(TZ_SENT_KEY).catch(() => undefined))?.value as { userId?: string; tz?: string; at?: number; ok?: boolean } | undefined
     const at = last?.at
     const same = last?.userId === userId && last.tz === tz && typeof at === 'number' && now >= at

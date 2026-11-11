@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../db'
 import { ldb } from '../log/store'
 import type { AlertRow } from '../notify/store'
+import { setPersonZones, setSelf, setZone } from '../time/zone'
 
 // D-145: the Today missed-dose row closes when the dose is taken or skipped (by anyone), and not before. Invented names and ids only.
 const h = vi.hoisted(() => ({ seen: vi.fn((_id: string) => Promise.resolve()) }))
@@ -20,7 +21,7 @@ beforeEach(async () => {
   await Promise.all([db.outbox.clear(), db.kv.clear(), ldb.medications.clear(), ldb.meds.clear()])
   await ldb.medications.add({ personId: 'p2', name: 'Losartan', strength: '50 mg', serverId: 'm1', clientId: 'c1', medStatus: 'active', schedule: { v: 1, times: ['09:00'] } })
 })
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks() })
+afterEach(() => { setZone(null); setPersonZones({}, null); setSelf(null); cleanup(); vi.useRealTimers(); vi.restoreAllMocks() })
 /** A phone whose own calendar is `hours` ahead of UTC (a worker cannot switch the real zone): the local date getters read the shifted instant. */
 function phoneAhead(hours: number) {
   const proto = Object.getPrototypeOf(new Date()) as Date
@@ -67,5 +68,20 @@ describe('useMissedToday', () => {
     await new Promise((r) => setTimeout(r, 80))
     expect(screen.getByTestId('out').textContent).toBe('p2:md')
     expect(h.seen).not.toHaveBeenCalled()
+  })
+})
+
+// S30 L8 r2: a viewer in Chicago, the missed dose belongs to a Manila person: her day and her takes decide, not the Chicago day.
+describe('useMissedToday on a Chicago phone for a Manila person', () => {
+  it('a take from 21:00 Manila on 10-25 (08:00 Chicago the same day) leaves the 09:00 row open; a take at 09:40 Manila today closes it', async () => {
+    setZone('America/Chicago'); setSelf('me'); setPersonZones({ p2: 'Asia/Manila' }) // NOW = 10:10 Manila 10-26 = 21:10 Chicago 10-25
+    render(<Probe rows={ROWS} />)
+    await ldb.meds.add({ personId: 'p2', name: 'Losartan', takenAt: '2026-10-25T13:00:00Z', medicationId: 'm1', slot: '09:00' })
+    await new Promise((r) => setTimeout(r, 80))
+    expect(screen.getByTestId('out').textContent).toBe('p2:md')
+    expect(h.seen).not.toHaveBeenCalled()
+    await ldb.meds.add({ personId: 'p2', name: 'Losartan', takenAt: '2026-10-26T01:40:00Z', medicationId: 'm1', slot: '09:00' })
+    await waitFor(() => expect(screen.getByTestId('out').textContent).toBe('none'))
+    await waitFor(() => expect(h.seen).toHaveBeenCalledWith('md'))
   })
 })

@@ -1,4 +1,4 @@
-import { dayIn, getZone, minutesIn } from '../time/zone'
+import { dayIn, getZone, minutesIn, zoneOf } from '../time/zone'
 import type { MedTaken, Medication } from '../log/store'
 
 /** Pure helpers for the live medicine schedule (public.medications, PART-3 1.2 and 1.3). No React, no storage. */
@@ -160,9 +160,10 @@ export function reminderId(key: string, slot: string): number {
 /** Which slot a dose logged at `when` belongs to: the open (not yet taken or skipped) slot of that day latest at or before that time (else the earliest). undefined for an as-needed medicine,
  *  one with no times, or when every slot of the day is done (an extra dose has no slot). */
 export function pickSlot(med: Medication, takes: Pick<MedTaken, 'name' | 'takenAt' | 'medicationId' | 'slot' | 'skipped'>[], when: Date): string | undefined {
-  const day = manilaDay(when) // the dose day is the Manila day, like the server's refs and useTakenToday
-  const open = matchDoses(slotsFor([med], med.personId, day), takes, day, manilaDay).filter((d) => d.state === 'pending')
-  const at = manilaMinutes(when)
+  const tz = zoneOf(med.personId) // the medicine's own person's clock (this phone's for me): a carer marking for someone far away picks THEIR slot
+  const day = manilaDay(when, tz) // the dose day, like the server's refs and useTakenToday
+  const open = matchDoses(slotsFor([med], med.personId, day), takes, day, (v) => manilaDay(v, tz)).filter((d) => d.state === 'pending')
+  const at = manilaMinutes(when, tz)
   const sorted = open.sort((a, b) => a.at - b.at)
   // the latest open slot at or before the time of the take; never a slot still in the future. None yet: the earliest.
   return ([...sorted].reverse().find((d) => d.at <= at) ?? sorted[0])?.slot

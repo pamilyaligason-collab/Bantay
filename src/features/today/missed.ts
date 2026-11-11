@@ -53,15 +53,16 @@ export function useMissedToday(rows: AlertRow[]): Missed[] {
   useEffect(() => {
     if (!key) return setFinal(new Set())
     const ids = key.split(',')
-    const since = () => tzMidnight(manilaDay(new Date())).toISOString()
+    const since = () => new Date(Math.min(...ids.map((id) => { const tz = zoneOf(id); return tzMidnight(manilaDay(new Date(), tz), tz).getTime() }))).toISOString() // the earliest midnight among these people's own zones
     const sub = liveQuery(async () => ({ meds: await ldb.medications.where('personId').anyOf(ids).toArray(), takes: await ldb.meds.where('takenAt').aboveOrEqual(since()).filter((t) => ids.includes(t.personId)).toArray() })).subscribe({
       next: ({ meds, takes }) => {
-        const day = manilaDay(new Date()), done = new Set<string>()
+        const done = new Set<string>()
         for (const r of rows) {
           const { slot } = doseRef(r.ref)
           if (r.kind !== 'dose_missed' || r.seenAt != null || !r.personId || !slot || !ids.includes(r.personId) || !showsAsCard(r.ref, undefined, zoneOf(r.personId))) continue
           const mine = meds.filter((m) => m.personId === r.personId)
-          if (mine.length && !matchDoses(slotsFor(mine, r.personId, day), takes.filter((t) => t.personId === r.personId), day, manilaDay).some((d) => d.slot === slot && d.state === 'pending')) done.add(r.id)
+          const tz = zoneOf(r.personId), day = manilaDay(new Date(), tz) // that person's day and clock
+          if (mine.length && !matchDoses(slotsFor(mine, r.personId, day), takes.filter((t) => t.personId === r.personId), day, (v) => manilaDay(v, tz)).some((d) => d.slot === slot && d.state === 'pending')) done.add(r.id)
         }
         setFinal(done)
         for (const id of done) void markSeen(id).catch(() => undefined)

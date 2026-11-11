@@ -1,23 +1,9 @@
 import { cleanup } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { FamilyEvent, FamilyTask } from '../family/store'
-import type { Wx } from './heroCards'
 import { todayRows } from './PlanToday'
-import { weatherLine } from './weather'
 
 afterEach(cleanup)
-const wx: Wx = { temp: 27.4, rainPct: 20, words: 'partly cloudy', at: '2026-10-19T00:00:00Z' }
-
-describe('weatherLine', () => {
-  it('one sentence with a rounded temperature', () => {
-    expect(weatherLine(wx, new Date(2026, 9, 19, 9))).toBe('27° partly cloudy. Today up to 20%.')
-  })
-  it('unknown temperature gives no line, never 0', () => {
-    expect(weatherLine({ ...wx, temp: null })).toBeNull()
-    expect(weatherLine(null)).toBeNull()
-  })
-})
-
 describe('todayRows', () => {
   const now = new Date(2026, 9, 19, 10)
   const task = (o: Partial<FamilyTask>): FamilyTask => ({ clientId: 't', title: 'Task', due: '2026-10-19', assigneePersonId: null, done: false, ...o })

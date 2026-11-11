@@ -54,7 +54,11 @@ for (const size of SIZES) {
         await expect(card).toContainText('988')
         await expect(card).not.toContainText('1553')
         await expect(card.getByRole('button', { name: 'Call 988 (crisis line, free)' })).toBeVisible()
+        await expect(card.getByRole('link', { name: 'Text 988' })).toHaveAttribute('href', 'sms:988')
         await expect(card.getByRole('button', { name: 'Call 911' })).toBeVisible()
+        const order = await card.locator('button, a').evaluateAll((els) => els.map((e) => (e.textContent ?? '').trim()))
+        expect(order.indexOf('Call 988 (crisis line, free)')).toBeLessThan(order.indexOf('Call 911')) // 988 above 911 on the self-harm card
+        expect(order.indexOf('Text 988')).toBeLessThan(order.indexOf('Call 911'))
         await expect(card.getByRole('button', { name: /Call 1553/ })).toHaveCount(0)
       })
 
@@ -67,6 +71,34 @@ for (const size of SIZES) {
         await expect(card.getByRole('link', { name: 'Call 911' })).toHaveAttribute('href', 'tel:911')
         await expect(card).not.toContainText('1553')
         await expect(card).not.toContainText('NCMH')
+      })
+
+      test('Weather screen in Texas reads Fahrenheit and mph (30 C = 86 F, 9 km/h = 6 mph)', async ({ page }) => {
+        await open(page, '/#weather', size, scheme)
+        const tiles = page.getByTestId('wx-details')
+        await tiles.scrollIntoViewIfNeeded()
+        await expect(tiles).toContainText('6 mph')
+        await expect(tiles).not.toContainText('km/h')
+        await expect(page.getByTestId('wx-hero')).toContainText('86°F')
+        await shot(page, 'weather-f-mph', size, scheme)
+      })
+
+      test('A Philippine bulletin on a Texas phone carries the Philippines chip', async ({ page }) => {
+        await open(page, '/#safety/warnings', size, scheme)
+        await page.evaluate(async () => {
+          const alert = { id: 'tx-r2-a1', kind: 'tcws', level: 'Signal No. 2', title: 'Tropical Cyclone Wind Signal No. 2', what: 'Strong winds are expected.', where: 'Eastern Samar', when: 'Next 24 hours', doNow: 'Follow local officials.', source: 'PAGASA', sourceUrl: null, issuedAt: '2026-11-11T00:00:00Z', lat: 11.5, lon: 125.5, bulletin: 'Synthetic bulletin text for the test.', checkedAt: '2026-11-11T01:50:00Z' }
+          await new Promise<void>((res, rej) => {
+            const o = indexedDB.open('bantay')
+            o.onerror = () => rej(o.error)
+            o.onsuccess = () => { const tx = o.result.transaction('kv', 'readwrite'); tx.objectStore('kv').put({ key: 'safety.alerts', value: [alert] }); tx.oncomplete = () => { o.result.close(); res() }; tx.onerror = () => rej(tx.error) }
+          })
+        })
+        await page.reload() // raw IndexedDB writes do not notify live queries
+        const card = page.getByRole('article', { name: 'Tropical Cyclone Wind Signal No. 2' })
+        await expect(card).toBeVisible()
+        await expect(card.locator('.sf-chip', { hasText: 'Philippines' })).toBeVisible()
+        await card.scrollIntoViewIfNeeded()
+        await shot(page, 'alertcard-philippines', size, scheme)
       })
 
       test('Quick dial in Texas: the OFW numbers dial with +63', async ({ page }) => {

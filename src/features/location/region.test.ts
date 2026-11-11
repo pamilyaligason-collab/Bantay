@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { inTexas, regionOf } from './region'
 import { phoneCountry, toE164 } from './phoneRegion'
 import { smsNumber, smsUris, usableNumber } from '../sos/sms'
@@ -6,6 +6,8 @@ import { smsNumber, smsUris, usableNumber } from '../sos/sms'
 const HOUSTON = { lat: 29.76, lon: -95.37 }
 const TAGBILARAN = { lat: 9.65, lon: 123.85 }
 const SINGAPORE = { lat: 1.35, lon: 103.82 }
+
+afterEach(() => vi.restoreAllMocks())
 
 describe('region (S30 L8)', () => {
   it('a position decides: Houston is us, Tagbilaran is ph, the Texas box edges', () => {
@@ -38,7 +40,7 @@ describe('region (S30 L8)', () => {
 describe('toE164 (D4): Philippine national numbers from outside the Philippines', () => {
   it('abroad: 09xx and 02 numbers get +63, punctuation goes', () => {
     expect(toE164('0917-123-4567', true)).toBe('+639171234567')
-    expect(toE164('(02) 8722-1144', true)).toBe('+6328722'+'1144')
+    expect(toE164('(02) 8722-1144', true)).toBe('+63287221144')
     expect(toE164('639171234567', true)).toBe('+639171234567')
   })
   it('abroad: a number with + stays, a US 10-digit number stays, short numbers stay', () => {
@@ -53,7 +55,13 @@ describe('toE164 (D4): Philippine national numbers from outside the Philippines'
     expect(toE164('', false)).toBe('')
   })
   it('SOS: smsNumber and the sms: links carry +63 from the US, and a PH phone still gets the local form', () => {
-    expect(smsNumber('0917 123 4567')).toBe(toE164('0917 123 4567')) // follows this phone
+    const zone = (tz: string) => vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({ timeZone: tz } as Intl.ResolvedDateTimeFormatOptions)
+    zone('America/Chicago') // the phone is set to Texas: hand value, not the code's own answer
+    expect(smsNumber('0917 123 4567')).toBe('+639171234567')
+    expect(smsUris([{ name: 'Nene', phone: '0917 123 4567' } as never], 'hi')[0]!.uri).toBe('sms:+639171234567?body=hi')
+    vi.restoreAllMocks()
+    zone('Asia/Manila') // a Philippine phone: the local form, unchanged
+    expect(smsNumber('0917 123 4567')).toBe('09171234567')
     expect(usableNumber('0917 123 4567')).toBe(true)
     expect(usableNumber('+63 917 123 4567')).toBe(true)
     expect(smsUris([{ name: 'Nene', phone: '+63 917 123 4567' } as never], 'hi')[0]!.uri).toBe('sms:+639171234567?body=hi')

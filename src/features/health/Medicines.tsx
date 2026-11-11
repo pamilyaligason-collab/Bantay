@@ -53,10 +53,11 @@ function settledBy(d: DoseState, takes: MedTaken[]): MedTaken | undefined {
 /** Today's doses for one person, shared by the screen and the Health summary. */
 export function useToday(personId: string) {
   const meds = useMedicationRows(personId)
-  const day = manilaDay(new Date()) // the dose day is Manila's
+  const tz = zoneOf(personId) // the dose day is the PERSON's (this phone's for me), never the viewer's
+  const day = manilaDay(new Date(), tz)
   const week = useTakesSince(personId, addManilaDays(day, -6))
-  const takes = useMemo(() => (week ?? NONE).filter((t) => manilaDay(t.takenAt) === day), [week, day])
-  const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day, manilaDay), [meds, personId, day, takes])
+  const takes = useMemo(() => (week ?? NONE).filter((t) => manilaDay(t.takenAt, tz) === day), [week, day, tz])
+  const doses = useMemo(() => matchDoses(slotsFor(meds ?? [], personId, day), takes, day, (v) => manilaDay(v, tz)), [meds, personId, day, takes, tz])
   return { meds, takes, week, doses, day }
 }
 

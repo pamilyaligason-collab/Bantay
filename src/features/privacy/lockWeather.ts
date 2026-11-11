@@ -5,7 +5,7 @@ import { conditionWords, kindOf, type Forecast, type Kind } from '../weather/for
 
 /** The lock-screen weather glance (mockup start-finger). Weather has no health or private data, so it is safe before unlocking.
  *  Read from the newest forecast already cached on this phone (works offline); no request, no location. null when nothing usable is cached. */
-export interface Glance { temp: number; words: string; kind: Kind; rain: string | null; place?: string }
+export interface Glance { temp: number; tempC: number; words: string; kind: Kind; rain: string | null; place?: string }
 
 /** Cache key `weather.forecast.<lat>,<lon>` -> the home zone's name when that forecast is for a home zone (within 3 km); a GPS spot gets no name rather than a wrong one. */
 export function placeOfKey(key: string): string | undefined {
@@ -22,7 +22,7 @@ export function glanceOf(fc: Forecast, now = Date.now()): Glance | null {
   const next = fc.hourly.find((h) => h.time > here && (h.prob ?? 0) >= 60)
   const hr = next ? Number(next.time.slice(11, 13)) : null
   return {
-    temp: Math.round(fc.current.temp), words: conditionWords(fc.current.code), kind: kindOf(fc.current.code),
+    temp: Math.round(fc.current.temp), tempC: fc.current.temp, words: conditionWords(fc.current.code), kind: kindOf(fc.current.code),
     rain: hr == null ? null : `rain likely after ${hr % 12 || 12} ${hr >= 12 ? 'PM' : 'AM'}`
   }
 }

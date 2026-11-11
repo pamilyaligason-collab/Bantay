@@ -54,8 +54,9 @@ export function useTodayDoses(personId: string): { doses: DoseState[]; hasMeds: 
   }, [personId])
   return useMemo(() => {
     if (meds === undefined) return null
-    const day = manilaDay(new Date())
-    return { doses: matchDoses(slotsFor(meds, personId, day), takes, day, manilaDay), hasMeds: meds.length > 0 }
+    const tz = zoneOf(personId) // the person's day, not the viewer's phone (a carer in Texas reading a Manila parent)
+    const day = manilaDay(new Date(), tz)
+    return { doses: matchDoses(slotsFor(meds, personId, day), takes, day, (v) => manilaDay(v, tz)), hasMeds: meds.length > 0 }
   }, [meds, takes, personId])
 }
 
