@@ -7,7 +7,8 @@ import { useAlertRows } from '../notify/useAlerts'
 import { useHealthData } from '../records/useHealthData'
 import { Icon } from '../shell/Icon'
 import { SubHeader } from '../shell/SubHeader'
-import { tzMidnight, zoneOf } from '../time/zone'
+import { tzMidnight } from '../time/zone'
+import { usePersonZone } from '../time/usePersonZone'
 import { manilaDaysEnding } from '../today/nextPick'
 import MedEditSheet, { type MedNote } from './MedEditSheet'
 import { clock12, setMedStatus } from './medActions'
@@ -40,14 +41,15 @@ function useMedById(id: string): Medication | null | undefined {
 }
 
 /** Doses this person logged in the last 7 days, live. undefined until the first read, so the week never shows "0 taken" before the doses are in. */
-function useWeekTakes(personId: string | undefined): MedTaken[] | undefined {
+export function useWeekTakes(personId: string | undefined): MedTaken[] | undefined {
+  const tz = usePersonZone(personId) // recomputes when people.tz arrives
   const [got, setGot] = useState<{ id: string; rows: MedTaken[] } | undefined>(undefined)
   useEffect(() => {
     if (!personId) return
-    const since = tzMidnight(manilaDaysEnding(new Date(), 7, zoneOf(personId))[0]!, zoneOf(personId)).toISOString()
+    const since = tzMidnight(manilaDaysEnding(new Date(), 7, tz)[0]!, tz).toISOString()
     const sub = liveQuery(() => ldb.meds.where('takenAt').aboveOrEqual(since).filter((m) => m.personId === personId).toArray()).subscribe({ next: (rows) => setGot({ id: personId, rows }), error: () => setGot({ id: personId, rows: NONE }) })
     return () => sub.unsubscribe()
-  }, [personId])
+  }, [personId, tz])
   return got && got.id === personId ? got.rows : undefined // rows read for another person never pass as this one's
 }
 

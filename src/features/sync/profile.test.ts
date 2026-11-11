@@ -176,6 +176,18 @@ describe('two people on one phone', () => {
     expect(await db.outbox.count()).toBe(0) // nothing of A's is written into B
     expect((await db.kv.get('profile.selfId'))?.value).toBe('B')
   })
+  it("member A's home place is gone when member B signs in, and when A signs out; B never inherits it", async () => {
+    const { adoptPerson, forgetSelf } = await import('./profile')
+    await adoptPerson('A')
+    await db.kv.put({ key: 'loc.home', value: { name: 'Houston, Texas', lat: 29.76, lon: -95.37, tz: 'America/Chicago' } })
+    await adoptPerson('A') // the same person again keeps it
+    expect((await db.kv.get('loc.home'))?.value).toMatchObject({ name: 'Houston, Texas' })
+    await adoptPerson('B')
+    expect(await db.kv.get('loc.home')).toBeUndefined()
+    await db.kv.put({ key: 'loc.home', value: { name: 'Dallas, Texas', lat: 32.78, lon: -96.8 } })
+    await forgetSelf()
+    expect(await db.kv.get('loc.home')).toBeUndefined()
+  })
   it('a photo picked by B is uploaded as B', async () => {
     await saveProfile('A', { phone: '1' })
     await (await import('./profile')).savePhoto('B', 'data:image/jpeg;base64,AAAA') // supabase client is absent: stays pending, owned by B

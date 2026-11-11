@@ -10,7 +10,7 @@ import { rainLine as todayRainLine, type Wx } from '../today/heroCards'
 import { useWeather } from '../today/weather'
 import { ALERTS_KEY, CHECKED_KEY, NO_STALE, STALE_KEY, type Alert, affectsUs, allQuiet, feedStale, freshness, freshText, outdatedLine, placeOnly, quakeFeltKm, rankAlerts, shownCheck, urgentFirst, type LatLon, type StaleSources } from './alerts'
 import { useNow } from './AlertCard'
-import { coversHere, planDial, splitDial } from './dial'
+import { coversHere, fromPhone, planDial, splitDial } from './dial'
 import { type Entry, forZone, hasPoint, OVERRIDES_KEY, type Overrides, withFamilyAdded, withOverrides } from './entries'
 import { hazardsFor, hazardStatus, hazardSub } from './hazardCards'
 import { cyclones, stormName } from './LiveMaps'
@@ -49,7 +49,7 @@ const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`
 
 /** Numbers a person can call from Quick dial here: the one local set plus national, OFW and teleconsult sets that show for this place. */
 export function dialCount(place: Place, overrides: Overrides): number {
-  const plan = planDial(place.weather, withFamilyAdded(hotlines as Entry[], overrides), place.source !== 'zone')
+  const plan = planDial(place.weather, withFamilyAdded(hotlines as Entry[], overrides), fromPhone(place.source))
   return plan.sets.reduce((n, s) => n + splitDial(s.entries).groups.reduce((m, g) => m + g.items.length, 0), 0)
 }
 

@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { db } from '../../db'
 import { supabase } from '../auth/client'
 import { getMember } from '../auth/session'
 import { loadCarerOf } from '../family/reportData'
 import { SwitchRow } from '../settings/Group'
+import { summaryTimeLine } from '../time/digestTime'
+import { getZone, subscribeZones } from '../time/zone'
 
 type Client = { from: (t: string) => any; rpc: (fn: string, args: object) => any } // eslint-disable-line @typescript-eslint/no-explicit-any
 const KEY = 'digest.on' // { userId, on }: a cache only. The server row (carer_prefs, 0039) decides; no row = on.
@@ -13,6 +15,7 @@ const KEY = 'digest.on' // { userId, on }: a cache only. The server row (carer_p
 export default function DigestToggle() {
   const [state, setState] = useState<{ userId: string; on: boolean } | null>(null) // null = not a carer, or still loading
   const [note, setNote] = useState('')
+  const tz = useSyncExternalStore(subscribeZones, getZone, getZone)
 
   useEffect(() => {
     let live = true
@@ -53,7 +56,7 @@ export default function DigestToggle() {
     <>
       <div className="st-h"><h2>For carers</h2></div>
       <div className="sh-card sh-list st-list" data-testid="digest-toggle">
-        <SwitchRow icon="file" tint="blue" title="8 PM summary" sub="One calm note at 8 PM about who still has medicine to take." on={state.on} onChange={(v) => void set(v)} />
+        <SwitchRow icon="file" tint="blue" title="8 PM summary" sub={`One calm note at ${summaryTimeLine(new Date(), tz)} about who still has medicine to take.`} on={state.on} onChange={(v) => void set(v)} />
       </div>
       <p className="sh-sub sh-note">Turning this off never stops missed-medicine or Unwell alerts.</p>
       {note && <p className="sh-sub sh-note" role="status">{note}</p>}

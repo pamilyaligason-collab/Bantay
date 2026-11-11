@@ -84,6 +84,8 @@ describe('no location fix', () => {
   it('names the home place it is showing; a picked zone or a real fix says nothing', () => {
     expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: true })).toBe('Location off: showing your home area')
     expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: true, settled: true })).toBeNull()
+    expect(locationOffNote({ source: 'home', zone: 'dampas', settled: true })).toBe('Showing your home place') // S30 L9: the member's saved home place
+    expect(locationOffNote({ source: 'home', zone: 'dampas', settled: false })).toBeNull()
     expect(locationOffNote({ source: 'gps', zone: 'dampas', picked: false, settled: true })).toBeNull()
     expect(locationOffNote({ source: 'zone', zone: 'dampas', picked: false, settled: false })).toBeNull() // still looking
     expect(locationOffNote(null)).toBeNull()

@@ -2,28 +2,27 @@ import { Capacitor } from '@capacitor/core'
 import { liveQuery } from 'dexie'
 import { useCallback, useEffect, useState } from 'react'
 import { db } from '../../db'
-import { HOME_ZONES, type LatLon, type Loc } from './geo'
-import { resolvePlace, type ZoneId } from './place'
+import { HOME_ZONES, nearestZone, type HomePlace, type LatLon, type Loc } from './geo'
+import { asHome, inPhilippines, resolvePlace, setKnownHome, type ZoneId } from './place'
 import { shouldRefresh, weatherFixState } from './freshness'
 import { familyPlacesOn } from '../family/flags'
 import { useBarangayTick } from './nearestPlace'
 
-export interface Home {
-  name: string
-  lat: number
-  lon: number
-}
+export type Home = HomePlace // name, lat, lon and (S30 L9) an optional IANA tz
 export const ZONE_KEY = 'loc.zone'
+export const HOME_KEY = 'loc.home'
 const LAST_KEY = 'loc.last'
 const FIRST_ZONE: ZoneId = HOME_ZONES[0].id
 const zoneHome = (id: string): Home => HOME_ZONES.find((z) => z.id === id) ?? HOME_ZONES[0]
 /** D-33: a saved custom home, else the last chosen zone, else the first zone. */
 export const getHome = async (): Promise<Home> => {
-  const saved = (await db.kv.get('loc.home').catch(() => undefined))?.value as Home | undefined
+  const saved = (await db.kv.get(HOME_KEY).catch(() => undefined))?.value as Home | undefined
   if (saved) return saved
   return zoneHome(((await db.kv.get(ZONE_KEY).catch(() => undefined))?.value as string | undefined) ?? FIRST_ZONE)
 }
-export const saveHome = (h: Home) => db.kv.put({ key: 'loc.home', value: h })
+export const saveHome = (h: Home) => db.kv.put({ key: HOME_KEY, value: h })
+/** S30 L9 (F1): "My home place" cleared: weather, place words and the timezone go back to the last Philippine zone. */
+export const clearHome = () => db.kv.delete(HOME_KEY)
 
 /** X7: a real position. 0,0 is what a broken provider returns; it is never a place we are in (unknown is not a position). */
 export const validFix = (p: { lat: number; lon: number }) =>
@@ -166,19 +165,24 @@ export const usePlace = (o?: { weather?: boolean }) => {
 /** Same, over a useLocation() the caller already holds, so a screen with several readers shares one position. */
 export function usePlaceFrom(l: ReturnType<typeof useLocation>) {
   useBarangayTick() // re-render when an offline barangay lookup lands (S28, D-181)
-  // undefined until Dexie has answered, so a saved Conel pick never shows Dampas first
-  const [saved, setSaved] = useState<ZoneId | null | undefined>(undefined)
+  // undefined until Dexie has answered, so a saved Conel pick never shows Dampas first. The member's own home place (S30 L9) is read with it.
+  const [saved, setSaved] = useState<{ zone: ZoneId | null; home: Home | null } | undefined>(undefined)
   useEffect(() => {
-    const sub = liveQuery(() => db.kv.get(ZONE_KEY)).subscribe({ next: (r) => setSaved((r?.value as ZoneId | undefined) ?? null), error: () => setSaved(null) })
+    const sub = liveQuery(async () => ({ zone: ((await db.kv.get(ZONE_KEY))?.value as ZoneId | undefined) ?? null, home: asHome((await db.kv.get(HOME_KEY))?.value) })).subscribe({
+      next: (r) => { setKnownHome(r.home); setSaved(r) },
+      error: () => setSaved({ zone: null, home: null })
+    })
     return () => sub.unsubscribe()
   }, [])
-  const lastZone = saved ?? FIRST_ZONE
+  // A home outside the Philippines replaces the last Philippine zone for weather and words when there is no fresh fix. A home inside it only chooses the nearest zone when none was picked by hand.
+  const home = saved?.home && !inPhilippines(saved.home) ? saved.home : null
+  const lastZone = saved?.zone ?? (saved?.home && inPhilippines(saved.home) ? (nearestZone(saved.home).id as ZoneId) : FIRST_ZONE)
   // a zone pick wins over an old fix: forget the fix so the pick is honoured when location is off
   const pickZone = useCallback(async (id: ZoneId) => { await db.kv.put({ key: ZONE_KEY, value: id }); if (l.source === 'last') await l.forget() }, [l])
   if (saved === undefined) return null
   // GPS still pending: show the saved zone now instead of hiding the screen
   // settled: GPS answered (or fell back), so a 'zone' source is a real fallback and not just "still looking"
-  return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone }), lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'gps' || l.source === 'last' ? l.at : undefined, accuracy: l.source === 'gps' || l.source === 'last' ? l.accuracy : undefined, picked: saved !== null }
+  return { ...resolvePlace({ gps: l.source === 'gps' || l.source === 'last' ? { lat: l.lat, lon: l.lon, stale: l.source === 'last' } : null, lastZone, home }), home, lastZone, pickZone, ask: l.ask, settled: l.source !== 'pending', fixAt: l.source === 'gps' || l.source === 'last' ? l.at : undefined, accuracy: l.source === 'gps' || l.source === 'last' ? l.accuracy : undefined, picked: saved.zone !== null }
 }
 
 /** Where Weather would look right now, without a hook or a GPS read (the rain reminder runs at app open): a stored fix up to 6 h old, else the saved zone. */
@@ -186,5 +190,6 @@ export async function weatherPoint(now = Date.now()): Promise<LatLon> {
   const v = (await db.kv.get(LAST_KEY).catch(() => undefined))?.value as { lat: number; lon: number; at: number } | undefined
   const lastZone = ((await db.kv.get(ZONE_KEY).catch(() => undefined))?.value as ZoneId | undefined) ?? FIRST_ZONE
   const gps = v && validFix(v) && weatherFixState(v.at, now) !== 'drop' ? { lat: v.lat, lon: v.lon, stale: true } : null
-  return resolvePlace({ gps, lastZone }).weather
+  const home = asHome((await db.kv.get(HOME_KEY).catch(() => undefined))?.value) // S30 L9: a home place abroad is where the rain reminder looks when there is no fix
+  return resolvePlace({ gps, lastZone, home }).weather
 }

@@ -37,6 +37,18 @@ describe('heartbeat', () => {
     expect(calls).toEqual([{ table: 'job_runs', op: 'insert', arg: { job: 'dose-watch', ok: true, summary: { sent: 3 } } }])
   })
 
+  it('a partial run (4 of 5 sources fine, PAGASA down) writes ok:false to job_runs but raises no system alert', async () => {
+    const { sb, calls } = fake({ admins: ['a1', 'a2'] })
+    await heartbeat(sb, 'alerts-ingest', false, { sources_ok: 4, sources_failed: 1, pagasa_ok: false })
+    expect(calls).toEqual([{ table: 'job_runs', op: 'insert', arg: { job: 'alerts-ingest', ok: false, summary: { sources_ok: 4, sources_failed: 1, pagasa_ok: false } } }])
+  })
+
+  it('a run where every source failed (sources_ok 0) still raises the alert', async () => {
+    const { sb, calls } = fake({ admins: ['a1'] })
+    await heartbeat(sb, 'alerts-ingest', false, { sources_ok: 0, sources_failed: 5 })
+    expect(calls.filter((c) => c.table === 'carer_alerts')).toHaveLength(1)
+  })
+
   it('a failed run also raises one system alert per admin, person_id null, ref job:window', async () => {
     vi.useFakeTimers(); vi.setSystemTime(ALERT_WINDOW_S * 5 * 1000 + 1234) // window 5, hand-computed
     const { sb, calls } = fake({ admins: ['a1', 'a2'] })

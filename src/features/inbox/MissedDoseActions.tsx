@@ -3,7 +3,7 @@ import { useFamilyPeople } from '../family/roster'
 import { useTakenToday } from '../health/useActivity'
 import { useMedications } from '../health/useMedications'
 import { manilaDay, matchDoses, slotsFor } from '../health/meds'
-import { zoneOf } from '../time/zone'
+import { usePersonZone } from '../time/usePersonZone'
 import { logDose } from '../log/store'
 import { Icon } from '../shell/Icon'
 import { useActingCan, useActingPersonId } from '../viewas/viewAs'
@@ -31,7 +31,7 @@ export function MissedDoseActions({ personId, refText, now = new Date() }: { per
   const [ask, setAsk] = useState(false)
   const [done, setDone] = useState(false)
   const { day, slot } = doseRef(refText)
-  const tz = zoneOf(personId) // the ref's day is the server's day on THEIR zone (people.tz), not this phone's
+  const tz = usePersonZone(personId) // the ref's day is the server's day on THEIR zone (people.tz), not this phone's
   const today = manilaDay(now, tz)
   const open = personId && slot && (day == null || day === today)
     ? matchDoses(slotsFor(meds, personId, today), takes, today, (v) => manilaDay(v, tz)).filter((d) => d.slot === slot && d.state === 'pending')

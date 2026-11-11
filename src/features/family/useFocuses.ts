@@ -1,10 +1,11 @@
 import { liveQuery } from 'dexie'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { ldb, type MedTaken, type Medication } from '../log/store'
 import { hdb } from '../records/store'
 import { useAlertRows } from '../notify/useAlerts'
 import { useActing, useViewedVisibleIds } from '../viewas/viewAs'
 import { reviewAsks, useCarerIds, type ReviewAsk } from './CarerCards'
+import { subscribeZones, zoneOf } from '../time/zone'
 import { todayView } from './MemberPage'
 import { personFocus, sortByFocus, type Focus } from './personFocus'
 import { useCheckInsLoaded, useFamilyPeople, type FamilyPerson } from './roster'
@@ -22,6 +23,7 @@ export function useFocuses(people: FamilyPerson[]): { loaded: boolean; items: Pe
   const [d, setD] = useState<D | null>(null)
   const [now, setNow] = useState(() => new Date())
   const key = people.map((p) => p.id).join(',')
+  const zones = useSyncExternalStore(subscribeZones, () => people.map((p) => zoneOf(p.id)).join(','), () => '') // people.tz arriving late redraws each person's day (S30 L9)
   useEffect(() => {
     const ids = key ? key.split(',') : []
     const sub = liveQuery(async () => ({
@@ -54,7 +56,7 @@ export function useFocuses(people: FamilyPerson[]): { loaded: boolean; items: Pe
       return { person, focus, missedDoses, asks, alertIds }
     })
     return { loaded: true, items: sortByFocus(items) }
-  }, [d, last, alerts, writable, acting, people, now])
+  }, [d, last, alerts, writable, acting, people, now, zones])
 }
 
 /** Everyone the screen may show: all of the family, or while acting only who the viewed person can see (fails closed). */

@@ -112,18 +112,6 @@
 .fm-sos .fm-sos-done { min-height: 48px; min-width: 48px; padding: 0 8px; border: 0; background: none; color: #fff; font: inherit; font-size: 15px; font-weight: 700; text-decoration: underline; flex: none; }
 .fm-sos a:focus-visible, .fm-sos button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
-/* S4: "Needs you now" carer cards (family-home) */
-.fm-sech { display: flex; align-items: baseline; justify-content: space-between; margin-top: 4px; }
-.fm-need { display: flex; flex-direction: column; gap: 10px; border-inline-start: 4px solid var(--amber); }
-.fm-need[data-kind="dose_missed"], .fm-need[data-kind="mood_unwell"] { border-inline-start-color: var(--red); }
-.fm-need-top { display: flex; align-items: center; gap: 12px; }
-.fm-need-top .grow { min-width: 0; overflow-wrap: anywhere; }
-.fm-need-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.fm-need .fm-need-act { min-height: 48px; padding: 0 20px; text-decoration: none; }
-.fm-need-note { margin: 0 4px; }
-.fm-need .in-actions { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 0; } /* the missed-dose actions (inbox) sit in a row, like the mockup */
-.fm-need .in-actions .in-act { flex: 1 1 auto; width: auto; min-height: 48px; padding: 0 10px; font-size: 15px; justify-content: center; text-align: center; text-decoration: none; white-space: nowrap; } /* 15 px so "Open Ate Joy" and "Message the family" share one row at 360 and 390 */
-
 /* S4: Answer for Papa */
 .fa-q { margin: 0; }
 .fa-opts { display: grid; gap: 8px; }
@@ -143,10 +131,6 @@
 .fp .fp-act { min-height: 48px; padding: 0 14px; flex: none; }
 .fp-fix { display: flex; flex-direction: column; gap: 8px; }
 
-/* lane J (S8): one card per person, one line per item */
-.fm-need-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.fm-need-lines li { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 15px; overflow-wrap: anywhere; }
-.fm-need-lines li .fm-need-act { flex: none; padding: 0 16px; }
 /* S14 F2: three segments (Home, Messages, Plan); the done check-in card keeps its place so focus can stay on it */
 .seg.fm-seg3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .fm-checkin .tile { width: 44px; height: 44px; }

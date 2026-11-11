@@ -1,11 +1,11 @@
 import { isRough } from './freshness'
-import { pickLocalSet, type LatLon } from './geo'
+import { distanceKm, HOME_NEAR_KM, pickLocalSet, type HomePlace, type LatLon } from './geo'
 import { nearestPlace, nearestLabel, packPlace, zoneLabel } from './nearestPlace'
 import { agoWords } from '../today/timeWords'
 
 export interface PlaceWords { title: string; approx?: boolean; sub?: string; stale: boolean } // approx: the fix is rough, so only the place LINE reads 'around <title>' (placeLine); sentences use the plain title // stale -> callers add data-testid="place-last"
 /** What usePlace() returns, as far as the words need it. `settled: false` = the first position is still being found (unknown is not the home zone). `picked: false` = no zone was chosen by hand, so the zone is only the home fallback. */
-export interface PlaceLike { source: string; zone: string; weather?: LatLon; fixAt?: number; accuracy?: number; picked?: boolean; settled?: boolean }
+export interface PlaceLike { source: string; zone: string; weather?: LatLon; fixAt?: number; accuracy?: number; picked?: boolean; settled?: boolean; home?: HomePlace | null }
 
 const short = (zone: string) => zoneLabel(zone) // S28: '<barangay>, <town>' for a home zone
 /** The area the phone is in. Outside every named area it is 'where you are': a home zone 500 km away is not the phone's place. */
@@ -27,7 +27,9 @@ export function placeWords(place: PlaceLike | null, now: number = Date.now()): P
   switch (place.source) {
     case 'gps': return { title: exactOf(place, now), approx: roughOf(place) || undefined, stale: false }
     case 'last': { const a = place.fixAt == null ? '' : agoWords((now - place.fixAt) / 60_000); return { title: `${exactOf(place, now)} · last known${a ? `, ${a}` : ''}`, approx: roughOf(place) || undefined, stale: true } }
+    case 'home': return { title: place.home?.name ?? areaOf(place), stale: false } // S30 L9 (F1): no fresh position, so the member's own home place (outside the Philippines)
     case 'gps-abroad': { // S30 L8 (F3): a phone inside a named area abroad (Texas) says that area, not the Philippine home zone; elsewhere abroad keeps 'Away · <home zone>'
+      if (place.home && place.weather && distanceKm(place.weather, place.home) <= HOME_NEAR_KM) return { title: place.home.name, stale: false } // at home: the member's own name for it
       const s = place.weather ? pickLocalSet(place.weather) : null
       return { title: s?.where === 'area' ? s.area.name : `Away · ${short(place.zone)}`, stale: false }
     }

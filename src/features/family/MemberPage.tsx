@@ -1,6 +1,7 @@
 import { liveQuery } from 'dexie'
 import { useEffect, useMemo, useState } from 'react'
 import FmAvatar from './FmAvatar'
+import { usePersonZone } from '../time/usePersonZone'
 import { theirTime, zoneOf } from '../time/zone'
 import { dayOf, manilaDay, manilaMinutes, matchDoses, slotsFor } from '../health/meds'
 import { ON_TIME_MIN } from '../health/doseCount'
@@ -73,7 +74,8 @@ export function useToday(personId: string): TodayView {
     const t = setInterval(() => setTick(new Date()), 60_000)
     return () => { sub.unsubscribe(); clearInterval(t) }
   }, [personId])
-  return useMemo(() => todayView({ ...d, personId, now: tick }), [d, personId, tick])
+  const tz = usePersonZone(personId) // todayView reads the person's zone: a late people.tz must redraw the day (S30 L9)
+  return useMemo(() => todayView({ ...d, personId, now: tick }), [d, personId, tick, tz]) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
 /** The "Today" card of the member page and the report: today's doses (taken or missed), the last mood and the last blood pressure with its word. */
