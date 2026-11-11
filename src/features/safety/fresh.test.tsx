@@ -129,6 +129,6 @@ describe('FreshLine', () => {
   it('an empty list is unknown: never checked, amber line (not a calm "all clear")', async () => {
     render(<FreshLine />)
     expect(await screen.findByText('Never checked')).toBeTruthy()
-    expect(screen.getByRole('status').textContent).toMatch(/not been checked on this phone yet/)
+    expect(screen.getByRole('status').textContent).toMatch(/Warnings have not been checked yet/)
   })
 })

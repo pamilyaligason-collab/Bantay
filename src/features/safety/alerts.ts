@@ -148,7 +148,7 @@ export const splitEonet = (list: Alert[]): { official: Alert[]; eonet: Alert[] }
 export function outdatedLine(checkedAt: string | null | undefined): string {
   const t = checkedAt ? new Date(checkedAt) : null
   const tail = 'They may be out of date. Check PAGASA or listen to the radio.'
-  if (!t || Number.isNaN(t.getTime())) return `Alerts have not been checked on this phone yet. ${tail}`
+  if (!t || Number.isNaN(t.getTime())) return `Warnings have not been checked yet. ${tail}`
   return `Alerts last checked ${t.toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Manila' })}. ${tail}`
 }
 
