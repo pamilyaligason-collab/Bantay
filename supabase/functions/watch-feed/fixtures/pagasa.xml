@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UCpyLikj1x70S8UPxVqsPr6g"/>
+ <id>yt:channel:pyLikj1x70S8UPxVqsPr6g</id>
+ <yt:channelId>pyLikj1x70S8UPxVqsPr6g</yt:channelId>
+ <title>DOST-PAGASA Weather Report</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UCpyLikj1x70S8UPxVqsPr6g"/>
+ <author>
+  <name>DOST-PAGASA Weather Report</name>
+  <uri>https://www.youtube.com/channel/UCpyLikj1x70S8UPxVqsPr6g</uri>
+ </author>
+ <published>2015-03-22T23:46:56+00:00</published>
+ <entry>
+  <id>yt:video:gxos5VAuz7c</id>
+  <yt:videoId>gxos5VAuz7c</yt:videoId>
+  <yt:channelId>UCpyLikj1x70S8UPxVqsPr6g</yt:channelId>
+  <title>Public Weather Forecast issued at 5:00 PM | November 11, 2026 - Wednesday</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=gxos5VAuz7c"/>
+  <author>
+   <name>DOST-PAGASA Weather Report</name>
+   <uri>https://www.youtube.com/channel/UCpyLikj1x70S8UPxVqsPr6g</uri>
+  </author>
+  <published>2026-11-11T09:23:59+00:00</published>
+  <updated>2026-11-11T09:35:17+00:00</updated>
+  
+ </entry>
+<entry>
+  <id>yt:video:AgcXtAFRGkw</id>
+  <yt:videoId>AgcXtAFRGkw</yt:videoId>
+  <yt:channelId>UCpyLikj1x70S8UPxVqsPr6g</yt:channelId>
+  <title>Public Weather Forecast issued at 5:00 PM | November 11, 2026 - Wednesday</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=AgcXtAFRGkw"/>
+  <author>
+   <name>DOST-PAGASA Weather Report</name>
+   <uri>https://www.youtube.com/channel/UCpyLikj1x70S8UPxVqsPr6g</uri>
+  </author>
+  <published>2026-11-11T09:19:30+00:00</published>
+  <updated>2026-11-11T09:19:31+00:00</updated>
+  
+ </entry>
+<entry>
+  <id>yt:video:7Qe8op1xNXA</id>
+  <yt:videoId>7Qe8op1xNXA</yt:videoId>
+  <yt:channelId>UCpyLikj1x70S8UPxVqsPr6g</yt:channelId>
+  <title>Public Weather Forecast issued at 5:00 AM | November 11, 2026 - Wednesday</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=7Qe8op1xNXA"/>
+  <author>
+   <name>DOST-PAGASA Weather Report</name>
+   <uri>https://www.youtube.com/channel/UCpyLikj1x70S8UPxVqsPr6g</uri>
+  </author>
+  <published>2026-11-10T21:20:39+00:00</published>
+  <updated>2026-11-10T23:54:08+00:00</updated>
+  
+ </entry>
+</feed>
