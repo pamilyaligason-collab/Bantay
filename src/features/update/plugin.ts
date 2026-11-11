@@ -4,11 +4,13 @@ import type { PluginListenerHandle } from '@capacitor/core'
 /** Contract with android/.../AppUpdaterPlugin.java. download() rejects with err.code (native: message == code) one of 'network' | 'checksum' | 'space' | 'busy' | 'bad_args'; a size mismatch is 'checksum'. */
 export interface AppUpdaterPlugin {
   /** canInstall = packageManager.canRequestPackageInstalls() */
-  info(): Promise<{ versionCode: number; versionName: string; canInstall: boolean }>
+  /** silentInstall: true only in a shell whose install() honours {silent:true}; absent in 2.9.0 and older (they would open Android's box), so automatic installs need it === true. */
+  info(): Promise<{ versionCode: number; versionName: string; canInstall: boolean; silentInstall?: boolean }>
   /** Opens Android's "Install unknown apps" screen for Bantay. */
   openInstallPermission(): Promise<void>
   download(o: { url: string; sha256: string; size: number }): Promise<{ path: string }>
-  install(o: { path: string }): Promise<{ status: 'success' | 'pending_user' | 'failure'; message?: string }>
+  /** silent: automatic update. If Android needs a tap, resolve 'needs_tap' and do NOT open its box (an older shell ignores this and opens it). */
+  install(o: { path: string; silent?: boolean }): Promise<{ status: 'success' | 'pending_user' | 'needs_tap' | 'failure'; message?: string }>
   addListener(
     event: 'progress',
     cb: (p: { done: number; total: number }) => void,

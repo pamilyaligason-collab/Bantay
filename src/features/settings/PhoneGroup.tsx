@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useKv } from '../shell/useKv'
+import { isNativeAndroid } from '../safety/settingsOpener'
 import { useCarerIds } from '../family/CarerCards'
 import FamilyPhones from '../family/FamilyPhones'
 import SensorSettings from '../sensors/SensorSettings'
 import SetupCard from '../today/SetupCard'
-import Group, { NavRow } from './Group'
+import Group, { NavRow, SwitchRow } from './Group'
 import { useAccount } from './useAccount'
 
 /** Settings > Phone (#me/phone): Health Connect and sensors, the setup list, and the Family phones check (carers and admins). */
@@ -16,6 +18,7 @@ export default function PhoneGroup() {
     window.addEventListener('hashchange', on)
     return () => window.removeEventListener('hashchange', on)
   }, [])
+  const [auto, setAuto] = useKv<boolean>('update.auto', true)
   const phones = /^#me\/phone\/phones/.test(hash) // a real route, so the hardware Back returns to the Phone group
   const showPhones = member?.role === 'admin' || carerIds.length > 0
   if (phones) {
@@ -35,6 +38,9 @@ export default function PhoneGroup() {
       <div className="sh-card sh-list st-list">
         <NavRow icon="check" title="Set up everything" sub="Update, alerts, location and the rest, one step at a time" href="#setup/all" testId="settings-setup-all" />
       </div>
+      {isNativeAndroid() && <div className="sh-card sh-list st-list">
+        <SwitchRow icon="dl" title="Update Bantay by itself" sub="Checks once in a while and installs new versions on Wi-Fi. Android may ask you to tap Install the first time." on={auto} onChange={setAuto} />
+      </div>}
       {showPhones && (
         <div className="sh-card sh-list st-list">
           <NavRow icon="phone" title="Family phones" sub="Can each phone wake its owner for alarms?" href="#me/phone/phones" />

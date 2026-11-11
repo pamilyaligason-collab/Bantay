@@ -19,15 +19,31 @@ const kvGet = async <T,>(k: string) => (await db.kv.get(k).catch(() => undefined
 const kvPut = (key: string, value: unknown) => db.kv.put({ key, value }).catch(() => undefined)
 
 /** Same-origin /latest.json (Pages serves it; the release script commits public/latest.json). At most once per 6 h unless forced; between checks the cached copy still drives the card. */
-export async function checkForUpdate(force = false, fetcher: typeof fetch = fetch): Promise<UpdateState> {
-  if (state.checking) return state
+let inflight: Promise<UpdateState> | null = null
+let inflightForce = false
+let fetchedLast = false // the newest check went to the network (a failed try counts)
+/** One shared promise: a caller that arrives while a check runs (App's open check, then runAuto) gets that check's real result, not the 'checking' state.
+ *  A forced caller that arrives during an unforced check waits for it, then fetches fresh if that result came from the cache. */
+export function checkForUpdate(force = false, fetcher: typeof fetch = fetch): Promise<UpdateState> {
+  if (!inflight) {
+    inflightForce = force
+    const p: Promise<UpdateState> = doCheck(force, fetcher).finally(() => { if (inflight === p) inflight = null })
+    inflight = p
+    return p
+  }
+  if (!force || inflightForce) return inflight
+  return inflight.then((s) => (fetchedLast ? s : checkForUpdate(true, fetcher)))
+}
+async function doCheck(force: boolean, fetcher: typeof fetch): Promise<UpdateState> {
   set({ checking: true, failed: false })
   try {
     const shell = await AppUpdater.info().catch(() => ({ versionCode: 0, versionName: 'web', canInstall: false }))
     let latest = parseLatest(await kvGet('update.latest')) ?? null
     let checkedAt = (await kvGet<number>('update.checkedAt')) ?? null
     let failed = false
+    fetchedLast = false
     if (shell.versionCode !== 0 && checkDue(checkedAt, Date.now(), force)) {
+      fetchedLast = true
       try {
         const res = await fetcher('/latest.json', { cache: 'no-store' })
         const got = res.ok ? parseLatest(await res.json()) : null
