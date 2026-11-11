@@ -4,7 +4,7 @@ import { skipOnboarding } from './helpers'
 // S30 L8 round 2 (auth build, PostgREST mocked, invented people): a carer on a Texas phone (America/Chicago) looking at a relative who lives in the Philippines.
 // 02:00Z on 11 Nov is 20:00 Tuesday in Texas and 10:00 Wednesday in Manila. Her 09:00 dose is judged and labelled on HER clock: "(their time)".
 // Also Settings > Display: the "Weather units" row and its sheet. Shots only when S30_SHOTS=<dir> (390x844 and 360x740, light and dark).
-// Carer cards (family/CarerCards.tsx) are not mounted by any screen in this build, so they have no page to shoot; their "(their time)" text is covered by texasDoseDay.test.ts and carer-cards.test.tsx.
+// The old carer cards component was not mounted by any screen and was removed in S30 L9; the member page below is where "(their time)" shows, and texasDoseDay.test.ts covers slotAgo.
 declare const process: { env: Record<string, string | undefined> }
 const SHOTS = process.env.S30_SHOTS
 test.use({ serviceWorkers: 'block', locale: 'en-US', timezoneId: 'America/Chicago' })

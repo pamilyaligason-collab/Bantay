@@ -42,3 +42,7 @@
 :root[data-narrow] .st-row { flex-wrap: wrap; }
 :root[data-narrow] .st-row > .sh-grow { flex: 1 1 100px; min-width: 0; }
 :root[data-narrow] .st-row b { overflow-wrap: anywhere; }
+.st-search { display: flex; flex-direction: column; gap: 6px; }
+.st-search input { min-height: 52px; border-radius: 14px; border: 1px solid var(--line); background: var(--card2); color: var(--ink); font: inherit; font-size: 17px; padding: 0 14px; }
+.st-rad[aria-pressed="true"] { font-weight: 700; }
+.st-radios .sh-sub { margin: 8px 4px; }

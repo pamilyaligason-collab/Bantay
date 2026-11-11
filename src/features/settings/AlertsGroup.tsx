@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useKv } from '../shell/useKv'
+import { digestTimeLine } from '../time/digestTime'
 import { AlarmHealthRow } from '../phonecheck/AlarmHealthRow'
 import { KEY_PHONE_CHECK } from '../phonecheck/keys'
 import { useKvValue } from '../phonecheck/useKvValue'
@@ -35,7 +36,7 @@ function WorldAlertsLater() {
       <div className="sh-card sh-list st-list" data-testid="world-alerts-later">
         <LaterRow icon="warn" tint="red" title="Hazards near family" sub="Instant. Home zones, plus members who share their place." />
         <LaterRow icon="bolt" tint="amber" title="Philippines-wide warnings" sub="Instant when urgent, otherwise in the digest." />
-        <LaterRow icon="clock" tint="green" title="Daily digest time" sub="World big events and news, once a day." />
+        <LaterRow icon="clock" tint="green" title="Daily digest time" sub={`World big events and news, once a day, at ${digestTimeLine()}.`} />
         <LaterRow icon="msg" tint="blue" title="SMS fallback" sub="Text message if push does not arrive. Carrier charges may apply." />
       </div>
       <div className="sh-card st-later-card">Not on yet. These need Bantay's server to remember a choice for each person. Today Bantay alerts everyone when a PAGASA wind signal covers a home zone, and admins can send a storm, flood or heat warning. Other warnings show on Safety when you open Bantay. Your phone's own carrier alerts (cell broadcast) work even without Bantay.</div>

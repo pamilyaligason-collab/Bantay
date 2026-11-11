@@ -9,6 +9,7 @@ import ViewAsRow from '../viewas/ViewAsRow'
 import { useActing } from '../viewas/viewAs'
 import LabsGroup from './LabsGroup'
 import { THEMES } from './DisplayGroup'
+import HomePlaceRow from './HomePlaceRow'
 import { sosNames } from './FamilyGroup'
 import { supabase } from '../auth/client'
 import { Lock, NavRow, Switch } from './Group'
@@ -58,6 +59,7 @@ export default function Overview() {
         {!out && <ViewAsRow />}
         <NavRow icon="bell" tint="red" title="Alerts and reminders" sub={quiet ? 'Quiet hours on · 10 PM to 6 AM' : 'Quiet hours off'} href="#me/alerts" />
         <NavRow icon="screen" tint="blue" title="Display" sub={`${label(TEXT_SIZES, isTextSize(textSize) ? textSize : 'normal')} text · ${label(THEMES, theme)}`} href="#me/display" />
+        <HomePlaceRow />
         {!noAccount && <NavRow icon="users" tint="amber" title="Family and sharing" sub={names ? `SOS text to ${names}` : 'Records, SOS text, Medical ID'} href="#me/family" locked={acting} />}
         <NavRow icon="phone" tint="teal" title="Phone" sub="Health Connect and setup list" href="#me/phone" />
         <NavRow icon="shield" tint="purple" title="Privacy" sub="Agreement, AI, my data" href="#privacy" locked={acting} />

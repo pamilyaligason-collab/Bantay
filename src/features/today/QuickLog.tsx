@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { liveMedicines } from '../health/meds'
+import { parseTemp, tempAsk, tempBoth, tempUnitFor, type TempUnit } from '../health/tempEntry'
+import { useWxUnits } from '../weather/units'
 import { FAIL_TEXT, FEELINGS, feelingToast, logBp, logFeeling, logSugar, logWeight, moodLine, takeDose, takeMedication, useHasWriterCarer, type Feeling, type LogResult } from './actions'
 import { useMyDoseRows, useMyMedications } from './useMyTakes'
 import BpCheckButton from '../health/bpcheck/BpCheckButton'
@@ -75,6 +77,9 @@ function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: stri
   const [a, setA] = useState('')
   const [b, setB] = useState('')
   const [fasting, setFasting] = useState(true)
+  const wxUnits = useWxUnits()
+  const [tempPick, setTempPick] = useState<TempUnit | null>(null) // null: the phone's own unit (US: Fahrenheit)
+  const tempUnit = tempPick ?? tempUnitFor(wxUnits)
   const self = useActingPersonId() // the viewed person while an admin is acting, else me
   const personId = self ?? undefined
   const goal = useGoal(self ?? '') // no water goal under 1 year: no Water in More
@@ -113,9 +118,9 @@ function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: stri
       if (v == null) return setErr('Type your weight in kg, a number from 20 to 300.')
       void run(logWeight(v, personId), `Saved weight ${v} kg`)
     } else if (open === 'temp') {
-      const v = readNum(a, 30, 45)
-      if (v == null) return setErr('Type the temperature in °C, a number from 30 to 45.')
-      void run(logFor(self, (id) => logReading({ personId: id, takenAt: now(), test: 'temperature', value: v, unit: '°C' })), `Saved temperature ${v} °C`)
+      const t = parseTemp(a, tempUnit) // always stored in Celsius, as before
+      if (t == null) return setErr(tempAsk(tempUnit))
+      void run(logFor(self, (id) => logReading({ personId: id, takenAt: now(), test: 'temperature', value: t.c, unit: '°C' })), `Saved temperature ${tempBoth(t)}`)
     } else if (open === 'sleep') {
       const h = readNum(a, 0, 16)
       if (h == null) return setErr('Type the hours you slept, a number from 0 to 16.')
@@ -199,7 +204,13 @@ function LogSheets({ start, notify, onClose }: { start: Kind; notify: (msg: stri
       {(open === 'temp' || open === 'sleep') && (
         <Sheet title={open === 'temp' ? 'Temperature' : 'Sleep'} onClose={close}>
           <form className="td-form" onSubmit={submit} noValidate>
-            <label>{open === 'temp' ? 'Temperature (°C)' : 'Hours slept last night'}<input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} placeholder={open === 'temp' ? '36.8' : '7'} /></label>
+            {open === 'temp' && (
+              <div role="group" aria-label="Unit" className="td-seg">
+                {(['C', 'F'] as const).map((u) => <button key={u} type="button" aria-pressed={tempUnit === u} onClick={() => { setTempPick(u); setA(''); setErr('') }}>{'°' + u}</button>)}
+              </div>
+            )}
+            <label>{open === 'temp' ? `Temperature (°${tempUnit})` : 'Hours slept last night'}<input inputMode="decimal" value={a} onChange={(e) => setA(e.target.value)} placeholder={open === 'temp' ? (tempUnit === 'F' ? '98.6' : '36.8') : '7'} /></label>
+            {open === 'temp' && parseTemp(a, tempUnit) && <p className="td-sub" aria-live="polite">{tempBoth(parseTemp(a, tempUnit)!)}</p>}
             {err && <p className="td-err" role="alert">{err}</p>}
             <button type="submit" className="td-pill light solid" disabled={busy}>Save</button>
           </form>
