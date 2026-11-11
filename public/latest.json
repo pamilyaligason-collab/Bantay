@@ -1,9 +1,9 @@
 {
-    "versionCode":  2008000,
-    "versionName":  "2.8.0",
-    "url":  "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.8.0/bantay-2.8.0.apk",
-    "sha256":  "af062a50f5ad06f6a3c4e4703acf9141568a606ef14260ce6eed1c362be6be11",
-    "size":  15779070,
+    "versionCode":  2009000,
+    "versionName":  "2.9.0",
+    "url":  "https://github.com/pamilyaligason-collab/Bantay/releases/download/v2.9.0/bantay-2.9.0.apk",
+    "sha256":  "971b2dfaea35e2f942369de60b1e88f3bb86bc294ba13539b7aecfa5be4bc45a",
+    "size":  17210289,
     "minShell":  2000000,
-    "notes":  "Daily battery and check-in for the family map while the app is closed."
+    "notes":  "One setup link and Set up everything; new app icons; notification icon."
 }
