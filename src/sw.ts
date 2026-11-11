@@ -14,7 +14,7 @@ self.skipWaiting()
 clientsClaim()
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)
-registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/admin/] })) // /admin is its own page (web admin), never the app shell
+registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/^\/admin/, /^\/get(\/|\?|$)/, /\.html$/] })) // /admin (web admin), /get (the installer page) and plain .html pages (privacy policy) are their own pages, never the app shell
 
 // D-181: offline barangay packs. Cache-first, JSON answers only (the host answers a missing file with index.html and 200), newest ~100 tiles kept.
 // workbox-strategies / workbox-expiration are not direct dependencies, so this uses the Cache API. index.json and the two home tiles are fetched at install; the glob precache is vite config, left alone.
