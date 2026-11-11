@@ -179,3 +179,12 @@ describe('index.ts wiring (source guard; the function itself passed deno check)'
     expect(sql).not.toMatch(/grant[^;]*(insert|update|delete)[^;]*to authenticated/)
   })
 })
+
+describe('oembedPlayable', () => {
+  it('200 plays, 400/401/404 are a definite no, anything else is unknown (throws) so a YouTube outage deletes nothing', async () => {
+    const { oembedPlayable } = await import('./feed.ts')
+    expect(oembedPlayable(200)).toBe(true)
+    for (const s of [400, 401, 404]) expect(oembedPlayable(s)).toBe(false)
+    for (const s of [403, 429, 500, 503]) expect(() => oembedPlayable(s)).toThrow()
+  })
+})

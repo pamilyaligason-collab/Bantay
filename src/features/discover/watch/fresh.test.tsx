@@ -6,7 +6,7 @@ import { loadFresh } from './fresh'
 import Watch from './Screen'
 
 // S33 L1: the Watch shelves put fresh watch_videos rows (marked New) before the checked list; with no usable row they are the checked list, exactly as before.
-const s = vi.hoisted(() => ({ client: null as unknown, answer: (() => ({ data: [], error: null })) as () => unknown, query: [] as string[] }))
+const s = vi.hoisted(() => ({ client: null as unknown, answer: ((_kind: 'recent' | 'evergreen') => ({ data: [], error: null })) as (kind: 'recent' | 'evergreen') => unknown, query: [] as string[] }))
 vi.mock('../../auth/client', () => ({ get supabase() { return s.client } }))
 vi.mock('../../admin/events', async (orig) => ({ ...(await orig<typeof import('../../admin/events')>()), track: async () => true }))
 const NOW = Date.now()
@@ -16,10 +16,16 @@ const CURATED = DISCOVER_VIDEOS.filter(playable)
 
 beforeEach(() => {
   s.query.length = 0
-  const chain: Record<string, unknown> = {}
-  for (const m of ['select', 'gte', 'order']) chain[m] = (...a: unknown[]) => { s.query.push(`${m}(${a.join(',')})`); return chain }
-  chain.limit = (n: number) => { s.query.push(`limit(${n})`); return Promise.resolve().then(() => s.answer()) }
-  s.client = { from: (t: string) => { s.query.push('from(' + t + ')'); return chain } }
+  s.client = {
+    from: (t: string) => {
+      s.query.push('from(' + t + ')')
+      let kind: 'recent' | 'evergreen' = 'recent'
+      const chain: Record<string, unknown> = {}
+      for (const m of ['select', 'gte', 'eq', 'order']) chain[m] = (...a: unknown[]) => { if (m === 'eq') kind = 'evergreen'; s.query.push(`${m}(${a.join(',')})`); return chain }
+      chain.limit = (n: number) => { s.query.push(`limit(${n})`); return Promise.resolve().then(() => s.answer(kind)) }
+      return chain
+    }
+  }
 })
 afterEach(() => { cleanup(); s.client = null })
 
@@ -43,9 +49,22 @@ describe('mergeFresh', () => {
   it('a repeat inside the fresh rows shows once', () => {
     expect(mergeFresh([r('bbbbbbbbbb1', 'recipes', 1), r('bbbbbbbbbb1', 'recipes', 2)], [], T)).toHaveLength(1)
   })
-  it('30 days is kept, 31 is not; a date in the future is not', () => {
-    const got = mergeFresh([r('cccccccccc1', 'recipes', 30), r('cccccccccc2', 'recipes', 31), r('cccccccccc3', 'recipes', -1)], [], T)
-    expect(got.map((v) => v.id)).toEqual(['cccccccccc1'])
+  it('30 days is New, 31 and older is the untagged back catalogue; a date in the future is dropped', () => {
+    const got = mergeFresh([r('cccccccccc1', 'recipes', 30), r('cccccccccc2', 'recipes', 31), r('cccccccccc4', 'recipes', 900), r('cccccccccc3', 'recipes', -1)], [], T)
+    expect(got.map((v) => [v.id, v.fresh])).toEqual([['cccccccccc1', true], ['cccccccccc2', undefined], ['cccccccccc4', undefined]])
+  })
+  it('order: New (newest first), then older ones of the same channels (newest first, no tag), then the checked list; each video once', () => {
+    const got = mergeFresh([r('gggggggggg1', 'prepping', 400), r('gggggggggg2', 'prepping', 40), r('gggggggggg3', 'prepping', 2), r('gggggggggg2', 'prepping', 40), r(cur[0]!.id, 'prepping', 100)], cur, T)
+    expect(got.map((v) => v.id)).toEqual(['gggggggggg3', 'gggggggggg2', cur[0]!.id, 'gggggggggg1', cur[1]!.id, cur[2]!.id])
+    expect(got.map((v) => v.fresh)).toEqual([true, undefined, undefined, undefined, undefined, undefined])
+  })
+  it('the back catalogue keeps 30 per shelf and does not use up the 10 New slots (or the other way round)', () => {
+    const old = Array.from({ length: 35 }, (_, i) => r('hhhhhhh' + String(i).padStart(4, '0'), 'farm-diy', 40 + i))
+    const news = Array.from({ length: 12 }, (_, i) => r('iiiiiii' + String(i).padStart(4, '0'), 'farm-diy', 1 + i * 0.1))
+    const got = mergeFresh([...old, ...news], [], T)
+    expect(got.filter((v) => v.fresh)).toHaveLength(10)
+    expect(got.filter((v) => !v.fresh)).toHaveLength(30)
+    expect(got.filter((v) => !v.fresh).map((v) => v.id)).toEqual(old.slice(0, 30).map((v) => v.video_id))
   })
   it('at most 10 per shelf, the newest 10; another shelf is not affected', () => {
     const many = Array.from({ length: 12 }, (_, i) => r('dddddddd' + String(i).padStart(3, '0'), 'prepping', i + 1))
@@ -61,15 +80,23 @@ describe('mergeFresh', () => {
 })
 
 describe('loadFresh', () => {
-  it('reads watch_videos newest first with the 30-day floor and a cap', async () => {
-    s.answer = () => ({ data: [row('qqqqqqqqqq1', 'recipes', 'C', 'T', 1)], error: null })
+  it('reads watch_videos newest first with the 30-day floor and a cap, then the evergreen rows', async () => {
+    s.answer = (k) => ({ data: [row(k === 'recent' ? 'qqqqqqqqqq1' : 'qqqqqqqqqq2', 'recipes', 'C', 'T', k === 'recent' ? 1 : 90)], error: null })
     const got = await loadFresh(NOW)
-    expect(got).toHaveLength(1)
+    expect((got as { video_id: string }[]).map((x) => x.video_id)).toEqual(['qqqqqqqqqq1', 'qqqqqqqqqq2'])
+    expect(s.query).toContain('eq(evergreen,true)')
+    expect(s.query).toContain('limit(90)')
     expect(s.query[0]).toBe('from(watch_videos)')
     expect(s.query).toContain('select(video_id,shelf,channel,title,published_at)')
     expect(s.query).toContain(`gte(published_at,${new Date(NOW - 30 * DAY).toISOString()})`)
     expect(s.query).toContain('order(published_at,[object Object])')
     expect(s.query).toContain('limit(60)')
+  })
+  it('without migration 0068 (the evergreen read errors) the New videos still load; and the other way round', async () => {
+    s.answer = (k) => (k === 'recent' ? { data: [row('rrrrrrrrrr1', 'recipes', 'C', 'T', 1)], error: null } : { data: null, error: { code: '42703' } })
+    expect(await loadFresh(NOW)).toHaveLength(1)
+    s.answer = (k) => { if (k === 'recent') throw new Error('offline'); return { data: [row('rrrrrrrrrr2', 'recipes', 'C', 'T', 90)], error: null } }
+    expect(await loadFresh(NOW)).toHaveLength(1)
   })
   it('an error, a throw, a rejection, a non-list and no client all give []', async () => {
     s.answer = () => ({ data: null, error: { code: '42P01' } }); expect(await loadFresh()).toEqual([])
@@ -118,6 +145,23 @@ describe('Watch with fresh rows', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Video, Typhoon safety: what to pack/ }))
     expect(container.querySelector('iframe')).toBeNull() // loads only after its own tap
     expect(screen.getByTestId('watch-player').querySelector('a[href="https://www.youtube.com/watch?v=frshPrep001"]')).toBeTruthy()
+  })
+})
+
+describe('Watch with older videos of the same channels', () => {
+  const names = () => screen.getAllByRole('button', { name: /^Video, / }).map((b) => b.getAttribute('aria-label')!)
+  it('New first, then the untagged older ones, then the checked list; the older ones add to the count', async () => {
+    s.answer = (k) => ({ data: k === 'recent' ? [row('newwwwwww01', 'recipes', 'Kawaling Pinoy', 'Pinakbet in one pan', 1)] : [row('oldddddd001', 'recipes', 'Panlasang Pinoy', 'Adobo recipe from long ago', 200), row('oldddddd002', 'prepping', 'DOST-PAGASA', 'Typhoon safety basics', 400)], error: null })
+    render(<Watch />)
+    await waitFor(() => expect(screen.getAllByText('New')).toHaveLength(1))
+    expect(screen.getByRole('heading', { name: 'Watch · All videos' }).nextElementSibling!.textContent).toBe(String(CURATED.length + 3))
+    expect(names().slice(0, 4)).toEqual(['Video, Pinakbet in one pan, Kawaling Pinoy, New', 'Video, Adobo recipe from long ago, Panlasang Pinoy', 'Video, Typhoon safety basics, DOST-PAGASA', 'Video, Disaster Wais: the go bag, Philippine Red Cross'])
+  })
+  it('only older rows (a quiet month): no New tag, they still come before the checked list', async () => {
+    s.answer = (k) => ({ data: k === 'evergreen' ? [row('oldddddd003', 'farm-diy', 'ATI Central Office', 'Backyard gulayan guide', 300)] : [], error: null })
+    render(<Watch />)
+    await waitFor(() => expect(names()[0]).toBe('Video, Backyard gulayan guide, ATI Central Office'))
+    expect(screen.queryByText('New')).toBeNull()
   })
 })
 

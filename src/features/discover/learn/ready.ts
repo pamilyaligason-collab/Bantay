@@ -22,8 +22,10 @@ export type WatchVideo = Video & { fresh?: boolean }
 export const FRESH_TOPIC: Record<string, string> = { prepping: 'Be prepared', 'farm-diy': 'Farming and DIY', recipes: 'Recipe videos' }
 export const FRESH_DAYS = 30
 export const FRESH_PER_SHELF = 10
+/** S34: older videos of the same channels (watch_videos.evergreen, migration 0068): after the New ones, no tag, at most 30 per shelf. */
+export const EVERGREEN_PER_SHELF = 30
 
-/** Fresh rows first (newest first, at most 10 per shelf, nothing older than 30 days, only a real id on a known shelf), then the checked videos, no video twice. Anything unreadable in `fresh` is skipped; with no usable row the result is the checked list as it was.
+/** Fresh rows first (newest first, at most 10 per shelf, within 30 days, only a real id on a known shelf), then the older rows of the same channels (newest first, untagged, at most 30 per shelf), then the checked videos, no video twice. Anything unreadable in `fresh` is skipped; with no usable row the result is the checked list as it was.
  *  `now` is epoch ms. */
 export function mergeFresh(fresh: unknown, curated: Video[], now: number = Date.now()): WatchVideo[] {
   const rows: { v: WatchVideo; t: number }[] = []
@@ -32,17 +34,19 @@ export function mergeFresh(fresh: unknown, curated: Video[], now: number = Date.
     const topic = typeof o.shelf === 'string' ? FRESH_TOPIC[o.shelf] : undefined
     const t = typeof o.published_at === 'string' ? Date.parse(o.published_at) : NaN
     if (typeof o.video_id !== 'string' || !VIDEO_ID.test(o.video_id) || !topic || typeof o.title !== 'string' || !o.title.trim() || typeof o.channel !== 'string' || !o.channel.trim()) continue
-    if (!Number.isFinite(t) || now - t > FRESH_DAYS * 86_400_000 || t > now + 3_600_000) continue
-    rows.push({ v: { id: o.video_id, placeholder: false, title: o.title.trim(), topic, source: o.channel.trim(), minutes: null, sub: null, fresh: true }, t })
+    if (!Number.isFinite(t) || t > now + 3_600_000) continue
+    const isNew = now - t <= FRESH_DAYS * 86_400_000
+    rows.push({ v: { id: o.video_id, placeholder: false, title: o.title.trim(), topic, source: o.channel.trim(), minutes: null, sub: null, ...(isNew ? { fresh: true } : {}) }, t })
   }
   const seen = new Set<string>()
   const per = new Map<string, number>()
   const out: WatchVideo[] = []
   for (const { v } of rows.sort((a, b) => b.t - a.t)) {
     if (seen.has(v.id)) continue
-    const n = (per.get(v.topic) ?? 0) + 1
-    if (n > FRESH_PER_SHELF) continue
-    per.set(v.topic, n)
+    const key = (v.fresh ? 'n:' : 'o:') + v.topic
+    const n = (per.get(key) ?? 0) + 1
+    if (n > (v.fresh ? FRESH_PER_SHELF : EVERGREEN_PER_SHELF)) continue
+    per.set(key, n)
     seen.add(v.id)
     out.push(v)
   }
